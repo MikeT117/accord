@@ -1,0 +1,10 @@
+dist
+node_modules
+.env
+.env.*
+eslintrc.yml
+.gitignore
+.prettierrc.yml
+README.md
+TODO
+tsconfig.tsbuildinfo

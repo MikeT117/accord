@@ -1,0 +1,33 @@
+env:
+  es2021: true
+  node: true
+extends:
+  - eslint:recommended
+  - plugin:@typescript-eslint/recommended
+  - prettier
+parser: '@typescript-eslint/parser'
+parserOptions:
+  ecmaVersion: latest
+  sourceType: module
+plugins:
+  - '@typescript-eslint'
+  - prettier
+rules: 
+  {
+    prettier/prettier: "error",
+    '@typescript-eslint/no-unused-vars': ["error", { "argsIgnorePattern": "^_" }],
+    '@typescript-eslint/no-explicit-any': "error",
+    import/extensions: 0,
+    import/prefer-default-export: "off",
+    max-len: ["error", { "code": 120 }],
+    operator-linebreak: "off",
+    no-console: "off",
+    no-restricted-syntax: "warn",
+    no-await-in-loop: "warn"
+  }
+settings:
+  {
+    import/resolver: {
+      typescript: {}
+    }
+  }

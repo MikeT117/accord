@@ -1,0 +1,5 @@
+node_modules
+logs
+pm2
+docker-compose-dev.yaml
+docker-compose-prod.yaml

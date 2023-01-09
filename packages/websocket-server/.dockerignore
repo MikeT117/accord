@@ -1,0 +1,13 @@
+dist
+node_modules
+schema
+test
+.env
+.env.*
+eslintrc.yml
+.gitignore
+.prettierrc.yml
+.taprc
+README.md
+TODO
+tsconfig.tsbuildinfo
