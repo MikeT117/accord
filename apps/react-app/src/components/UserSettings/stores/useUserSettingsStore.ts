@@ -19,18 +19,16 @@ export const useUserSettingsStore = create(
       section: USER_OVERVIEW as Section,
     },
     (set) => ({
-      actions: {
-        toggleOpen: () =>
-          set((s) => {
-            if (s.isOpen) {
-              return { isOpen: false };
-            }
-            return { isOpen: true };
-          }),
-        setSection: (section: Section) => set({ section }),
-      },
+      toggleOpen: () =>
+        set((s) => {
+          if (s.isOpen) {
+            return { isOpen: false };
+          }
+          return { isOpen: true };
+        }),
+      setSection: (section: Section) => set({ section }),
     }),
   ),
 );
 
-export const userSettingsActions = useUserSettingsStore.getState().actions;
+export const userSettingsStore = useUserSettingsStore.getState();

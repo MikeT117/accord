@@ -8,23 +8,21 @@ type Dictionary<T> = {
 export const useMessageCreatorInput = create(
   persist(
     combine({ inputs: {} as Dictionary<string> }, (set) => ({
-      actions: {
-        initialise: (id: string) =>
-          set((s) => ({
-            inputs: { ...s.inputs, [id]: '' },
-          })),
-        update: (id: string, content: string) =>
-          set((s) => ({
-            inputs: { ...s.inputs, [id]: content },
-          })),
-        reset: (id: string) =>
-          set((s) => ({
-            inputs: { ...s.inputs, [id]: '' },
-          })),
-      },
+      initialise: (id: string) =>
+        set((s) => ({
+          inputs: { ...s.inputs, [id]: '' },
+        })),
+      update: (id: string, content: string) =>
+        set((s) => ({
+          inputs: { ...s.inputs, [id]: content },
+        })),
+      reset: (id: string) =>
+        set((s) => ({
+          inputs: { ...s.inputs, [id]: '' },
+        })),
     })),
     { name: 'drafts' },
   ),
 );
 
-export const messageCreatorInputActions = useMessageCreatorInput.getState().actions;
+export const messageCreatorInputStore = useMessageCreatorInput.getState();

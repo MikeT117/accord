@@ -2,8 +2,8 @@ import { AccordApiErrorResponse, Channel } from '@accord/common';
 import { AxiosError } from 'axios';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
-import { guildChannelActions } from '@/shared-stores/guildChannelStore';
-import { privateChannelActions } from '@/shared-stores/privateChannelStore';
+import { guildChannelStore } from '@/shared-stores/guildChannelStore';
+import { privateChannelStore } from '@/shared-stores/privateChannelStore';
 
 export const useUpdateChannelMutation = () => {
   return useMutation<
@@ -22,7 +22,7 @@ export const useUpdateChannelMutation = () => {
     {
       onSuccess: ({ id, type, name, parentId, topic, guildId, parentRoleSync }) => {
         if ((type === 0 || type === 1 || type === 4) && guildId) {
-          guildChannelActions.updateChannel({
+          guildChannelStore.updateChannel({
             id,
             type,
             name,
@@ -32,7 +32,7 @@ export const useUpdateChannelMutation = () => {
             parentRoleSync,
           });
         } else if (type === 2 || type === 3) {
-          privateChannelActions.updateChannel({ id, type, name });
+          privateChannelStore.updateChannel({ id, type, name });
         }
       },
     },

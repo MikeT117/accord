@@ -7,11 +7,9 @@ export const useGuildCategoryFilter = create(
       guildCategoryId: undefined as string | undefined,
     },
     (set) => ({
-      actions: {
-        setGuildCategoryId: (guildCategoryId: string | undefined) => set({ guildCategoryId }),
-      },
+      setGuildCategoryId: (guildCategoryId: string | undefined) => set({ guildCategoryId }),
     }),
   ),
 );
 
-export const guildCategoryFilterActions = useGuildCategoryFilter.getState().actions;
+export const guildCategoryFilterStore = useGuildCategoryFilter.getState();

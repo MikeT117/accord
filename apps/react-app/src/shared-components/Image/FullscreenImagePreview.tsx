@@ -3,11 +3,11 @@ import { useGlobalKeyListener } from '@/shared-hooks';
 import { Dialog } from '@/shared-components/Dialog';
 import { Image } from './Image';
 import {
-  fullscreenImagePreviewActions,
+  fullscreenImagePreviewStore,
   useFullscreenImagePreviewStore,
 } from './stores/useFullscreenImagePreviewStore';
 
-const { toggleOpen } = fullscreenImagePreviewActions;
+const { toggleOpen } = fullscreenImagePreviewStore;
 
 const FullscreenImagePreviewContent = () => {
   const src = useFullscreenImagePreviewStore(useCallback((s) => s.src, []));

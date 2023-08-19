@@ -5,9 +5,9 @@ import { Button } from '@/shared-components/Button';
 import { DefaultTooltip } from '@/shared-components/DefaultTooltip';
 import { IconButton } from '@/shared-components/IconButton';
 import { ListItem } from '@/shared-components/ListItem';
-import { guildSettingsActions, GUILD_ROLES } from '../../stores/useGuildSettingsStore';
+import { guildSettingsStore, GUILD_ROLES } from '../../stores/useGuildSettingsStore';
 
-const { setSection, setRole } = guildSettingsActions;
+const { setSection, setRole } = guildSettingsStore;
 
 export const GuildRoleEditorSidebar = ({
   guildId,

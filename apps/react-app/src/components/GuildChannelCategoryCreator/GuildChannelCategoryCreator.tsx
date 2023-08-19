@@ -5,11 +5,11 @@ import { SettingToggle } from '@/shared-components/Settings';
 import { useCreateGuildChannelMutation } from '@/api/channel/createGuildChannel';
 import { useGuildChannelCategoryCreator } from './hooks/useGuildChannelCategoryCreator';
 import { useIsGuildChannelCreatorOpen } from './hooks/useIsGuildChannelCategoryCreatorOpen';
-import { guildChannelCategoryCreatorActions } from './stores/useGuildChannelCategoryCreatorStore';
+import { guildChannelCategoryCreatorStore } from './stores/useGuildChannelCategoryCreatorStore';
 import { GuildRoleListSelector } from '@/shared-components/GuildRoleListSelector/GuildRoleListSelector';
 
 const { nextStage, prevStage, setName, toggleOpen, togglePrivate, updateRoles } =
-  guildChannelCategoryCreatorActions;
+  guildChannelCategoryCreatorStore;
 
 export const GuildChannelCategoryCreatorContent = () => {
   const guildChannelCategoryCreatorState = useGuildChannelCategoryCreator();

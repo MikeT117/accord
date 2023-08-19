@@ -3,7 +3,7 @@ import type { GuildMember, GuildRole } from '@accord/common';
 import { GuildMemberListItem } from '../../GuildMemberListItem';
 import { LoadingSpinner } from '@/shared-components/LoadingSpinner';
 import { Input } from '@/shared-components/Input';
-import { guildSettingsActions, useGuildSettingsStore } from '../../stores/useGuildSettingsStore';
+import { guildSettingsStore, useGuildSettingsStore } from '../../stores/useGuildSettingsStore';
 import { Dialog } from '@/shared-components/Dialog';
 import { Button } from '@/shared-components/Button';
 import { useGetRoleGuildMembersQuery } from '@/api/role/getRoleGuildMembers';
@@ -41,7 +41,7 @@ export const GuildRoleEditorAssignMembersDialogContent = ({
       roleId: guildRole.id,
       members: selectedMembers,
     });
-    guildSettingsActions.toggleAssignRoleMembersOpen();
+    guildSettingsStore.toggleAssignRoleMembersOpen();
   };
 
   const toggleSelectedUser = (guildMember: Omit<GuildMember, 'roles'>) => {
@@ -78,11 +78,7 @@ export const GuildRoleEditorAssignMembersDialogContent = ({
         )}
       </div>
       <div className='flex justify-between bg-grayA-3 px-4 py-3'>
-        <Button
-          intent='link'
-          padding='s'
-          onClick={guildSettingsActions.toggleAssignRoleMembersOpen}
-        >
+        <Button intent='link' padding='s' onClick={guildSettingsStore.toggleAssignRoleMembersOpen}>
           Cancel
         </Button>
         <Button onClick={assignUsers} disabled={selectedMembers.length === 0}>
@@ -96,7 +92,7 @@ export const GuildRoleEditorAssignMembersDialogContent = ({
 export const GuildRoleEditorAssignMembersDialog = ({ children }: { children: ReactNode }) => {
   const isOpen = useGuildSettingsStore(useCallback((s) => s.isAssignRoleMembersOpen, []));
   return (
-    <Dialog isOpen={isOpen} onClose={guildSettingsActions.toggleAssignRoleMembersOpen}>
+    <Dialog isOpen={isOpen} onClose={guildSettingsStore.toggleAssignRoleMembersOpen}>
       {children}
     </Dialog>
   );

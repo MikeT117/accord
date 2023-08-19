@@ -11,12 +11,9 @@ import { useCallback } from 'react';
 import { useGetGuildCategoriesQuery } from '@/api/guild/getGuildCategories';
 import { MainSidebarHeaderLayout, MainSidebarContentLayout } from '@/shared-components/Layouts';
 import { ListItem } from '@/shared-components/ListItem';
-import {
-  guildCategoryFilterActions,
-  useGuildCategoryFilter,
-} from './stores/useGuildCategoryFilter';
+import { guildCategoryFilterStore, useGuildCategoryFilter } from './stores/useGuildCategoryFilter';
 
-const { setGuildCategoryId } = guildCategoryFilterActions;
+const { setGuildCategoryId } = guildCategoryFilterStore;
 
 export const GuildBrowserSidebar = () => {
   const guildCategoryId = useGuildCategoryFilter(useCallback((s) => s.guildCategoryId, []));

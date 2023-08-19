@@ -2,7 +2,7 @@ import { AccordApiErrorResponse } from '@accord/common';
 import { AxiosError } from 'axios';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
-import { guildActions } from '@/shared-stores/guildStore';
+import { guildStore } from '@/shared-stores/guildStore';
 
 export const useDeleteRoleMutation = () => {
   return useMutation<
@@ -15,7 +15,7 @@ export const useDeleteRoleMutation = () => {
     },
     {
       onSuccess: (_, { roleId, guildId }) => {
-        guildActions.deleteRole(roleId, guildId);
+        guildStore.deleteRole(roleId, guildId);
       },
     },
   );

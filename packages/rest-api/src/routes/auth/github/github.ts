@@ -82,7 +82,7 @@ const github: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
       },
     },
     async (req, reply) => {
-      const authorizationEndpoint = fastify.githubOauth2.generateAuthorizationUri(req);
+      const authorizationEndpoint = fastify.githubOauth2.generateAuthorizationUri(req, reply);
       reply.redirect(authorizationEndpoint);
     },
   );

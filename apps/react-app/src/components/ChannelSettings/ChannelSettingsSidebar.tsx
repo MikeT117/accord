@@ -5,7 +5,7 @@ import {
   FullscreenSettingsSidebarList,
 } from '@/shared-components/FullscreenSettings';
 import {
-  channelSettingsActions,
+  channelSettingsStore,
   ChannelSettingsSection,
   CHANNEL_OVERVIEW,
   CHANNEL_ROLES,
@@ -33,7 +33,7 @@ export const ChannelSettingsSidebar = ({
           intent='secondary'
           baseBg={false}
           isActive={settingsSection === CHANNEL_OVERVIEW}
-          onClick={() => channelSettingsActions.setActiveSection(CHANNEL_OVERVIEW)}
+          onClick={() => channelSettingsStore.setActiveSection(CHANNEL_OVERVIEW)}
           isActionable
         >
           Overview
@@ -42,15 +42,15 @@ export const ChannelSettingsSidebar = ({
           intent='secondary'
           baseBg={false}
           isActive={settingsSection === CHANNEL_ROLES}
-          onClick={() => channelSettingsActions.setActiveSection(CHANNEL_ROLES)}
+          onClick={() => channelSettingsStore.setActiveSection(CHANNEL_ROLES)}
           isActionable
         >
           Permissions
         </ListItem>
       </FullscreenSettingsSidebarList>
-      <Divider className='my-2.5 mx-2.5' />
+      <Divider className='mx-2.5 my-2.5' />
       <FullscreenSettingsSidebarList>
-        <span className='ml-2.5 mb-1 block text-xs font-semibold text-gray-11'>Danger Zone</span>
+        <span className='mb-1 ml-2.5 block text-xs font-semibold text-gray-11'>Danger Zone</span>
         <ListItem intent='danger' baseBg={false} onClick={onDelete} isActionable>
           Delete {type !== 1 ? 'Channel' : 'Category'}
         </ListItem>

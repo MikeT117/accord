@@ -2,7 +2,7 @@ import { GuildRole, AccordApiErrorResponse } from '@accord/common';
 import { AxiosError } from 'axios';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
-import { guildActions } from '@/shared-stores/guildStore';
+import { guildStore } from '@/shared-stores/guildStore';
 
 export const useUpdateRoleMutation = () => {
   return useMutation<GuildRole, AxiosError<AccordApiErrorResponse>, GuildRole>(
@@ -13,7 +13,7 @@ export const useUpdateRoleMutation = () => {
     },
     {
       onSuccess: (role) => {
-        guildActions.updateRole(role);
+        guildStore.updateRole(role);
       },
     },
   );

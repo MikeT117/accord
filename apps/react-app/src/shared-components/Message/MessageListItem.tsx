@@ -1,6 +1,6 @@
 import type { ChannelMessage } from '@accord/common';
 import { forwardRef, useState } from 'react';
-import { actionConfirmationActions } from '@/components/ActionConfirmation';
+import { actionConfirmationStore } from '@/components/ActionConfirmation';
 import { ListItem } from '@/shared-components/ListItem';
 import { Message } from '@/shared-components/Message';
 import { InlineMessageEditor } from './InlineMessageEditor';
@@ -48,7 +48,7 @@ export const MessageListItem = forwardRef<
 
     const handleDeleteMessage = () => {
       if (isAuthorCurrentUser) {
-        actionConfirmationActions.setChannelMessage(message, () =>
+        actionConfirmationStore.setChannelMessage(message, () =>
           onDeleteMessage({
             id: message.id,
             channelId: message.channelId,

@@ -3,14 +3,14 @@ import type { ChannelMessage, UserRelationship } from '@accord/common';
 import { AccordWebsocketClient } from '@accord/websocket-client';
 import { queryClient } from '@/lib/queryClient/queryClient';
 import { FullScreenLoadingSpinner } from '@/shared-components/LoadingSpinner';
-import { loggedInUserActions } from '@/shared-stores/loggedInUserStore';
-import { useSessionStore, sessionStoreActions } from '@/shared-stores/sessionStore';
-import { voiceStateActions } from '@/shared-stores/voiceStateStore';
+import { loggedInUserStore } from '@/shared-stores/loggedInUserStore';
+import { useSessionStore, sessionStore } from '@/shared-stores/sessionStore';
+import { voiceStateStore } from '@/shared-stores/voiceStateStore';
 import { AccordOperation } from '@accord/common';
 import { WEBSOCKET_ENDPOINT } from '@/constants';
-import { guildChannelActions } from '@/shared-stores/guildChannelStore';
-import { guildActions } from '@/shared-stores/guildStore';
-import { privateChannelActions } from '@/shared-stores/privateChannelStore';
+import { guildChannelStore } from '@/shared-stores/guildChannelStore';
+import { guildStore } from '@/shared-stores/guildStore';
+import { privateChannelStore } from '@/shared-stores/privateChannelStore';
 import { InfiniteData } from '@tanstack/react-query';
 import { insertInfiniteDataItem } from '../../lib/queryClient/utils/insertInfiniteDataItem';
 import { updateInfiniteDataItem } from '../../lib/queryClient/utils/updateInfiniteDataItem';
@@ -26,7 +26,7 @@ export const AccordWebsocket = ({ children }: { children: ReactNode }) => {
       onError: (ev) => console.error('WS ERROR: ', ev),
       onClose: (ev) => {
         if (ev.reason === 'UNAUTHENTICATED' || ev.reason === 'INVALID_SESSION') {
-          sessionStoreActions.clearSession();
+          sessionStore.clearSession();
         }
       },
       debug: false,
@@ -36,81 +36,81 @@ export const AccordWebsocket = ({ children }: { children: ReactNode }) => {
     awc.addAccordEventListener(
       AccordOperation.CLIENT_READY_OP,
       ({ guildChannels, guilds, privateChannels, user, voiceChannelStates }) => {
-        guildActions.initialise(guilds);
-        guildChannelActions.initialise(guildChannels);
-        privateChannelActions.initialise(privateChannels);
-        loggedInUserActions.initialise(user);
-        voiceStateActions.initialise(voiceChannelStates);
+        guildStore.initialise(guilds);
+        guildChannelStore.initialise(guildChannels);
+        privateChannelStore.initialise(privateChannels);
+        loggedInUserStore.initialise(user);
+        voiceStateStore.initialise(voiceChannelStates);
         set(true);
       },
     );
 
     awc.addAccordEventListener(AccordOperation.GUILD_CREATE_OP, ({ guild, channels }) => {
-      guildActions.addGuild(guild);
-      guildChannelActions.addManyChannels(channels);
+      guildStore.addGuild(guild);
+      guildChannelStore.addManyChannels(channels);
     });
 
     awc.addAccordEventListener(AccordOperation.GUILD_UPDATE_OP, ({ guild }) => {
-      guildActions.updateGuild(guild);
+      guildStore.updateGuild(guild);
     });
 
     awc.addAccordEventListener(AccordOperation.GUILD_DELETE_OP, ({ guild: { id } }) => {
-      guildActions.deleteGuild(id);
-      guildChannelActions.deleteChannelByGuildId(id);
+      guildStore.deleteGuild(id);
+      guildChannelStore.deleteChannelByGuildId(id);
     });
 
     awc.addAccordEventListener(AccordOperation.GUILD_ROLE_CREATE_OP, ({ role }) => {
-      guildActions.addRole(role);
+      guildStore.addRole(role);
     });
 
     awc.addAccordEventListener(AccordOperation.GUILD_ROLE_UPDATE_OP, ({ role }) => {
-      guildActions.updateRole(role);
+      guildStore.updateRole(role);
     });
 
     awc.addAccordEventListener(
       AccordOperation.GUILD_ROLE_DELETE_OP,
       ({ role: { id, guildId } }) => {
-        guildActions.deleteRole(id, guildId);
+        guildStore.deleteRole(id, guildId);
       },
     );
 
     awc.addAccordEventListener(AccordOperation.GUILD_MEMBER_UPDATE_OP, ({ member }) => {
-      guildActions.updateMember(member);
+      guildStore.updateMember(member);
     });
 
     awc.addAccordEventListener(AccordOperation.CHANNEL_CREATE_OP, ({ channel }) => {
       if (channel.type === 2 || channel.type === 3) {
-        privateChannelActions.addChannel(channel);
+        privateChannelStore.addChannel(channel);
       } else if (channel.type === 0 || channel.type === 1 || channel.type === 4) {
-        guildChannelActions.addChannel(channel);
+        guildChannelStore.addChannel(channel);
       }
     });
     awc.addAccordEventListener(AccordOperation.CHANNEL_UPDATE_OP, ({ channel }) => {
       if (channel.type === 2 || channel.type === 3) {
-        privateChannelActions.updateChannel(channel);
+        privateChannelStore.updateChannel(channel);
       } else if (channel.type === 0 || channel.type === 1 || channel.type === 4) {
-        guildChannelActions.updateChannel(channel);
+        guildChannelStore.updateChannel(channel);
       }
     });
 
     awc.addAccordEventListener(AccordOperation.CHANNEL_DELETE_OP, ({ channel: { id } }) => {
-      guildChannelActions.deleteChannel(id);
+      guildChannelStore.deleteChannel(id);
     });
 
     awc.addAccordEventListener(
       AccordOperation.VOICE_CHANNEL_STATE_CREATE,
-      voiceStateActions.addVoiceState,
+      voiceStateStore.addVoiceState,
     );
 
     awc.addAccordEventListener(
       AccordOperation.VOICE_CHANNEL_STATE_UPDATE,
-      voiceStateActions.updateVoiceState,
+      voiceStateStore.updateVoiceState,
     );
 
     awc.addAccordEventListener(
       AccordOperation.VOICE_CHANNEL_STATE_DELETE,
       ({ channelId, userAccountId }) => {
-        voiceStateActions.delVoiceState(channelId, userAccountId);
+        voiceStateStore.delVoiceState(channelId, userAccountId);
       },
     );
 
@@ -159,7 +159,7 @@ export const AccordWebsocket = ({ children }: { children: ReactNode }) => {
     });
 
     awc.addAccordEventListener(AccordOperation.USER_UPDATE, ({ user }) => {
-      loggedInUserActions.updateUser(user);
+      loggedInUserStore.updateUser(user);
     });
 
     return () => awc.close();

@@ -11,13 +11,11 @@ export type ToastType = {
 
 export const useToastsStore = create(
   combine({ toasts: [] as ToastType[] }, (set) => ({
-    actions: {
-      addToast: (toast: Omit<ToastType, 'id'>) =>
-        set((s) => ({ toasts: [...s.toasts, { ...toast, id: Date.now(), duration: 5000 }] })),
-      dismissToast: (id: number) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
-      clearAllToasts: () => set({ toasts: [] }),
-    },
+    addToast: (toast: Omit<ToastType, 'id'>) =>
+      set((s) => ({ toasts: [...s.toasts, { ...toast, id: Date.now(), duration: 5000 }] })),
+    dismissToast: (id: number) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+    clearAllToasts: () => set({ toasts: [] }),
   })),
 );
 
-export const toastActions = useToastsStore.getState().actions;
+export const toastStore = useToastsStore.getState();

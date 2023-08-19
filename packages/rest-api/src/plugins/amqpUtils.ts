@@ -29,8 +29,23 @@ import type {
   ChannelPinDeleteEvent,
 } from '@accord/common';
 import { AccordForwardingMessageQueue, AccordNonForwardingMessageQueue } from '@accord/common';
+import {
+  FastifyInstance,
+  RawServerDefault,
+  FastifyBaseLogger,
+  FastifyTypeProviderDefault,
+} from 'fastify';
+import { IncomingMessage, ServerResponse } from 'http';
 
-export default fp(async (fastify) => {
+function amqpUtils(
+  fastify: FastifyInstance<
+    RawServerDefault,
+    IncomingMessage,
+    ServerResponse<IncomingMessage>,
+    FastifyBaseLogger,
+    FastifyTypeProviderDefault
+  >,
+) {
   const encodeMessage = (msg: unknown) => {
     try {
       const buffer = Buffer.from(JSON.stringify(msg));
@@ -92,7 +107,7 @@ export default fp(async (fastify) => {
   const sendToGuildQueue = (
     payload: BasePublishEvent &
       Partial<BasePublishUserEvent | BasePublishRoleEvent> &
-      (GuildUpdateEvent | GuildDeleteEvent),
+      (GuildUpdateEvent | GuildDeleteEvent | GuildCreateEvent),
   ) => sendToQueue(AccordForwardingMessageQueue.GUILD, payload);
 
   const sendToGuildMemberQueue = (
@@ -105,7 +120,7 @@ export default fp(async (fastify) => {
     payload: BasePublishEvent & (SocketSubscriptionAddEvent | SocketSubscriptionRemoveEvent),
   ) => sendToQueue(AccordNonForwardingMessageQueue.SOCKET_SUBSCRIPTION, payload);
 
-  fastify.decorate('amqpUtils', {
+  return {
     sendToChannelMessageQueue,
     sendToChannelQueue,
     sendToChannelPinQueue,
@@ -115,7 +130,12 @@ export default fp(async (fastify) => {
     sendToGuildQueue,
     sendToGuildMemberQueue,
     sendToSocketSessionQueue,
-  });
+  };
+}
+
+export default fp(async (fastify) => {
+  const utils = amqpUtils(fastify);
+  fastify.decorate('amqpUtils', utils);
 });
 
 declare module 'fastify' {

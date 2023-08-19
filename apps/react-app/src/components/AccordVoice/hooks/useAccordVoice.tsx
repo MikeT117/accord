@@ -4,12 +4,12 @@ import { Device } from 'mediasoup-client';
 import type { Producer } from 'mediasoup-client/lib/Producer';
 import type { RtpCapabilities } from 'mediasoup-client/lib/RtpParameters';
 import type { Transport, TransportOptions } from 'mediasoup-client/lib/Transport';
-import { memo, useCallback, useMemo, useRef } from 'react';
+import { memo, useCallback, useRef } from 'react';
 import type { Consumer } from 'mediasoup-client/lib/Consumer';
 import { useSessionStore } from '@/shared-stores/sessionStore';
-import { voiceStateActions } from '@/shared-stores/voiceStateStore';
+import { voiceStateStore } from '@/shared-stores/voiceStateStore';
 import { RTC_WEBSOCKET_ENDPOINT } from '@/constants';
-import { toastActions } from '@/shared-components/Toast';
+import { toastStore } from '@/shared-components/Toast';
 import { useLoggedInUserId } from '../../../shared-stores/loggedInUserStore';
 
 const webRtcState: {
@@ -167,13 +167,13 @@ export const useAccordVoice = () => {
 
     producer.observer.on('pause', () => {
       if (webRtcState.channelId) {
-        voiceStateActions.setSelfMute(webRtcState.channelId, userId, true);
+        voiceStateStore.setSelfMute(webRtcState.channelId, userId, true);
       }
     });
 
     producer.observer.on('resume', () => {
       if (webRtcState.channelId) {
-        voiceStateActions.setSelfMute(webRtcState.channelId, userId, false);
+        voiceStateStore.setSelfMute(webRtcState.channelId, userId, false);
       }
     });
 
@@ -216,12 +216,12 @@ export const useAccordVoice = () => {
 
               consumer.observer.on('pause', () => {
                 if (webRtcState.channelId) {
-                  voiceStateActions.setMute(webRtcState.channelId, params.userId, true);
+                  voiceStateStore.setMute(webRtcState.channelId, params.userId, true);
                 }
               });
               consumer.observer.on('resume', () => {
                 if (webRtcState.channelId) {
-                  voiceStateActions.setMute(webRtcState.channelId, params.userId, false);
+                  voiceStateStore.setMute(webRtcState.channelId, params.userId, false);
                 }
               });
 
@@ -333,7 +333,7 @@ export const useAccordVoice = () => {
       d: {},
       callback: () => {
         if (webRtcState.channelId) {
-          voiceStateActions.delVoiceState(webRtcState.channelId, userId);
+          voiceStateStore.delVoiceState(webRtcState.channelId, userId);
           webRtcState.sendTransport?.close();
           webRtcState.recvTransport?.close();
           webRtcState.guildId = null;
@@ -369,7 +369,7 @@ export const useAccordVoice = () => {
         await consume();
         resumeConsumers();
       } catch (e) {
-        toastActions.addToast({
+        toastStore.addToast({
           title: 'Could not join Voice Channel',
           description: (e as Error).message,
           type: 'ERROR',

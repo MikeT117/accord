@@ -4,7 +4,7 @@ import { createWorker } from 'mediasoup';
 export const createMediaSoupWorker = async () => {
   const worker = await createWorker({
     rtcMinPort: 10000,
-    rtcMaxPort: 11000,
+    rtcMaxPort: 10050,
     logLevel: 'none',
   });
 

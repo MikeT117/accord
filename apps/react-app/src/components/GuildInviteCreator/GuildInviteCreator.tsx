@@ -1,6 +1,6 @@
 import { ClipboardIcon } from '@heroicons/react/24/outline';
 import { Dialog } from '@/shared-components/Dialog';
-import { guildInviteCreatorActions } from './stores/useGuildInviteCreatorStore';
+import { guildInviteCreatorStore } from './stores/useGuildInviteCreatorStore';
 import { Input } from '@/shared-components/Input';
 import { IconButton } from '@/shared-components/IconButton';
 import { Button } from '@/shared-components/Button';
@@ -13,7 +13,7 @@ import { DefaultTooltip } from '@/shared-components/DefaultTooltip';
 import { useInviteLinkCopy } from '@/shared-hooks/useInviteLinkCopy';
 import { useFilteredRelationships } from '../../shared-hooks/useFilteredRelationships';
 
-const { toggleOpen } = guildInviteCreatorActions;
+const { toggleOpen } = guildInviteCreatorStore;
 
 export const GuildInviteCreatorContent = () => {
   const inviteLink = useNewGuildInvite();
@@ -41,7 +41,7 @@ export const GuildInviteCreatorContent = () => {
         onChange={handleListFilterChange}
         value={displayNameFilter}
       />
-      <div className='mt-3 mb-6 flex min-h-[200px] flex-col'>
+      <div className='mb-6 mt-3 flex min-h-[200px] flex-col'>
         <span className='mb-1.5 text-sm text-gray-11'>Friends - {relationships.length}</span>
         <ul>
           {relationships.map((relationship) => (

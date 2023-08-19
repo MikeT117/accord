@@ -3,7 +3,7 @@ import { AxiosError } from 'axios';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/axios';
-import { guildActions } from '@/shared-stores/guildStore';
+import { guildStore } from '@/shared-stores/guildStore';
 
 export const useDeleteGuildMutation = () => {
   const navigate = useNavigate();
@@ -18,7 +18,7 @@ export const useDeleteGuildMutation = () => {
     {
       onSuccess: (_, { id }) => {
         navigate('/app');
-        guildActions.deleteGuild(id);
+        guildStore.deleteGuild(id);
       },
     },
   );

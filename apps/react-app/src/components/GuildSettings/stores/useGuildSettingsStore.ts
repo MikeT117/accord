@@ -26,26 +26,24 @@ export const useGuildSettingsStore = create(
       guildRoleId: null as string | null,
     },
     (set) => ({
-      actions: {
-        toggleOpen: () =>
-          set((s) => {
-            if (s.isOpen) {
-              return {
-                isOpen: false,
-                isAssignRoleMembersOpen: false,
-                section: GUILD_OVERVIEW,
-                guildRole: null,
-              };
-            }
-            return { isOpen: true };
-          }),
-        toggleAssignRoleMembersOpen: () =>
-          set((s) => ({ isAssignRoleMembersOpen: !s.isAssignRoleMembersOpen })),
-        setRole: (guildRoleId: string) => set({ guildRoleId, section: GUILD_ROLE_EDITOR }),
-        setSection: (section: GuildSettingsSection) => set({ section }),
-      },
+      toggleOpen: () =>
+        set((s) => {
+          if (s.isOpen) {
+            return {
+              isOpen: false,
+              isAssignRoleMembersOpen: false,
+              section: GUILD_OVERVIEW,
+              guildRole: null,
+            };
+          }
+          return { isOpen: true };
+        }),
+      toggleAssignRoleMembersOpen: () =>
+        set((s) => ({ isAssignRoleMembersOpen: !s.isAssignRoleMembersOpen })),
+      setRole: (guildRoleId: string) => set({ guildRoleId, section: GUILD_ROLE_EDITOR }),
+      setSection: (section: GuildSettingsSection) => set({ section }),
     }),
   ),
 );
 
-export const guildSettingsActions = useGuildSettingsStore.getState().actions;
+export const guildSettingsStore = useGuildSettingsStore.getState();

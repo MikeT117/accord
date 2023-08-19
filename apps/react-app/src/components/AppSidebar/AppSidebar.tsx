@@ -3,9 +3,9 @@ import { PlusIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import { IconButton } from '@/shared-components/IconButton';
 import { DefaultTooltip } from '@/shared-components/DefaultTooltip';
-import { guildCreatorActions } from '@/components/GuildCreator';
+import { guildCreatorStore } from '@/components/GuildCreator';
 import { useAppsidebarState } from './hooks/useAppsidebarState';
-import { userSettingsActions } from '@/components/UserSettings';
+import { userSettingsStore } from '@/components/UserSettings';
 import { Avatar } from '@/shared-components/Avatar';
 
 export const AppSidebar = () => {
@@ -27,7 +27,7 @@ export const AppSidebar = () => {
           </IconButton>
         </DefaultTooltip>
         <DefaultTooltip tootipText='Create Server' position='right' delayDuration={100}>
-          <IconButton padding='l' onClick={guildCreatorActions.toggleOpen} intent='secondary'>
+          <IconButton padding='l' onClick={guildCreatorStore.toggleOpen} intent='secondary'>
             <PlusIcon className='h-5 w-5 stroke-2' />
           </IconButton>
         </DefaultTooltip>
@@ -59,7 +59,7 @@ export const AppSidebar = () => {
       </ul>
       <div className='mt-auto flex flex-col items-center'>
         <DefaultTooltip tootipText='User Settings' position='right'>
-          <IconButton onClick={userSettingsActions.toggleOpen} intent='secondary'>
+          <IconButton onClick={userSettingsStore.toggleOpen} intent='secondary'>
             <Cog6ToothIcon className='h-4 w-4' />
           </IconButton>
         </DefaultTooltip>

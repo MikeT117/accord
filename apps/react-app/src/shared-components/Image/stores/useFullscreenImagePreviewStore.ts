@@ -8,22 +8,20 @@ export const useFullscreenImagePreviewStore = create(
       isOpen: false as boolean,
     },
     (set) => ({
-      actions: {
-        setSrc: (src: string) => set({ src, isOpen: true }),
-        toggleOpen: () =>
-          set((s) => {
-            if (s.isOpen) {
-              return { isOpen: false, src: null };
-            } else {
-              if (s.src) {
-                return { isOpen: true };
-              }
+      setSrc: (src: string) => set({ src, isOpen: true }),
+      toggleOpen: () =>
+        set((s) => {
+          if (s.isOpen) {
+            return { isOpen: false, src: null };
+          } else {
+            if (s.src) {
+              return { isOpen: true };
             }
-            return s;
-          }),
-      },
+          }
+          return s;
+        }),
     }),
   ),
 );
 
-export const fullscreenImagePreviewActions = useFullscreenImagePreviewStore.getState().actions;
+export const fullscreenImagePreviewStore = useFullscreenImagePreviewStore.getState();

@@ -4,8 +4,8 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/axios';
 import { queryClient } from '@/lib/queryClient/queryClient';
-import { guildActions } from '@/shared-stores/guildStore';
-import { guildChannelActions } from '@/shared-stores/guildChannelStore';
+import { guildStore } from '@/shared-stores/guildStore';
+import { guildChannelStore } from '@/shared-stores/guildChannelStore';
 
 export const useLeaveGuildMutation = () => {
   const navigate = useNavigate();
@@ -15,8 +15,8 @@ export const useLeaveGuildMutation = () => {
     },
     {
       onSuccess: (_, { id }) => {
-        guildActions.deleteGuild(id);
-        guildChannelActions.deleteChannelByGuildId(id);
+        guildStore.deleteGuild(id);
+        guildChannelStore.deleteChannelByGuildId(id);
         queryClient.removeQueries([id], { exact: false });
         navigate('/app');
       },

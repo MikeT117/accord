@@ -6,13 +6,13 @@ import { useCloudinary } from '@/shared-hooks';
 import { TrashIcon } from '@heroicons/react/24/solid';
 import { Dialog } from '@/shared-components/Dialog';
 import { SettingToggle } from '@/shared-components/Settings';
-import { guildCreatorActions } from './stores/useGuildCreatorStore';
+import { guildCreatorStore } from './stores/useGuildCreatorStore';
 import { useGuildCreator } from './hooks/useGuildCreator';
 import { useCreateGuildMutation } from '@/api/guild/createGuild';
 import { useIsGuildCreatorOpen } from './hooks/useIsGuildCreatorOpen';
 import { GuildCategorySelect } from '@/shared-components/GuildCategorySelect';
 
-const { setName, toggleDiscoverable, toggleOpen, setGuildCategoryId } = guildCreatorActions;
+const { setName, toggleDiscoverable, toggleOpen, setGuildCategoryId } = guildCreatorStore;
 
 export const GuildCreatorContent = () => {
   const guildCreatorState = useGuildCreator();
@@ -50,7 +50,7 @@ export const GuildCreatorContent = () => {
       <div className='relative flex w-min justify-center self-center'>
         {attachments.length !== 0 && (
           <IconButton
-            className='absolute top-0 right-0'
+            className='absolute right-0 top-0'
             intent='dangerSolid'
             onClick={handleClearAttachments}
           >

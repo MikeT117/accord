@@ -3,13 +3,13 @@ import { forwardRef, ReactNode } from 'react';
 import type { Channel, GuildCategoryChannel } from '@accord/common';
 import { ChannelContextMenu } from './ChannelContextMenu';
 import { Root, Item, Trigger, Content } from '@radix-ui/react-accordion';
-import { collapsedCategoriesActions } from './stores/collapsedCategoriesStore';
+import { collapsedCategoriesStore } from './stores/collapsedCategoriesStore';
 import { useDrop } from 'react-dnd';
 import { useUpdateChannelMutation } from '@/api/channel/updateChannel';
 import { mergeRefs } from 'react-merge-refs';
 import { useCollapsedCategoryById } from './hooks/useCollapsedCategoryById';
 
-const { toggleCategory } = collapsedCategoriesActions;
+const { toggleCategory } = collapsedCategoriesStore;
 
 export const CategoryChannelListItem = forwardRef<
   HTMLDivElement,

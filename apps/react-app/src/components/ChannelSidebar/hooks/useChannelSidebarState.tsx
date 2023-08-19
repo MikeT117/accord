@@ -2,9 +2,9 @@ import { useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useGuildChannelStore } from '@/shared-stores/guildChannelStore';
 import { useGuildStore } from '@/shared-stores/guildStore';
-import { historyStoreActions } from '@/shared-stores/historyStore';
+import { historyStore } from '@/shared-stores/historyStore';
 
-const { setGuildId } = historyStoreActions;
+const { setGuildId } = historyStore;
 
 export const useChannelSidebarState = () => {
   const { guildId = '', channelId = '' } = useParams();

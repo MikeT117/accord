@@ -4,7 +4,7 @@ import { Button } from '@/shared-components/Button';
 import { GuildMemberListItem } from '../../GuildMemberListItem';
 import { Input } from '@/shared-components/Input';
 import { LoadingSpinner } from '@/shared-components/LoadingSpinner';
-import { guildSettingsActions } from '../../stores/useGuildSettingsStore';
+import { guildSettingsStore } from '../../stores/useGuildSettingsStore';
 import { useUnassignGuildMemberFromRoleMutation } from '@/api/role/unassignGuildMemberFromRole';
 import { useGetRoleGuildMembersQuery } from '@/api/role/getRoleGuildMembers';
 
@@ -48,7 +48,7 @@ export const GuildRoleEditorAssignedMembers = ({
           value={memberFilter}
         />
         <Button
-          onClick={guildSettingsActions.toggleAssignRoleMembersOpen}
+          onClick={guildSettingsStore.toggleAssignRoleMembersOpen}
           disabled={!isEditable}
           intent='primary'
         >

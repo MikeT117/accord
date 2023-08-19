@@ -1,6 +1,6 @@
 import { Root, ToastTitle, ToastDescription, ToastAction } from '@radix-ui/react-toast';
 import { useCallback } from 'react';
-import { toastActions, useToastsStore } from './stores/useToastsStore';
+import { toastStore, useToastsStore } from './stores/useToastsStore';
 import { IconButton } from '@/shared-components/IconButton';
 import {
   CheckCircleIcon,
@@ -16,7 +16,7 @@ export const ToastsList = () => {
       {toasts.map((t) => (
         <Root
           duration={t.duration}
-          onOpenChange={() => toastActions.dismissToast(t.id)}
+          onOpenChange={() => toastStore.dismissToast(t.id)}
           key={t.id}
           className={`flex items-center rounded-md border px-3 py-2.5 ${(() => {
             if (t.type === 'SUCCESS') {
@@ -49,7 +49,7 @@ export const ToastsList = () => {
           </div>
           <ToastAction
             asChild
-            onClick={() => toastActions.dismissToast(t.id)}
+            onClick={() => toastStore.dismissToast(t.id)}
             altText='Dismiss Notification'
           >
             <IconButton

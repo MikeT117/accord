@@ -1,9 +1,9 @@
 import { IconButton } from '@/shared-components/IconButton';
 import { DropdownMenu, DropdownMenuItem } from '@/shared-components/DropdownMenu';
-import { guildChannelCreatorActions } from '@/components/GuildChannelCreator';
-import { guildChannelCategoryCreatorActions } from '@/components/GuildChannelCategoryCreator';
-import { guildSettingsActions } from '@/components/GuildSettings/stores/useGuildSettingsStore';
-import { guildInviteCreatorActions } from '@/components/GuildInviteCreator/stores/useGuildInviteCreatorStore';
+import { guildChannelCreatorStore } from '@/components/GuildChannelCreator';
+import { guildChannelCategoryCreatorStore } from '@/components/GuildChannelCategoryCreator';
+import { guildSettingsStore } from '@/components/GuildSettings/stores/useGuildSettingsStore';
+import { guildInviteCreatorStore } from '@/components/GuildInviteCreator/stores/useGuildInviteCreatorStore';
 import { useGuildPermission } from './hooks/useGuildPermissions';
 import {
   FolderPlusIcon,
@@ -15,7 +15,7 @@ import {
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useLoggedInUserId } from '@/shared-stores/loggedInUserStore';
 import { useLeaveGuildMutation } from '@/api/member/leaveGuild';
-import { actionConfirmationActions, ConfirmationActionType } from '../ActionConfirmation';
+import { actionConfirmationStore, ConfirmationActionType } from '../ActionConfirmation';
 
 export const GuildOptionsDropdown = ({
   guildId,
@@ -32,7 +32,7 @@ export const GuildOptionsDropdown = ({
   const { mutate } = useLeaveGuildMutation();
 
   const leaveGuildMutation = () => {
-    actionConfirmationActions.setGuild(
+    actionConfirmationStore.setGuild(
       { id: guildId, name: guildName },
       ConfirmationActionType.LEAVE,
       () => mutate({ id: guildId }),
@@ -54,24 +54,24 @@ export const GuildOptionsDropdown = ({
     >
       {manageGuildChannels && (
         <>
-          <DropdownMenuItem fullWidth onClick={guildChannelCreatorActions.toggleOpen}>
+          <DropdownMenuItem fullWidth onClick={guildChannelCreatorStore.toggleOpen}>
             <span className='whitespace-nowrap'>Create Channel</span>
             <PlusCircleIcon className='h-5 w-5 shrink-0' />
           </DropdownMenuItem>
-          <DropdownMenuItem fullWidth onClick={guildChannelCategoryCreatorActions.toggleOpen}>
+          <DropdownMenuItem fullWidth onClick={guildChannelCategoryCreatorStore.toggleOpen}>
             <span className='whitespace-nowrap'>Create Category</span>
             <FolderPlusIcon className='h-5 w-5 shrink-0' />
           </DropdownMenuItem>
         </>
       )}
       {guildAdmin && (
-        <DropdownMenuItem fullWidth onClick={guildInviteCreatorActions.toggleOpen}>
+        <DropdownMenuItem fullWidth onClick={guildInviteCreatorStore.toggleOpen}>
           <span className='whitespace-nowrap'>Create Invite</span>
           <UserGroupIcon className='h-5 w-5 shrink-0' />
         </DropdownMenuItem>
       )}
       {manageGuild && (
-        <DropdownMenuItem fullWidth onClick={guildSettingsActions.toggleOpen}>
+        <DropdownMenuItem fullWidth onClick={guildSettingsStore.toggleOpen}>
           <span className='whitespace-nowrap'>Server Settings</span>
           <Cog6ToothIcon className='h-5 w-5 shrink-0' />
         </DropdownMenuItem>

@@ -2,7 +2,7 @@ import type { AxiosError } from 'axios';
 import { useMutation } from '@tanstack/react-query';
 import type { AccordApiErrorResponse, Attachment, UserAccount } from '@accord/common';
 import { api } from '@/lib/axios';
-import { loggedInUserActions } from '@/shared-stores/loggedInUserStore';
+import { loggedInUserStore } from '@/shared-stores/loggedInUserStore';
 
 export const useUpdateUserMutation = () => {
   return useMutation<
@@ -18,7 +18,7 @@ export const useUpdateUserMutation = () => {
     },
     {
       onSuccess: (user) => {
-        loggedInUserActions.updateUser(user);
+        loggedInUserStore.updateUser(user);
       },
     },
   );

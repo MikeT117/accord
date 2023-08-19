@@ -9,11 +9,11 @@ import {
   FullscreenSettingsSidebarTitle,
 } from '@/shared-components/FullscreenSettings';
 import { ListItem } from '@/shared-components/ListItem';
-import { sessionStoreActions } from '@/shared-stores/sessionStore';
+import { sessionStore } from '@/shared-stores/sessionStore';
 import { UserGuilds } from './UserGuilds';
 import { UserOverview } from './UserOverview';
 import {
-  userSettingsActions,
+  userSettingsStore,
   USER_GUILDS,
   USER_OVERVIEW,
   USER_SESSIONS,
@@ -21,13 +21,13 @@ import {
 } from './stores/useUserSettingsStore';
 import { UserSessions } from './UserSessions';
 
-const { setSection, toggleOpen } = userSettingsActions;
+const { setSection, toggleOpen } = userSettingsStore;
 
 export const UserSettingsContent = () => {
   const section = useUserSettingsStore(useCallback((s) => s.section, []));
 
   const handleLogout = () => {
-    sessionStoreActions.clearSession();
+    sessionStore.clearSession();
   };
 
   return (

@@ -6,9 +6,9 @@ import {
   FullscreenSettingsSidebarList,
 } from '@/shared-components/FullscreenSettings';
 import { ListItem } from '@/shared-components/ListItem';
-import { actionConfirmationActions, ConfirmationActionType } from '@/components/ActionConfirmation';
+import { actionConfirmationStore, ConfirmationActionType } from '@/components/ActionConfirmation';
 import {
-  guildSettingsActions,
+  guildSettingsStore,
   GuildSettingsSection,
   GUILD_BANS,
   GUILD_INVITES,
@@ -18,8 +18,8 @@ import {
   GUILD_ROLE_EDITOR,
 } from './stores/useGuildSettingsStore';
 
-const { setSection } = guildSettingsActions;
-const { setGuild } = actionConfirmationActions;
+const { setSection } = guildSettingsStore;
+const { setGuild } = actionConfirmationStore;
 
 export const GuildSettingsSidebar = ({
   guildId,
@@ -34,7 +34,7 @@ export const GuildSettingsSidebar = ({
 
   const handleGuildDelete = () => {
     setGuild({ id: guildId, name }, ConfirmationActionType.DELETE, () => {
-      guildSettingsActions.toggleOpen();
+      guildSettingsStore.toggleOpen();
       deleteGuild({ id: guildId });
     });
   };
@@ -62,9 +62,9 @@ export const GuildSettingsSidebar = ({
           Roles
         </ListItem>
       </FullscreenSettingsSidebarList>
-      <Divider className='my-2.5 mx-2.5' />
+      <Divider className='mx-2.5 my-2.5' />
       <FullscreenSettingsSidebarList>
-        <span className='ml-2.5 mb-1 block text-xs font-semibold text-gray-11'>
+        <span className='mb-1 ml-2.5 block text-xs font-semibold text-gray-11'>
           User Management
         </span>
         <ListItem
@@ -95,9 +95,9 @@ export const GuildSettingsSidebar = ({
           Bans
         </ListItem>
       </FullscreenSettingsSidebarList>
-      <Divider className='my-2.5 mx-2.5' />
+      <Divider className='mx-2.5 my-2.5' />
       <FullscreenSettingsSidebarList>
-        <span className='ml-2.5 mb-1 block text-xs font-semibold text-gray-11'>Danger Zone</span>
+        <span className='mb-1 ml-2.5 block text-xs font-semibold text-gray-11'>Danger Zone</span>
         <ListItem intent='danger' baseBg={false} onClick={handleGuildDelete} isActionable>
           Delete Server
         </ListItem>

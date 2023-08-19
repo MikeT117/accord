@@ -14,23 +14,21 @@ export const useChannelSettingsStore = create(
       section: CHANNEL_OVERVIEW as ChannelSettingsSection,
     },
     (set) => ({
-      actions: {
-        toggleOpen: () =>
-          set((s) => {
-            if (s.isOpen) {
-              return {
-                isOpen: false,
-                section: CHANNEL_OVERVIEW,
-                channelId: null,
-              };
-            }
-            return { isOpen: true };
-          }),
-        setChannelId: (channelId: string) => set({ channelId, isOpen: true }),
-        setActiveSection: (section: ChannelSettingsSection) => set({ section }),
-      },
+      toggleOpen: () =>
+        set((s) => {
+          if (s.isOpen) {
+            return {
+              isOpen: false,
+              section: CHANNEL_OVERVIEW,
+              channelId: null,
+            };
+          }
+          return { isOpen: true };
+        }),
+      setChannelId: (channelId: string) => set({ channelId, isOpen: true }),
+      setActiveSection: (section: ChannelSettingsSection) => set({ section }),
     }),
   ),
 );
 
-export const channelSettingsActions = useChannelSettingsStore.getState().actions;
+export const channelSettingsStore = useChannelSettingsStore.getState();

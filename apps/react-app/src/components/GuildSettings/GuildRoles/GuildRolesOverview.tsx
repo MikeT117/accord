@@ -4,11 +4,11 @@ import { useCreateRoleMutation } from '@/api/role/createRole';
 import { useDeleteRoleMutation } from '@/api/role/deleteRole';
 import { Button } from '@/shared-components/Button';
 import { Input } from '@/shared-components/Input';
-import { actionConfirmationActions } from '../../ActionConfirmation';
+import { actionConfirmationStore } from '../../ActionConfirmation';
 import { GuildRoleListItem } from './GuildRoleEditor/GuildRoleListItem';
-import { guildSettingsActions } from '../stores/useGuildSettingsStore';
+import { guildSettingsStore } from '../stores/useGuildSettingsStore';
 
-const { setRole } = guildSettingsActions;
+const { setRole } = guildSettingsStore;
 
 export const GuildSettingsRolesOverview = ({
   guildId,
@@ -39,7 +39,7 @@ export const GuildSettingsRolesOverview = ({
   };
 
   const handleRoleDelete = ({ id, name }: GuildRole) => {
-    actionConfirmationActions.setGuildRole({ guildId, id, name }, () =>
+    actionConfirmationStore.setGuildRole({ guildId, id, name }, () =>
       deleteRole({ roleId: id, guildId }),
     );
   };

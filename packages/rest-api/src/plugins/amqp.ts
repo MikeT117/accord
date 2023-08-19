@@ -22,7 +22,8 @@ function initialiseAMQP(): Promise<{ connection: Connection; channel: Channel }>
         return { connection, channel };
       });
     })
-    .catch(() => {
+    .catch((e) => {
+      console.log('Failure connecting to AMQP: ', e);
       return new Promise((resolve) => setTimeout(() => initialiseAMQP().then(resolve), 2000));
     });
 }

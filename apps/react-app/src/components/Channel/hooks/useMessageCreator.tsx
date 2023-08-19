@@ -2,11 +2,11 @@ import { useCallback, useEffect, useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useCreateChannelMessageMutation } from '@/api/message/createChannelMessage';
 import { useCloudinary } from '@/shared-hooks';
-import { toastActions } from '@/shared-components/Toast';
+import { toastStore } from '@/shared-components/Toast';
 import { useMessageInput } from './useMessageInput';
-import { messageCreatorInputActions } from '../stores/useMessageCreatorInput';
+import { messageCreatorInputStore } from '../stores/useMessageCreatorInput';
 
-const { reset, update } = messageCreatorInputActions;
+const { reset, update } = messageCreatorInputStore;
 
 export const useMessageCreator = () => {
   const { channelId = '' } = useParams();
@@ -30,7 +30,7 @@ export const useMessageCreator = () => {
 
   useEffect(() => {
     if (isError) {
-      toastActions.addToast({
+      toastStore.addToast({
         title: 'Could not send message',
         description: 'Message could not be sent, please try again later.',
         type: 'ERROR',

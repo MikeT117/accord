@@ -3,10 +3,8 @@ import { combine } from 'zustand/middleware';
 
 export const useGuildInviteCreatorStore = create(
   combine({ isOpen: false }, (set) => ({
-    actions: {
-      toggleOpen: () => set((s) => ({ isOpen: !s.isOpen })),
-    },
+    toggleOpen: () => set((s) => ({ isOpen: !s.isOpen })),
   })),
 );
 
-export const guildInviteCreatorActions = useGuildInviteCreatorStore.getState().actions;
+export const guildInviteCreatorStore = useGuildInviteCreatorStore.getState();

@@ -4,13 +4,13 @@ import { useCallback } from 'react';
 import { Dialog } from '@/shared-components/Dialog';
 import { FullscreenSettingsContentLayout } from '@/shared-components/FullscreenSettings';
 import { IconButton } from '@/shared-components/IconButton';
-import { actionConfirmationActions } from '@/components/ActionConfirmation';
+import { actionConfirmationStore } from '@/components/ActionConfirmation';
 import { ChannelOverview } from './ChannelOverview';
 import { ChannelPermissions } from './ChannelPermissions';
 import { ChannelPermissionsRolesSidebar } from './ChannelPermissionsRolesSidebar';
 import { ChannelSettingsSidebar } from './ChannelSettingsSidebar';
 import {
-  channelSettingsActions,
+  channelSettingsStore,
   CHANNEL_OVERVIEW,
   CHANNEL_ROLES,
   useChannelSettingsStore,
@@ -45,8 +45,8 @@ export const ChannelSettingsContent = () => {
   } = channelSettingsState;
 
   const handleGuildChannelDelete = () => {
-    actionConfirmationActions.setChannel({ id, name, type, guildId }, () => {
-      channelSettingsActions.toggleOpen();
+    actionConfirmationStore.setChannel({ id, name, type, guildId }, () => {
+      channelSettingsStore.toggleOpen();
       deleteChannel({ id, type, guildId });
     });
   };
@@ -83,7 +83,7 @@ export const ChannelSettingsContent = () => {
       <FullscreenSettingsContentLayout>
         <IconButton
           className='absolute right-0 top-12'
-          onClick={channelSettingsActions.toggleOpen}
+          onClick={channelSettingsStore.toggleOpen}
           intent='secondary'
         >
           <XMarkIcon className='h-5 w-5' />
@@ -125,7 +125,7 @@ export const ChannelSettings = () => {
   return (
     <Dialog
       isOpen={isOpen}
-      onClose={channelSettingsActions.toggleOpen}
+      onClose={channelSettingsStore.toggleOpen}
       size='screen'
       className='flex'
     >

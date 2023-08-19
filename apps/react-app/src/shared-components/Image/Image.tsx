@@ -2,7 +2,7 @@ import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { forwardRef, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { mergeRefs } from 'react-merge-refs';
-import { fullscreenImagePreviewActions } from './stores/useFullscreenImagePreviewStore';
+import { fullscreenImagePreviewStore } from './stores/useFullscreenImagePreviewStore';
 
 const IDLE = 'IDLE';
 const LOADING = 'LOADING';
@@ -41,7 +41,7 @@ export const Image = forwardRef<
 
   const handleImageOnClick = () => {
     if (isSuccess && isActionable) {
-      fullscreenImagePreviewActions.setSrc(src ?? '');
+      fullscreenImagePreviewStore.setSrc(src ?? '');
     }
   };
 

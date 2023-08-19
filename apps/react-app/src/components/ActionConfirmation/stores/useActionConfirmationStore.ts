@@ -43,82 +43,80 @@ export const useActionConfirmationStore = create(
       action: null as (() => void) | null,
     },
     (set) => ({
-      actions: {
-        toggleOpen: () =>
-          set((s) => {
-            if (s.isOpen) {
-              return {
-                isOpen: false,
-                guild: null,
-                channel: null,
-                channelMessage: null,
-                guildRole: null,
-                warning: '',
-                confirmation: '',
-                action: null,
-              };
-            }
-            return { isOpen: true };
-          }),
-        setRelationship: (relationship: UserRelationship, action: () => void) =>
-          set({
-            isOpen: true,
-            relationship,
-            actionSubject: ConfirmationActionSubject.RELATIONSHIP,
-            actionType: ConfirmationActionType.DELETE,
-            action,
-          }),
-        setAccount: (account: Pick<UserAccount, 'id' | 'displayName'>, action: () => void) =>
-          set({
-            account,
-            isOpen: true,
-            actionSubject: ConfirmationActionSubject.ACCOUNT,
-            actionType: ConfirmationActionType.DELETE,
-            action,
-          }),
-        setGuild: (
-          guild: Pick<Guild, 'id' | 'name'>,
-          actionType: ConfirmationActionTypes,
-          action: () => void,
-        ) =>
-          set({
-            guild,
-            isOpen: true,
-            actionSubject: ConfirmationActionSubject.SERVER,
-            actionType,
-            action,
-          }),
-        setChannel: (
-          channel: Pick<Channel, 'id' | 'type' | 'guildId' | 'name'>,
-          action: () => void,
-        ) =>
-          set({
-            channel,
-            isOpen: true,
-            actionSubject: ConfirmationActionSubject.SERVER,
-            actionType: ConfirmationActionType.DELETE,
-            action,
-          }),
-        setChannelMessage: (channelMessage: ChannelMessage, action: () => void) =>
-          set({
-            channelMessage,
-            isOpen: true,
-            actionSubject: ConfirmationActionSubject.MESSAGE,
-            actionType: ConfirmationActionType.DELETE,
-            action,
-          }),
-        setGuildRole: (guildRole: Pick<GuildRole, 'id' | 'guildId' | 'name'>, action: () => void) =>
-          set({
-            guildRole,
-            isOpen: true,
-            actionSubject: ConfirmationActionSubject.ROLE,
-            actionType: ConfirmationActionType.DELETE,
-            action,
-          }),
-        setConfirmation: (confirmation: string) => set({ confirmation }),
-      },
+      toggleOpen: () =>
+        set((s) => {
+          if (s.isOpen) {
+            return {
+              isOpen: false,
+              guild: null,
+              channel: null,
+              channelMessage: null,
+              guildRole: null,
+              warning: '',
+              confirmation: '',
+              action: null,
+            };
+          }
+          return { isOpen: true };
+        }),
+      setRelationship: (relationship: UserRelationship, action: () => void) =>
+        set({
+          isOpen: true,
+          relationship,
+          actionSubject: ConfirmationActionSubject.RELATIONSHIP,
+          actionType: ConfirmationActionType.DELETE,
+          action,
+        }),
+      setAccount: (account: Pick<UserAccount, 'id' | 'displayName'>, action: () => void) =>
+        set({
+          account,
+          isOpen: true,
+          actionSubject: ConfirmationActionSubject.ACCOUNT,
+          actionType: ConfirmationActionType.DELETE,
+          action,
+        }),
+      setGuild: (
+        guild: Pick<Guild, 'id' | 'name'>,
+        actionType: ConfirmationActionTypes,
+        action: () => void,
+      ) =>
+        set({
+          guild,
+          isOpen: true,
+          actionSubject: ConfirmationActionSubject.SERVER,
+          actionType,
+          action,
+        }),
+      setChannel: (
+        channel: Pick<Channel, 'id' | 'type' | 'guildId' | 'name'>,
+        action: () => void,
+      ) =>
+        set({
+          channel,
+          isOpen: true,
+          actionSubject: ConfirmationActionSubject.SERVER,
+          actionType: ConfirmationActionType.DELETE,
+          action,
+        }),
+      setChannelMessage: (channelMessage: ChannelMessage, action: () => void) =>
+        set({
+          channelMessage,
+          isOpen: true,
+          actionSubject: ConfirmationActionSubject.MESSAGE,
+          actionType: ConfirmationActionType.DELETE,
+          action,
+        }),
+      setGuildRole: (guildRole: Pick<GuildRole, 'id' | 'guildId' | 'name'>, action: () => void) =>
+        set({
+          guildRole,
+          isOpen: true,
+          actionSubject: ConfirmationActionSubject.ROLE,
+          actionType: ConfirmationActionType.DELETE,
+          action,
+        }),
+      setConfirmation: (confirmation: string) => set({ confirmation }),
     }),
   ),
 );
 
-export const actionConfirmationActions = useActionConfirmationStore.getState().actions;
+export const actionConfirmationStore = useActionConfirmationStore.getState();

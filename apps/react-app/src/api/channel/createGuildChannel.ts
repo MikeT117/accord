@@ -2,7 +2,7 @@ import { AccordApiErrorResponse, GuildChannel } from '@accord/common';
 import { AxiosError } from 'axios';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
-import { guildChannelActions } from '@/shared-stores/guildChannelStore';
+import { guildChannelStore } from '@/shared-stores/guildChannelStore';
 
 export const useCreateGuildChannelMutation = () => {
   return useMutation<
@@ -23,7 +23,7 @@ export const useCreateGuildChannelMutation = () => {
     },
     {
       onSuccess: (channel) => {
-        guildChannelActions.addChannel(channel);
+        guildChannelStore.addChannel(channel);
       },
     },
   );

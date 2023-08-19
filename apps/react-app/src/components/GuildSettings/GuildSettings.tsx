@@ -12,7 +12,7 @@ import { GuildRoleEditor } from './GuildRoles/GuildRoleEditor/GuildRoleEditor';
 import { GuildRoleEditorSidebar } from './GuildRoles/GuildRoleEditor/GuildRoleEditorSidebar';
 import { GuildSettingsRolesOverview } from './GuildRoles/GuildRolesOverview';
 import {
-  guildSettingsActions,
+  guildSettingsStore,
   GUILD_BANS,
   GUILD_INVITES,
   GUILD_MEMBERS,
@@ -24,7 +24,7 @@ import {
 import { useGuildSettings } from './hooks/useGuildSettings';
 import { AccordError } from '../../shared-components/AccordError';
 
-const { toggleOpen } = guildSettingsActions;
+const { toggleOpen } = guildSettingsStore;
 
 export const GuildSettingsContent = () => {
   const guildSettingsState = useGuildSettings();

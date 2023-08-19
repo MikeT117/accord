@@ -3,12 +3,11 @@ import { UserGroupIcon } from '@heroicons/react/24/solid';
 import { MainContentBodyLayout, MainContentHeaderLayout } from '@/shared-components/Layouts';
 import { RelationshipListItem } from '../RelationshipListItem';
 import { Input } from '@/shared-components/Input';
-import { useLoggedInUserId } from '@/shared-stores/loggedInUserStore';
-import { privateChannelActions } from '@/shared-stores/privateChannelStore';
+import { privateChannelStore } from '@/shared-stores/privateChannelStore';
 import { useCreatePrivateChannelMutation } from '@/api/channel/createPrivateChannel';
 import { useDeleteRelationshipMutation } from '@/api/relationships/deleteRelationship';
 import { useFilteredRelationships } from '../../../../shared-hooks/useFilteredRelationships';
-import { actionConfirmationActions } from '../../../ActionConfirmation';
+import { actionConfirmationStore } from '../../../ActionConfirmation';
 import { UserRelationship } from '@accord/common';
 
 export const UserDashboardRelationships = () => {
@@ -20,13 +19,13 @@ export const UserDashboardRelationships = () => {
   const { mutateAsync: createPrivateChannel } = useCreatePrivateChannelMutation();
 
   const handleDelete = (relationship: UserRelationship) => {
-    actionConfirmationActions.setRelationship(relationship, () =>
+    actionConfirmationStore.setRelationship(relationship, () =>
       deleteRelationship({ id: relationship.id, status: relationship.status }),
     );
   };
 
   const handleChat = async (friendUserId: string) => {
-    const existingChannel = privateChannelActions.getPrivateChannelByMembers(friendUserId);
+    const existingChannel = privateChannelStore.getPrivateChannelByMembers(friendUserId);
     if (!existingChannel) {
       const channel = await createPrivateChannel({ users: [friendUserId] });
       navigate(`/app/@me/channel/${channel.id}`);

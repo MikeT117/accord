@@ -1,15 +1,12 @@
 import { useCallback, useEffect } from 'react';
-import {
-  messageCreatorInputActions,
-  useMessageCreatorInput,
-} from '../stores/useMessageCreatorInput';
+import { messageCreatorInputStore, useMessageCreatorInput } from '../stores/useMessageCreatorInput';
 
 export const useMessageInput = (channelId: string) => {
   const input = useMessageCreatorInput(useCallback((s) => s.inputs[channelId], [channelId]));
 
   useEffect(() => {
     if (!input) {
-      messageCreatorInputActions.initialise(channelId);
+      messageCreatorInputStore.initialise(channelId);
     }
   }, [input, channelId]);
 

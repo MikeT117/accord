@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useCreateGuildInviteMutation } from '@/api/invite/createGuildInvite';
 import { env } from '@/env';
-import { toastActions } from '@/shared-components/Toast';
+import { toastStore } from '@/shared-components/Toast';
 
 export const useNewGuildInvite = () => {
   const { guildId = '' } = useParams();
@@ -16,7 +16,7 @@ export const useNewGuildInvite = () => {
 
   useEffect(() => {
     if (isError) {
-      toastActions.addToast({ title: 'Could not create invite', type: 'ERROR', duration: 5000 });
+      toastStore.addToast({ title: 'Could not create invite', type: 'ERROR', duration: 5000 });
     }
   }, [isError]);
 

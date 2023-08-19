@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sessionStoreActions } from '@/shared-stores/sessionStore';
+import { sessionStore } from '@/shared-stores/sessionStore';
 import { useReqQueryParams } from './useReqQueryParams';
 
 export const useExtractTokensFromQueryParams = () => {
@@ -15,7 +15,7 @@ export const useExtractTokensFromQueryParams = () => {
     if (error || !accesstoken || !refreshtoken) {
       navigate('/');
     } else {
-      sessionStoreActions.setSession({ accesstoken, refreshtoken });
+      sessionStore.setSession({ accesstoken, refreshtoken });
     }
   }, [params, navigate]);
 };

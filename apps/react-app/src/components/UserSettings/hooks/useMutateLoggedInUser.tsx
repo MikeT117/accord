@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDeleteAccountMutation } from '../../../api/user/deleteAccount';
 import { useUpdateUserMutation } from '../../../api/user/updateUser';
 import { useCloudinary } from '../../../shared-hooks';
-import { actionConfirmationActions } from '../../ActionConfirmation';
+import { actionConfirmationStore } from '../../ActionConfirmation';
 import { useLoggedInUser } from './useLoggedInUser';
 
 export const useMutateLoggedInUser = () => {
@@ -32,7 +32,7 @@ export const useMutateLoggedInUser = () => {
   };
 
   const deleteUserAccount = () => {
-    actionConfirmationActions.setAccount(user, () => deleteAccountMutation(undefined));
+    actionConfirmationStore.setAccount(user, () => deleteAccountMutation(undefined));
   };
 
   return {

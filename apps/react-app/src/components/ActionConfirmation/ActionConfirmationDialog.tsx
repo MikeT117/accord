@@ -1,5 +1,5 @@
 import { Message } from '@/shared-components/Message';
-import { actionConfirmationActions } from './stores/useActionConfirmationStore';
+import { actionConfirmationStore } from './stores/useActionConfirmationStore';
 import { useCallback } from 'react';
 import { Dialog } from '@/shared-components/Dialog';
 import { Button } from '@/shared-components/Button';
@@ -10,7 +10,7 @@ import { RelationshipListItem } from '../UserDashboard/Relationships/Relationshi
 import { useActionConfirmation } from './hooks/useActionConfirmation';
 import { useActionConfirmationStore } from './stores/useActionConfirmationStore';
 
-const { toggleOpen, setConfirmation } = actionConfirmationActions;
+const { toggleOpen, setConfirmation } = actionConfirmationStore;
 
 export const ActionConfirmationDialogContent = () => {
   const actionConfirmationState = useActionConfirmation();

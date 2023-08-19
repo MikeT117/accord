@@ -9,11 +9,11 @@ import { RadioGroupItem } from './RadioGroupItem';
 import { useGuildChannelCreator } from './hooks/useGuildChannelCreator';
 import { useCreateGuildChannelMutation } from '@/api/channel/createGuildChannel';
 import { useIsGuildChannelCreatorOpen } from './hooks/useIsGuildChannelCreatorOpen';
-import { guildChannelCreatorActions } from './stores/useGuildChannelCreatorStore';
+import { guildChannelCreatorStore } from './stores/useGuildChannelCreatorStore';
 import { GuildRoleListSelector } from '@/shared-components/GuildRoleListSelector/GuildRoleListSelector';
 
 const { nextStage, prevStage, setName, setTopic, setType, toggleOpen, togglePrivate, updateRoles } =
-  guildChannelCreatorActions;
+  guildChannelCreatorStore;
 
 export const GuildChannelCreatorContent = () => {
   const guildChannelCreatorState = useGuildChannelCreator();

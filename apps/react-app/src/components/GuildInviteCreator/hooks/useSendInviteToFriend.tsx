@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useCreatePrivateChannelMutation } from '@/api/channel/createPrivateChannel';
 import { useCreateChannelMessageMutation } from '@/api/message/createChannelMessage';
-import { privateChannelActions } from '@/shared-stores/privateChannelStore';
+import { privateChannelStore } from '@/shared-stores/privateChannelStore';
 
 export const useSendInviteToUser = () => {
   const { mutateAsync: createUserChannel } = useCreatePrivateChannelMutation();
@@ -11,7 +11,7 @@ export const useSendInviteToUser = () => {
     async (inviteLink: string, recipientUserId: string) => {
       if (inviteLink) {
         const existingChannel =
-          privateChannelActions.getPrivateChannelByMembers(recipientUserId) ??
+          privateChannelStore.getPrivateChannelByMembers(recipientUserId) ??
           (await createUserChannel({ users: [recipientUserId] }));
         createMessage({ channelId: existingChannel.id, content: inviteLink });
       }

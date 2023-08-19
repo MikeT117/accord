@@ -6,13 +6,13 @@ import { CategoryChannelListItem } from './CategoryChannelListItem';
 import { VoiceChannelListItem } from './VoiceChannelListItem';
 import { MainSidebarContentLayout, MainSidebarHeaderLayout } from '@/shared-components/Layouts';
 import { GuildOptionsDropdown } from './GuildOptionsDropdown';
-import { actionConfirmationActions } from '@/components/ActionConfirmation';
-import { channelSettingsActions } from '@/components/ChannelSettings/stores/useChannelSettingsStore';
+import { actionConfirmationStore } from '@/components/ActionConfirmation';
+import { channelSettingsStore } from '@/components/ChannelSettings/stores/useChannelSettingsStore';
 import { useChannelSidebarState } from './hooks/useChannelSidebarState';
 import { useDeleteChannelMutation } from '@/api/channel/deleteChannel';
 import { useUpdateChannelMutation } from '@/api/channel/updateChannel';
 
-const { setChannelId } = channelSettingsActions;
+const { setChannelId } = channelSettingsStore;
 
 export const ChannelSidebar = () => {
   const channelsidebarState = useChannelSidebarState();
@@ -39,7 +39,7 @@ export const ChannelSidebar = () => {
   const { channelId, channels, guildId, name, ownerUserAccountId } = channelsidebarState;
 
   const handleGuildChannelDelete = (channel: Pick<Channel, 'id' | 'type' | 'guildId' | 'name'>) => {
-    actionConfirmationActions.setChannel(channel, () => deleteChannel(channel));
+    actionConfirmationStore.setChannel(channel, () => deleteChannel(channel));
   };
 
   const handleGuildChannelSettings = (channelId: string) => {

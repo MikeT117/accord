@@ -4,9 +4,9 @@ import { DefaultTooltip } from '@/shared-components/DefaultTooltip';
 import { Input } from '@/shared-components/Input';
 import { ListItem } from '@/shared-components/ListItem';
 import { useFilteredGuilds } from './hooks/useFilteredGuilds';
-import { userSettingsActions } from './stores/useUserSettingsStore';
+import { userSettingsStore } from './stores/useUserSettingsStore';
 
-const { toggleOpen } = userSettingsActions;
+const { toggleOpen } = userSettingsStore;
 
 export const UserGuilds = () => {
   const { guildNameFilter, guilds, setGuildNameFilter } = useFilteredGuilds();

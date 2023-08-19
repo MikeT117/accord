@@ -37,10 +37,10 @@ export default fp(async (fastify) => {
 declare module 'fastify' {
   export interface FastifyInstance {
     jwt: {
-      createAccesstoken: (payload: string | Buffer | Record<string, unknown>) => Promise<string>;
-      createRefreshtoken: (payload: string | Buffer | Record<string, unknown>) => Promise<string>;
-      verifyAccesstoken: (token: string | Buffer) => Promise<JWTPayload>;
-      verifyRefreshtoken: (token: string | Buffer) => Promise<JWTPayload>;
+      createAccesstoken: (payload: string | Buffer | Record<string, unknown>) => string;
+      createRefreshtoken: (payload: string | Buffer | Record<string, unknown>) => string;
+      verifyAccesstoken: (token: string | Buffer) => JWTPayload;
+      verifyRefreshtoken: (token: string | Buffer) => JWTPayload;
     };
   }
 }
