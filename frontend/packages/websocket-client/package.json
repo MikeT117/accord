@@ -1,0 +1,30 @@
+{
+  "name": "@accord/websocket-client",
+  "description": "Accord Websocket client",
+  "version": "0.0.1",
+  "author": "",
+  "license": "MIT",
+  "private": true,
+  "main": "dist/index.js",
+  "files": [
+    "./"
+  ],
+  "scripts": {
+    "build:ts": "tsc --build"
+  },
+  "dependencies": {
+    "@accord/common": "*"
+  },
+  "devDependencies": {
+    "cross-env": "7.0.3",
+    "@types/node": "^20.8.6",
+    "@typescript-eslint/eslint-plugin": "^6.7.5",
+    "@typescript-eslint/parser": "^6.7.5",
+    "eslint": "^8.51.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
+    "prettier": "^3.0.3",
+    "typescript": "^5.2.2"
+  }
+}

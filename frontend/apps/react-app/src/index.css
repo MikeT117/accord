@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+*::-webkit-scrollbar-button {
+  display: none;
+}
+
+*::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+*::-webkit-scrollbar-track-piece {
+  background-color: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: hsla(240, 92.0%, 93.8%, 0.148);
+}
+
+em-emoji-picker {
+  --border-radius: 0px;
+  --category-icon-size: 16px;
+  --font-size: 14px;
+  --rgb-background: 52, 52, 58;
+  --rgb-accent: 62, 99, 221;
+  --rgb-input: 235, 235, 254, 0.061;
+}
