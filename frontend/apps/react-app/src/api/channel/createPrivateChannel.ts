@@ -5,17 +5,15 @@ import { api } from '@/lib/axios';
 import { privateChannelStore } from '@/shared-stores/privateChannelStore';
 
 export const useCreatePrivateChannelMutation = () => {
-  return useMutation<PrivateChannel, AxiosError<AccordApiErrorResponse>, { users: string[] }>(
-    async ({ users }) => {
+  return useMutation<PrivateChannel, AxiosError<AccordApiErrorResponse>, { users: string[] }>({
+    mutationFn: async ({ users }) => {
       const { data } = await api.post('/v1/users/@me/channels', {
         users,
       });
       return data.channel;
     },
-    {
-      onSuccess: (channel) => {
-        privateChannelStore.addChannel(channel);
-      },
+    onSuccess: (channel) => {
+      privateChannelStore.addChannel(channel);
     },
-  );
+  });
 };

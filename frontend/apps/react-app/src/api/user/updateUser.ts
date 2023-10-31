@@ -11,15 +11,13 @@ export const useUpdateUserMutation = () => {
     Pick<UserAccount, 'displayName'> & {
       avatar?: Omit<Attachment, 'id'>;
     }
-  >(
-    async ({ avatar, displayName }) => {
+  >({
+    mutationFn: async ({ avatar, displayName }) => {
       const { data } = await api.patch('/v1/users/@me', { displayName, avatar });
       return data.user;
     },
-    {
-      onSuccess: (user) => {
-        currentUserStore.updateUser(user);
-      },
+    onSuccess: (user) => {
+      currentUserStore.updateUser(user);
     },
-  );
+  });
 };

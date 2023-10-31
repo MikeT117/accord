@@ -8,14 +8,16 @@ export const useDeleteAttachmentMutation = () => {
     Record<string, unknown>,
     AxiosError<AccordApiErrorResponse>,
     { publicId: string; resourceType: string; signature: string; timestamp: number }
-  >(async ({ publicId, resourceType, signature, timestamp }) => {
-    const { data } = await api.post(`/v1/attachments/destroy`, {
-      publicId,
-      resourceType,
-      signature,
-      timestamp,
-    });
+  >({
+    mutationFn: async ({ publicId, resourceType, signature, timestamp }) => {
+      const { data } = await api.post(`/v1/attachments/destroy`, {
+        publicId,
+        resourceType,
+        signature,
+        timestamp,
+      });
 
-    return data;
+      return data;
+    },
   });
 };

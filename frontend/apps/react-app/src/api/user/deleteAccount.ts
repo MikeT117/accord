@@ -5,12 +5,10 @@ import { api } from '@/lib/axios';
 import { sessionStore } from '@/shared-stores/sessionStore';
 
 export const useDeleteAccountMutation = () => {
-  return useMutation<unknown, AxiosError<AccordApiErrorResponse>, unknown>(
-    async () => api.delete('/v1/users/@me'),
-    {
-      onSuccess: () => {
-        sessionStore.clearSession();
-      },
+  return useMutation<unknown, AxiosError<AccordApiErrorResponse>, unknown>({
+    mutationFn: async () => api.delete('/v1/users/@me'),
+    onSuccess: () => {
+      sessionStore.clearSession();
     },
-  );
+  });
 };

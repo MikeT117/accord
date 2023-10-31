@@ -10,16 +10,14 @@ export const useDeleteGuildChannelMutation = () => {
     undefined,
     AxiosError<AccordApiErrorResponse>,
     Pick<GuildChannel, 'id' | 'guildId'>
-  >(
-    async ({ id }) => {
+  >({
+    mutationFn: async ({ id }) => {
       const { data } = await api.delete(`/v1/channels/${id}`);
       return data.channel;
     },
-    {
-      onSuccess: (_, args) => {
-        guildStore.deleteChannel(args.id, args.guildId);
-        queryClient.invalidateQueries([args.id, 'messages']);
-      },
+    onSuccess: (_, args) => {
+      guildStore.deleteChannel(args.id, args.guildId);
+      queryClient.invalidateQueries({ queryKey: [args.id, 'messages'] });
     },
-  );
+  });
 };

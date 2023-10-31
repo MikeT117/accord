@@ -16,15 +16,13 @@ export const useUpdateGuildMutation = () => {
         banner?: Omit<Attachment, 'id'>;
         icon?: Omit<Attachment, 'id'>;
       }
-  >(
-    async ({ id, ...updatedGuild }) => {
+  >({
+    mutationFn: async ({ id, ...updatedGuild }) => {
       const { data } = await api.patch(`/v1/guilds/${id}`, updatedGuild);
       return data.guild;
     },
-    {
-      onSuccess: (guild) => {
-        guildStore.updateGuild(guild);
-      },
+    onSuccess: (guild) => {
+      guildStore.updateGuild(guild);
     },
-  );
+  });
 };

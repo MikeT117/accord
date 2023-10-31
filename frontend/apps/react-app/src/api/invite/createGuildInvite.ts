@@ -8,8 +8,10 @@ export const useCreateGuildInviteMutation = () => {
     Pick<GuildInvite, 'id'>,
     AxiosError<AccordApiErrorResponse>,
     { guildId: string }
-  >(async ({ guildId }) => {
-    const { data } = await api.post(`/v1/guilds/${guildId}/invites`);
-    return data.invite;
+  >({
+    mutationFn: async ({ guildId }) => {
+      const { data } = await api.post(`/v1/guilds/${guildId}/invites`);
+      return data.invite;
+    },
   });
 };

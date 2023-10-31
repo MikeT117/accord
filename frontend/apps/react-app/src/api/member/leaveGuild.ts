@@ -8,16 +8,14 @@ import { guildStore } from '@/shared-stores/guildStore';
 
 export const useLeaveGuildMutation = () => {
   const navigate = useNavigate();
-  return useMutation<Record<string, never>, AxiosError<AccordApiErrorResponse>, Pick<Guild, 'id'>>(
-    async ({ id }) => {
+  return useMutation<Record<string, never>, AxiosError<AccordApiErrorResponse>, Pick<Guild, 'id'>>({
+    mutationFn: async ({ id }) => {
       return api.delete(`/v1/users/@me/guilds/${id}`);
     },
-    {
-      onSuccess: (_, { id }) => {
-        guildStore.deleteGuild(id);
-        queryClient.removeQueries([id], { exact: false });
-        navigate('/app');
-      },
+    onSuccess: (_, { id }) => {
+      guildStore.deleteGuild(id);
+      queryClient.removeQueries({ queryKey: [id], exact: false });
+      navigate('/app');
     },
-  );
+  });
 };

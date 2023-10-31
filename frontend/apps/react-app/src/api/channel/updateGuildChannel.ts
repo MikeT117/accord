@@ -11,26 +11,24 @@ export const useUpdateGuildChannelMutation = () => {
     AxiosError<AccordApiErrorResponse>,
     Pick<GuildChannel, 'id' | 'channelType' | 'guildId'> &
       Partial<Pick<GuildChannel, 'name' | 'topic' | 'parentId'>>
-  >(
-    async (payload) => {
+  >({
+    mutationFn: async (payload) => {
       const { data } = await api.patch(
         `/v1/channels/${payload.id}`,
         Object.fromEntries(Object.entries(payload).filter(([_, v]) => v !== undefined)),
       );
       return data.channel;
     },
-    {
-      onSuccess: ({ id, channelType, name, parentId, topic, guildId, parentRoleSync }) => {
-        guildStore.updateChannel({
-          id,
-          channelType,
-          name,
-          parentId,
-          topic,
-          guildId,
-          parentRoleSync,
-        });
-      },
+    onSuccess: ({ id, channelType, name, parentId, topic, guildId, parentRoleSync }) => {
+      guildStore.updateChannel({
+        id,
+        channelType,
+        name,
+        parentId,
+        topic,
+        guildId,
+        parentRoleSync,
+      });
     },
-  );
+  });
 };

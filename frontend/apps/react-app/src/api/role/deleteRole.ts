@@ -9,14 +9,12 @@ export const useDeleteRoleMutation = () => {
     Record<string, never>,
     AxiosError<AccordApiErrorResponse>,
     { roleId: string; guildId: string }
-  >(
-    async ({ roleId, guildId }) => {
+  >({
+    mutationFn: async ({ roleId, guildId }) => {
       return api.delete(`/v1/guilds/${guildId}/roles/${roleId}`);
     },
-    {
-      onSuccess: (_, { roleId, guildId }) => {
-        guildStore.deleteRole(roleId, guildId);
-      },
+    onSuccess: (_, { roleId, guildId }) => {
+      guildStore.deleteRole(roleId, guildId);
     },
-  );
+  });
 };

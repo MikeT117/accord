@@ -8,7 +8,9 @@ export const useSyncGuildChannelRolesWithParentMutation = () => {
     Record<string, never>,
     AxiosError<AccordApiErrorResponse>,
     { channelId: string; guildId: string }
-  >(async ({ channelId, guildId }) => {
-    return api.post(`/v1/guilds/${guildId}/channels/${channelId}/permissions/sync`);
+  >({
+    mutationFn: async ({ channelId, guildId }) => {
+      return api.post(`/v1/guilds/${guildId}/channels/${channelId}/permissions/sync`);
+    },
   });
 };

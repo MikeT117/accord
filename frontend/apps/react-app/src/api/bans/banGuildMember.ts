@@ -11,22 +11,21 @@ export const useBanGuildMemberMutation = () => {
     Omit<GuildMember, 'roles'>,
     AxiosError<AccordApiErrorResponse>,
     Pick<GuildMember, 'id' | 'guildId'>
-  >(
-    async ({ guildId, id }) => {
+  >({
+    mutationFn: async ({ guildId, id }) => {
       const { data } = await api.put(`/v1/guilds/${guildId}/bans/${id}`, { banReason: '' });
       return data.guildMember;
     },
-    {
-      onSuccess: (guildMember, { id, guildId }) => {
-        queryClient.setQueryData<InfiniteData<Omit<GuildMember, 'roles'>[]>>(
-          [guildId, 'bans'],
-          (prev) => insertInfiniteDataItem(prev, guildMember),
-        );
-        queryClient.setQueryData<InfiniteData<Omit<GuildMember, 'roles'>[]>>(
-          [guildId, 'members'],
-          (prev) => deleteInfiniteDataItem(prev, (m) => m.id !== id),
-        );
-      },
+
+    onSuccess: (guildMember, { id, guildId }) => {
+      queryClient.setQueryData<InfiniteData<Omit<GuildMember, 'roles'>[]>>(
+        [guildId, 'bans'],
+        (prev) => insertInfiniteDataItem(prev, guildMember),
+      );
+      queryClient.setQueryData<InfiniteData<Omit<GuildMember, 'roles'>[]>>(
+        [guildId, 'members'],
+        (prev) => deleteInfiniteDataItem(prev, (m) => m.id !== id),
+      );
     },
-  );
+  });
 };

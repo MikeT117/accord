@@ -10,20 +10,18 @@ export const useUpdateChannelMessageMutation = () => {
     Pick<ChannelMessage, 'id' | 'content' | 'channelId'>,
     AxiosError<AccordApiErrorResponse>,
     Pick<ChannelMessage, 'id' | 'content' | 'channelId'>
-  >(
-    async ({ id, channelId, content }) => {
+  >({
+    mutationFn: async ({ id, channelId, content }) => {
       const { data } = await api.patch(`/v1/channels/${channelId}/messages/${id}`, { content });
       return data.message;
     },
-    {
-      onSuccess: (message) => {
-        console.log({ message });
-        queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
-          [message.channelId, 'messages'],
-          (prev) =>
-            updateInfiniteDataItem(prev, (m) => (m.id === message.id ? { ...m, ...message } : m)),
-        );
-      },
+    onSuccess: (message) => {
+      console.log({ message });
+      queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
+        [message.channelId, 'messages'],
+        (prev) =>
+          updateInfiniteDataItem(prev, (m) => (m.id === message.id ? { ...m, ...message } : m)),
+      );
     },
-  );
+  });
 };

@@ -7,25 +7,22 @@ import { updateInfiniteDataItem } from '../../lib/queryClient/utils/updateInfini
 import { insertInfiniteDataItem } from '../../lib/queryClient/utils/insertInfiniteDataItem';
 
 export const usePinChannelMessageMutation = () => {
-  return useMutation<undefined, AxiosError<AccordApiErrorResponse>, ChannelMessage>(
-    async ({ id, channelId }) => {
+  return useMutation<undefined, AxiosError<AccordApiErrorResponse>, ChannelMessage>({
+    mutationFn: async ({ id, channelId }) => {
       return api.put(`/v1/channels/${channelId}/pins/${id}`);
     },
-    {
-      onSuccess: (_, message) => {
-        queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
-          [message.channelId, 'messages'],
-          (prev) =>
-            updateInfiniteDataItem(prev, (m) =>
-              m.id === message.id ? { ...message, isPinned: true } : m,
-            ),
-        );
-
-        queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
-          [message.channelId, 'messages', 'pinned'],
-          (prev) => insertInfiniteDataItem(prev, message),
-        );
-      },
+    onSuccess: (_, message) => {
+      queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
+        [message.channelId, 'messages'],
+        (prev) =>
+          updateInfiniteDataItem(prev, (m) =>
+            m.id === message.id ? { ...message, isPinned: true } : m,
+          ),
+      );
+      queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
+        [message.channelId, 'messages', 'pinned'],
+        (prev) => insertInfiniteDataItem(prev, message),
+      );
     },
-  );
+  });
 };

@@ -11,15 +11,13 @@ export const useDeleteGuildMutation = () => {
     { guild: Pick<Guild, 'id'> },
     AxiosError<AccordApiErrorResponse>,
     Pick<Guild, 'id'>
-  >(
-    async ({ id }) => {
+  >({
+    mutationFn: async ({ id }) => {
       return api.delete(`/v1/guilds/${id}`);
     },
-    {
-      onSuccess: (_, { id }) => {
-        navigate('/app');
-        guildStore.deleteGuild(id);
-      },
+    onSuccess: (_, { id }) => {
+      navigate('/app');
+      guildStore.deleteGuild(id);
     },
-  );
+  });
 };

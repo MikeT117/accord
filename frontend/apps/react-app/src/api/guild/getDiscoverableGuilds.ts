@@ -20,9 +20,9 @@ export const useGetDiscoverableGuildsQuery = ({
   return useQuery<
     Omit<Guild, 'createdAd' | 'updatedAt' | 'ownerId'>[],
     AxiosError<AccordApiErrorResponse>
-  >(
+  >({
     queryKey,
-    async () => {
+    queryFn: async () => {
       const { data } = await api.get(
         queryCheck
           ? `/v1/guilds?query=${query}&offset=${offset}&limit=${limit}`
@@ -30,9 +30,7 @@ export const useGetDiscoverableGuildsQuery = ({
       );
       return data;
     },
-    {
-      staleTime: 0,
-      cacheTime: 0,
-    },
-  );
+    staleTime: 30000,
+    gcTime: 30000,
+  });
 };

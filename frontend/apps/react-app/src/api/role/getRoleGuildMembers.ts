@@ -12,20 +12,17 @@ export const useGetRoleGuildMembersQuery = ({
   roleId: string;
   isAssigned: boolean;
 }) => {
-  return useInfiniteQuery<Omit<GuildMember, 'roles'>[], AxiosError<AccordApiErrorResponse>>(
-    [guildId, 'roles', roleId, 'members', 'assigned', isAssigned.toString()],
-    async ({ pageParam = 0 }) => {
-      const endpoint = `/v1/guilds/${guildId}/roles/${roleId}/members?assigned=${isAssigned}&offset=${
-        1 * pageParam
-      }&limit=10`;
+  return useInfiniteQuery<Omit<GuildMember, 'roles'>[], AxiosError<AccordApiErrorResponse>>({
+    queryKey: [guildId, 'roles', roleId, 'members', 'assigned', isAssigned.toString()],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const endpoint = `/v1/guilds/${guildId}/roles/${roleId}/members?assigned=${isAssigned}&offset=${pageParam}&limit=10`;
 
       const { data } = await api.get(endpoint);
       return data;
     },
-    {
-      cacheTime: 0,
-      staleTime: 0,
-      getNextPageParam: (lastPage, pages) => (lastPage.length === 0 ? undefined : pages.length),
-    },
-  );
+    gcTime: 0,
+    staleTime: 0,
+    getNextPageParam: (lastPage, pages) => (lastPage.length === 0 ? undefined : pages.length),
+  });
 };

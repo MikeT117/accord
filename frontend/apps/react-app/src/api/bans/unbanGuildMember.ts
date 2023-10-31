@@ -11,20 +11,19 @@ export const useUnbanGuildMemberMutation = () => {
     GuildMember,
     AxiosError<AccordApiErrorResponse>,
     Pick<GuildMember, 'id' | 'guildId'>
-  >(
-    async ({ id, guildId }) => {
+  >({
+    mutationFn: async ({ id, guildId }) => {
       const { data } = await api.delete(`/v1/guilds/${guildId}/bans/${id}`);
       return data.guildMember;
     },
-    {
-      onSuccess: (guildMember, { id, guildId }) => {
-        queryClient.setQueryData<InfiniteData<GuildMember[]>>([guildId, 'members'], (prev) =>
-          insertInfiniteDataItem(prev, guildMember),
-        );
-        queryClient.setQueryData<InfiniteData<GuildMember[]>>([guildId, 'bans'], (prev) =>
-          deleteInfiniteDataItem(prev, (m) => m.id !== id),
-        );
-      },
+
+    onSuccess: (guildMember, { id, guildId }) => {
+      queryClient.setQueryData<InfiniteData<GuildMember[]>>([guildId, 'members'], (prev) =>
+        insertInfiniteDataItem(prev, guildMember),
+      );
+      queryClient.setQueryData<InfiniteData<GuildMember[]>>([guildId, 'bans'], (prev) =>
+        deleteInfiniteDataItem(prev, (m) => m.id !== id),
+      );
     },
-  );
+  });
 };

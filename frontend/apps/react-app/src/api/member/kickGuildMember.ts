@@ -9,16 +9,14 @@ export const useKickGuildMemberMutation = () => {
     Record<string, never>,
     AxiosError<AccordApiErrorResponse>,
     Pick<GuildMember, 'id' | 'guildId'>
-  >(
-    async ({ guildId, id }) => {
+  >({
+    mutationFn: async ({ guildId, id }) => {
       return api.delete(`/v1/guilds/${guildId}/members/${id}`);
     },
-    {
-      onSuccess: (_, { guildId, id }) => {
-        queryClient.setQueryData<GuildMember[] | undefined>([guildId, 'members'], (prev) =>
-          Array.isArray(prev) ? prev.filter((m) => m.id !== id) : prev,
-        );
-      },
+    onSuccess: (_, { guildId, id }) => {
+      queryClient.setQueryData<GuildMember[] | undefined>([guildId, 'members'], (prev) =>
+        Array.isArray(prev) ? prev.filter((m) => m.id !== id) : prev,
+      );
     },
-  );
+  });
 };

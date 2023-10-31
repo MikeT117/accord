@@ -16,15 +16,13 @@ export const useCreateGuildChannelMutation = () => {
       type: 0 | 1 | 4;
       isPrivate: boolean;
     }
-  >(
-    async ({ guildId, ...body }) => {
+  >({
+    mutationFn: async ({ guildId, ...body }) => {
       const { data } = await api.post(`/v1/guilds/${guildId}/channels`, body);
       return data.channel;
     },
-    {
-      onSuccess: (channel) => {
-        guildStore.createChannel(channel);
-      },
+    onSuccess: (channel) => {
+      guildStore.createChannel(channel);
     },
-  );
+  });
 };

@@ -8,7 +8,9 @@ export const useUnassignGuildChannelFromRoleMutation = () => {
     Record<string, never>,
     AxiosError<AccordApiErrorResponse>,
     { roleId: string; channelId: string; guildId: string }
-  >(async ({ channelId, guildId, roleId }) => {
-    return api.delete(`/v1/guilds/${guildId}/roles/${roleId}/channels/${channelId}`);
+  >({
+    mutationFn: async ({ channelId, guildId, roleId }) => {
+      return api.delete(`/v1/guilds/${guildId}/roles/${roleId}/channels/${channelId}`);
+    },
   });
 };

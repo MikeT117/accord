@@ -10,12 +10,15 @@ export const useGetGuildInviteQuery = ({
   inviteId: string;
   enabled: boolean;
 }) => {
-  return useQuery<GuildInvite, AxiosError<AccordApiErrorResponse>>(
-    [inviteId],
-    async () => {
+  return useQuery<GuildInvite, AxiosError<AccordApiErrorResponse>>({
+    queryKey: [inviteId],
+    queryFn: async () => {
       const { data } = await api.get(`/v1/invites/${inviteId}`);
       return data.invite ?? null;
     },
-    { enabled, cacheTime: Infinity, staleTime: Infinity, retry: 0 },
-  );
+    enabled,
+    gcTime: Infinity,
+    staleTime: Infinity,
+    retry: 0,
+  });
 };

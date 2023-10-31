@@ -11,20 +11,18 @@ export const useDeleteChannelMessageMutation = () => {
     Pick<ChannelMessage, 'id' | 'channelId'>,
     AxiosError<AccordApiErrorResponse>,
     Pick<ChannelMessage, 'id' | 'channelId'>
-  >(
-    async ({ channelId, id }) => {
+  >({
+    mutationFn: async ({ channelId, id }) => {
       const { data } = await api.delete<{
         message: Pick<ChannelMessage, 'id' | 'channelId'>;
       }>(`/v1/channels/${channelId}/messages/${id}`);
 
       return data.message;
     },
-    {
-      onSuccess: (_, { id, channelId }) => {
-        queryClient.setQueryData<InfiniteData<ChannelMessage[]>>([channelId, 'messages'], (prev) =>
-          deleteInfiniteDataItem(prev, (m) => m.id !== id),
-        );
-      },
+    onSuccess: (_, { id, channelId }) => {
+      queryClient.setQueryData<InfiniteData<ChannelMessage[]>>([channelId, 'messages'], (prev) =>
+        deleteInfiniteDataItem(prev, (m) => m.id !== id),
+      );
     },
-  );
+  });
 };

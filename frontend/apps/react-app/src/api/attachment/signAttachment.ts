@@ -8,7 +8,9 @@ export const useSignAttachmentMutation = () => {
     { signature: string; timestamp: number; publicId: string },
     AxiosError<AccordApiErrorResponse>,
     { fileName: string }
-  >(async ({ fileName }) => {
-    return (await api.post(`/v1/attachments`, { fileName })).data;
+  >({
+    mutationFn: async ({ fileName }) => {
+      return (await api.post(`/v1/attachments`, { fileName })).data;
+    },
   });
 };

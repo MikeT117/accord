@@ -9,17 +9,15 @@ import { api } from '@/lib/axios';
 import { guildStore } from '@/shared-stores/guildStore';
 
 export const useCreateRoleMutation = () => {
-  return useMutation<GuildRole, AxiosError<AccordApiErrorResponse>, Pick<GuildRole, 'guildId'>>(
-    async ({ guildId }) => {
+  return useMutation<GuildRole, AxiosError<AccordApiErrorResponse>, Pick<GuildRole, 'guildId'>>({
+    mutationFn: async ({ guildId }) => {
       const { data } = await api.post(`/v1/guilds/${guildId}/roles`);
       return data.role;
     },
-    {
-      onSuccess: (role) => {
-        guildStore.addRole(role);
-        guildSettingsStore.setRole(role.id);
-        guildSettingsStore.setSection(GUILD_ROLE_EDITOR);
-      },
+    onSuccess: (role) => {
+      guildStore.createRole(role);
+      guildSettingsStore.setRole(role.id);
+      guildSettingsStore.setSection(GUILD_ROLE_EDITOR);
     },
-  );
+  });
 };

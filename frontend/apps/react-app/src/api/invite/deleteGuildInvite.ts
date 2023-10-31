@@ -10,17 +10,15 @@ export const useDeleteGuildInviteMutation = () => {
     Pick<GuildInvite, 'id'>,
     AxiosError<AccordApiErrorResponse>,
     { inviteId: string; guildId: string }
-  >(
-    async ({ inviteId, guildId }) => {
+  >({
+    mutationFn: async ({ inviteId, guildId }) => {
       const { data } = await api.delete(`/v1/guilds/${guildId}/invites/${inviteId}`);
       return data.invite;
     },
-    {
-      onSuccess: (_, { inviteId, guildId }) => {
-        queryClient.setQueryData<InfiniteData<GuildInvite[]>>([guildId, 'invites'], (prev) =>
-          deleteInfiniteDataItem(prev, (m) => m.id !== inviteId),
-        );
-      },
+    onSuccess: (_, { inviteId, guildId }) => {
+      queryClient.setQueryData<InfiniteData<GuildInvite[]>>([guildId, 'invites'], (prev) =>
+        deleteInfiniteDataItem(prev, (m) => m.id !== inviteId),
+      );
     },
-  );
+  });
 };

@@ -12,21 +12,19 @@ export const useCreateChannelMessageMutation = () => {
     Pick<ChannelMessage, 'content' | 'channelId'> & {
       attachments?: string[];
     }
-  >(
-    async ({ channelId, content, attachments }) => {
+  >({
+    mutationFn: async ({ channelId, content, attachments }) => {
       const { data } = await api.post(`/v1/channels/${channelId}/messages`, {
         content,
         attachments,
       });
       return data.message;
     },
-    {
-      onSuccess: (message) => {
-        queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
-          [message.channelId, 'messages'],
-          (prev) => insertInfiniteDataItem(prev, message),
-        );
-      },
+    onSuccess: (message) => {
+      queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
+        [message.channelId, 'messages'],
+        (prev) => insertInfiniteDataItem(prev, message),
+      );
     },
-  );
+  });
 };

@@ -7,17 +7,15 @@ export const useGetUserSessionsQuery = () => {
   return useInfiniteQuery<
     Pick<UserSession, 'id' | 'createdAt' | 'isCurrentSession'>[],
     AxiosError<AccordApiErrorResponse>
-  >(
-    ['sessions'],
-    async ({ pageParam = 0 }) => {
+  >({
+    queryKey: ['sessions'],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
       const { data } = await api.get(`/v1/users/@me/sessions?offset=${pageParam}&limit=50`);
       return data;
     },
-    {
-      getNextPageParam: (lastPage, pages) =>
-        lastPage.length < 50 ? undefined : pages.flat().length,
-      staleTime: Infinity,
-      cacheTime: Infinity,
-    },
-  );
+    getNextPageParam: (lastPage, pages) => (lastPage.length < 50 ? undefined : pages.flat().length),
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
 };

@@ -9,20 +9,18 @@ export const useRelationshipCreateMutation = () => {
     UserRelationship,
     AxiosError<AccordApiErrorResponse>,
     Pick<UserRelationship, 'status'> & Pick<UserAccount, 'displayName'>
-  >(
-    async ({ displayName }) => {
+  >({
+    mutationFn: async ({ displayName }) => {
       const { data } = await api.post('/v1/users/@me/relationships/', {
         status,
         displayName,
       });
       return data.relationship;
     },
-    {
-      onSuccess: (relationship) => {
-        queryClient.setQueryData<UserRelationship[]>(['relationships'], (prev) =>
-          Array.isArray(prev) ? [...prev, relationship] : [],
-        );
-      },
+    onSuccess: (relationship) => {
+      queryClient.setQueryData<UserRelationship[]>(['relationships'], (prev) =>
+        Array.isArray(prev) ? [...prev, relationship] : [],
+      );
     },
-  );
+  });
 };
