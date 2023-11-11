@@ -1,21 +1,38 @@
 /* eslint-env browser */
 
-const pc = new RTCPeerConnection({
-  iceServers: [
-    {
-      urls: "stun:stun.l.google.com:19302",
-    },
-  ],
-});
+window.connectWS = () => {
+  const ws = new WebSocket("wss://${env.HOST}/websocket");
+  ws.onclose = (currWS, ev) => {
+    console.log("WS CLOSE EVENT: ", ev);
+  };
+  ws.onerror = (currWS, ev) => {
+    console.log("WS ERROR EVENT: ", ev);
+  };
+  ws.onmessage = (message) => {
+    pc.setRemoteDescription(JSON.parse(atob(message.data)));
+  };
+  ws.onopen = (currWS, ev) => {
+    console.log("WS OPEN EVENT: ", ev);
+  };
+
+  window.ws = ws;
+};
 
 window.initMedia = () => {
+  window.pc = new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: "stun:stun.l.google.com:19302",
+      },
+    ],
+  });
   pc.oniceconnectionstatechange = (e) => {
     console.log("connection state change", pc.iceConnectionState);
   };
   pc.onicecandidate = (event) => {
     if (event.candidate === null) {
       alert("INIT COMPLETE");
-      window.SDP = btoa(JSON.stringify(pc.localDescription));
+      window.SDP = pc.localDescription;
     }
   };
 
@@ -44,15 +61,10 @@ window.initMedia = () => {
 };
 
 window.sendSDP = () => {
-  fetch(`https://${env.HOST}/api`, {
-    headers: {
-      "Content-Type": "text/plain",
-    },
-    method: "POST",
-    body: window.SDP,
-  })
-    .then((r) => r.text())
-    .then((answer) => {
-      pc.setRemoteDescription(JSON.parse(atob(answer)));
-    });
+  const channelId = document.getElementById("channel_id").value;
+  if (channelId.length == 0) {
+    alert("No Channel ID");
+    return;
+  }
+  window.ws.send(JSON.stringify({ sdp: window.SDP, channelId }));
 };
