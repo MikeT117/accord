@@ -4,37 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-    <link rel="stylesheet" href="styles.css" />
+    <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   </head>
   <body>
-    <div id="signalingContainer" style="display: none">
-      Browser base64 Session Description<br />
-      <textarea id="localSessionDescription" readonly="true"></textarea> <br />
-      <button onclick="window.sendSDP()">Send SDP to Server</button>
-      <br />
-      <br />
-
-      Golang base64 Session Description<br />
-      <textarea id="remoteSessionDescription"></textarea> <br />
-      <button onclick="window.startSession()">Start Session</button><br />
+    <div>
+      <button onclick="window.initMedia(true)">Init Publisher</button>
+      <button onclick="window.initMedia()">Init Consumer</button>
     </div>
-
-    <br />
-
-    Audio<br />
-    <audio id="audio1" autoplay muted></audio> <br />
-
-    <button class="createSessionButton" onclick="window.createSession(true)">
-      Publish a Broadcast
-    </button>
-    <button class="createSessionButton" onclick="window.createSession(false)">
-      Join a Broadcast</button
-    ><br />
-
-    <br />
-
-    Logs<br />
-    <div id="logs"></div>
+    <div>
+      <button onclick="window.sendSDP(true)">Publish</button>
+      <button onclick="window.sendSDP()">Consume</button>
+    </div>
+    <audio id="audio-feedback" autoplay></audio>
   </body>
-  <script src="/script.js"></script>
+  <script src="script.js"></script>
 </html>

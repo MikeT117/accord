@@ -1,80 +1,66 @@
 /* eslint-env browser */
-var log = (msg) => {
-  document.getElementById("logs").innerHTML += msg + "<br>";
-};
 
-window.createSession = (isPublisher) => {
-  let pc = new RTCPeerConnection({
-    iceServers: [
-      {
-        urls: "stun:stun.l.google.com:19302",
-      },
-    ],
-  });
-  pc.oniceconnectionstatechange = (e) => log(pc.iceConnectionState);
+const pc = new RTCPeerConnection({
+  iceServers: [
+    {
+      urls: "stun:stun.l.google.com:19302",
+    },
+  ],
+});
+
+window.initMedia = (publisher = false) => {
+  pc.oniceconnectionstatechange = (e) => {
+    console.log("connection state change", pc.iceConnectionState);
+  };
   pc.onicecandidate = (event) => {
     if (event.candidate === null) {
-      console.log({ sdp: pc.localDescription });
-      window.sdp = pc.localDescription;
+      alert("INIT COMPLETE");
+      window.SDP = btoa(JSON.stringify(pc.localDescription));
     }
   };
 
-  if (isPublisher) {
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then((stream) => {
-        stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-        document.getElementById("audio1").srcObject = stream;
-        pc.createOffer()
-          .then((d) => pc.setLocalDescription(d))
-          .catch(log);
-      })
-      .catch(log);
+  if (publisher) {
+    pc.onnegotiationneeded = (e) =>
+      pc
+        .createOffer()
+        .then((d) => pc.setLocalDescription(d))
+        .catch(console.error);
+
+    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+      stream.getAudioTracks().forEach((track) => pc.addTrack(track, stream));
+      pc.addTransceiver("audio");
+      pc.addTransceiver(stream.getAudioTracks()[0], {
+        direction: "sendonly",
+        streams: [stream],
+      });
+    });
   } else {
     pc.addTransceiver("audio");
-    pc.createOffer()
-      .then((d) => pc.setLocalDescription(d))
-      .catch(log);
+    pc.onnegotiationneeded = (e) =>
+      pc
+        .createOffer()
+        .then((d) => pc.setLocalDescription(d))
+        .catch(console.error);
 
-    pc.ontrack = function (event) {
-      var el = document.getElementById("audio1");
-      el.srcObject = event.streams[0];
-      el.autoplay = true;
-      el.controls = true;
+    pc.ontrack = (event) => {
+      console.log("Got track event", event);
+      const audioElem = document.createElement("audio");
+      audioElem.srcObject = event.streams[0];
+      audioElem.autoplay = true;
     };
   }
+};
 
-  window.startSession = () => {
-    let sd = document.getElementById("remoteSessionDescription").value;
-    if (sd === "") {
-      return alert("Session Description must not be empty");
-    }
-
-    try {
-      pc.setRemoteDescription(JSON.parse(atob(sd)));
-    } catch (e) {
-      alert(e);
-    }
-  };
-
-  window.sendSDP = () => {
-    fetch("/api", {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-      body: btoa(JSON.stringify(window.sdp)),
-    })
-      .then((r) => console.log(r.json()))
-      .catch((e) => {
-        console.log({ e });
-      });
-  };
-
-  let btns = document.getElementsByClassName("createSessionButton");
-  for (let i = 0; i < btns.length; i++) {
-    btns[i].style = "display: none";
-  }
-
-  document.getElementById("signalingContainer").style = "display: block";
+window.sendSDP = (publisher = false) => {
+  fetch(`https://${env.HOST}/api?publisher=${publisher}`, {
+    headers: {
+      "Content-Type": "text/plain",
+    },
+    method: "POST",
+    body: window.SDP,
+  })
+    .then((r) => r.text())
+    .then((answer) => {
+      pc.setRemoteDescription(JSON.parse(atob(answer)));
+    });
 };
