@@ -7,14 +7,8 @@
     <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   </head>
   <body>
-    <div>
-      <button onclick="window.initMedia(true)">Init Publisher</button>
-      <button onclick="window.initMedia()">Init Consumer</button>
-    </div>
-    <div>
-      <button onclick="window.sendSDP(true)">Publish</button>
-      <button onclick="window.sendSDP()">Consume</button>
-    </div>
+    <button onclick="window.initMedia()">Init</button>
+    <button onclick="window.sendSDP()">Publish/Consume</button>
     <audio id="audio-feedback" autoplay></audio>
   </body>
   <script src="script.js"></script>

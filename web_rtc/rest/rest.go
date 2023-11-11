@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	signal "github.com/MikeT117/go_web_rtc/internal"
 	"github.com/MikeT117/go_web_rtc/web_rtc/rtc"
@@ -17,12 +18,8 @@ func CreateRESTService() {
 	channel := hub.CreateChannel("channel1")
 
 	e := echo.New()
-	e.POST("/api", func(c echo.Context) error {
-		publisher, err := strconv.ParseBool(c.QueryParam("publisher"))
 
-		if err != nil {
-			return err
-		}
+	e.POST("/api", func(c echo.Context) error {
 
 		body, err := io.ReadAll(c.Request().Body)
 		if err != nil {
@@ -32,8 +29,7 @@ func CreateRESTService() {
 		offer := webrtc.SessionDescription{}
 		signal.Decode(string(body), &offer)
 
-		rtc := channel.CreatePeer("peer1", offer, publisher)
-
+		rtc := channel.CreatePeer(strconv.FormatInt(time.Now().UnixNano(), 10), offer)
 		return c.String(http.StatusOK, signal.Encode(rtc.LocalDescription()))
 
 	})

@@ -8,7 +8,7 @@ const pc = new RTCPeerConnection({
   ],
 });
 
-window.initMedia = (publisher = false) => {
+window.initMedia = () => {
   pc.oniceconnectionstatechange = (e) => {
     console.log("connection state change", pc.iceConnectionState);
   };
@@ -19,40 +19,32 @@ window.initMedia = (publisher = false) => {
     }
   };
 
-  if (publisher) {
-    pc.onnegotiationneeded = (e) =>
-      pc
-        .createOffer()
-        .then((d) => pc.setLocalDescription(d))
-        .catch(console.error);
+  pc.onnegotiationneeded = (e) =>
+    pc
+      .createOffer()
+      .then((d) => pc.setLocalDescription(d))
+      .catch(console.error);
 
-    navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
-      stream.getAudioTracks().forEach((track) => pc.addTrack(track, stream));
-      pc.addTransceiver("audio");
-      pc.addTransceiver(stream.getAudioTracks()[0], {
-        direction: "sendonly",
-        streams: [stream],
-      });
-    });
-  } else {
+  navigator.mediaDevices.getUserMedia({ audio: true }).then((stream) => {
+    stream.getAudioTracks().forEach((track) => pc.addTrack(track, stream));
     pc.addTransceiver("audio");
-    pc.onnegotiationneeded = (e) =>
-      pc
-        .createOffer()
-        .then((d) => pc.setLocalDescription(d))
-        .catch(console.error);
+    pc.addTransceiver(stream.getAudioTracks()[0], {
+      direction: "sendrecv",
+      streams: [stream],
+    });
+  });
 
-    pc.ontrack = (event) => {
-      console.log("Got track event", event);
-      const audioElem = document.createElement("audio");
-      audioElem.srcObject = event.streams[0];
-      audioElem.autoplay = true;
-    };
-  }
+  pc.addTransceiver("audio");
+  pc.ontrack = (event) => {
+    console.log("Got track event", event);
+    const audioElem = document.createElement("audio");
+    audioElem.srcObject = event.streams[0];
+    audioElem.autoplay = true;
+  };
 };
 
-window.sendSDP = (publisher = false) => {
-  fetch(`https://${env.HOST}/api?publisher=${publisher}`, {
+window.sendSDP = () => {
+  fetch(`https://${env.HOST}/api`, {
     headers: {
       "Content-Type": "text/plain",
     },
