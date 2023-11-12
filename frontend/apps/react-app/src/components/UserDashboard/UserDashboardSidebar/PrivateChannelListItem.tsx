@@ -1,21 +1,22 @@
-import type { UserAccount } from '@accord/common';
 import { ListItem } from '@/shared-components/ListItem';
 import { Avatar } from '@/shared-components/Avatar';
 import { useCurrentUserId } from '../../../shared-stores/currentUserStore';
+import { UserLimited } from '../../../types';
 
 export const PrivateChannelListItem = ({
   channelType,
-  members,
+  users,
   isActive,
   onClick,
 }: {
   channelType: 2 | 3;
-  members: Pick<UserAccount, 'id' | 'displayName' | 'avatar'>[];
+  users: UserLimited[];
   isActive: boolean;
   onClick: () => void;
 }) => {
+  console.log({ users });
   const userId = useCurrentUserId();
-  const recipients = members.filter((m) => m.id !== userId);
+  const recipients = users.filter((m) => m.id !== userId);
   return (
     <ListItem isActive={isActive} onClick={onClick} intent='secondary' baseBg={false} isActionable>
       <div className='flex items-center space-x-3'>

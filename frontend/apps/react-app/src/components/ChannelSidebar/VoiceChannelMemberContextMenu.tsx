@@ -1,7 +1,8 @@
 import { ReactNode } from 'react';
-import type { VoiceChannelState } from '@accord/common';
+
 import { SpeakerXMarkIcon, SpeakerWaveIcon } from '@heroicons/react/20/solid';
 import { ContextMenu, ContextMenuItem } from '@/shared-components/ContextMenu';
+import { VoiceChannelState } from '../../types';
 
 export const VoiceChannelMemberContextMenu = ({
   voiceChannelState,

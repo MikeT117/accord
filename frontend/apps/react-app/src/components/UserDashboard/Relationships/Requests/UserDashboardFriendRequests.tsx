@@ -4,27 +4,16 @@ import { RelationshipListItem } from '../RelationshipListItem';
 import { Button } from '@/shared-components/Button';
 import { Input } from '@/shared-components/Input';
 import { useRelationshipCreatorStore } from '../../RelationshipCreator/useRelationshipCreatorstore';
-import type { UserRelationship } from '@accord/common';
 import { useCurrentUserId } from '@/shared-stores/currentUserStore';
-import { useAcceptRelationshipMutation } from '@/api/relationships/acceptRelationship';
-import { useDeleteRelationshipMutation } from '@/api/relationships/deleteRelationship';
+import { useAcceptRelationshipMutation } from '@/api/userRelationships/acceptRelationship';
+import { useDeleteRelationshipMutation } from '@/api/userRelationships/deleteRelationship';
 import { useFilteredRelationships } from '../../../../shared-hooks/useFilteredRelationships';
 
 export const UserDashboardFriendRequests = () => {
   const userId = useCurrentUserId();
-  const { relationships, displayNameFilter, setDisplayNameFilter } = useFilteredRelationships({
-    status: 1,
-  });
+  const { relationships, displayNameFilter, setDisplayNameFilter } = useFilteredRelationships(1);
   const { mutate: acceptRelationship } = useAcceptRelationshipMutation();
   const { mutate: deleteRelationship } = useDeleteRelationshipMutation();
-
-  const handleAccepRelationshipClick = (relationship: Pick<UserRelationship, 'id' | 'status'>) => {
-    acceptRelationship(relationship);
-  };
-
-  const handleDelete = (relationshipId: string, status: number) => {
-    deleteRelationship({ id: relationshipId, status });
-  };
 
   return (
     <>
@@ -48,10 +37,10 @@ export const UserDashboardFriendRequests = () => {
           {relationships?.map((r) => (
             <RelationshipListItem
               key={r.id}
-              isIncomingRequest={r.initiatorUserAccountId !== userId}
+              isOutgoing={r.creatorId === userId}
               relationship={r}
-              onDelete={() => handleDelete(r.id, r.status)}
-              onAccept={() => handleAccepRelationshipClick({ id: r.id, status: r.status })}
+              onDelete={() => deleteRelationship(r.id)}
+              onAccept={() => acceptRelationship(r.id)}
             />
           ))}
         </ul>

@@ -1,6 +1,6 @@
-import type { Emoji } from '@accord/common';
 import { lazy, ReactNode } from 'react';
 import { Popover } from '../Popover';
+import { Emoji } from '../../types';
 
 const EmojiPicker = lazy(() => import('./Picker'));
 

@@ -2,7 +2,7 @@ import { Button } from '@/shared-components/Button';
 import { Dialog } from '@/shared-components/Dialog';
 import { Input } from '@/shared-components/Input';
 import { SettingToggle } from '@/shared-components/Settings';
-import { useCreateGuildChannelMutation } from '@/api/channel/createGuildChannel';
+import { useCreateGuildChannelMutation } from '@/api/channels/createGuildChannel';
 import { useGuildChannelCategoryCreator } from './hooks/useGuildChannelCategoryCreator';
 import { useIsGuildChannelCreatorOpen } from './hooks/useIsGuildChannelCategoryCreatorOpen';
 import { guildChannelCategoryCreatorStore } from './stores/useGuildChannelCategoryCreatorStore';
@@ -34,8 +34,9 @@ export const GuildChannelCategoryCreatorContent = () => {
           guildId,
           isPrivate,
           name,
+          topic: '',
           roles,
-          type: 1,
+          channelType: 1,
         }).then(() => {
           toggleOpen();
         });
@@ -47,8 +48,9 @@ export const GuildChannelCategoryCreatorContent = () => {
         guildId,
         isPrivate,
         name,
+        topic: '',
         roles,
-        type: 1,
+        channelType: 1,
       }).then(() => {
         toggleOpen();
       });

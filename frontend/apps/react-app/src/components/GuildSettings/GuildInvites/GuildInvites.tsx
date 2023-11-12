@@ -1,5 +1,5 @@
-import { useDeleteGuildInviteMutation } from '@/api/invite/deleteGuildInvite';
-import { useGetGuildInvitesQuery } from '@/api/invite/getGuildInvites';
+import { useDeleteGuildInviteMutation } from '@/api/guildInvites/deleteGuildInvite';
+import { useGetGuildInvitesQuery } from '@/api/guildInvites/getGuildInvites';
 import { env } from '@/env';
 import { InfiniteLoad } from '@/shared-components/InfiniteLoad';
 import { useInviteLinkCopy } from '@/shared-hooks/useInviteLinkCopy';
@@ -26,11 +26,11 @@ export const GuildInvites = ({ guildId }: { guildId: string }) => {
                 <GuildInviteListItem
                   key={i.id}
                   id={i.id}
-                  creatorAvatar={i.creator.user.avatar}
-                  creatorName={i.creator.nickname ?? i.creator.user.displayName}
+                  creatorAvatar={i.creator.avatar}
+                  creatorName={i.creator.displayName}
                   usedCount={i.usedCount}
                   onCopy={() => onCopy(`https://${env.apiUrl}/invite/${i.id}`)}
-                  onDelete={() => deleteGuildInvite({ guildId: i.guildId, inviteId: i.id })}
+                  onDelete={() => deleteGuildInvite({ guildId, inviteId: i.id })}
                 />
               )),
             )}

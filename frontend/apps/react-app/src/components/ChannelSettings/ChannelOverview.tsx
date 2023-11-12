@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { GuildChannel } from '@accord/common';
 import { UnsavedSettingsPrompt } from '@/shared-components/Settings/UnsavedSettingsPrompt';
 import { Input } from '@/shared-components/Input';
 import { TextArea } from '@/shared-components/TextArea';
+import { GuildChannel } from '../../types';
 
 export const ChannelOverview = ({
   name,
@@ -10,10 +10,10 @@ export const ChannelOverview = ({
   topic,
   onChannelUpdate,
 }: Pick<GuildChannel, 'name' | 'channelType' | 'topic'> & {
-  onChannelUpdate: (channel: Pick<GuildChannel, 'name' | 'topic'>) => void;
+  onChannelUpdate: (name: string, topic: string) => void;
 }) => {
   const [modifiedName, setName] = useState<string>(name);
-  const [modifiedTopic, setTopic] = useState<string | null | undefined>(topic);
+  const [modifiedTopic, setTopic] = useState<string>(topic);
 
   const isNameModified = modifiedName !== name;
   const isTopicModified = modifiedTopic !== topic;
@@ -54,7 +54,7 @@ export const ChannelOverview = ({
               id='channel-topic'
               placeholder='Channel topic'
               onChange={handleTopicChange}
-              value={modifiedTopic ?? topic ?? ''}
+              value={modifiedTopic ?? topic}
             />
           </label>
         )}
@@ -62,9 +62,7 @@ export const ChannelOverview = ({
       <UnsavedSettingsPrompt
         isVisible={changesCanBeApplied}
         onDiscard={handleDiscardClick}
-        onSave={() =>
-          onChannelUpdate({ name: modifiedName ?? name, topic: modifiedTopic ?? topic })
-        }
+        onSave={() => onChannelUpdate(modifiedName, modifiedTopic)}
       />
     </div>
   );

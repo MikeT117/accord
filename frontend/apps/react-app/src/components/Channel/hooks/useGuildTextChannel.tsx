@@ -1,8 +1,8 @@
 import { useParams } from 'react-router-dom';
 import { useGuildStore } from '@/shared-stores/guildStore';
-import { GuildTextChannel } from '@accord/common';
+import { GuildChannel } from '../../../types';
 
-export function useGuildTextChannel() {
+export const useGuildTextChannel = () => {
   const { guildId = '', channelId = '' } = useParams();
   const guild = useGuildStore((s) => s.guilds[guildId]);
 
@@ -12,7 +12,7 @@ export function useGuildTextChannel() {
 
   const memberRoles = guild.roles.filter((gr) => guild.member.roles.some((gmr) => gmr === gr.id));
   const channel = guild.channels.find((c) => c.id === channelId && c.channelType === 0) as
-    | GuildTextChannel
+    | GuildChannel
     | null
     | undefined;
 
@@ -26,4 +26,4 @@ export function useGuildTextChannel() {
   }, 0);
 
   return { channel, permissions };
-}
+};

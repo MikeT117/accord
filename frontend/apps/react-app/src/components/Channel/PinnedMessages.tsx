@@ -1,12 +1,11 @@
 import { StarIcon } from '@heroicons/react/20/solid';
 import { ReactNode } from 'react';
-import type { GuildRole } from '@accord/common';
 import { LoadingSpinner } from '@/shared-components/LoadingSpinner';
 import { IconButton } from '@/shared-components/IconButton';
 import { Popover } from '@/shared-components/Popover';
-import { useGetPinnedChannelMessagesQuery } from '@/api/message/getPinnedChannelMessages';
 import { InfiniteLoad } from '@/shared-components/InfiniteLoad';
 import { PinnedMessageListItem } from '@/shared-components/Message/PinnedMessageListItem';
+import { useGetChannelPinsQuery } from '../../api/channelPins/getChannelPins';
 
 export const PinnedMessagesPopoverContent = ({
   channelId,
@@ -15,7 +14,7 @@ export const PinnedMessagesPopoverContent = ({
   channelId: string;
   permissions: number;
 }) => {
-  const { data, isLoading, fetchNextPage } = useGetPinnedChannelMessagesQuery(channelId);
+  const { data, isLoading, fetchNextPage } = useGetChannelPinsQuery(channelId);
   return (
     <>
       <div className='flex items-center bg-grayA-3 px-4 py-3'>

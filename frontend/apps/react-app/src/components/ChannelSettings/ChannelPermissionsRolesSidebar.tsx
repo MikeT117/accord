@@ -1,7 +1,7 @@
-import type { GuildRole } from '@accord/common';
 import { PlusCircleIcon } from '@heroicons/react/24/solid';
 import { DefaultTooltip } from '@/shared-components/DefaultTooltip';
 import { ListItem } from '@/shared-components/ListItem';
+import { GuildRole } from '../../types';
 
 export const ChannelPermissionsRolesSidebar = ({
   onAssignGuildChannelRole,

@@ -1,4 +1,4 @@
-import { GuildTextChannel, PrivateTextChannel } from '@accord/common';
+import { GuildChannel, PrivateChannel } from '../../types';
 import { Header } from './Header';
 import { MessageCreator } from './MessageCreator';
 import { MessagesList } from './MessagesList';
@@ -8,7 +8,7 @@ export const TextChannel = ({
   channel,
   permissions,
 }: {
-  channel: GuildTextChannel | PrivateTextChannel;
+  channel: GuildChannel | PrivateChannel;
   permissions: number;
 }) => {
   return (

@@ -1,29 +1,24 @@
 import { ReactNode, useCallback, useState } from 'react';
-import type { GuildMember, GuildRole } from '@accord/common';
 import { GuildMemberListItem } from '../../GuildMemberListItem';
 import { LoadingSpinner } from '@/shared-components/LoadingSpinner';
 import { Input } from '@/shared-components/Input';
 import { guildSettingsStore, useGuildSettingsStore } from '../../stores/useGuildSettingsStore';
 import { Dialog } from '@/shared-components/Dialog';
 import { Button } from '@/shared-components/Button';
-import { useGetRoleGuildMembersQuery } from '@/api/role/getRoleGuildMembers';
-import { useAssignGuildMemberToRoleMutation } from '@/api/role/assignGuildMemberToRole';
+import { useGetGuildRoleMembersQuery } from '../../../../api/guildRoles/getGuildRoleMembers';
+import { useAssignRoleToUserMutation } from '../../../../api/userRoles/assignRoleToUser';
+import { GuildRole } from '../../../../types';
 
 export const GuildRoleEditorAssignMembersDialogContent = ({
   guildRole,
 }: {
   guildRole: GuildRole;
 }) => {
-  const [selectedMembers, setSelectedMembers] = useState<Omit<GuildMember, 'roles'>[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [memberFilter, setMemberFilter] = useState('');
 
-  const { data, isLoading } = useGetRoleGuildMembersQuery({
-    isAssigned: false,
-    guildId: guildRole.guildId,
-    roleId: guildRole.id,
-  });
-
-  const { mutate: assignRoleUser } = useAssignGuildMemberToRoleMutation();
+  const { data, isLoading } = useGetGuildRoleMembersQuery(guildRole.guildId, guildRole.id, true);
+  const { mutate: assignRoleUser } = useAssignRoleToUserMutation();
 
   const filteredMembers = !memberFilter.trim()
     ? data?.pages
@@ -39,16 +34,16 @@ export const GuildRoleEditorAssignMembersDialogContent = ({
     assignRoleUser({
       guildId: guildRole.guildId,
       roleId: guildRole.id,
-      members: selectedMembers,
+      userIds: selectedUserIds,
     });
     guildSettingsStore.toggleAssignRoleMembersOpen();
   };
 
-  const toggleSelectedUser = (guildMember: Omit<GuildMember, 'roles'>) => {
-    if (selectedMembers.some((m) => m.id === guildMember.id)) {
-      setSelectedMembers((s) => s.filter((m) => m.id !== guildMember.id));
+  const toggleSelectedUser = (newId: string) => {
+    if (selectedUserIds.some((id) => id === newId)) {
+      setSelectedUserIds((ids) => ids.filter((id) => id !== newId));
     } else {
-      setSelectedMembers((s) => [...s, guildMember]);
+      setSelectedUserIds((ids) => [...ids, newId]);
     }
   };
 
@@ -68,10 +63,10 @@ export const GuildRoleEditorAssignMembersDialogContent = ({
           <ul className='mb-6 mt-3 min-h-[200px] space-y-2'>
             {filteredMembers?.map((m) => (
               <GuildMemberListItem
-                key={m.id}
+                key={m.user.id}
                 user={m.user}
-                onToggleSelect={() => toggleSelectedUser(m)}
-                selected={selectedMembers.includes(m)}
+                onToggleSelect={() => toggleSelectedUser(m.user.id)}
+                selected={selectedUserIds.findIndex((ids) => ids === m.user.id) !== -1}
               />
             ))}
           </ul>
@@ -81,7 +76,7 @@ export const GuildRoleEditorAssignMembersDialogContent = ({
         <Button intent='link' padding='s' onClick={guildSettingsStore.toggleAssignRoleMembersOpen}>
           Cancel
         </Button>
-        <Button onClick={assignUsers} disabled={selectedMembers.length === 0}>
+        <Button onClick={assignUsers} disabled={selectedUserIds.length === 0}>
           Assign
         </Button>
       </div>

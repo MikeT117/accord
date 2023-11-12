@@ -1,16 +1,14 @@
-import type {
-  Channel,
-  ChannelMessage,
-  Guild,
-  UserRelationship,
-  GuildRole,
-  UserAccount,
-  ObjectValues,
-  PrivateTextChannel,
-  GuildChannel,
-} from '@accord/common';
 import { create } from 'zustand';
 import { combine } from 'zustand/middleware';
+import {
+  ChannelMessage,
+  Guild,
+  UserLimited,
+  GuildRole,
+  ObjectValues,
+  UserRelationship,
+  Channel,
+} from '../../../types';
 
 export const ConfirmationActionType = {
   DELETE: 'delete',
@@ -33,15 +31,12 @@ export const useActionConfirmationStore = create(
   combine(
     {
       isOpen: false as boolean,
-      actionType: ConfirmationActionType.DELETE as ConfirmationActionTypes,
+      actionType: null as ConfirmationActionTypes | null,
       actionSubject: null as ConfirmationActionSubjects | null,
-      account: null as Pick<UserAccount, 'id' | 'displayName'> | null,
+      user: null as Pick<UserLimited, 'id' | 'displayName'> | null,
       guild: null as Pick<Guild, 'id' | 'name'> | null,
       guildRole: null as Pick<GuildRole, 'id' | 'guildId' | 'name'> | null,
-      channel: null as
-        | Pick<GuildChannel, 'id' | 'channelType' | 'guildId' | 'name'>
-        | Pick<PrivateTextChannel, 'id' | 'channelType' | 'name'>
-        | null,
+      channel: null as Pick<Channel, 'id' | 'channelType' | 'name'> | null,
       channelMessage: null as ChannelMessage | null,
       relationship: null as UserRelationship | null,
       confirmation: '',
@@ -72,9 +67,9 @@ export const useActionConfirmationStore = create(
           actionType: ConfirmationActionType.DELETE,
           action,
         }),
-      setAccount: (account: Pick<UserAccount, 'id' | 'displayName'>, action: () => void) =>
+      setAccount: (user: Pick<UserLimited, 'id' | 'displayName'>, action: () => void) =>
         set({
-          account,
+          user,
           isOpen: true,
           actionSubject: ConfirmationActionSubject.ACCOUNT,
           actionType: ConfirmationActionType.DELETE,
@@ -92,12 +87,7 @@ export const useActionConfirmationStore = create(
           actionType,
           action,
         }),
-      setChannel: (
-        channel:
-          | Pick<GuildChannel, 'id' | 'channelType' | 'guildId' | 'name'>
-          | Pick<PrivateTextChannel, 'id' | 'channelType' | 'name'>,
-        action: () => void,
-      ) =>
+      setChannel: (channel: Pick<Channel, 'id' | 'channelType' | 'name'>, action: () => void) =>
         set({
           channel,
           isOpen: true,

@@ -1,10 +1,10 @@
 import { TrashIcon } from '@heroicons/react/24/solid';
-import type { UserAccount } from '@accord/common';
 import { Avatar } from '@/shared-components/Avatar';
 import { Checkbox } from '@/shared-components/Checkbox';
 import { DefaultTooltip } from '@/shared-components/DefaultTooltip';
 import { ListItem } from '@/shared-components/ListItem';
 import { IconButton } from '@/shared-components/IconButton';
+import { User } from '../../types';
 
 export const GuildMemberListItem = ({
   user,
@@ -13,7 +13,7 @@ export const GuildMemberListItem = ({
   onToggleSelect,
   onDeleteClick,
 }: {
-  user: Pick<UserAccount, 'id' | 'displayName' | 'avatar'>;
+  user: Pick<User, 'id' | 'displayName' | 'avatar'>;
   selected?: boolean;
   isEditable?: boolean;
   onToggleSelect?: () => void;

@@ -7,7 +7,7 @@ import { Input } from '@/shared-components/Input';
 import { TextArea } from '@/shared-components/TextArea';
 import { RadioGroupItem } from './RadioGroupItem';
 import { useGuildChannelCreator } from './hooks/useGuildChannelCreator';
-import { useCreateGuildChannelMutation } from '@/api/channel/createGuildChannel';
+import { useCreateGuildChannelMutation } from '@/api/channels/createGuildChannel';
 import { useIsGuildChannelCreatorOpen } from './hooks/useIsGuildChannelCreatorOpen';
 import { guildChannelCreatorStore } from './stores/useGuildChannelCreatorStore';
 import { GuildRoleListSelector } from '@/shared-components/GuildRoleListSelector/GuildRoleListSelector';

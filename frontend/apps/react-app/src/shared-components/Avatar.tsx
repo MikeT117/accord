@@ -1,5 +1,6 @@
 import { Root, Image, Fallback } from '@radix-ui/react-avatar';
 import { cva, VariantProps } from 'class-variance-authority';
+import { env } from '../env';
 
 const avatarStyles = cva(
   'inline-flex shrink-0 cursor-pointer select-none items-center justify-center overflow-hidden rounded-full',
@@ -31,12 +32,14 @@ export interface AvatarProps
   extends React.HTMLAttributes<HTMLSpanElement>,
     VariantProps<typeof avatarStyles> {
   className?: string;
+  uri?: string | null;
   src?: string | null;
   fallback?: string;
   onClick?: () => void;
 }
 
 export const Avatar = ({
+  uri,
   src = '',
   fallback = '',
   className = '',
@@ -45,7 +48,7 @@ export const Avatar = ({
 }: AvatarProps) => {
   return (
     <Root className={avatarStyles({ size, className })} onClick={onClick}>
-      <Image src={src ?? ''} className='h-full w-full object-cover' />
+      <Image src={uri ?? env.cloudinaryResUrl + src} className='h-full w-full object-cover' />
       <Fallback className='flex h-full w-full items-center justify-center bg-grayA-3 font-medium'>
         {fallback}
       </Fallback>

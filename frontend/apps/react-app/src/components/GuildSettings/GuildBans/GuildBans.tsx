@@ -1,15 +1,15 @@
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
-import { useInfiniteGuildMemberBansQuery } from '@/api/bans/getBannedGuildMembers';
-import { useUnbanGuildMemberMutation } from '@/api/bans/unbanGuildMember';
 import { Input } from '@/shared-components/Input';
 import { LoadingSpinner } from '@/shared-components/LoadingSpinner';
 import { GuildBanListItem } from './GuildBanListItem';
+import { useDeleteGuildBanMutation } from '../../../api/guildBans/deleteGuildBan';
+import { useGetGuildBansQuery } from '../../../api/guildBans/getGuildBans';
 
 export const GuildBans = ({ guildId }: { guildId: string }) => {
   const [filter, setFilter] = useState('');
-  const { data, isLoading } = useInfiniteGuildMemberBansQuery(guildId);
-  const { mutate: unbanMember } = useUnbanGuildMemberMutation();
+  const { data, isLoading } = useGetGuildBansQuery(guildId);
+  const { mutate: unbanMember } = useDeleteGuildBanMutation();
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -26,12 +26,11 @@ export const GuildBans = ({ guildId }: { guildId: string }) => {
       />
       <ul className='w-full space-y-2'>
         {data?.pages.map((page) =>
-          page.map((m) => (
+          page.map((gb) => (
             <GuildBanListItem
-              key={m.id}
-              name={m.nickname ?? m.user.displayName}
-              avatar={m.user.avatar}
-              onUnbanMember={() => unbanMember({ guildId: m.guildId, id: m.id })}
+              key={gb.user.id}
+              guildBan={gb}
+              onUnbanMember={() => unbanMember({ guildId, userId: gb.user.id })}
             />
           )),
         )}

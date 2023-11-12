@@ -2,9 +2,11 @@ import { useReqQueryParams } from '@/shared-hooks';
 
 export const useSearchQueryParams = () => {
   const params = useReqQueryParams();
+  const query = params.get('query');
+  const limit = params.get('limit');
+
   return {
-    query: params.get('query'),
-    offset: params.get('offset'),
-    limit: params.get('limit'),
+    query: query && query.trim().length !== 0 ? query.trim() : '',
+    limit: limit && limit.trim().length !== 0 ? parseInt(limit.trim(), 10) : 50,
   };
 };

@@ -5,18 +5,18 @@ export const useRelationshipCreatorStore = create(
   combine(
     {
       isOpen: false,
-      displayName: '',
+      username: '',
     },
     (set, get) => ({
       toggleOpen: () =>
         set((s) => {
           if (s.isOpen) {
-            return { isOpen: false, displayName: '' };
+            return { isOpen: false, username: '' };
           }
           return { isOpen: true };
         }),
-      setDisplayName: (displayName: string) => set({ displayName }),
-      isDisplayNameValid: () => get().displayName.replace(' ', '').length !== 0,
+      setDisplayName: (username: string) => set({ username }),
+      isDisplayNameValid: () => get().username.replace(' ', '').length !== 0,
     }),
   ),
 );

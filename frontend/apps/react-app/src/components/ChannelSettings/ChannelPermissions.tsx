@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { GuildChannel, GuildRole } from '@accord/common';
 import { UnsavedSettingsPrompt } from '@/shared-components/Settings/UnsavedSettingsPrompt';
 import { SettingToggle } from '@/shared-components/Settings';
 import { GuildRoleListItem } from '@/components/GuildSettings/GuildRoles/GuildRoleEditor/GuildRoleListItem';
@@ -7,18 +6,18 @@ import { Input } from '@/shared-components/Input';
 import { Button } from '@/shared-components/Button';
 import { ListItem } from '@/shared-components/ListItem';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { GuildChannel, GuildRole } from '../../types';
 
 export const ChannelPermissions = ({
   assignedRoles,
   defaultRole,
   isPrivate,
   parentId,
-  parentRoleSync,
   channelType,
   onAssignGuildChannelRole,
   onSyncGuildChannelRoles,
   onUnassignGuildChannelRole,
-}: Pick<GuildChannel, 'parentId' | 'parentRoleSync' | 'channelType'> & {
+}: Pick<GuildChannel, 'parentId' | 'channelType'> & {
   onAssignGuildChannelRole: (roleId: string) => void;
   onUnassignGuildChannelRole: (roleId: string) => void;
   onSyncGuildChannelRoles: () => void;
@@ -48,12 +47,14 @@ export const ChannelPermissions = ({
   return (
     <div className='w-full pl-8 pt-12'>
       <h1 className='mb-6 text-3xl font-semibold text-gray-12'>Permissions</h1>
-      {parentRoleSync && (
-        <span className='mb-3 block text-sm text-gray-11'>
-          Permissions for this channel are synced with the parent category.
-        </span>
-      )}
-      {parentId && !parentRoleSync && (
+      {
+        /*parentRoleSync */ true && (
+          <span className='mb-3 block text-sm text-gray-11'>
+            Permissions for this channel are synced with the parent category.
+          </span>
+        )
+      }
+      {parentId && !true /*parentRoleSync*/ && (
         <ListItem intent='secondary' className='mb-3' isHoverable={false}>
           <ArrowPathIcon className='h-5 w-5' />
           <span className='ml-3 mr-auto text-sm'>Permissions are not synced with Category</span>

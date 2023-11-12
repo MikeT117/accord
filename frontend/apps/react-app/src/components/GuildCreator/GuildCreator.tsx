@@ -8,7 +8,7 @@ import { Dialog } from '@/shared-components/Dialog';
 import { SettingToggle } from '@/shared-components/Settings';
 import { guildCreatorStore } from './stores/useGuildCreatorStore';
 import { useGuildCreator } from './hooks/useGuildCreator';
-import { useCreateGuildMutation } from '@/api/guild/createGuild';
+import { useCreateGuildMutation } from '@/api/guilds/createGuild';
 import { useIsGuildCreatorOpen } from './hooks/useIsGuildCreatorOpen';
 import { GuildCategorySelect } from '@/shared-components/GuildCategorySelect';
 
@@ -16,7 +16,7 @@ const { setName, toggleDiscoverable, toggleOpen, setGuildCategoryId } = guildCre
 
 export const GuildCreatorContent = () => {
   const guildCreatorState = useGuildCreator();
-  const { attachments, UploadWrapper, deleteAttachments, onFileUploadClick } = useCloudinary();
+  const { attachments, UploadWrapper, clearAttachments, onFileUploadClick } = useCloudinary();
   const { mutate: createGuild } = useCreateGuildMutation();
 
   if (!guildCreatorState) {
@@ -31,15 +31,15 @@ export const GuildCreatorContent = () => {
   };
 
   const handleClearAttachments = () => {
-    deleteAttachments(true);
+    clearAttachments();
   };
 
   const handleCreateButtonClick = async () => {
     await createGuild({
       name,
       isDiscoverable,
-      icon: attachments[0],
-      guildCategoryId: guildCategoryId ?? null,
+      icon: attachments[0]?.id,
+      guildCategoryId: guildCategoryId,
     });
     toggleOpen();
   };
@@ -59,7 +59,7 @@ export const GuildCreatorContent = () => {
         )}
         <Avatar
           size='4xl'
-          src={attachments[0]?.src ?? ''}
+          uri={attachments[0]?.preview}
           fallback='Icon'
           onClick={onFileUploadClick}
         />

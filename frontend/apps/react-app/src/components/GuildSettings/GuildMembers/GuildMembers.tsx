@@ -1,12 +1,12 @@
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useState } from 'react';
-import { useBanGuildMemberMutation } from '@/api/bans/banGuildMember';
-import { useInfiniteGuildMembersQuery } from '@/api/member/getGuildMembers';
-import { useKickGuildMemberMutation } from '@/api/member/kickGuildMember';
+import { useInfiniteGuildMembersQuery } from '@/api/guildMembers/getGuildMembers';
 import { Input } from '@/shared-components/Input';
 import { LoadingSpinner } from '@/shared-components/LoadingSpinner';
 import { InfiniteLoad } from '@/shared-components/InfiniteLoad';
 import { GuildMemberListItem } from './GuildMemberListItem';
+import { useCreateGuildBanMutation } from '../../../api/guildBans/createGuildBan';
+import { useDeleteGuildMemberMutation } from '../../../api/guildMembers/deleteGuildMember';
 
 export const GuildMembers = ({
   guildId,
@@ -20,8 +20,8 @@ export const GuildMembers = ({
   creatorId: string;
 }) => {
   const { data, isLoading, fetchNextPage } = useInfiniteGuildMembersQuery(guildId);
-  const { mutate: banMember } = useBanGuildMemberMutation();
-  const { mutate: kickMember } = useKickGuildMemberMutation();
+  const { mutate: createBan } = useCreateGuildBanMutation();
+  const { mutate: deleteMember } = useDeleteGuildMemberMutation();
   const [filter, setFilter] = useState('');
 
   if (isLoading) {
@@ -30,9 +30,7 @@ export const GuildMembers = ({
 
   const filteredData = filter
     ? data?.pages.map((p) =>
-        p.filter((gm) =>
-          (gm.nickname ?? gm.user.displayName).toLowerCase().includes(filter.toLowerCase()),
-        ),
+        p.filter((gm) => gm.user.displayName.toLowerCase().includes(filter.toLowerCase())),
       )
     : data?.pages;
 
@@ -53,15 +51,13 @@ export const GuildMembers = ({
         {filteredData?.map((page) =>
           page.map((m) => (
             <GuildMemberListItem
+              key={m.user.id}
               guildId={guildId}
-              roles={m.roles}
-              isOwner={m.userId === creatorId}
-              isCurrentUser={m.userId === creatorId}
-              key={m.id}
-              avatar={m.user.avatar}
-              name={m.nickname ?? m.user.displayName}
-              onBanMember={() => banMember({ id: m.id, guildId })}
-              onKickMember={() => kickMember({ id: m.id, guildId })}
+              member={m}
+              isOwner={m.user.id === creatorId}
+              isCurrentUser={m.user.id === creatorId}
+              onBanMember={() => createBan({ guildId, reason: '', userId: m.user.id })}
+              onKickMember={() => deleteMember({ id: m.user.id, guildId })}
             />
           )),
         )}

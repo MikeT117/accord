@@ -1,4 +1,3 @@
-import type { GuildVoiceChannel } from '@accord/common';
 import { ListItem } from '@/shared-components/ListItem';
 import { GuildChannelContextMenu } from './GuildChannelContextMenu';
 import { Avatar } from '@/shared-components/Avatar';

@@ -1,20 +1,14 @@
 import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
 import { useInView } from 'react-intersection-observer';
-import { useAcceptGuildInviteMutation } from '@/api/invite/acceptGuildInvite';
-import { useGetGuildInviteQuery } from '@/api/invite/getGuildInvite';
+import { useGetGuildInviteQuery } from '@/api/guildInvites/getGuildInvite';
 import { Avatar } from '@/shared-components/Avatar';
 import { Button } from '@/shared-components/Button';
+import { useCreateGuildMemberMutation } from '../../api/guildMembers/createGuildMember';
 
 export const MessageInvite = ({ inviteId }: { inviteId: string }) => {
-  const { ref, inView } = useInView({
-    threshold: 0,
-  });
-  const { data, isError } = useGetGuildInviteQuery({
-    inviteId,
-    enabled: inView,
-  });
-
-  const { mutate: acceptInvite } = useAcceptGuildInviteMutation();
+  const { ref, inView } = useInView({ threshold: 0 });
+  const { data, isError } = useGetGuildInviteQuery(inviteId, inView);
+  const { mutate: createGuildMember } = useCreateGuildMemberMutation();
 
   return (
     <div ref={ref} className='mt-2 flex w-full max-w-[400px] flex-col rounded-md bg-grayA-3 p-3'>
@@ -28,13 +22,16 @@ export const MessageInvite = ({ inviteId }: { inviteId: string }) => {
       <div className='flex items-center'>
         {data && !isError ? (
           <>
-            <Avatar size='xl' src={data.guild.icon} fallback={data.guild.name} />
+            <Avatar size='xl' src={data.icon} fallback={data.name} />
             <div className='ml-3 mr-auto flex flex-col justify-center space-y-1'>
-              <span className='text-sm font-semibold text-gray-12'>{data.guild.name}</span>
-              <span className='text-xs text-gray-11'>{data.guild.memberCount} Members</span>
+              <span className='text-sm font-semibold text-gray-12'>{data.name}</span>
+              <span className='text-xs text-gray-11'>{data.memberCount} Members</span>
             </div>
-            <Button onClick={() => acceptInvite({ id: data.id })} disabled={data.isJoined}>
-              {data.isJoined ? 'Joined' : 'Join'}
+            <Button
+              onClick={() => createGuildMember({ guildId: data.guildId, inviteId })}
+              disabled={true}
+            >
+              {true ? 'Joined' : 'Join'}
             </Button>
           </>
         ) : (

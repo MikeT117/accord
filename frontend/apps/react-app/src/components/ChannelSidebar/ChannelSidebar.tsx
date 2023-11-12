@@ -1,12 +1,5 @@
 import { useDrop } from 'react-dnd';
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
-import type {
-  GuildCategoryChannel,
-  GuildChannel,
-  GuildTextChannel,
-  GuildVoiceChannel,
-} from '@accord/common';
-
 import { CategoryChannelListItem } from './CategoryChannelListItem';
 import { GuildVoiceChannelListItem } from './GuildVoiceChannelListItem';
 import { MainSidebarContentLayout, MainSidebarHeaderLayout } from '@/shared-components/Layouts';
@@ -14,9 +7,10 @@ import { GuildOptionsDropdown } from './GuildOptionsDropdown';
 import { actionConfirmationStore } from '@/components/ActionConfirmation';
 import { channelSettingsStore } from '@/components/ChannelSettings/stores/useChannelSettingsStore';
 import { useChannelSidebarState } from './hooks/useChannelSidebarState';
-import { useDeleteGuildChannelMutation } from '@/api/channel/deleteGuildChannel';
-import { useUpdateGuildChannelMutation } from '@/api/channel/updateGuildChannel';
+import { useDeleteGuildChannelMutation } from '@/api/channels/deleteGuildChannel';
+import { useUpdateGuildChannelMutation } from '@/api/channels/updateGuildChannel';
 import { GuildTextChannelListItem } from './TextChannelListItem';
+import { GuildChannel } from '../../types';
 
 export const ChannelSidebar = () => {
   const channelsidebarState = useChannelSidebarState();
@@ -27,9 +21,9 @@ export const ChannelSidebar = () => {
 
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'GUILD_CHANNEL',
-    drop: ({ id, guildId, channelType, parentId }: GuildChannel) => {
+    drop: ({ id, guildId, parentId }: GuildChannel) => {
       if (parentId) {
-        updateGuildChannel({ id, guildId, channelType, parentId: null });
+        updateGuildChannel({ channelId: id, guildId, parentId: null, sync: false });
       }
     },
     collect: (monitor) => ({
@@ -70,7 +64,7 @@ export const ChannelSidebar = () => {
               c.channelType === 1 && (
                 <CategoryChannelListItem
                   key={c.id}
-                  categoryChannel={c as GuildCategoryChannel}
+                  categoryChannel={c}
                   isActive={c.id === channelId}
                   onSettings={() => handleGuildChannelSettings(c.id)}
                   onDelete={() =>
@@ -86,7 +80,7 @@ export const ChannelSidebar = () => {
                     if (cc.parentId === c.id && cc.channelType === 0) {
                       return (
                         <GuildTextChannelListItem
-                          channel={cc as GuildTextChannel}
+                          channel={cc}
                           key={cc.id}
                           isActive={cc.id === channelId}
                           onClick={() => navigate(`/app/server/${cc.guildId}/channel/${cc.id}`)}
@@ -105,7 +99,7 @@ export const ChannelSidebar = () => {
                       return (
                         <GuildVoiceChannelListItem
                           key={cc.id}
-                          voiceChannel={cc as GuildVoiceChannel}
+                          voiceChannel={cc}
                           onSettings={() => handleGuildChannelSettings(cc.id)}
                           onDelete={() =>
                             handleGuildChannelDelete({
@@ -132,7 +126,7 @@ export const ChannelSidebar = () => {
               return (
                 <GuildTextChannelListItem
                   key={c.id}
-                  channel={c as GuildTextChannel}
+                  channel={c}
                   isActive={c.id === channelId}
                   onClick={() => navigate(`/app/server/${c.guildId}/channel/${c.id}`)}
                   onSettings={() => handleGuildChannelSettings(c.id)}
@@ -150,7 +144,7 @@ export const ChannelSidebar = () => {
               return (
                 <GuildVoiceChannelListItem
                   key={c.id}
-                  voiceChannel={c as GuildVoiceChannel}
+                  voiceChannel={c}
                   onSettings={() => handleGuildChannelSettings(c.id)}
                   onDelete={() =>
                     handleGuildChannelDelete({

@@ -62,7 +62,7 @@ export const UserDashboardSidebar = () => {
           {channels.map((c) => (
             <PrivateChannelListItem
               key={c.id}
-              members={c.members}
+              users={c.users}
               channelType={c.channelType}
               isActive={c.id === activeChannelId}
               onClick={() => navigate(`/app/@me/channel/${c.id}`)}

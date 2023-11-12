@@ -1,4 +1,3 @@
-import { GuildRole } from '@accord/common';
 import * as Tabs from '@radix-ui/react-tabs';
 import { GuildRoleEditorAssignedMembers } from './GuildRoleEditorAssignedMembers';
 import {
@@ -7,6 +6,7 @@ import {
 } from './GuildRoleEditorAssignMembersDialog';
 import { GuildRoleEditorDisplay } from './GuildRoleEditorDisplay';
 import { GuildRoleEditorPermissions } from './GuildRoleEditorPermissions';
+import { GuildRole } from '../../../../types';
 
 export const GuildRoleEditor = ({ editingRole }: { editingRole: GuildRole }) => {
   return (

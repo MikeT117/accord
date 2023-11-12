@@ -25,8 +25,8 @@ export const useGuildSettings = () => {
   const editingRole = [defaultRole, ...customRoles].find((r) => r.id === guildRoleId);
 
   return {
-    ...guild,
-    memberUserAccountId: guild.member.id,
+    guild,
+    memberUserAccountId: guild.member.user.id,
     section,
     customRoles,
     defaultRole,

@@ -2,8 +2,12 @@ import { create } from 'zustand';
 import { combine } from 'zustand/middleware';
 
 export const useGuildInviteCreatorStore = create(
-  combine({ isOpen: false }, (set) => ({
-    toggleOpen: () => set((s) => ({ isOpen: !s.isOpen })),
+  combine({ isOpen: false, inviteId: null as string | null }, (set) => ({
+    open: (inviteId: string) => {
+      console.log({ inviteId });
+      return set({ isOpen: true, inviteId });
+    },
+    close: () => set({ isOpen: false, inviteId: null }),
   })),
 );
 

@@ -1,36 +1,37 @@
 import { ClipboardIcon } from '@heroicons/react/24/outline';
 import { Dialog } from '@/shared-components/Dialog';
-import { guildInviteCreatorStore } from './stores/useGuildInviteCreatorStore';
+import {
+  guildInviteCreatorStore,
+  useGuildInviteCreatorStore,
+} from './stores/useGuildInviteCreatorStore';
 import { Input } from '@/shared-components/Input';
 import { IconButton } from '@/shared-components/IconButton';
 import { Button } from '@/shared-components/Button';
 import { ListItem } from '@/shared-components/ListItem';
 import { Avatar } from '@/shared-components/Avatar';
-import { useNewGuildInvite } from './hooks/useNewGuildInvite';
 import { useSendInviteToUser } from './hooks/useSendInviteToFriend';
 import { useIsGuildInviteCreatorOpen } from './hooks/useIsGuildInviteCreatorOpen';
 import { DefaultTooltip } from '@/shared-components/DefaultTooltip';
 import { useInviteLinkCopy } from '@/shared-hooks/useInviteLinkCopy';
 import { useFilteredRelationships } from '../../shared-hooks/useFilteredRelationships';
 
-const { toggleOpen } = guildInviteCreatorStore;
+import { env } from '../../env';
 
 export const GuildInviteCreatorContent = () => {
-  const inviteLink = useNewGuildInvite();
-
-  const { displayNameFilter, relationships, setDisplayNameFilter } = useFilteredRelationships({
-    status: 0,
-  });
+  const inviteId = useGuildInviteCreatorStore((s) => s.inviteId);
+  const { displayNameFilter, relationships, setDisplayNameFilter } = useFilteredRelationships(0);
   const { sendInviteToUser, status } = useSendInviteToUser();
   const onCopy = useInviteLinkCopy();
 
-  if (!inviteLink) {
+  if (!inviteId) {
     return null;
   }
 
   const handleListFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDisplayNameFilter(e.currentTarget.value);
   };
+
+  const inviteLink = `https://${env.apiUrl}/v1/invites/${inviteId}`;
 
   return (
     <div className='px-4 py-5'>
@@ -52,10 +53,10 @@ export const GuildInviteCreatorContent = () => {
                 onClick={() => sendInviteToUser(inviteLink, relationship.user.id)}
                 disabled={status !== 'idle'}
               >
+                {status === 'idle' && 'Send Invite'}
+                {status === 'pending' && 'Sending...'}
                 {status === 'success' && 'Invite Sent'}
                 {status === 'error' && 'Invite Failed'}
-                {status === 'loading' && 'Sending...'}
-                {status === 'idle' && 'Send Invite'}
               </Button>
             </ListItem>
           ))}
@@ -86,7 +87,7 @@ export const GuildInviteCreatorContent = () => {
 export const GuildInviteCreator = () => {
   const isOpen = useIsGuildInviteCreatorOpen();
   return (
-    <Dialog isOpen={isOpen} onClose={toggleOpen}>
+    <Dialog isOpen={isOpen} onClose={guildInviteCreatorStore.close}>
       <GuildInviteCreatorContent />
     </Dialog>
   );

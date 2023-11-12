@@ -1,14 +1,15 @@
 import { ReactNode } from 'react';
-import type { ChannelMessage } from '@accord/common';
 import { Avatar } from '@/shared-components/Avatar';
 import { MessageInvite } from './MessageInvite';
 import { Image } from '@/shared-components/Image';
 import { MessageContent } from './MessageContent';
 import { useExtractInvite } from './hooks/useExtractInvite';
 import { TimeAgo } from '@/shared-components/TimeAgo';
+import { ChannelMessage } from '../../types';
+import { env } from '../../env';
 
 export const Message = ({ message, editor }: { message: ChannelMessage; editor?: ReactNode }) => {
-  const { attachments, content, author, createdAt, member } = message;
+  const { attachments, content, author, createdAt } = message;
   const inviteId = useExtractInvite(content);
   return (
     <div
@@ -21,7 +22,7 @@ export const Message = ({ message, editor }: { message: ChannelMessage; editor?:
       />
       <div className='flex items-baseline [grid-area:message-username/message-timestamp]'>
         <span className='mr-2 whitespace-nowrap text-sm font-semibold text-gray-12 '>
-          {member?.nickname ?? author.displayName}
+          {author.displayName}
         </span>
         <TimeAgo
           className='whitespace-nowrap align-bottom text-xs font-medium text-gray-11'
@@ -34,7 +35,7 @@ export const Message = ({ message, editor }: { message: ChannelMessage; editor?:
         {Array.isArray(attachments) && attachments.length !== 0 && (
           <div className='mt-2 flex flex-wrap space-x-2'>
             {attachments.map((a) => (
-              <Image key={a} src={a} />
+              <Image key={a} src={env.cloudinaryResUrl + a} />
             ))}
           </div>
         )}

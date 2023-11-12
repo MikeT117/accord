@@ -4,30 +4,28 @@ import { MainContentBodyLayout, MainContentHeaderLayout } from '@/shared-compone
 import { RelationshipListItem } from '../RelationshipListItem';
 import { Input } from '@/shared-components/Input';
 import { privateChannelStore } from '@/shared-stores/privateChannelStore';
-import { useCreatePrivateChannelMutation } from '@/api/channel/createPrivateChannel';
-import { useDeleteRelationshipMutation } from '@/api/relationships/deleteRelationship';
+import { useCreatePrivateChannelMutation } from '@/api/channels/createPrivateChannel';
+import { useDeleteRelationshipMutation } from '@/api/userRelationships/deleteRelationship';
 import { useFilteredRelationships } from '../../../../shared-hooks/useFilteredRelationships';
 import { actionConfirmationStore } from '../../../ActionConfirmation';
-import { UserRelationship } from '@accord/common';
+import { UserRelationship } from '../../../../types';
 
 export const UserDashboardRelationships = () => {
-  const { relationships, displayNameFilter, setDisplayNameFilter } = useFilteredRelationships({
-    status: 0,
-  });
+  const { relationships, displayNameFilter, setDisplayNameFilter } = useFilteredRelationships(0);
   const { mutate: deleteRelationship } = useDeleteRelationshipMutation();
   const navigate = useNavigate();
   const { mutateAsync: createPrivateChannel } = useCreatePrivateChannelMutation();
 
   const handleDelete = (relationship: UserRelationship) => {
     actionConfirmationStore.setRelationship(relationship, () =>
-      deleteRelationship({ id: relationship.id, status: relationship.status }),
+      deleteRelationship(relationship.id),
     );
   };
 
   const handleChat = async (friendUserId: string) => {
     const existingChannel = privateChannelStore.getPrivateChannelByMembers(friendUserId);
     if (!existingChannel) {
-      const channel = await createPrivateChannel({ users: [friendUserId] });
+      const channel = await createPrivateChannel([friendUserId]);
       navigate(`/app/@me/channel/${channel.id}`);
     } else {
       navigate(`/app/@me/channel/${existingChannel.id}`);

@@ -14,9 +14,10 @@ import {
 } from '@heroicons/react/20/solid';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { useCurrentUserId } from '@/shared-stores/currentUserStore';
-import { useLeaveGuildMutation } from '@/api/member/leaveGuild';
+import { useLeaveGuildMutation } from '@/api/me/leaveGuild';
 import { actionConfirmationStore, ConfirmationActionType } from '../ActionConfirmation';
 import { GUILD_ADMIN, MANAGE_GUILD, MANAGE_GUILD_CHANNELS } from '../../constants';
+import { useCreateGuildInviteMutation } from '../../api/guildInvites/createGuildInvite';
 
 export const GuildOptionsDropdown = ({
   guildId,
@@ -34,14 +35,26 @@ export const GuildOptionsDropdown = ({
   const manageGuildChannels = (permissions & (1 << MANAGE_GUILD_CHANNELS)) !== 0;
   const manageGuild = (permissions & (1 << MANAGE_GUILD)) !== 0;
 
-  const { mutate } = useLeaveGuildMutation();
+  const { mutate: leaveGuildMutation } = useLeaveGuildMutation();
+  const { mutate: createInviteMutation } = useCreateGuildInviteMutation();
 
-  const leaveGuildMutation = () => {
+  const leaveGuild = () => {
     actionConfirmationStore.setGuild(
       { id: guildId, name: guildName },
       ConfirmationActionType.LEAVE,
-      () => mutate({ id: guildId }),
+      () => leaveGuildMutation(guildId),
     );
+  };
+
+  const createInvite = () => {
+    createInviteMutation(guildId, {
+      onSuccess(inviteId) {
+        guildInviteCreatorStore.open(inviteId);
+      },
+      onError(error) {
+        console.log({ error });
+      },
+    });
   };
 
   return (
@@ -70,7 +83,7 @@ export const GuildOptionsDropdown = ({
         </>
       )}
       {guildAdmin && (
-        <DropdownMenuItem fullWidth onClick={guildInviteCreatorStore.toggleOpen}>
+        <DropdownMenuItem fullWidth onClick={createInvite}>
           <span className='whitespace-nowrap'>Create Invite</span>
           <UserGroupIcon className='h-5 w-5 shrink-0' />
         </DropdownMenuItem>
@@ -82,7 +95,7 @@ export const GuildOptionsDropdown = ({
         </DropdownMenuItem>
       )}
       {userId !== ownerUserAccountId && (
-        <DropdownMenuItem fullWidth intent='danger' onClick={leaveGuildMutation}>
+        <DropdownMenuItem fullWidth intent='danger' onClick={leaveGuild}>
           <span className='whitespace-nowrap'>Leave Server</span>
           <ArrowLeftOnRectangleIcon className='h-5 w-5 shrink-0 rotate-180 ' />
         </DropdownMenuItem>

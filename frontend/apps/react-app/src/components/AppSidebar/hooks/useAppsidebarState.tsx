@@ -5,7 +5,7 @@ import { useCurrentUserStore } from '../../../shared-stores/currentUserStore';
 
 export const useAppsidebarState = () => {
   const { guildId = '' } = useParams();
-  const guilds = useGuildStore((s) => s.ids.map((i) => s.guilds[i]!));
+  const guilds = useGuildStore(useCallback((s) => s.ids.map((i) => s.guilds[i]!), []));
   const user = useCurrentUserStore(useCallback((s) => s.user, []));
   return { activeGuildId: guildId, guilds, user };
 };

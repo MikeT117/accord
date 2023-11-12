@@ -1,12 +1,12 @@
-import { GuildRole } from '@accord/common';
 import { useState } from 'react';
-import { useCreateRoleMutation } from '@/api/role/createRole';
-import { useDeleteRoleMutation } from '@/api/role/deleteRole';
 import { Button } from '@/shared-components/Button';
 import { Input } from '@/shared-components/Input';
 import { actionConfirmationStore } from '../../ActionConfirmation';
 import { GuildRoleListItem } from './GuildRoleEditor/GuildRoleListItem';
 import { guildSettingsStore } from '../stores/useGuildSettingsStore';
+import { useCreateRoleMutation } from '../../../api/guildRoles/createGuildRole';
+import { useDeleteRoleMutation } from '../../../api/guildRoles/deleteGuildRole';
+import { GuildRole } from '../../../types';
 
 const { setRole } = guildSettingsStore;
 
@@ -45,7 +45,7 @@ export const GuildSettingsRolesOverview = ({
   };
 
   const handleRoleCreate = () => {
-    createRole({ guildId });
+    createRole(guildId);
   };
 
   return (

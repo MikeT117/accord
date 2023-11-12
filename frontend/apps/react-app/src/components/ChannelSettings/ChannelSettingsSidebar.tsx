@@ -1,4 +1,3 @@
-import type { GuildChannel } from '@accord/common';
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import {
   FullscreenSettingsSidebarLayout,
@@ -12,6 +11,7 @@ import {
 } from './stores/useChannelSettingsStore';
 import { ListItem } from '@/shared-components/ListItem';
 import { Divider } from '@/shared-components/Divider';
+import { GuildChannel } from '../../types';
 
 export const ChannelSettingsSidebar = ({
   name,

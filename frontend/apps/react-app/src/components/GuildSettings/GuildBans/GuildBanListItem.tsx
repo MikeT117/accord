@@ -3,20 +3,19 @@ import { Avatar } from '@/shared-components/Avatar';
 import { IconButton } from '@/shared-components/IconButton';
 import { DropdownMenu, DropdownMenuItem } from '@/shared-components/DropdownMenu';
 import { ListItem } from '@/shared-components/ListItem';
+import { GuildBan } from '../../../types';
 
 export const GuildBanListItem = ({
-  avatar,
-  name,
+  guildBan,
   onUnbanMember,
 }: {
-  name: string;
-  avatar?: string | null;
+  guildBan: GuildBan;
   onUnbanMember?: () => void;
 }) => {
   return (
     <ListItem intent='secondary' isHoverable={false}>
-      <Avatar size='md' src={avatar} className='mr-3' />
-      <span className='mr-auto text-gray-12'>{name}</span>
+      <Avatar size='md' src={guildBan.user.avatar} className='mr-3' />
+      <span className='mr-auto text-gray-12'>{guildBan.user.displayName}</span>
       <DropdownMenu
         side='bottom'
         align='end'

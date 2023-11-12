@@ -1,6 +1,6 @@
-import type { PrivateChannel } from '@accord/common';
 import { create } from 'zustand';
 import { combine, devtools } from 'zustand/middleware';
+import { PrivateChannel } from '../types';
 
 type Dictionary<T> = {
   [key: string]: T | undefined;
@@ -24,7 +24,7 @@ export const usePrivateChannelStore = create(
             }
             return { ids: _ids, channels: _channels };
           }),
-        addChannel: (channel: PrivateChannel) => {
+        create: (channel: PrivateChannel) => {
           return set((s) => {
             if (!(channel.id in s.channels)) {
               return {
@@ -35,9 +35,7 @@ export const usePrivateChannelStore = create(
             return s;
           });
         },
-        updateChannel: (
-          channel: Pick<PrivateChannel, 'id'> & Partial<Omit<PrivateChannel, 'id'>>,
-        ) => {
+        update: (channel: Pick<PrivateChannel, 'id'> & Partial<Omit<PrivateChannel, 'id'>>) => {
           set((s) => {
             const prev = s.channels[channel.id];
             if (prev) {
@@ -48,7 +46,7 @@ export const usePrivateChannelStore = create(
             return s;
           });
         },
-        deleteChannel: (channel: Pick<PrivateChannel, 'id'>) => {
+        delete: (channel: Pick<PrivateChannel, 'id'>) => {
           const channels = get().channels;
           const ids = get().ids;
           if (channel.id in channels) {
@@ -56,14 +54,12 @@ export const usePrivateChannelStore = create(
             set({ channels, ids: ids.filter((i) => i !== channel.id) });
           }
         },
-        getPrivateChannelByMembers: (recipientUserId: string) => {
+        selectByMemberIds: (userId: string) => {
           const ids = get().ids;
           const channels = get().channels;
           return ids
             .map((id) => channels[id])
-            .find(
-              (c) => c && c.members.length <= 2 && c?.members.some((m) => m.id === recipientUserId),
-            );
+            .find((c) => c && c.users.length <= 2 && c?.users.some((m) => m.id === userId));
         },
       }),
     ),

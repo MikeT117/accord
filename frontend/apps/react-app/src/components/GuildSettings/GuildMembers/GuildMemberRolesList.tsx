@@ -10,7 +10,7 @@ export const GuildMemberRolesList = ({ guildId, roles }: { guildId: string; role
   const { overflowed, ref, overflowedCount } = useOverflowedGuildRoles(guildRoles);
 
   return (
-    <div className='mr-auto flex w-[350px] flex-row space-x-1' ref={ref}>
+    <div className='flex max-w-[350px] flex-row space-x-1' ref={ref}>
       {guildRoles
         .filter((gr) => !overflowed.includes(gr.id))
         .map((gr) => (

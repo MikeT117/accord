@@ -1,5 +1,5 @@
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import { forwardRef, useState } from 'react';
+import { forwardRef, useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { mergeRefs } from 'react-merge-refs';
 import { fullscreenImagePreviewStore } from './stores/useFullscreenImagePreviewStore';
@@ -36,6 +36,10 @@ export const Image = forwardRef<
     },
   });
 
+  useEffect(() => {
+    set(LOADING);
+  }, [src]);
+
   const handleImageOnLoad = () => set(SUCCESS);
   const handleImageOnError = () => set(ERROR);
 
@@ -49,10 +53,10 @@ export const Image = forwardRef<
     return (
       <div
         ref={mergeRefs([ref, inViewRef])}
-        className='flex items-center justify-center rounded-md bg-grayA-3'
+        className='flex items-center justify-center rounded-md bg-redA-3 border border-redA-4'
         style={{ height: h, width: w }}
       >
-        <ExclamationTriangleIcon className='h-8 w-8 text-gray-11' />
+        <ExclamationTriangleIcon className='max-h-10 max-w-10 text-redA-6' />
       </div>
     );
   }

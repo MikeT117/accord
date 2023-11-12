@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
-import { useGetRelationshipsQuery } from '../api/relationships/getRelationships';
+import { useGetRelationshipsQuery } from '../api/userRelationships/getRelationships';
 
-export const useFilteredRelationships = ({ status }: { status: 0 | 1 | 2 }) => {
+export const useFilteredRelationships = (status: number) => {
   const [displayNameFilter, setDisplayNameFilter] = useState('');
   const { data } = useGetRelationshipsQuery();
   const relationships = useMemo(

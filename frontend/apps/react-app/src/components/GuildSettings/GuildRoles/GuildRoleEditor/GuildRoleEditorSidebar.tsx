@@ -1,11 +1,11 @@
-import { GuildRole } from '@accord/common';
 import { ArrowLeftIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { useCreateRoleMutation } from '@/api/role/createRole';
 import { Button } from '@/shared-components/Button';
 import { DefaultTooltip } from '@/shared-components/DefaultTooltip';
 import { IconButton } from '@/shared-components/IconButton';
 import { ListItem } from '@/shared-components/ListItem';
 import { guildSettingsStore, GUILD_ROLES } from '../../stores/useGuildSettingsStore';
+import { useCreateRoleMutation } from '../../../../api/guildRoles/createGuildRole';
+import { GuildRole } from '../../../../types';
 
 const { setSection, setRole } = guildSettingsStore;
 
@@ -35,7 +35,7 @@ export const GuildRoleEditorSidebar = ({
           </Button>
         </DefaultTooltip>
         <DefaultTooltip tootipText='Create New Role' delayDuration={100}>
-          <IconButton intent='secondary' padding='xs' onClick={() => createRole({ guildId })}>
+          <IconButton intent='secondary' padding='xs' onClick={() => createRole(guildId)}>
             <PlusIcon className='h-5 w-5' />
           </IconButton>
         </DefaultTooltip>

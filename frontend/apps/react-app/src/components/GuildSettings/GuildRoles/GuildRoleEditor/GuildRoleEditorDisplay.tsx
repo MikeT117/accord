@@ -1,8 +1,8 @@
 import { useLayoutEffect, useState } from 'react';
-import type { GuildRole } from '@accord/common';
 import { UnsavedSettingsPrompt } from '@/shared-components/Settings/UnsavedSettingsPrompt';
 import { Input } from '@/shared-components/Input';
-import { useUpdateRoleMutation } from '@/api/role/updateGuildRole';
+import { useUpdateRoleMutation } from '@/api/guildRoles/updateGuildRole';
+import { GuildRole } from '../../../../types';
 
 export const GuildRoleEditorDisplay = ({
   role,

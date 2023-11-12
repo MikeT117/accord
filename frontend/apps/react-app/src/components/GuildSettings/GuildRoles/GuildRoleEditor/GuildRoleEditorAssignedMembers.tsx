@@ -1,12 +1,12 @@
-import type { GuildRole } from '@accord/common';
 import { useState } from 'react';
 import { Button } from '@/shared-components/Button';
 import { GuildMemberListItem } from '../../GuildMemberListItem';
 import { Input } from '@/shared-components/Input';
 import { LoadingSpinner } from '@/shared-components/LoadingSpinner';
 import { guildSettingsStore } from '../../stores/useGuildSettingsStore';
-import { useUnassignGuildMemberFromRoleMutation } from '@/api/role/unassignGuildMemberFromRole';
-import { useGetRoleGuildMembersQuery } from '@/api/role/getRoleGuildMembers';
+import { useUnassignRoleFromUserMutation } from '../../../../api/userRoles/unassignRoleFromUser';
+import { useGetGuildRoleMembersQuery } from '../../../../api/guildRoles/getGuildRoleMembers';
+import { GuildRole } from '../../../../types';
 
 export const GuildRoleEditorAssignedMembers = ({
   role,
@@ -16,12 +16,8 @@ export const GuildRoleEditorAssignedMembers = ({
   isEditable: boolean;
 }) => {
   const [memberFilter, setMemberFilter] = useState('');
-  const { mutate: unassignRole } = useUnassignGuildMemberFromRoleMutation();
-  const { data, isLoading } = useGetRoleGuildMembersQuery({
-    guildId: role.guildId,
-    roleId: role.id,
-    isAssigned: true,
-  });
+  const { mutate: unassignRole } = useUnassignRoleFromUserMutation();
+  const { data, isLoading } = useGetGuildRoleMembersQuery(role.guildId, role.id);
 
   const filteredMembers = !memberFilter.trim()
     ? data?.pages
@@ -32,9 +28,9 @@ export const GuildRoleEditorAssignedMembers = ({
     setMemberFilter(val);
   };
 
-  const handleUnassignRole = (memberId: string) => {
+  const handleUnassignRole = (userId: string) => {
     if (isEditable) {
-      unassignRole({ guildId: role.guildId, memberId, roleId: role.id });
+      unassignRole({ guildId: role.guildId, userId, roleId: role.id });
     }
   };
 
@@ -62,9 +58,9 @@ export const GuildRoleEditorAssignedMembers = ({
           <ul className='space-y-2'>
             {filteredMembers.map((member) => (
               <GuildMemberListItem
-                key={member.id}
+                key={member.user.id}
                 user={member.user}
-                onDeleteClick={() => handleUnassignRole(member.id)}
+                onDeleteClick={() => handleUnassignRole(member.user.id)}
                 isEditable={isEditable}
               />
             ))}

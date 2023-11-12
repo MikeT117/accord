@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useRelationshipCreateMutation } from '@/api/relationships/createRelationship';
+import { useRelationshipCreateMutation } from '@/api/userRelationships/createRelationship';
 import { Button } from '@/shared-components/Button';
 import { Dialog } from '@/shared-components/Dialog';
 import { Input } from '@/shared-components/Input';
@@ -9,7 +9,7 @@ const toggleOpen = useRelationshipCreatorStore.getState().toggleOpen;
 const setDisplayName = useRelationshipCreatorStore.getState().setDisplayName;
 
 export const RelationshipCreatorContent = () => {
-  const displayName = useRelationshipCreatorStore(useCallback((s) => s.displayName, []));
+  const username = useRelationshipCreatorStore(useCallback((s) => s.username, []));
 
   const isDisplayNameValid = useRelationshipCreatorStore(
     useCallback((s) => s.isDisplayNameValid(), []),
@@ -17,7 +17,7 @@ export const RelationshipCreatorContent = () => {
 
   const createRelationship = useRelationshipCreateMutation();
   const handleCreateRelationship = async () => {
-    createRelationship.mutate({ status: 1, displayName });
+    createRelationship.mutate({ status: 1, username });
   };
 
   return (
@@ -27,7 +27,7 @@ export const RelationshipCreatorContent = () => {
         <span className='mb-1.5 text-xs text-gray-11'>Username</span>
         <Input
           id='friend-request-username'
-          value={displayName}
+          value={username}
           onChange={(e) => setDisplayName(e.currentTarget.value)}
           placeholder='Enter username'
         />

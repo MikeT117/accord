@@ -1,4 +1,3 @@
-import type { ChannelMessage } from '@accord/common';
 import { forwardRef, useState } from 'react';
 import { actionConfirmationStore } from '@/components/ActionConfirmation';
 import { ListItem } from '@/shared-components/ListItem';
@@ -6,6 +5,7 @@ import { Message } from '@/shared-components/Message';
 import { InlineMessageEditor } from './InlineMessageEditor';
 import { MessageActions } from './MessageActions';
 import { MANAGE_CHANNEL_MESSAGES } from '../../constants';
+import { ChannelMessage } from '../../types';
 
 export const MessageListItem = forwardRef<
   HTMLLIElement,

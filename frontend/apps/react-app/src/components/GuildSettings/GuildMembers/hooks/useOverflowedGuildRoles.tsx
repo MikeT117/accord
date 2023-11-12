@@ -1,5 +1,5 @@
-import { GuildRole } from '@accord/common';
 import { useState, useRef, useLayoutEffect } from 'react';
+import { GuildRole } from '../../../../types';
 
 export const useOverflowedGuildRoles = (guildRoles: GuildRole[]) => {
   const [overflowed, set] = useState<string[]>([]);

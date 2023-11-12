@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { useDeleteAccountMutation } from '../../../api/user/deleteAccount';
-import { useUpdateUserMutation } from '../../../api/user/updateUser';
+import { useDeleteAccountMutation } from '../../../api/users/deleteAccount';
+import { useUpdateUserMutation } from '../../../api/users/updateUser';
 import { useCloudinary } from '../../../shared-hooks';
 import { actionConfirmationStore } from '../../ActionConfirmation';
 import { useCurrentUser } from '@/shared-stores/currentUserStore';
+
+// TODO: UI for updating public flags
 
 export const useMutateLoggedInUser = () => {
   const user = useCurrentUser();
@@ -11,7 +13,7 @@ export const useMutateLoggedInUser = () => {
 
   const { mutate: updateUserMutation } = useUpdateUserMutation();
   const { mutate: deleteAccountMutation } = useDeleteAccountMutation();
-  const { UploadWrapper, attachments, deleteAttachments, onFileUploadClick } = useCloudinary();
+  const { UploadWrapper, attachments, clearAttachments, onFileUploadClick } = useCloudinary();
 
   if (!user) {
     return null;
@@ -24,15 +26,16 @@ export const useMutateLoggedInUser = () => {
 
   const discardChanges = () => {
     setDisplayName('');
-    deleteAttachments(true);
+    clearAttachments();
   };
 
   const saveChanges = () => {
     updateUserMutation({
-      avatar: attachments[0],
-      displayName: displayName.length !== 0 ? displayName : displayName,
+      avatar: attachments[0]?.id,
+      displayName: displayName.length < 6 ? user.displayName : displayName,
+      publicFlags: user.publicFlags,
     });
-    deleteAttachments();
+    clearAttachments();
   };
 
   const deleteUserAccount = () => {
@@ -42,7 +45,7 @@ export const useMutateLoggedInUser = () => {
   return {
     discardChanges,
     saveChanges,
-    deleteAttachments,
+    clearAttachments,
     deleteUserAccount,
     onFileUploadClick,
     setDisplayName,

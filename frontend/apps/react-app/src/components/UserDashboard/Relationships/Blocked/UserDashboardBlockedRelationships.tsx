@@ -1,19 +1,13 @@
 import { NoSymbolIcon } from '@heroicons/react/24/outline';
-import { useDeleteRelationshipMutation } from '@/api/relationships/deleteRelationship';
+import { useDeleteRelationshipMutation } from '@/api/userRelationships/deleteRelationship';
 import { Input } from '@/shared-components/Input';
 import { MainContentHeaderLayout, MainContentBodyLayout } from '@/shared-components/Layouts';
 import { RelationshipListItem } from '../RelationshipListItem';
 import { useFilteredRelationships } from '../../../../shared-hooks/useFilteredRelationships';
 
 export const UserDashboardBlockedRelationships = () => {
-  const { relationships, displayNameFilter, setDisplayNameFilter } = useFilteredRelationships({
-    status: 2,
-  });
+  const { relationships, displayNameFilter, setDisplayNameFilter } = useFilteredRelationships(2);
   const deleteRelationship = useDeleteRelationshipMutation();
-
-  const handleDelete = (relationshipId: string, status: number) => {
-    deleteRelationship.mutate({ id: relationshipId, status });
-  };
 
   return (
     <>
@@ -37,7 +31,7 @@ export const UserDashboardBlockedRelationships = () => {
             <RelationshipListItem
               key={r.id}
               relationship={r}
-              onDelete={() => handleDelete(r.id, r.status)}
+              onDelete={() => deleteRelationship.mutate(r.id)}
             />
           ))}
         </ul>

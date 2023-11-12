@@ -1,25 +1,30 @@
 import { useState } from 'react';
-import type { GuildRole } from '@accord/common';
 import { ROLE_INFO } from '@/constants';
 import { UnsavedSettingsPrompt } from '@/shared-components/Settings/UnsavedSettingsPrompt';
 import { SettingToggle } from '@/shared-components/Settings';
-import { useUpdateRoleMutation } from '@/api/role/updateGuildRole';
+import { useUpdateRoleMutation } from '@/api/guildRoles/updateGuildRole';
+import { GuildRole } from '../../../../types';
 
 export const GuildRoleEditorPermissions = ({ role }: { role: GuildRole }) => {
   const [modifiedPermissions, set] = useState(role.permissions);
   const { mutate: updateRole } = useUpdateRoleMutation();
 
   const saveChanges = () => {
-    updateRole({ ...role, permissions: modifiedPermissions });
+    updateRole({
+      guildId: role.guildId,
+      id: role.id,
+      name: role.name,
+      permissions: modifiedPermissions,
+    });
   };
 
   const resetModifiedRole = () => {
     set(role.permissions);
   };
 
-  function handlePermissionToggle(offset: number) {
+  const handlePermissionToggle = (offset: number) => {
     set((s) => s ^ (1 << offset));
-  }
+  };
 
   return (
     <ul className='space-y-2'>

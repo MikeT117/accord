@@ -1,193 +1,118 @@
-import type { Attachment } from '@accord/common';
-import { ChangeEvent, memo, ReactNode, useCallback, useMemo, useRef, useState } from 'react';
-import { useDeleteAttachmentMutation } from '@/api/attachment/deleteAttachment';
-import { useSignAttachmentMutation } from '@/api/attachment/signAttachment';
+import { ChangeEvent, ReactNode, useRef, useState } from 'react';
+import { useSignAttachmentMutation } from '@/api/attachments/signAttachment';
 import { env } from '../env';
+import { useUploadAttachmentMutation } from '../api/attachments/uploadAttachment';
 
-export type CloudinaryResp = {
-  access_mode: string;
-  api_key: string;
-  asset_id: string;
-  bytes: number;
-  created_at: string;
-  etag: string;
-  folder: string;
-  format: string;
-  height: number;
-  placeholder: boolean;
-  public_id: string;
-  resource_type: string;
-  secure_url: string;
-  signature: string;
-  tags: string[];
-  type: string;
-  url: string;
-  version: number;
-  version_id: string;
-  width: number;
+type UploadedAttachment = {
+  id: string;
+  preview: string;
 };
 
-const uploadFile = async ({
-  file,
-  publicId,
-  signature,
-  timestamp,
-}: {
-  file: File;
-  publicId: string;
-  timestamp: number;
-  signature: string;
-}): Promise<CloudinaryResp | null> => {
-  if (!timestamp || !signature) {
-    throw new Error('timestamp and/or signature empty');
-  }
-  if (!publicId) {
-    throw new Error('File has no public ID');
-  }
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('api_key', env.cloudinaryApiKey);
-  formData.append('timestamp', timestamp.toString());
-  formData.append('signature', signature);
-  try {
-    const resp = await fetch(env.cloudinaryUrl, {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!resp.ok) {
-      return null;
-    }
-
-    return resp.json();
-  } catch {
-    return null;
-  }
+const readFile = (file: File): Promise<{ preview: string; height: number; width: number }> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const image = new Image();
+      image.onload = () => {
+        resolve({ preview: image.src, height: image.height, width: image.width });
+      };
+      image.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
 };
 
 export const useCloudinary = () => {
-  const [attachments, setAttachments] = useState<Omit<Attachment, 'id'>[]>([]);
+  const [attachments, setAttachments] = useState<UploadedAttachment[]>([]);
   const ref = useRef<HTMLInputElement | null>(null);
 
-  const { mutateAsync: signAttachment } = useSignAttachmentMutation();
-  const { mutateAsync: delAttachment } = useDeleteAttachmentMutation();
+  const signMutation = useSignAttachmentMutation();
+  const uploadMutation = useUploadAttachmentMutation();
 
-  const onFileUploadClick = useCallback(() => {
-    if (!env.cloudinaryUrl && !env.cloudinaryApiKey) {
-      alert('Cloudinary URL/API-KEY not valid, attachment upload disabled!');
+  const onFileUploadClick = () => {
+    if (!env.cloudinaryUrl || !env.cloudinaryApiKey) {
+      console.warn('Cloudinary URL/API-KEY not valid, attachment upload disabled!');
       return;
     }
-    if (ref.current) {
+
+    if (typeof ref.current?.click === 'function') {
       ref.current.click();
     }
-  }, []);
+  };
 
-  const deleteAttachment = useCallback(
-    async ({
-      publicId,
-      resourceType,
-      timestamp,
-      signature,
-    }: Pick<Attachment, 'publicId' | 'resourceType' | 'timestamp' | 'signature'>) => {
-      await delAttachment({ publicId, resourceType, timestamp, signature });
-      setAttachments((s) => s.filter((a) => a.signature !== signature));
-    },
-    [delAttachment],
-  );
+  const UploadWrapper = ({
+    id,
+    children,
+    disabled = false,
+    multiple = true,
+  }: {
+    id: string;
+    children?: ReactNode;
+    disabled?: boolean;
+    multiple?: boolean;
+  }) => {
+    const uploadFile = async (file: File, height: number, width: number) => {
+      const resp = await signMutation.mutateAsync({
+        filename: file.name,
+        filesize: file.size,
+        height: height,
+        width: width,
+        resourceType: file.type,
+      });
 
-  const deleteAttachments = useCallback(
-    async (includeCloud = false) => {
-      if (attachments.length === 0) {
+      await uploadMutation.mutateAsync({ file, uploadURL: resp.uploadURL });
+      return { id: resp.id };
+    };
+
+    const handleChange = async ({ target }: ChangeEvent<HTMLInputElement>) => {
+      if (!target.files) {
         return;
       }
-      if (includeCloud) {
-        await Promise.all(attachments.map(async (a) => deleteAttachment({ ...a })));
-      }
-      setAttachments([]);
-    },
-    [attachments, deleteAttachment],
-  );
 
-  const UploadWrapper = memo(
-    ({
-      id,
-      children,
-      disabled = false,
-      multiple = true,
-    }: {
-      id: string;
-      children?: ReactNode;
-      disabled?: boolean;
-      multiple?: boolean;
-    }) => {
-      const handleChange = useCallback(({ target }: ChangeEvent<HTMLInputElement>) => {
-        if (!target.files || target.files.length === 0) {
-          return;
-        }
-
+      await Promise.all(
         Array.from(target.files).map(async (file) => {
-          const cloudinaryPayload = await signAttachment({
-            fileName: file.name,
-          });
-          const cloudinaryResponse = await uploadFile({
-            file,
-            ...cloudinaryPayload,
-          });
+          try {
+            const readAttachment = await readFile(file);
+            const uploadedAttachment = await uploadFile(
+              file,
+              readAttachment.height,
+              readAttachment.width,
+            );
 
-          if (
-            !cloudinaryResponse?.height ||
-            !cloudinaryResponse?.width ||
-            !cloudinaryResponse?.secure_url ||
-            !cloudinaryResponse?.bytes ||
-            !cloudinaryResponse?.resource_type ||
-            !cloudinaryResponse?.public_id ||
-            !cloudinaryResponse?.signature ||
-            !cloudinaryPayload.timestamp
-          ) {
-            return;
+            return setAttachments((s) => [
+              ...s,
+              { id: uploadedAttachment.id, preview: readAttachment.preview },
+            ]);
+          } catch (e) {
+            console.error(`Attachment (${file.name}) failed to upload: `, e);
           }
-          setAttachments((s) => [
-            ...s,
-            {
-              name: file.name,
-              height: cloudinaryResponse.height,
-              width: cloudinaryResponse.width,
-              src: cloudinaryResponse.secure_url,
-              size: cloudinaryResponse.bytes,
-              resourceType: cloudinaryResponse.resource_type,
-              publicId: cloudinaryResponse.public_id,
-              signature: cloudinaryResponse.signature,
-              timestamp: cloudinaryPayload.timestamp,
-            },
-          ]);
-        });
-      }, []);
-      return (
-        <label htmlFor={id} className='m-0 cursor-pointer p-0'>
-          {children}
-          <input
-            id={id}
-            name={id}
-            ref={ref}
-            onChange={handleChange}
-            type='file'
-            style={{ display: 'none' }}
-            disabled={disabled}
-            multiple={multiple}
-          />
-        </label>
+        }),
       );
-    },
-  );
+    };
 
-  UploadWrapper.displayName = 'UploadWrapper';
+    return (
+      <label htmlFor={id} className='m-0 cursor-pointer p-0'>
+        {children}
+        <input
+          id={id}
+          name={id}
+          ref={ref}
+          onChange={handleChange}
+          type='file'
+          style={{ display: 'none' }}
+          disabled={disabled}
+          multiple={multiple}
+        />
+      </label>
+    );
+  };
 
   return {
     ref,
     attachments,
-    onFileUploadClick,
     UploadWrapper,
-    deleteAttachment,
-    deleteAttachments,
+    onFileUploadClick,
+    deleteAttachment: (id: string) => setAttachments((s) => s.filter((a) => a.id !== id)),
+    clearAttachments: () => setAttachments([]),
   };
 };

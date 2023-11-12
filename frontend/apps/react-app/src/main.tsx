@@ -14,6 +14,7 @@ import { UserDashboardFriendRequests } from '@/components/UserDashboard/Relation
 import { PrivateChannel } from './components/Channel/PrivateChannel';
 import { GuildChannel } from './components/Channel/GuildChannel';
 import { UserDashboardSidebar } from './components/UserDashboard/UserDashboardSidebar/UserDashboardSidebar';
+import { ErrorBoundary } from 'react-error-boundary';
 
 const router = createBrowserRouter([
   {
@@ -75,6 +76,8 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById('app')!).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <ErrorBoundary fallback={<p>Something went wrong!</p>}>
+      <RouterProvider router={router} />
+    </ErrorBoundary>
   </StrictMode>,
 );

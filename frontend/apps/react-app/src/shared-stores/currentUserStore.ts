@@ -1,13 +1,13 @@
-import type { UserAccount } from '@accord/common';
 import { useCallback } from 'react';
 import { create } from 'zustand';
 import { combine, devtools } from 'zustand/middleware';
+import { User } from '../types';
 
 export const useCurrentUserStore = create(
   devtools(
-    combine({ user: null as UserAccount | null }, (set) => ({
-      initialise: (user: UserAccount) => set({ user }),
-      updateUser: (user: Partial<UserAccount>) =>
+    combine({ user: null as User | null }, (set) => ({
+      initialise: (user: User) => set({ user }),
+      updateUser: (user: Partial<User>) =>
         set((s) => ({ user: s.user != null ? { ...s.user, ...user } : s.user })),
     })),
     { name: 'CurrentUserStore' },

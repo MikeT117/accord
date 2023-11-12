@@ -1,4 +1,4 @@
-import { useDeleteGuildMutation } from '@/api/guild/deleteGuild';
+import { useDeleteGuildMutation } from '@/api/guilds/deleteGuild';
 import { Divider } from '@/shared-components/Divider';
 import {
   FullscreenSettingsSidebarLayout,

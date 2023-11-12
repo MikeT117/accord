@@ -8,7 +8,7 @@ import {
   TvIcon,
 } from '@heroicons/react/24/solid';
 import { useCallback } from 'react';
-import { useGetGuildCategoriesQuery } from '@/api/guild/getGuildCategories';
+import { useGetGuildCategoriesQuery } from '@/api/guilds/getGuildCategories';
 import { MainSidebarHeaderLayout, MainSidebarContentLayout } from '@/shared-components/Layouts';
 import { ListItem } from '@/shared-components/ListItem';
 import { guildCategoryFilterStore, useGuildCategoryFilter } from './stores/useGuildCategoryFilter';

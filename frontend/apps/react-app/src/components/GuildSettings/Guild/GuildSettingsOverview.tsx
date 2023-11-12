@@ -10,25 +10,15 @@ import { Divider } from '@/shared-components/Divider';
 import { Image } from '@/shared-components/Image';
 import { IconButton } from '@/shared-components/IconButton';
 import { TrashIcon } from '@heroicons/react/24/solid';
-import { useUpdateGuildMutation } from '@/api/guild/updateGuild';
+import { useUpdateGuildMutation } from '@/api/guilds/updateGuild';
 import { GuildCategorySelect } from '@/shared-components/GuildCategorySelect';
+import { Guild } from '../../../types';
+import { env } from '../../../env';
 
 export const GuildSettingsOverview = ({
-  guildId,
-  isDiscoverable,
-  name,
-  guildCategoryId,
-  banner,
-  description,
-  icon,
+  guild: { id, isDiscoverable, name, guildCategoryId, banner, description, icon },
 }: {
-  guildId: string;
-  name: string;
-  guildCategoryId: string | null;
-  description?: string | null;
-  isDiscoverable: boolean;
-  icon?: string | null;
-  banner?: string | null;
+  guild: Guild;
 }) => {
   const [modifiedName, setName] = useState(name);
   const [modifiedDescription, setDescription] = useState(description);
@@ -44,7 +34,9 @@ export const GuildSettingsOverview = ({
     name !== modifiedName ||
     description !== modifiedDescription ||
     isDiscoverable !== modifiedIsDiscoverable ||
-    modifiedGuildCategoryId !== guildCategoryId;
+    modifiedGuildCategoryId !== guildCategoryId ||
+    modifiedBanner.attachments.length !== 0 ||
+    modifiedIcon.attachments.length !== 0;
 
   const isValid = modifiedName.trim() !== '';
   const changesCanBeApplied =
@@ -55,24 +47,24 @@ export const GuildSettingsOverview = ({
 
   const saveChanges = () => {
     updateGuild({
-      id: guildId,
+      id,
       name: modifiedName,
       description: modifiedDescription,
       isDiscoverable: modifiedIsDiscoverable,
-      icon: modifiedIcon.attachments[0],
-      banner: modifiedBanner.attachments[0],
-      guildCategoryId: modifiedGuildCategoryId,
+      icon: modifiedIcon.attachments[0]?.id,
+      banner: modifiedBanner.attachments[0]?.id,
+      categoryId: modifiedGuildCategoryId,
     });
-    modifiedIcon.deleteAttachments();
-    modifiedBanner.deleteAttachments();
+    modifiedIcon.clearAttachments();
+    modifiedBanner.clearAttachments();
   };
 
   const discardChanges = () => {
     setName(name);
     setDescription(description);
     setIsDiscoverable(isDiscoverable);
-    modifiedIcon.deleteAttachments();
-    modifiedBanner.deleteAttachments();
+    modifiedIcon.clearAttachments();
+    modifiedBanner.clearAttachments();
   };
 
   return (
@@ -81,19 +73,22 @@ export const GuildSettingsOverview = ({
         <h1 className='mb-6 text-3xl font-semibold text-gray-12'>Overview</h1>
         <div className='mb-8 flex'>
           <div className='relative flex'>
-            {modifiedIcon.attachments[0]?.src && (
+            {modifiedIcon.attachments[0]?.preview && (
               <IconButton
                 intent='danger'
                 className='absolute top-0 right-0'
-                onClick={() => modifiedIcon.deleteAttachments(true)}
+                onClick={() => modifiedIcon.clearAttachments()}
               >
                 <TrashIcon className='h-4 w-4' />
               </IconButton>
             )}
             <Avatar
-              src={modifiedIcon.attachments[0]?.src ?? icon}
+              uri={modifiedIcon.attachments[0]?.preview}
+              src={icon}
               size='6xl'
-              onClick={modifiedIcon.attachments[0]?.src ? void 0 : modifiedIcon.onFileUploadClick}
+              onClick={
+                modifiedIcon.attachments[0]?.preview ? void 0 : modifiedIcon.onFileUploadClick
+              }
               fallback={name[0] + 'S'}
             />
           </div>
@@ -154,14 +149,16 @@ export const GuildSettingsOverview = ({
                   intent='danger'
                   shape='sqircle'
                   padding='s'
-                  onClick={() => modifiedBanner.deleteAttachment(modifiedBanner.attachments[0])}
+                  onClick={() => modifiedBanner.deleteAttachment(modifiedBanner.attachments[0].id)}
                 >
                   <TrashIcon className='h-4 w-4' />
                 </IconButton>
               </div>
             )}
             <div className='flex overflow-hidden rounded'>
-              <Image src={modifiedBanner.attachments[0]?.src ?? banner} />
+              <Image
+                src={modifiedBanner.attachments[0]?.preview ?? env.cloudinaryResUrl + banner}
+              />
             </div>
           </div>
         </div>

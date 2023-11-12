@@ -8,6 +8,12 @@ import { Divider } from '@/shared-components/Divider';
 import { useMutateLoggedInUser } from './hooks/useMutateLoggedInUser';
 
 export const UserOverview = () => {
+  const mutateLoggedInUser = useMutateLoggedInUser();
+
+  if (!mutateLoggedInUser) {
+    return null;
+  }
+
   const {
     user,
     attachments,
@@ -16,12 +22,12 @@ export const UserOverview = () => {
     isAvatarModified,
     displayName,
     setDisplayName,
-    deleteAttachments,
+    clearAttachments,
     deleteUserAccount,
     onFileUploadClick,
     discardChanges,
     saveChanges,
-  } = useMutateLoggedInUser();
+  } = mutateLoggedInUser;
 
   return (
     <div className='pl-8 pt-12'>
@@ -32,14 +38,15 @@ export const UserOverview = () => {
             <IconButton
               intent='danger'
               className='absolute top-0 right-0'
-              onClick={() => deleteAttachments(true)}
+              onClick={() => clearAttachments()}
             >
               <TrashIcon className='h-4 w-4' />
             </IconButton>
           )}
           <Avatar
             size='6xl'
-            src={attachments[0]?.src ?? user.avatar}
+            uri={attachments[0]?.preview}
+            src={user.avatar}
             onClick={isAvatarModified ? void 0 : onFileUploadClick}
             className='shrink-0 cursor-pointer'
           />

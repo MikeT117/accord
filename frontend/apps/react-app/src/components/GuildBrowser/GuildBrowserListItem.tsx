@@ -1,8 +1,9 @@
-import type { Guild } from '@accord/common';
 import { Avatar } from '@/shared-components/Avatar';
 import { Button } from '@/shared-components/Button';
 import { Image } from '@/shared-components/Image';
 import { useIsGuildMember } from './hooks/useIsMember';
+import { env } from '../../env';
+import { Guild } from '../../types';
 
 export const GuildBrowserListItem = ({
   guild,
@@ -17,7 +18,7 @@ export const GuildBrowserListItem = ({
   const isGuildMember = useIsGuildMember(guild.id);
   return (
     <div className='group flex min-h-[320px] min-w-[240px] max-w-[20%] transform-gpu flex-col overflow-hidden rounded-md bg-gray-4 transition ease-in-out hover:scale-[101%] hover:bg-gray-5'>
-      <Image src={guild.banner} isActionable={false} h='160px' w='auto' />
+      <Image src={env.cloudinaryResUrl + guild.banner} isActionable={false} h='160px' w='auto' />
       <Avatar
         src={guild.icon}
         size='xxl'

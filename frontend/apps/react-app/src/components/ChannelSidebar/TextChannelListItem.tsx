@@ -1,8 +1,8 @@
 import { useDrag } from 'react-dnd';
-import type { GuildTextChannel } from '@accord/common';
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import { ListItem } from '@/shared-components/ListItem';
 import { GuildChannelContextMenu } from './GuildChannelContextMenu';
+import { GuildChannel } from '../../types';
 
 export const GuildTextChannelListItem = ({
   channel,
@@ -11,7 +11,7 @@ export const GuildTextChannelListItem = ({
   onDelete,
   onSettings,
 }: {
-  channel: GuildTextChannel;
+  channel: GuildChannel;
   isActive: boolean;
   onClick: () => void;
   onDelete: () => void;

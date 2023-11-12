@@ -34,17 +34,9 @@ export const GuildSettingsContent = () => {
   }
 
   const {
-    id,
-    name,
-    description,
-    isDiscoverable,
-    guildCategoryId,
-    icon,
-    banner,
+    guild,
     section,
     memberUserAccountId,
-    memberCount,
-    creatorId,
     customRoles,
     defaultRole,
     editingRole,
@@ -53,44 +45,34 @@ export const GuildSettingsContent = () => {
 
   return (
     <>
-      <GuildSettingsSidebar guildId={id} name={name} section={section} />
+      <GuildSettingsSidebar guildId={guild.id} name={guild.name} section={section} />
       <FullscreenSettingsContentLayout>
         {section === GUILD_ROLES && (
           <GuildSettingsRolesOverview
             customRoles={customRoles}
             defaultRole={defaultRole}
-            guildId={id}
+            guildId={guild.id}
           />
         )}
         {section === GUILD_ROLE_EDITOR && (
           <div className='flex h-full'>
             <GuildRoleEditorSidebar
-              guildId={id}
+              guildId={guild.id}
               editableRoles={editableRoles}
               currentRoleId={editingRole?.id}
             />
             {editingRole && <GuildRoleEditor editingRole={editingRole} />}
           </div>
         )}
-        {section === GUILD_OVERVIEW && (
-          <GuildSettingsOverview
-            guildCategoryId={guildCategoryId}
-            guildId={id}
-            isDiscoverable={isDiscoverable}
-            name={name}
-            banner={banner}
-            description={description}
-            icon={icon}
-          />
-        )}
-        {section === GUILD_INVITES && <GuildInvites guildId={id} />}
-        {section === GUILD_BANS && <GuildBans guildId={id} />}
+        {section === GUILD_OVERVIEW && <GuildSettingsOverview guild={guild} />}
+        {section === GUILD_INVITES && <GuildInvites guildId={guild.id} />}
+        {section === GUILD_BANS && <GuildBans guildId={guild.id} />}
         {section === GUILD_MEMBERS && (
           <GuildMembers
-            guildId={id}
-            memberCount={memberCount}
+            guildId={guild.id}
+            memberCount={guild.memberCount}
             userId={memberUserAccountId}
-            creatorId={creatorId}
+            creatorId={guild.creatorId}
           />
         )}
         <IconButton className='absolute right-0 top-12' intent='secondary' onClick={toggleOpen}>

@@ -12,7 +12,7 @@ export const usePrivateTextChannel = () => {
     return null;
   }
 
-  const recipients = channel.members.filter((m) => m.id !== userId);
+  const recipients = channel.users.filter((m) => m.id !== userId);
   const name =
     recipients.length > 1
       ? recipients.map((r) => r.displayName).join(', ')

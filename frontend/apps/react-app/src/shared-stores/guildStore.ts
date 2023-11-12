@@ -1,6 +1,6 @@
-import { Guild, GuildChannel, GuildMember, GuildRole } from '@accord/common';
 import { create } from 'zustand';
 import { combine, devtools } from 'zustand/middleware';
+import { Guild, GuildChannel, GuildMember, GuildRole } from '../types';
 
 type Dictionary<T> = {
   [key: string]: T | undefined;
@@ -32,7 +32,12 @@ export const useGuildStore = create(
             }));
           }
         },
-        updateGuild: (guild: Pick<Guild, 'id'> & Partial<Omit<Guild, 'id'>>) => {
+        updateGuild: (
+          guild: Pick<
+            Guild,
+            'id' | 'name' | 'description' | 'isDiscoverable' | 'icon' | 'banner' | 'guildCategoryId'
+          >,
+        ) => {
           set((s) => {
             const prev = s.guilds[guild.id];
             if (prev) {
@@ -96,9 +101,7 @@ export const useGuildStore = create(
             return s;
           });
         },
-        updateMember: (
-          member: Pick<GuildMember, 'id' | 'guildId'> & Partial<Omit<GuildMember, 'id'>>,
-        ) => {
+        updateMember: (member: Pick<GuildMember, 'guildId' | 'nickname'>) => {
           set((s) => {
             const prev = s.guilds[member.guildId];
             if (prev) {

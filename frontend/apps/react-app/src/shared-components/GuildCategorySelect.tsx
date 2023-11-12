@@ -1,4 +1,4 @@
-import { useGetGuildCategoriesQuery } from '@/api/guild/getGuildCategories';
+import { useGetGuildCategoriesQuery } from '@/api/guilds/getGuildCategories';
 import { Select } from './Select';
 import { SelectItem } from './Select';
 

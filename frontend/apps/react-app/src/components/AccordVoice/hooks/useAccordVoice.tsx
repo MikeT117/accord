@@ -1,5 +1,3 @@
-import { AccordRTCOperation } from '@accord/common';
-import { AccordWebsocketClient } from '@accord/websocket-client';
 import { Device } from 'mediasoup-client';
 import type { Producer } from 'mediasoup-client/lib/Producer';
 import type { RtpCapabilities } from 'mediasoup-client/lib/RtpParameters';
@@ -8,9 +6,10 @@ import { memo, useCallback, useRef } from 'react';
 import type { Consumer } from 'mediasoup-client/lib/Consumer';
 import { useSessionStore } from '@/shared-stores/sessionStore';
 import { voiceStateStore } from '@/shared-stores/voiceStateStore';
-import { RTC_WEBSOCKET_ENDPOINT } from '@/constants';
+import { AccordRTCOperation, RTC_WEBSOCKET_ENDPOINT } from '@/constants';
 import { toastStore } from '@/shared-components/Toast';
 import { useCurrentUserId } from '../../../shared-stores/currentUserStore';
+import { AccordWebsocketClient } from '../../../lib/websocketClient/AccordWebsocketClient';
 
 const webRtcState: {
   guildId: string | null;

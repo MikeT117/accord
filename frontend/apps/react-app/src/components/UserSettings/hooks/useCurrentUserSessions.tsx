@@ -1,19 +1,9 @@
-import { UserSession } from '@accord/common';
-import { useDeleteUserSessionMutation } from '../../../api/user/deleteUserSession';
-import { useGetUserSessionsQuery } from '../../../api/user/getUserSessions';
+import { useDeleteUserSessionMutation } from '../../../api/users/deleteUserSession';
+import { useGetUserSessionsQuery } from '../../../api/users/getUserSessions';
 
 export const useCurrentUserSessions = () => {
-  const { data } = useGetUserSessionsQuery();
+  const { data, fetchNextPage, hasNextPage } = useGetUserSessionsQuery();
   const { mutate } = useDeleteUserSessionMutation();
-
-  const deleteSession = ({
-    id,
-    isCurrentSession,
-  }: Pick<UserSession, 'id' | 'isCurrentSession'>) => {
-    if (!isCurrentSession) {
-      mutate({ id });
-    }
-  };
-
-  return { sessions: data, deleteSession };
+  const deleteSession = (id: string) => mutate(id);
+  return { data, fetchNextPage, hasNextPage, deleteSession };
 };

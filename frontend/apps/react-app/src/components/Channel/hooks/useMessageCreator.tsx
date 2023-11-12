@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useLayoutEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { useCreateChannelMessageMutation } from '@/api/message/createChannelMessage';
+import { useCreateChannelMessageMutation } from '@/api/channelMessages/createChannelMessage';
 import { useCloudinary } from '@/shared-hooks';
 import { toastStore } from '@/shared-components/Toast';
 import { useMessageInput } from './useMessageInput';
@@ -12,47 +11,35 @@ export const useMessageCreator = () => {
   const { channelId = '' } = useParams();
   const content = useMessageInput(channelId);
 
-  const { UploadWrapper, attachments, deleteAttachments, deleteAttachment, onFileUploadClick } =
+  const { UploadWrapper, attachments, clearAttachments, deleteAttachment, onFileUploadClick } =
     useCloudinary();
 
-  const { mutate, isSuccess, isError } = useCreateChannelMessageMutation();
+  const { mutate } = useCreateChannelMessageMutation();
 
-  useLayoutEffect(() => {
-    deleteAttachments(true);
-  }, [channelId]);
+  const updateContent = (val: string) => {
+    update(channelId, val);
+  };
 
-  useEffect(() => {
-    if (isSuccess) {
-      reset(channelId);
-      deleteAttachments();
-    }
-  }, [channelId, isSuccess, deleteAttachments]);
-
-  useEffect(() => {
-    if (isError) {
-      toastStore.addToast({
-        title: 'Could not send message',
-        description: 'Message could not be sent, please try again later.',
-        type: 'ERROR',
-        duration: Infinity,
-      });
-    }
-  }, [isError]);
-
-  const updateContent = useCallback(
-    (val: string) => {
-      update(channelId, val);
-    },
-    [channelId],
-  );
-
-  const createMessage = useCallback(async () => {
-    mutate({
-      channelId,
-      content,
-      attachments,
-    });
-  }, [channelId, content, attachments, mutate]);
+  const createMessage = () => {
+    mutate(
+      { channelId, content, attachments: attachments.map((a) => a.id) },
+      {
+        onSuccess() {
+          reset(channelId);
+          clearAttachments();
+        },
+        onError(error, variables, context) {
+          console.log({ error, variables, context });
+          toastStore.addToast({
+            title: 'Could not send message',
+            description: 'Message could not be sent, please try again later.',
+            type: 'ERROR',
+            duration: Infinity,
+          });
+        },
+      },
+    );
+  };
 
   return {
     content: content ?? '',
@@ -60,7 +47,7 @@ export const useMessageCreator = () => {
     UploadWrapper,
     createMessage,
     updateContent,
-    deleteAttachments,
+    clearAttachments,
     deleteAttachment,
     onFileUploadClick,
   };

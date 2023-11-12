@@ -1,20 +1,20 @@
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { forwardRef, ReactNode } from 'react';
-import type { GuildCategoryChannel, GuildChannel } from '@accord/common';
 import { GuildChannelContextMenu } from './GuildChannelContextMenu';
 import { Root, Item, Trigger, Content } from '@radix-ui/react-accordion';
 import { collapsedCategoriesStore } from './stores/collapsedCategoriesStore';
 import { useDrop } from 'react-dnd';
 import { mergeRefs } from 'react-merge-refs';
 import { useCollapsedCategoryById } from './hooks/useCollapsedCategoryById';
-import { useUpdateGuildChannelMutation } from '../../api/channel/updateGuildChannel';
+import { useUpdateGuildChannelMutation } from '../../api/channels/updateGuildChannel';
+import { GuildChannel } from '../../types';
 
 const { toggleCategory } = collapsedCategoriesStore;
 
 export const CategoryChannelListItem = forwardRef<
   HTMLDivElement,
   {
-    categoryChannel: GuildCategoryChannel;
+    categoryChannel: GuildChannel;
     isActive: boolean;
     children: ReactNode;
     onDelete: () => void;
@@ -25,10 +25,17 @@ export const CategoryChannelListItem = forwardRef<
 
   const { mutate: updateGuildChannel } = useUpdateGuildChannelMutation();
 
+  // TODO: present a prompt to the user so that they may
+  // decide to sync permissionw with the parent or not
   const [{ isOver }, drop] = useDrop(() => ({
     accept: 'GUILD_CHANNEL',
     drop: (channel: GuildChannel) => {
-      updateGuildChannel({ ...channel, parentId: categoryChannel.id });
+      updateGuildChannel({
+        channelId: channel.id,
+        guildId: channel.guildId,
+        parentId: categoryChannel.id,
+        sync: true,
+      });
     },
     collect: (monitor) => ({
       isOver: !!monitor.isOver(),
@@ -47,7 +54,7 @@ export const CategoryChannelListItem = forwardRef<
       <Item value={categoryChannel.id} className='rounded'>
         <GuildChannelContextMenu
           id={categoryChannel.id}
-          type={categoryChannel.channelType}
+          channelType={categoryChannel.channelType}
           onDelete={onDelete}
           onSettings={onSettings}
         >

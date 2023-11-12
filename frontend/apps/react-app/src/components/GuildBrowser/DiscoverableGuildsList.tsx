@@ -1,22 +1,22 @@
 import { useCallback } from 'react';
-import { useJoinDiscoverableGuildMutation } from '@/api/member/joinDiscoverableGuild';
 import { LoadingSpinner } from '@/shared-components/LoadingSpinner';
 import { GuildBrowserListItem } from './GuildBrowserListItem';
 import { useFilterableDiscoverableGuilds } from './hooks/useDiscoverableGuilds';
 import { useGuildCategoryFilter } from './stores/useGuildCategoryFilter';
+import { useCreateGuildMemberMutation } from '../../api/guildMembers/createGuildMember';
 
 export const DiscoverableGuildsList = () => {
-  const { query, isLoading, discoverableGuilds } = useFilterableDiscoverableGuilds();
-  const guildCategoryIdFilter = useGuildCategoryFilter(useCallback((s) => s.guildCategoryId, []));
-  const { mutate: joinGuild } = useJoinDiscoverableGuildMutation();
+  const { data, query, isLoading, fetchNextPage } = useFilterableDiscoverableGuilds();
+  const guildCategoryId = useGuildCategoryFilter(useCallback((s) => s.guildCategoryId, []));
+  const { mutate: joinGuild } = useCreateGuildMemberMutation();
 
   if (isLoading) {
     return <LoadingSpinner />;
   }
 
-  const categoryFilteredGuilds = guildCategoryIdFilter
-    ? discoverableGuilds.filter((g) => g.guildCategoryId === guildCategoryIdFilter)
-    : discoverableGuilds;
+  const guilds = guildCategoryId
+    ? data?.pages.map((p) => p.filter((g) => g.guildCategoryId === guildCategoryId))
+    : data?.pages;
 
   return (
     <div className='flex w-full max-w-[1064px] flex-col'>
@@ -26,9 +26,15 @@ export const DiscoverableGuildsList = () => {
         <h1 className='mb-3 text-xl font-semibold'>Popular Communities</h1>
       )}
       <ul className='mt-3 flex max-w-[1064px] flex-wrap space-x-4'>
-        {categoryFilteredGuilds.map((g) => (
-          <GuildBrowserListItem key={g.id} guild={g} onJoinGuild={() => joinGuild({ id: g.id })} />
-        ))}
+        {guilds?.map((p) =>
+          p.map((g) => (
+            <GuildBrowserListItem
+              key={g.id}
+              guild={g}
+              onJoinGuild={() => joinGuild({ guildId: g.id })}
+            />
+          )),
+        )}
       </ul>
     </div>
   );

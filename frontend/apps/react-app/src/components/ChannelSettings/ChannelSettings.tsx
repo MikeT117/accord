@@ -1,4 +1,3 @@
-import { Channel } from '@accord/common';
 import { XMarkIcon } from '@heroicons/react/24/solid';
 import { useCallback } from 'react';
 import { Dialog } from '@/shared-components/Dialog';
@@ -15,29 +14,30 @@ import {
   CHANNEL_ROLES,
   useChannelSettingsStore,
 } from './stores/useChannelSettingsStore';
-import { useChanneSettings } from './hooks/useChannelSettings';
-import { useUpdateGuildChannelMutation } from '@/api/channel/updateGuildChannel';
-import { useDeleteGuildChannelMutation } from '@/api/channel/deleteGuildChannel';
-import { useAssignGuildChannelToRoleMutation } from '@/api/role/assignGuildChannelToRole';
-import { useSyncGuildChannelRolesWithParentMutation } from '@/api/role/syncGuildChannelRolesWithParent';
-import { useUnassignGuildChannelFromRoleMutation } from '@/api/role/unassignGuildChannelFromRole';
+import { useGuildChanneSettings } from './hooks/useGuildChannelSettings';
+import { useUpdateGuildChannelMutation } from '@/api/channels/updateGuildChannel';
+import { useDeleteGuildChannelMutation } from '@/api/channels/deleteGuildChannel';
+
 import { AccordError } from '../../shared-components/AccordError';
+import { useAssignRoleToGuildChannelMutation } from '../../api/channelRoles/assignRoleToGuildChannel';
+import { useUnassignRoleFromGuildChannelMutation } from '../../api/channelRoles/unassignRoleFromGuildChannel';
+import { useUpdateChannelMutation } from '../../api/channels/updateChannel';
 
 export const ChannelSettingsContent = () => {
-  const channelSettingsState = useChanneSettings();
+  const channelSettingsState = useGuildChanneSettings();
 
-  const { mutate: updateGuildChannel } = useUpdateGuildChannelMutation();
   const { mutate: deleteGuildChannel } = useDeleteGuildChannelMutation();
-  const { mutate: assignRole } = useAssignGuildChannelToRoleMutation();
-  const { mutate: syncParentRoles } = useSyncGuildChannelRolesWithParentMutation();
-  const { mutate: unassignRole } = useUnassignGuildChannelFromRoleMutation();
+  const { mutate: assignRole } = useAssignRoleToGuildChannelMutation();
+  const { mutate: updateGuildChannel } = useUpdateGuildChannelMutation();
+  const { mutate: updateChannel } = useUpdateChannelMutation();
+  const { mutate: unassignRole } = useUnassignRoleFromGuildChannelMutation();
 
   if (!channelSettingsState) {
     return <AccordError />;
   }
 
   const {
-    channel: { id, guildId, topic, name, channelType, parentId, parentRoleSync },
+    channel: { id, guildId, topic, name, channelType, parentId },
     isPrivate,
     section,
     assignedRoles,
@@ -46,19 +46,14 @@ export const ChannelSettingsContent = () => {
   } = channelSettingsState;
 
   const handleGuildChannelDelete = () => {
-    actionConfirmationStore.setChannel({ id, name, channelType, guildId }, () => {
+    actionConfirmationStore.setChannel({ id, name, channelType: 1 }, () => {
       channelSettingsStore.toggleOpen();
       deleteGuildChannel({ id, guildId });
     });
   };
 
-  const handleGuildChannelUpdate = (updatedChannel: Pick<Channel, 'name' | 'topic'>) => {
-    updateGuildChannel({
-      id,
-      channelType,
-      guildId,
-      ...updatedChannel,
-    });
+  const handleChannelUpdate = (name: string, topic: string) => {
+    updateChannel({ id, name, topic });
   };
 
   const handleGuildChannelRoleAssign = (roleId: string) => {
@@ -70,7 +65,9 @@ export const ChannelSettingsContent = () => {
   };
 
   const handleGuildChannelParentRoleSync = () => {
-    syncParentRoles({ guildId, channelId: id });
+    if (parentId) {
+      updateGuildChannel({ guildId, channelId: id, parentId, sync: true });
+    }
   };
 
   return (
@@ -94,7 +91,7 @@ export const ChannelSettingsContent = () => {
             name={name}
             channelType={channelType}
             topic={topic}
-            onChannelUpdate={handleGuildChannelUpdate}
+            onChannelUpdate={handleChannelUpdate}
           />
         )}
         {section === CHANNEL_ROLES && (
@@ -106,7 +103,6 @@ export const ChannelSettingsContent = () => {
             <ChannelPermissions
               parentId={parentId}
               channelType={channelType}
-              parentRoleSync={parentRoleSync}
               isPrivate={isPrivate}
               assignedRoles={assignedRoles}
               defaultRole={defaultRole}

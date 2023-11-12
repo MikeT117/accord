@@ -7,14 +7,15 @@ import { Pip } from '../../shared-components/Pip';
 import { useCurrentUserSessions } from './hooks/useCurrentUserSessions';
 
 export const UserSessions = () => {
-  const { sessions, deleteSession } = useCurrentUserSessions();
+  // TODO: Sort out auto page fetching
+  const { data, deleteSession, fetchNextPage, hasNextPage } = useCurrentUserSessions();
   return (
     <div className='flex flex-col space-y-6 pl-8 pt-12'>
       <h1 className='text-3xl font-semibold text-gray-12'>Sessions Manager</h1>
       <div className='flex flex-col space-y-2'>
         <span className='text-sm text-gray-11'>Sessions</span>
         <ul className='space-y-1'>
-          {sessions?.pages.map((page) =>
+          {data?.pages.map((page) =>
             page.map((s) => (
               <ListItem
                 key={s.id}
@@ -34,7 +35,7 @@ export const UserSessions = () => {
                     <Pip>Current Session</Pip>
                   ) : (
                     <DefaultTooltip tootipText='Delete Session'>
-                      <IconButton intent='danger' onClick={() => deleteSession(s)}>
+                      <IconButton intent='danger' onClick={() => deleteSession(s.id)}>
                         <TrashIcon className='h-4 w-4' />
                       </IconButton>
                     </DefaultTooltip>
