@@ -10,7 +10,7 @@ export const useSendInviteToUser = () => {
   const sendInviteToUser = useCallback(
     async (inviteLink: string, recipientUserId: string) => {
       const existingChannel =
-        privateChannelStore.getPrivateChannelByMembers(recipientUserId) ??
+        privateChannelStore.selectByMemberIds(recipientUserId) ??
         (await createUserChannel([recipientUserId]));
       createMessage({ channelId: existingChannel.id, content: inviteLink });
     },

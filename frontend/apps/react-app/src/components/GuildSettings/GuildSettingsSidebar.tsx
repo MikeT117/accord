@@ -35,7 +35,7 @@ export const GuildSettingsSidebar = ({
   const handleGuildDelete = () => {
     setGuild({ id: guildId, name }, ConfirmationActionType.DELETE, () => {
       guildSettingsStore.toggleOpen();
-      deleteGuild({ id: guildId });
+      deleteGuild(guildId);
     });
   };
 

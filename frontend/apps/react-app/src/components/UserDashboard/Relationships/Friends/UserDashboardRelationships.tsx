@@ -23,7 +23,7 @@ export const UserDashboardRelationships = () => {
   };
 
   const handleChat = async (friendUserId: string) => {
-    const existingChannel = privateChannelStore.getPrivateChannelByMembers(friendUserId);
+    const existingChannel = privateChannelStore.selectByMemberIds(friendUserId);
     if (!existingChannel) {
       const channel = await createPrivateChannel([friendUserId]);
       navigate(`/app/@me/channel/${channel.id}`);

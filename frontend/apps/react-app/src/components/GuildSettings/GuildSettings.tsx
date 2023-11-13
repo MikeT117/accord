@@ -71,7 +71,6 @@ export const GuildSettingsContent = () => {
           <GuildMembers
             guildId={guild.id}
             memberCount={guild.memberCount}
-            userId={memberUserAccountId}
             creatorId={guild.creatorId}
           />
         )}

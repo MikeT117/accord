@@ -28,7 +28,7 @@ export const GuildTextChannelListItem = ({
   return (
     <GuildChannelContextMenu
       id={channel.id}
-      type={channel.channelType}
+      channelType={channel.channelType}
       onDelete={onDelete}
       onSettings={onSettings}
     >

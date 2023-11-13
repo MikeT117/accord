@@ -102,7 +102,7 @@ export type Channel = {
   id: string;
   name: string;
   topic: string;
-  channelType: 0 | 1 | 2 | 4;
+  channelType: number;
   creatorId: string;
   createdAt: Date;
   updatedAt: Date;

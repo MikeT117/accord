@@ -33,7 +33,6 @@ import type {
   UserRelationshipUpdateEventPayload,
 } from '../../types';
 
-
 export const AccordWebsocket = ({ children }: { children: ReactNode }) => {
   const [ready, set] = useState(false);
 

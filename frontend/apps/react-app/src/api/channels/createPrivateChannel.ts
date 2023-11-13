@@ -33,7 +33,7 @@ export const useCreatePrivateChannelMutation = () => {
   return useMutation({
     mutationFn: createPrivateChannelRequest,
     onSuccess: (channel) => {
-      privateChannelStore.addChannel(channel);
+      privateChannelStore.create(channel);
     },
   });
 };

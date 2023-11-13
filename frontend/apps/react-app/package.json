@@ -10,11 +10,8 @@
   ],
   "scripts": {
     "dev": "vite --host --port 3000 --force",
-    "test": "vite --host --force",
-    "build": "run-s build:ts build:vite",
-    "build:ts": "tsc",
-    "build:vite": "vite build",
-    "serve": "vite preview  --host --port 3000",
+    "build": "tsc && vite build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "unimported": "npx unimported"
   },
   "dependencies": {
@@ -68,12 +65,14 @@
     "eslint-plugin-prettier": "^5.0.1",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
     "postcss": "^8.4.31",
     "prettier": "^3.0.3",
     "prettier-plugin-tailwindcss": "^0.5.7",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2",
     "vite": "^4.5.0",
+    "@vitejs/plugin-react-swc": "^3.3.2",
     "vite-tsconfig-paths": "^4.2.1"
   }
 }

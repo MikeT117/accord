@@ -45,7 +45,7 @@ export const GuildChannelCreatorContent = () => {
           roles,
           isPrivate,
           guildId,
-          type: type === 'TEXT' ? 0 : 4,
+          channelType: type === 'TEXT' ? 0 : 4,
         }).then(() => {
           toggleOpen();
         });
@@ -59,7 +59,7 @@ export const GuildChannelCreatorContent = () => {
         roles,
         isPrivate,
         guildId,
-        type: type === 'TEXT' ? 0 : 4,
+        channelType: type === 'TEXT' ? 0 : 4,
       }).then(() => {
         toggleOpen();
       });

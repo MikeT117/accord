@@ -14,7 +14,7 @@ const confirmationLabel = (actionSubject: ConfirmationActionSubjects) =>
 export const useActionConfirmation = () => {
   const actionSubject = useActionConfirmationStore(useCallback((s) => s.actionSubject, []));
   const actionType = useActionConfirmationStore(useCallback((s) => s.actionType, []));
-  const account = useActionConfirmationStore(useCallback((s) => s.account, []));
+  const user = useActionConfirmationStore(useCallback((s) => s.user, []));
   const relationship = useActionConfirmationStore(useCallback((s) => s.relationship, []));
   const guild = useActionConfirmationStore(useCallback((s) => s.guild, []));
   const channel = useActionConfirmationStore(useCallback((s) => s.channel, []));
@@ -26,20 +26,20 @@ export const useActionConfirmation = () => {
   if (
     !actionSubject ||
     !actionType ||
-    (!guild && !channel && !channelMessage && !guildRole && !account)
+    (!guild && !channel && !channelMessage && !guildRole && !user)
   ) {
     return null;
   }
 
   const isConfirmed =
     (channelMessage || guildRole || relationship) ??
-    [account?.displayName, guild?.name, channel?.name].some((c) => c === confirmation);
+    [user?.displayName, guild?.name, channel?.name].some((c) => c === confirmation);
 
-  const confirmationPlaceholder = account?.displayName ?? guild?.name ?? channel?.name;
+  const confirmationPlaceholder = user?.displayName ?? guild?.name ?? channel?.name;
 
   return {
     title: `${actionType} ${actionSubject}`,
-    account,
+    user,
     relationship,
     guild,
     guildRole,

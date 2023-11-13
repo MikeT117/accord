@@ -6,7 +6,7 @@ import { useGuildStore } from '../../../shared-stores/guildStore';
 export const useCurrentUserVoiceState = () => {
   const userId = useCurrentUserId();
   const voiceState = useVoiceStateStore(
-    useCallback((s) => s.voiceStates.find((vs) => vs.userAccountId === userId), [userId]),
+    useCallback((s) => s.voiceStates.find((vs) => vs.member.user.id === userId), [userId]),
   );
 
   if (!voiceState) {

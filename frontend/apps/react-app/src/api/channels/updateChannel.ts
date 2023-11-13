@@ -29,7 +29,7 @@ export const useUpdateChannelMutation = () => {
       if (guildId) {
         guildStore.updateChannel({ guildId, id, name, topic });
       } else {
-        privateChannelStore.updateChannel({ id, name, topic });
+        privateChannelStore.update({ id, name, topic });
       }
     },
   });

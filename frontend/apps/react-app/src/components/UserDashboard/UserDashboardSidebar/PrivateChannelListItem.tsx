@@ -1,16 +1,14 @@
 import { ListItem } from '@/shared-components/ListItem';
 import { Avatar } from '@/shared-components/Avatar';
 import { useCurrentUserId } from '../../../shared-stores/currentUserStore';
-import { UserLimited } from '../../../types';
+import { PrivateChannel } from '../../../types';
 
 export const PrivateChannelListItem = ({
   channelType,
   users,
   isActive,
   onClick,
-}: {
-  channelType: 2 | 3;
-  users: UserLimited[];
+}: Pick<PrivateChannel, 'channelType' | 'users'> & {
   isActive: boolean;
   onClick: () => void;
 }) => {

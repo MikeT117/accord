@@ -13,7 +13,7 @@ export const TextChannel = ({
 }) => {
   return (
     <>
-      <Header name={channel.name} type={channel.channelType}>
+      <Header name={channel.name} channelType={channel.channelType}>
         <PinnedMessagesPopover align='end' side='bottom' sideOffset={6}>
           <PinnedMessagesPopoverContent channelId={channel.id} permissions={permissions} />
         </PinnedMessagesPopover>

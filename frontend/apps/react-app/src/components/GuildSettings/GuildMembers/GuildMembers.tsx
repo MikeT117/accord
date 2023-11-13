@@ -11,12 +11,10 @@ import { useDeleteGuildMemberMutation } from '../../../api/guildMembers/deleteGu
 export const GuildMembers = ({
   guildId,
   memberCount,
-  userId,
   creatorId,
 }: {
   guildId: string;
   memberCount: number;
-  userId: string;
   creatorId: string;
 }) => {
   const { data, isLoading, fetchNextPage } = useInfiniteGuildMembersQuery(guildId);
