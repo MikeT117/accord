@@ -1,4 +1,4 @@
-package voice_websocket
+package voice_server
 
 import (
 	"github.com/google/uuid"

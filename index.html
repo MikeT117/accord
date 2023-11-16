@@ -7,11 +7,8 @@
     <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
   </head>
   <body>
-    <input id="channel_id" placeholder="Enter ChannelID" />
-    <button onclick="window.connectWS()">Connect WS</button>
-    <button onclick="window.initMedia()">Init Media</button>
-    <button onclick="window.sendSDP()">Publish/Consume</button>
-    <audio id="audio" autoplay></audio>
+    <button id="btn-use-voice">UseVoice</button>
+    <audio id="audio" controls autoplay></audio>
   </body>
   <script src="script.js"></script>
 </html>

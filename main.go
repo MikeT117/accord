@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 
-	voice_websocket "github.com/MikeT117/go_web_rtc/voice/websocket"
+	voice_server "github.com/MikeT117/go_web_rtc/voice/websocket"
 )
 
 func main() {
-	voice_websocket.CreateWebsocketServer(context.Background())
+	voice_server.CreateWebsocketServer(context.Background())
+	""
 }

@@ -1,4 +1,4 @@
-package voice_webrtc
+package voice_server
 
 import (
 	"github.com/pion/interceptor"
@@ -12,7 +12,11 @@ type WebRTCHub struct {
 
 func CreateWebRTCHub() *WebRTCHub {
 	settingsEngine := webrtc.SettingEngine{}
-	settingsEngine.SetEphemeralUDPPortRange(10001, 10005)
+	settingsEngine.SetEphemeralUDPPortRange(10001, 10049)
+	settingsEngine.SetNetworkTypes([]webrtc.NetworkType{
+		webrtc.NetworkTypeTCP4,
+		webrtc.NetworkTypeUDP4,
+	})
 
 	m := &webrtc.MediaEngine{}
 	if err := m.RegisterDefaultCodecs(); err != nil {
@@ -32,15 +36,17 @@ func CreateWebRTCHub() *WebRTCHub {
 	}
 }
 
-func (hub *WebRTCHub) CreateChannel(ID string) *Channel {
+func (hub *WebRTCHub) GetOrCreateChannel(ID string) *Channel {
+	channel, ok := hub.Channels[ID]
 
-	channel := &Channel{
-		Hub:   hub,
-		ID:    ID,
-		Peers: make(map[string]*Peer),
+	if !ok {
+		channel = &Channel{
+			ID:          ID,
+			Hub:         hub,
+			Peers:       make(map[string]*Peer),
+			TrackLocals: make(map[string]*webrtc.TrackLocalStaticRTP),
+		}
+		hub.Channels[ID] = channel
 	}
-
-	hub.Channels[ID] = channel
-
 	return channel
 }

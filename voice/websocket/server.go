@@ -1,4 +1,4 @@
-package voice_websocket
+package voice_server
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	voice_webrtc "github.com/MikeT117/go_web_rtc/voice/webrtc"
 	"github.com/gorilla/websocket"
 )
 
@@ -15,29 +14,32 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+var webRTCHub *WebRTCHub = CreateWebRTCHub()
+var websocketHub *WebsocketHub = CreateWebsocketHub()
+
 func CreateWebsocketServer(ctx context.Context) {
 
-	webRTCHub := voice_webrtc.CreateWebRTCHub()
-	websocketHub := CreateWebsocketHub()
-
 	http.HandleFunc("/websocket", func(w http.ResponseWriter, r *http.Request) {
+
+		// Get ChannelID from query params
 
 		conn, err := upgrader.Upgrade(w, r, nil)
 
 		if err != nil {
-			log.Printf("upgrader.Upgrade: %v\n", err)
-			w.Header().Add("X-App-Error", "UNABLE_TO_ESTABLISH_WEBSOCKET_CONNECTION")
+			log.Print(err)
 			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
 			return
 		}
 
-		CreateWebsocketClient(websocketHub, webRTCHub, conn)
+		channel := webRTCHub.GetOrCreateChannel("channel1")
+		CreateWebsocketClient(websocketHub, channel, conn)
 	})
 
 	if err := http.ListenAndServe(
 		fmt.Sprintf(":%s", fmt.Sprint(4001)), nil); err != nil {
 		if err != nil {
-			log.Panicln("ListenAndServe", err)
+			log.Print(err)
 		}
 	}
 }

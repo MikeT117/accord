@@ -1,4 +1,4 @@
-package voice_websocket
+package voice_server
 
 import (
 	"encoding/json"
@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	voice_signal "github.com/MikeT117/go_web_rtc/voice/signal"
-	voice_webrtc "github.com/MikeT117/go_web_rtc/voice/webrtc"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pion/webrtc/v4"
@@ -16,18 +14,18 @@ import (
 
 type WebsocketClient struct {
 	websocketHub *WebsocketHub
-	webRTCHub    *voice_webrtc.WebRTCHub
+	channel      *Channel
+	Peer         *Peer
 	conn         *websocket.Conn
 	id           uuid.UUID
-	authTimeout  time.Duration
 	pingInterval time.Duration
 	pongWait     time.Duration
 	writeWait    time.Duration
 }
 
-type WebRTCInitPayload struct {
-	SDP       webrtc.SessionDescription `json:"sdp"`
-	ChannelID string                    `json:"channelId"`
+type WebsocketMessage struct {
+	Event string `json:"event"`
+	Data  string `json:"data"`
 }
 
 func (wc *WebsocketClient) CloseMessage(status int, message string) {
@@ -38,52 +36,47 @@ func (wc *WebsocketClient) ReadMessages() {
 
 	wc.conn.SetReadDeadline(time.Now().Add(wc.pongWait))
 
+	message := &WebsocketMessage{}
+
 	for {
 		_, p, err := wc.conn.ReadMessage()
 		fmt.Println("READ_MESSAGE_EXECUTING")
 
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("Error unexpected close: %v\n", err)
-			} else {
-				log.Printf("Unknown error: %v\n", err)
+			log.Println(err)
+			return
+		} else if err := json.Unmarshal(p, &message); err != nil {
+			log.Println(err)
+			return
+		}
+
+		switch message.Event {
+		case "candidate":
+			fmt.Println("READ MESSAGE - CANDIDATE")
+			candidate := webrtc.ICECandidateInit{}
+			if err := json.Unmarshal([]byte(message.Data), &candidate); err != nil {
+				fmt.Println(err)
+				return
 			}
-			return
+
+			if err := wc.Peer.Conn.AddICECandidate(candidate); err != nil {
+				log.Println(err)
+				return
+			}
+		case "answer":
+			fmt.Println("READ MESSAGE - ANSWER")
+			answer := webrtc.SessionDescription{}
+			if err := json.Unmarshal([]byte(message.Data), &answer); err != nil {
+				log.Println(err)
+				return
+			}
+
+			if err := wc.Peer.Conn.SetRemoteDescription(answer); err != nil {
+				log.Println(err)
+				return
+			}
 		}
 
-		webRTCInitPayload := &WebRTCInitPayload{}
-
-		if err := json.Unmarshal(p, webRTCInitPayload); err != nil {
-			wc.CloseMessage(4001, "Invalid offer")
-			return
-		}
-
-		fmt.Printf("SDP: %s\n", webRTCInitPayload.SDP.SDP)
-		fmt.Printf("Type: %s\n", webRTCInitPayload.SDP.Type)
-		fmt.Printf("ChannelID: %s\n", webRTCInitPayload.ChannelID)
-
-		if len(webRTCInitPayload.ChannelID) == 0 {
-			wc.CloseMessage(4001, "Invalid offer")
-			return
-		}
-
-		channel, ok := wc.webRTCHub.Channels[webRTCInitPayload.ChannelID]
-
-		if !ok {
-			channel = wc.webRTCHub.CreateChannel(webRTCInitPayload.ChannelID)
-		}
-
-		peerID := strconv.FormatInt(time.Now().UnixNano(), 10)
-		peer, err := channel.CreatePeer(peerID, webRTCInitPayload.SDP)
-
-		if err != nil {
-			channel.ClosePeer(peerID)
-			wc.CloseMessage(4001, "Unable to create peer")
-			return
-		}
-
-		answer := voice_signal.Encode(peer.LocalDescription())
-		wc.conn.WriteMessage(websocket.TextMessage, []byte(answer))
 	}
 }
 
@@ -107,14 +100,12 @@ func (wc *WebsocketClient) WriteMessages() {
 	}
 }
 
-func CreateWebsocketClient(websocketHub *WebsocketHub, webRTCHub *voice_webrtc.WebRTCHub, conn *websocket.Conn) {
+func CreateWebsocketClient(websocketHub *WebsocketHub, channel *Channel, conn *websocket.Conn) {
 
 	wc := &WebsocketClient{
-
 		websocketHub: websocketHub,
-		webRTCHub:    webRTCHub,
 		conn:         conn,
-		authTimeout:  time.Duration(10 * time.Second),
+		channel:      channel,
 		pingInterval: time.Duration(15 * time.Second),
 		pongWait:     time.Duration(20 * time.Second),
 		writeWait:    time.Duration(5 * time.Second),
@@ -136,10 +127,6 @@ func CreateWebsocketClient(websocketHub *WebsocketHub, webRTCHub *voice_webrtc.W
 		return nil
 	})
 
-	wc.websocketHub.RegisterClient(wc)
+	wc.channel.CreatePeer(strconv.FormatInt(time.Now().UnixNano(), 10), wc)
 
-	go wc.ReadMessages()
-	go wc.WriteMessages()
-
-	time.Sleep(wc.authTimeout)
 }
