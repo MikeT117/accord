@@ -3,37 +3,45 @@ INSERT INTO channels (guild_id, name, topic, channel_type, creator_id)
 VALUES (@guild_id, @name, @topic, @channel_type, @creator_id)
 RETURNING *;
 
--- name: CreateDirectChannel :one
+-- name: CreatePrivateChannel :one
 INSERT INTO channels (channel_type, creator_id)
 VALUES (@channel_type, @creator_id)
 RETURNING *;
-
--- name: CreateGuildChannelCategory :one
-INSERT INTO channels (guild_id, name, channel_type, creator_id)
-VALUES (@guild_id, @name, 1, @creator_id)
-RETURNING *;
-
--- name: UpdateGuildChannel :one
-UPDATE channels
-SET name = @name, topic = @topic, parent_role_sync = @parent_role_sync, parent_id = @parent_id
-WHERE id = @channel_id RETURNING *;
 
 -- name: UpdateGuildChannelCategory :one
 UPDATE channels
 SET name = @name
 WHERE id = @channel_id RETURNING *;
 
--- name: UpdatePrivateChannel :one
+-- name: UpdateChannel :one
 UPDATE channels
-SET name = @name, topic = @topic
-WHERE id = @channel_id RETURNING *;
+SET
+name = (
+CASE
+    WHEN sqlc.narg(name)::text IS NOT NULL THEN sqlc.narg(name)::text
+    ELSE channels.name
+END
+),
+topic = (
+CASE
+    WHEN sqlc.narg(topic)::text IS NOT NULL THEN sqlc.narg(topic)::text
+    ELSE channels.topic
+END
+)
+WHERE
+id = @channel_id
+RETURNING *;
 
--- name: DeleteChannel :execrows
+-- name: DeleteGuildChannel :execrows
 DELETE
-FROM channels
-WHERE id = @channel_id;
+FROM
+channels
+WHERE
+id = @channel_id
+AND
+guild_id = @guild_id::uuid;
 
--- name: CreateDirectChannelRecipients :execrows
+-- name: CreatePrivateChannelRecipients :execrows
 INSERT INTO channel_users (channel_id, user_id)
 SELECT @channel_id, id FROM users
 WHERE id = ANY(@user_ids::uuid[]);
@@ -42,7 +50,7 @@ WHERE id = ANY(@user_ids::uuid[]);
 WITH guild_channels_cte AS (
   SELECT *
   FROM channels
-  WHERE guild_id = @guild_id
+  WHERE guild_id = @guild_id::uuid
 ),
 
 guild_role_channels_cte AS (
@@ -58,6 +66,29 @@ FROM guild_channels_cte gcc
 INNER JOIN guild_role_channels_cte grcc ON grcc.channel_id = gcc.id;
 
 -- name: GetPrivateChannelUserByChannelIDAndUserID :execrows
-SELECT user_id
+SELECT 1
 FROM channel_users
-WHERE channel_id = @channel_id AND user_id = @user_id;
+WHERE channel_id = @channel_id AND user_id = @user_id
+LIMIT 1;
+
+-- name: GetPrivateChannelByUsers :one
+WITH private_channel_cte AS (
+    SELECT channel_id
+    FROM channel_users
+    WHERE user_id = ANY(@user_ids::uuid[])
+    GROUP BY channel_id
+    HAVING COUNT(*) = @users_len::int
+    LIMIT 1
+)
+
+SELECT
+*
+FROM
+channels
+WHERE
+id = (
+    SELECT
+    channel_id
+    FROM
+    private_channel_cte
+);

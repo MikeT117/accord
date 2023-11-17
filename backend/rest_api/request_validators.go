@@ -1,9 +1,11 @@
 package rest_api
 
 import (
+	"regexp"
 	"strings"
 
 	v "github.com/cohesivestack/valgo"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (b *GuildCreateRequestBody) Validate() (bool, string) {
@@ -97,9 +99,19 @@ func (b *BannedGuildMemberCreateBody) Validate() (bool, string) {
 	return true, ""
 }
 
-func (b *ChannelUpdateBody) Validate() (bool, string) {
-	val := v.Is(v.String(b.Name, "Name").Not().Blank().OfLengthBetween(2, 100)).
-		Is(v.String(b.Topic.String, "Topic").OfLengthBetween(0, 512))
+func (b *ChannelUpdateRequestBody) Validate(private bool) (bool, string) {
+
+	val := v.
+		Is(v.Any(b.Name).Passing(func(val any) bool {
+			if val.(pgtype.Text).Valid {
+				return private && len(val.(pgtype.Text).String) >= 0 && len(val.(pgtype.Text).String) <= 100 || !private && len(val.(pgtype.Text).String) > 2 && len(val.(pgtype.Text).String) <= 100
+			}
+
+			return true
+		})).
+		Is(v.Any(b.Topic).Passing(func(val any) bool {
+			return (val.(pgtype.Text).Valid && len(val.(pgtype.Text).String) >= 0 && len(val.(pgtype.Text).String) <= 100) || !val.(pgtype.Text).Valid
+		}))
 
 	if !val.Valid() {
 		messages := []string{}
@@ -113,11 +125,13 @@ func (b *ChannelUpdateBody) Validate() (bool, string) {
 }
 
 func (b *AttachmentSignBody) Validate() (bool, string) {
-	val := v.Is(v.String(b.Filename, "Filename").Not().Blank().OfLengthBetween(2, 100)).
+	regex, _ := regexp.Compile("image/.+")
+	val := v.
+		Is(v.String(b.Filename, "Filename").Not().Blank().OfLengthBetween(2, 100)).
 		Is(v.Int64(b.Filesize, "Filesize").Not().Zero()).
 		Is(v.Int64(b.Height, "Height").Not().Zero()).
 		Is(v.Int64(b.Width, "Width").Not().Zero()).
-		Is(v.String(b.ResourceType, "ResourceType").InSlice([]string{"image", "video", "link"}))
+		Is(v.String(b.ResourceType, "ResourceType").MatchingTo(regex))
 
 	if !val.Valid() {
 		messages := []string{}
@@ -148,6 +162,38 @@ func (b *ChannelMessageCreateBody) Validate() (bool, string) {
 
 func (b *ChannelMessageUpdateBody) Validate() (bool, string) {
 	val := v.Is(v.String(b.Content, "Content").Not().Blank().OfLengthBetween(1, 2000))
+
+	if !val.Valid() {
+		messages := []string{}
+		for _, v := range val.Errors() {
+			messages = append(messages, v.Messages()...)
+		}
+		return false, strings.Join(messages, ", ")
+	}
+
+	return true, ""
+}
+
+func (b *UserProfileUpdateRequestBody) Validate() (bool, string) {
+	val := v.
+		Is(v.String(b.DisplayName, "DisplayName").Not().Blank().OfLengthBetween(6, 32)).
+		Is(v.Int32(b.PublicFlags).Between(0, 16))
+
+	if !val.Valid() {
+		messages := []string{}
+		for _, v := range val.Errors() {
+			messages = append(messages, v.Messages()...)
+		}
+		return false, strings.Join(messages, ", ")
+	}
+
+	return true, ""
+}
+
+func (b *UserRelationshipCreateRequestBody) Validate() (bool, string) {
+	val := v.
+		Is(v.String(b.Username, "Username").Not().Blank().OfLengthBetween(6, 32)).
+		Is(v.Int32(b.Status).Between(1, 2))
 
 	if !val.Valid() {
 		messages := []string{}

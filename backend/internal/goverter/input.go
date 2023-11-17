@@ -27,8 +27,15 @@ type Converter interface {
 	// goverter:ignore Roles
 	ConvertSQLCChannelToGuildChannel(source sqlc.Channel) models.GuildChannel
 
-	ConvertManySQLCGuildInviteToGuildInvite(source []sqlc.GuildInvite) []models.GuildInvite
-	ConvertSQLCGuildInviteToGuildInvite(source sqlc.GuildInvite) models.GuildInvite
+	ConvertSQLCGetManyGuildChannelsByGuildIDRowToGuildChannel(source []sqlc.GetManyGuildChannelsByGuildIDRow) []models.GuildChannel
+
+	ConvertSQLCChannelToUpdatedChannel(source sqlc.Channel) models.UpdatedChannel
+
+	// goverter:map . Creator | ConvertGetManyGuildInvitesByGuildIDRowToGuildInviteToCreator
+	ConvertSQLCGetManyGuildInvitesByGuildIDRowToGuildInvite(source sqlc.GetManyGuildInvitesByGuildIDRow) models.GuildInvite
+	ConvertSQLCGetManyGuildInvitesByGuildIDRowToGuildInvites(source []sqlc.GetManyGuildInvitesByGuildIDRow) []models.GuildInvite
+
+	ConvertSQLCGetGuildInviteByIDRowToGuildInviteLimited(source sqlc.GetGuildInviteByIDRow) models.GuildInviteLimited
 
 	// goverter:map AttachmentID Avatar
 	// goverter:map . GuildMember
@@ -40,6 +47,14 @@ type Converter interface {
 	// goverter:map . User | GetManyGuildMembersByGuildIDRowToUser
 	ConvertSQLCGetManyGuildMembersByGuildIDRowToGuildMember(source sqlc.GetManyGuildMembersByGuildIDRow) models.GuildMemberLimited
 	ConvertSQLCGetManyGuildMembersByGuildIDRowToGuildMembers(source []sqlc.GetManyGuildMembersByGuildIDRow) []models.GuildMemberLimited
+
+	// goverter:map . User | GetManyAssignableGuildMembersByGuildIDAndRoleIDRowToUser
+	ConvertSQLCGetManyAssignableGuildMembersByRoleIDAndGuildIDRowToGuildMember(source sqlc.GetManyAssignableGuildMembersByGuildIDAndRoleIDRow) models.GuildMemberLimited
+	ConvertSQLCGetManyAssignableGuildMembersByRoleIDAndGuildIDRowToGuildMembers(source []sqlc.GetManyAssignableGuildMembersByGuildIDAndRoleIDRow) []models.GuildMemberLimited
+
+	// goverter:map . User | GetManyUnassignableGuildMembersByGuildIDAndRoleIDRowToUser
+	ConvertSQLCGetManyUnassignableGuildMembersByRoleIDAndGuildIDRowToGuildMember(source sqlc.GetManyUnassignableGuildMembersByGuildIDAndRoleIDRow) models.GuildMemberLimited
+	ConvertSQLCGetManyUnassignableGuildMembersByRoleIDAndGuildIDRowToGuildMembers(source []sqlc.GetManyUnassignableGuildMembersByGuildIDAndRoleIDRow) []models.GuildMemberLimited
 
 	// goverter:map . User | GetManyGuildBansByGuildIDRowToUser
 	ConvertSQLCGetManyGuildBansByGuildIDRowToGuildBan(source sqlc.GetManyGuildBansByGuildIDRow) models.GuildBan
@@ -69,13 +84,30 @@ type Converter interface {
 	ConvertSQLCGuildCategoryToGuildCategory(source sqlc.GuildCategory) sqlc.GuildCategory
 	ConvertSQLCGuildCategoryToGuildCategories(source []sqlc.GuildCategory) []sqlc.GuildCategory
 
-	// goverter:ignore Recipients
-	ConvertSQLCChannelToDirectChannel(source sqlc.Channel) models.DirectChannel
+	// goverter:ignore Users
+	ConvertSQLCChannelToPrivateChannel(source sqlc.Channel) models.PrivateChannel
 
 	// goverter:map AttachmentID Avatar
 	ConvertSQLCGetManyUsersByIDsRowToUser(source sqlc.GetManyUsersByIDsRow) models.UserLimited
 	ConvertSQLCGetManyUsersByIDsRowToUsers(source []sqlc.GetManyUsersByIDsRow) []models.UserLimited
 
-	ConverSQLCUserSessionsToUserSession(source sqlc.UserSession) models.UserSession
-	ConverSQLCUserSessionsToUserSessions(source []sqlc.UserSession) []models.UserSession
+	ConvertSQLCGetManyUserSessionsByIDRowToUserSession(source sqlc.GetManyUserSessionsByIDRow) models.UserSessionLimited
+	ConvertSQLCGetManyUserSessionsByIDRowToUserSessions(source []sqlc.GetManyUserSessionsByIDRow) []models.UserSessionLimited
+
+	// goverter:map AttachmentID Avatar
+	ConvertSQLCUpdateUserRowToUpdateUser(source sqlc.UpdateUserRow) models.UpdatedUser
+
+	// goverter:map . User | GetManyUserRelationshipsByUserIDRowToUser
+	ConvertSQLCGetManyUserRelationshipsByUserIDRowToUserRelationship(source sqlc.GetManyUserRelationshipsByUserIDRow) models.UserRelationship
+	ConvertSQLCGetManyUserRelationshipsByUserIDRowToUserRelationships(source []sqlc.GetManyUserRelationshipsByUserIDRow) []models.UserRelationship
+
+	// goverter:map AttachmentID Avatar
+	ConvertSQLCLinkRelationshipUsersRowToUserLimited(source sqlc.LinkManyRelationshipUsersRow) models.UserLimited
+	ConvertSQLCLinkRelationshipUsersRowToUsersLimited(source []sqlc.LinkManyRelationshipUsersRow) []models.UserLimited
+
+	// goverter:map AttachmentID Avatar
+	ConvertSQLCLinkRelationshipUserRowToUserLimited(source sqlc.LinkRelationshipUserRow) models.UserLimited
+
+	// goverter:ignore User
+	ConvertSQLCRelationshipToRelationship(source sqlc.Relationship) models.UserRelationship
 }

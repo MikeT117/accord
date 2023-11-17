@@ -12,6 +12,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const getUserIDByUsername = `-- name: GetUserIDByUsername :one
+SELECT
+id
+FROM
+users
+WHERE
+username = $1
+`
+
+func (q *Queries) GetUserIDByUsername(ctx context.Context, username string) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, getUserIDByUsername, username)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getUserProfileByID = `-- name: GetUserProfileByID :one
 WITH user_cte AS (
 	SELECT

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/MikeT117/accord/backend/internal/sqlc"
+	"github.com/MikeT117/accord/backend/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
@@ -57,7 +58,7 @@ func (a *api) HandleGuildChannelCreate(c echo.Context) error {
 	guildChannel := a.Mapper.ConvertSQLCChannelToGuildChannel(sqlGuildChannel)
 	guildChannel.Roles = []uuid.UUID{}
 
-	if len(body.Roles) != 0 && body.IsPrivate {
+	if len(body.Roles) != 0 {
 
 		rowsAffected, err := tx.AssignManyRolesToGuildChannel(reqCtx, sqlc.AssignManyRolesToGuildChannelParams{
 			ChannelID: guildChannel.ID,
@@ -75,7 +76,9 @@ func (a *api) HandleGuildChannelCreate(c echo.Context) error {
 
 		guildChannel.Roles = append(guildChannel.Roles, guildChannel.Roles...)
 
-	} else {
+	}
+
+	if !body.IsPrivate {
 		sqlDefaultGuildRoleID, err := tx.AssignDefaultRoleToManyGuildChannels(reqCtx, sqlc.AssignDefaultRoleToManyGuildChannelsParams{
 			ChannelIds: []uuid.UUID{sqlGuildChannel.ID},
 			GuildID:    guildID,
@@ -105,7 +108,7 @@ func (a *api) HandleGuildChannelCreate(c echo.Context) error {
 }
 
 // TODO: Fire GUILD_CHANNEL_ROLE_UPDATE/CHANNEL_ROLE_UPDATE event - GuildID, ChannelID and Roles included
-func (a *api) HandleGuildChannelPermissionsSync(c echo.Context) error {
+func (a *api) HandleGuildChannelUpdate(c echo.Context) error {
 	guildID, err := uuid.Parse(c.Param("guild_id"))
 
 	if err != nil {
@@ -118,17 +121,60 @@ func (a *api) HandleGuildChannelPermissionsSync(c echo.Context) error {
 		return NewClientError(err, http.StatusBadRequest, "invalid channel ID")
 	}
 
-	_, err = a.Queries.SyncChannelPermissionsWithParent(c.Request().Context(), sqlc.SyncChannelPermissionsWithParentParams{
+	body := GuildChannelUpdateRequestBody{}
+
+	if err := c.Bind(&body); err != nil {
+		return NewClientError(err, http.StatusBadRequest, "Unable to bind body")
+	}
+
+	if err != nil {
+		return NewClientError(err, http.StatusBadRequest, "Invalid member ID")
+	}
+
+	_, err = a.Queries.UpdateChannelParentID(c.Request().Context(), sqlc.UpdateChannelParentIDParams{
 		ChannelID: channelID,
-		GuildID: pgtype.UUID{
-			Bytes: guildID,
-			Valid: true,
-		},
+		ParentID:  body.ParentID,
+		GuildID:   guildID,
 	})
 
 	if err != nil {
-		return NewServerError(err, "a.Queries.SyncChannelPermissionsWithParent")
+		return NewServerError(err, "a.Queries.UpdateChannelParentID")
 	}
 
 	return NewSuccessfulResponse(c, http.StatusOK, nil)
+}
+
+// TODO: Fire CHANNEL_DELETE event - all properties are included
+func (a *api) HandleGuildChannelDelete(c echo.Context) error {
+	guildID, err := uuid.Parse(c.Param("guild_id"))
+
+	if err != nil {
+		return NewClientError(err, http.StatusBadRequest, "invalid guild ID")
+	}
+
+	channelID, err := uuid.Parse(c.Param("channel_id"))
+
+	if err != nil {
+		return NewClientError(err, http.StatusBadRequest, "invalid channel ID")
+	}
+
+	rowsAffected, err := a.Queries.DeleteGuildChannel(c.Request().Context(), sqlc.DeleteGuildChannelParams{
+		ChannelID: channelID,
+		GuildID:   guildID,
+	})
+
+	if err != nil {
+		return NewServerError(err, "a.Queries.DeleteChannel")
+	}
+
+	if rowsAffected != 1 {
+		return NewClientError(nil, http.StatusNotFound, "channel not found")
+	}
+
+	// TODO: Fire CHANNEL_DELETE event
+
+	return NewSuccessfulResponse(c, http.StatusOK, &models.DeletedChannel{
+		ID:      channelID,
+		GuildID: guildID,
+	})
 }

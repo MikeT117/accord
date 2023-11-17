@@ -6,18 +6,19 @@ import (
 )
 
 type GuildCreateRequestBody struct {
-	Name           string     `json:"name"`
-	IsDiscoverable bool       `json:"isDiscoverable"`
-	Icon           *uuid.UUID `json:"icon"`
+	Name            string      `json:"name"`
+	IsDiscoverable  bool        `json:"isDiscoverable"`
+	GuildCategoryID pgtype.UUID `json:"guildCategoryId"`
+	Icon            *uuid.UUID  `json:"icon"`
 }
 
 type GuildUpdateRequestBody struct {
-	Name           string      `json:"name"`
-	Description    string      `json:"description"`
-	IsDiscoverable bool        `json:"isDiscoverable"`
-	Icon           *uuid.UUID  `json:"icon"`
-	Banner         *uuid.UUID  `json:"banner"`
-	CategoryID     pgtype.UUID `json:"categoryId"`
+	Name            string      `json:"name"`
+	Description     string      `json:"description"`
+	IsDiscoverable  bool        `json:"isDiscoverable"`
+	Icon            *uuid.UUID  `json:"icon"`
+	Banner          *uuid.UUID  `json:"banner"`
+	GuildCategoryID pgtype.UUID `json:"guildCategoryId"`
 }
 
 type GuildRoleUpdateRequestBody struct {
@@ -45,7 +46,7 @@ type GuildChannelCreateBody struct {
 	ChannelType int16       `json:"channelType"`
 }
 
-type GroupChannelCreateBody struct {
+type PrivateChannelCreateBody struct {
 	Recipients []uuid.UUID `json:"recipients"`
 }
 
@@ -53,9 +54,14 @@ type BannedGuildMemberCreateBody struct {
 	Reason string `json:"reason"`
 }
 
-type ChannelUpdateBody struct {
-	Name  string      `json:"name"`
+type ChannelUpdateRequestBody struct {
+	Name  pgtype.Text `json:"name"`
 	Topic pgtype.Text `json:"topic"`
+}
+
+type GuildChannelUpdateRequestBody struct {
+	ParentID uuid.UUID `json:"parentId"`
+	Sync     bool      `json:"sync"`
 }
 
 type AttachmentSignBody struct {
@@ -73,4 +79,15 @@ type ChannelMessageCreateBody struct {
 
 type ChannelMessageUpdateBody struct {
 	Content string `json:"content"`
+}
+
+type UserProfileUpdateRequestBody struct {
+	Avatar      *uuid.UUID `json:"avatar"`
+	DisplayName string     `json:"displayName"`
+	PublicFlags int32      `json:"publicFlags"`
+}
+
+type UserRelationshipCreateRequestBody struct {
+	Status   int32  `json:"status"`
+	Username string `json:"username"`
 }

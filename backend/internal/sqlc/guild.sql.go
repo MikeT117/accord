@@ -13,19 +13,25 @@ import (
 )
 
 const createGuild = `-- name: CreateGuild :one
-INSERT INTO guilds (name, is_discoverable, creator_id)
-VALUES ($1, $2, $3)
+INSERT INTO guilds (name, is_discoverable, creator_id, guild_category_id)
+VALUES ($1, $2, $3, $4)
 RETURNING id, name, description, is_discoverable, channel_count, member_count, creator_id, guild_category_id, created_at, updated_at
 `
 
 type CreateGuildParams struct {
-	Name           string
-	IsDiscoverable bool
-	CreatorID      uuid.UUID
+	Name            string
+	IsDiscoverable  bool
+	CreatorID       uuid.UUID
+	GuildCategoryID pgtype.UUID
 }
 
 func (q *Queries) CreateGuild(ctx context.Context, arg CreateGuildParams) (Guild, error) {
-	row := q.db.QueryRow(ctx, createGuild, arg.Name, arg.IsDiscoverable, arg.CreatorID)
+	row := q.db.QueryRow(ctx, createGuild,
+		arg.Name,
+		arg.IsDiscoverable,
+		arg.CreatorID,
+		arg.GuildCategoryID,
+	)
 	var i Guild
 	err := row.Scan(
 		&i.ID,
@@ -51,6 +57,49 @@ WHERE id = $1
 func (q *Queries) DeleteGuild(ctx context.Context, guildID uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteGuild, guildID)
 	return err
+}
+
+const getGuildByID = `-- name: GetGuildByID :one
+SELECT
+id, name, description, is_discoverable, channel_count, member_count, creator_id, guild_category_id, created_at, updated_at
+FROM
+guilds
+WHERE
+id = $1
+`
+
+func (q *Queries) GetGuildByID(ctx context.Context, guildID uuid.UUID) (Guild, error) {
+	row := q.db.QueryRow(ctx, getGuildByID, guildID)
+	var i Guild
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.IsDiscoverable,
+		&i.ChannelCount,
+		&i.MemberCount,
+		&i.CreatorID,
+		&i.GuildCategoryID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getGuildDiscoverableStatusByID = `-- name: GetGuildDiscoverableStatusByID :one
+SELECT
+is_discoverable
+FROM
+guilds
+WHERE
+id = $1
+`
+
+func (q *Queries) GetGuildDiscoverableStatusByID(ctx context.Context, guildID uuid.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, getGuildDiscoverableStatusByID, guildID)
+	var is_discoverable bool
+	err := row.Scan(&is_discoverable)
+	return is_discoverable, err
 }
 
 const getManyDiscoverableGuilds = `-- name: GetManyDiscoverableGuilds :many
@@ -81,8 +130,6 @@ WITH guilds_cte AS (
         WHEN $3::text IS NOT NULL THEN name ILIKE $3::text
         ELSE TRUE
     END)
-    ORDER BY
-    member_count DESC
     LIMIT
     $4
 ),

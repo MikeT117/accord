@@ -3,7 +3,6 @@ package rest_api
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/MikeT117/accord/backend/internal/sqlc"
 	"github.com/google/uuid"
@@ -11,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (a *api) HandleGuildInviteRead(c echo.Context) error {
+func (a *api) HandleGuildInviteReadMany(c echo.Context) error {
 	guildID, err := uuid.Parse(c.Param("guild_id"))
 
 	if err != nil {
@@ -23,27 +22,27 @@ func (a *api) HandleGuildInviteRead(c echo.Context) error {
 	}
 
 	if len(c.QueryParam("before")) != 0 {
-		i, err := strconv.ParseInt(c.QueryParam("before"), 10, 64)
+		id, err := uuid.Parse(c.QueryParam("before"))
 
 		if err != nil {
 			return NewClientError(err, http.StatusBadRequest, "invalid timestamp")
 		}
 
-		params.Before = pgtype.Timestamp{
-			Time:  time.Unix(i, 0),
+		params.Before = pgtype.UUID{
+			Bytes: id,
 			Valid: true,
 		}
 	}
 
 	if len(c.QueryParam("after")) != 0 {
-		i, err := strconv.ParseInt(c.QueryParam("after"), 10, 64)
+		id, err := uuid.Parse(c.QueryParam("after"))
 
 		if err != nil {
 			return NewClientError(err, http.StatusBadRequest, "invalid timestamp")
 		}
 
-		params.After = pgtype.Timestamp{
-			Time:  time.Unix(i, 0),
+		params.After = pgtype.UUID{
+			Bytes: id,
 			Valid: true,
 		}
 	}
@@ -68,7 +67,7 @@ func (a *api) HandleGuildInviteRead(c echo.Context) error {
 		return NewServerError(err, "a.Queries.GetGuildInvitesByGuildID")
 	}
 
-	return NewSuccessfulResponse(c, http.StatusOK, a.Mapper.ConvertManySQLCGuildInviteToGuildInvite(sqlGuildInvites))
+	return NewSuccessfulResponse(c, http.StatusOK, a.Mapper.ConvertSQLCGetManyGuildInvitesByGuildIDRowToGuildInvites(sqlGuildInvites))
 }
 
 func (a *api) HandleGuildInviteCreate(c echo.Context) error {
@@ -78,10 +77,8 @@ func (a *api) HandleGuildInviteCreate(c echo.Context) error {
 		return NewClientError(err, http.StatusBadRequest, "invalid guild ID")
 	}
 
-	cctx := c.(*APIContext)
-
-	sqlGuildInvite, err := a.Queries.CreateGuildInvite(c.Request().Context(), sqlc.CreateGuildInviteParams{
-		UserID:  cctx.UserID,
+	inviteID, err := a.Queries.CreateGuildInvite(c.Request().Context(), sqlc.CreateGuildInviteParams{
+		UserID:  c.(*APIContext).UserID,
 		GuildID: guildID,
 	})
 
@@ -89,7 +86,7 @@ func (a *api) HandleGuildInviteCreate(c echo.Context) error {
 		return NewServerError(err, "a.Queries.CreateGuildInvite")
 	}
 
-	return NewSuccessfulResponse(c, http.StatusOK, a.Mapper.ConvertSQLCGuildInviteToGuildInvite(sqlGuildInvite))
+	return NewSuccessfulResponse(c, http.StatusOK, &inviteID)
 }
 
 func (a *api) HandleGuildInviteDelete(c echo.Context) error {
@@ -119,4 +116,20 @@ func (a *api) HandleGuildInviteDelete(c echo.Context) error {
 	}
 
 	return NewSuccessfulResponse(c, http.StatusOK, nil)
+}
+
+func (a *api) HandleGuildInviteReadOne(c echo.Context) error {
+	inviteID, err := uuid.Parse(c.Param("invite_id"))
+
+	if err != nil {
+		return NewClientError(err, http.StatusBadRequest, "invalid invite ID")
+	}
+
+	sqlGuildInvite, err := a.Queries.GetGuildInviteByID(c.Request().Context(), inviteID)
+
+	if err != nil {
+		return NewServerError(err, "a.Queries.DeleteGuildInvite")
+	}
+
+	return NewSuccessfulResponse(c, http.StatusOK, a.Mapper.ConvertSQLCGetGuildInviteByIDRowToGuildInviteLimited(sqlGuildInvite))
 }

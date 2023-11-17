@@ -26,3 +26,10 @@ type UserProfileWithGuildMember struct {
 	MutualGuilds []uuid.UUID        `json:"mutualGuilds"`
 	GuildMember  GuildMemberMinimal `json:"guildMember"`
 }
+
+type UpdatedUser struct {
+	ID          uuid.UUID  `json:"id"`
+	Avatar      *uuid.UUID `json:"avatar"`
+	DisplayName string     `json:"displayName"`
+	PublicFlags int32      `json:"publicFlags"`
+}

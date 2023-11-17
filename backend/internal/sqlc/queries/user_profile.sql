@@ -95,3 +95,11 @@ COALESCE(mgcte.mutual_guilds, '{}') AS mutual_guilds
 FROM
 user_cte ucte,
 mutual_guilds_cte mgcte;
+
+-- name: GetUserIDByUsername :one
+SELECT
+id
+FROM
+users
+WHERE
+username = @username;

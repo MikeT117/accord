@@ -22,15 +22,20 @@ WITH channel_messages_cte AS (
     LEFT JOIN guild_members gm ON gm.guild_id = cm.guild_id AND cm.user_id = gm.user_id
     WHERE cm.channel_id = @channel_id AND
     (CASE
-        WHEN sqlc.narg(before)::timestamp IS NOT NULL THEN cm.created_at < sqlc.narg(before)::timestamp
+        WHEN sqlc.narg(before)::uuid IS NOT NULL THEN cm.id < sqlc.narg(before)::uuid
         ELSE TRUE
     END)
     AND 
     (CASE
-        WHEN sqlc.narg(after)::timestamp IS NOT NULL THEN cm.created_at > sqlc.narg(after)::timestamp
+        WHEN sqlc.narg(after)::uuid IS NOT NULL THEN cm.id > sqlc.narg(after)::uuid
         ELSE TRUE
     END)
-    ORDER BY cm.created_at DESC
+    AND
+    (CASE
+        WHEN sqlc.narg(pinned)::boolean IS NOT NULL THEN cm.is_pinned = sqlc.narg(pinned)::boolean
+        ELSE TRUE
+    END)
+    ORDER BY cm.id DESC
     LIMIT @results_limit
 ),
 
@@ -43,7 +48,8 @@ attachments_cte AS (
 
 SELECT cmcte.*, COALESCE(acte.attachments, '{}')
 FROM channel_messages_cte cmcte
-LEFT JOIN attachments_cte acte ON acte.channel_message_id = cmcte.id;
+LEFT JOIN attachments_cte acte ON acte.channel_message_id = cmcte.id
+ORDER BY cmcte.id DESC;
 
 -- name: CreateChannelMessage :one
 WITH channel_message_insert_cte AS (
@@ -109,5 +115,16 @@ RETURNING id, channel_id, content, is_pinned;
 
 -- name: DeleteChannelMessage :one
 DELETE FROM channel_messages
-WHERE id = @message_id AND channel_id = @channel_id
-RETURNING id, channel_id;
+WHERE
+id = @message_id
+AND
+channel_id = @channel_id
+AND
+(CASE
+    WHEN sqlc.narg(user_id)::uuid IS NOT NULL
+    THEN sqlc.narg(user_id)::uuid = user_id
+    ELSE TRUE
+END)
+RETURNING
+id,
+channel_id;

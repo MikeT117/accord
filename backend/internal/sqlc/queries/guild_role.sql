@@ -57,6 +57,14 @@ INNER JOIN guild_roles gr ON gr.guild_id = c.guild_id
 WHERE c.id = ANY(@channel_ids::uuid[]) AND gr.name = '@owner' AND gr.guild_id = @guild_id
 RETURNING role_id;
 
+-- name: AssignDefaultRoleToUser :one
+INSERT INTO guild_role_users (role_id, user_id)
+SELECT gr.id, gm.user_id
+FROM guild_members gm
+INNER JOIN guild_roles gr ON gr.guild_id = gm.guild_id
+WHERE gm.user_id = @user_id AND gr.name = '@default' AND gm.guild_id = @guild_id
+RETURNING role_id;
+
 -- name: UnassignRoleFromUser :execrows
 DELETE
 FROM guild_role_users
@@ -98,10 +106,15 @@ guild_role_channels grc
 WHERE
 grc.channel_id = @channel_id;
 
--- name: SyncChannelPermissionsWithParent :one
+-- name: UpdateChannelParentIDAndSyncPermissions :one
 WITH update_channel_cte AS (
-  UPDATE channels set parent_role_sync = true
-  WHERE id = @channel_id AND guild_id = @guild_id AND parent_id IS NOT NULL
+  UPDATE channels
+  SET
+  parent_id = @parent_id::uuid
+  WHERE
+  id = @channel_id
+  AND
+  guild_id = @guild_id::uuid
   RETURNING id, parent_id
 ),
 
@@ -124,3 +137,13 @@ insert_parent_roles AS (
 
 SELECT ARRAY_AGG(role_id)::uuid[] as roles
 FROM insert_parent_roles;
+
+-- name: UpdateChannelParentID :one
+UPDATE channels
+SET
+parent_id = @parent_id::uuid
+WHERE
+id = @channel_id
+AND
+guild_id = @guild_id::uuid
+RETURNING id, parent_id;

@@ -33,8 +33,24 @@ func GetManyGuildMembersByGuildIDRowToUser(source sqlc.GetManyGuildMembersByGuil
 	return CreateUserLimited(source.ID, source.DisplayName, source.Username, source.PublicFlags, source.AttachmentID)
 }
 
+func GetManyAssignableGuildMembersByGuildIDAndRoleIDRowToUser(source sqlc.GetManyAssignableGuildMembersByGuildIDAndRoleIDRow) models.UserLimited {
+	return CreateUserLimited(source.ID, source.DisplayName, source.Username, source.PublicFlags, source.AttachmentID)
+}
+
+func GetManyUnassignableGuildMembersByGuildIDAndRoleIDRowToUser(source sqlc.GetManyUnassignableGuildMembersByGuildIDAndRoleIDRow) models.UserLimited {
+	return CreateUserLimited(source.ID, source.DisplayName, source.Username, source.PublicFlags, source.AttachmentID)
+}
+
+func GetManyUserRelationshipsByUserIDRowToUser(source sqlc.GetManyUserRelationshipsByUserIDRow) models.UserLimited {
+	return CreateUserLimited(source.UID, source.DisplayName, source.Username, source.PublicFlags, source.AttachmentID)
+}
+
 func GetManyGuildBansByGuildIDRowToUser(source sqlc.GetManyGuildBansByGuildIDRow) models.UserLimited {
 	return CreateUserLimited(source.ID, source.DisplayName, source.Username, source.PublicFlags, source.AttachmentID)
+}
+
+func ConvertGetManyGuildInvitesByGuildIDRowToGuildInviteToCreator(source sqlc.GetManyGuildInvitesByGuildIDRow) models.UserLimited {
+	return CreateUserLimited(source.UserID, source.DisplayName, source.Username, source.PublicFlags, source.AttachmentID)
 }
 
 // Field conversion extensions

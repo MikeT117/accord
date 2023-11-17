@@ -8,19 +8,19 @@ import (
 )
 
 type GuildChannel struct {
-	ID             uuid.UUID   `json:"id"`
-	Name           string      `json:"name"`
-	Topic          string      `json:"topic"`
-	ChannelType    int16       `json:"channelType"`
-	ParentRoleSync bool        `json:"parentRoleSync"`
-	ParentID       pgtype.UUID `json:"parentId"`
-	CreatorID      uuid.UUID   `json:"creatorId"`
-	CreatedAt      time.Time   `json:"createdAt"`
-	UpdatedAt      time.Time   `json:"updatedAt"`
-	Roles          []uuid.UUID `json:"roles"`
+	ID          uuid.UUID   `json:"id"`
+	Name        string      `json:"name"`
+	GuildID     uuid.UUID   `json:"guildId"`
+	Topic       string      `json:"topic"`
+	ChannelType int16       `json:"channelType"`
+	ParentID    pgtype.UUID `json:"parentId"`
+	CreatorID   uuid.UUID   `json:"creatorId"`
+	CreatedAt   time.Time   `json:"createdAt"`
+	UpdatedAt   time.Time   `json:"updatedAt"`
+	Roles       []uuid.UUID `json:"roles"`
 }
 
-type DirectChannel struct {
+type PrivateChannel struct {
 	ID          uuid.UUID     `json:"id"`
 	Name        *string       `json:"name"`
 	Topic       *string       `json:"topic"`
@@ -28,5 +28,17 @@ type DirectChannel struct {
 	CreatorID   uuid.UUID     `json:"creatorId"`
 	CreatedAt   time.Time     `json:"createdAt"`
 	UpdatedAt   time.Time     `json:"updatedAt"`
-	Recipients  []UserLimited `json:"recipients"`
+	Users       []UserLimited `json:"users"`
+}
+
+type UpdatedChannel struct {
+	ID      uuid.UUID   `json:"id"`
+	Name    string      `json:"name"`
+	Topic   string      `json:"topic"`
+	GuildID pgtype.UUID `json:"guildId"`
+}
+
+type DeletedChannel struct {
+	ID      uuid.UUID `json:"id"`
+	GuildID uuid.UUID `json:"guildId"`
 }

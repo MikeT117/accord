@@ -7,15 +7,15 @@ import (
 )
 
 type Guild struct {
-	ID              uuid.UUID      `json:"id" `
-	Name            string         `json:"name" `
-	Description     string         `json:"description" `
-	IsDiscoverable  bool           `json:"isDiscoverable" `
-	CreatorID       uuid.UUID      `json:"creatorId" `
+	ID              uuid.UUID      `json:"id"`
+	Name            string         `json:"name"`
+	Description     string         `json:"description"`
+	IsDiscoverable  bool           `json:"isDiscoverable"`
+	CreatorID       uuid.UUID      `json:"creatorId"`
 	GuildCategoryID *uuid.UUID     `json:"guildCategoryId"`
-	ChannelCount    int32          `json:"channelCount" `
-	MemberCount     int32          `json:"memberCount" `
-	CreatedAt       time.Time      `json:"createdAt" `
+	ChannelCount    int32          `json:"channelCount"`
+	MemberCount     int32          `json:"memberCount"`
+	CreatedAt       time.Time      `json:"createdAt"`
 	UpdatedAt       time.Time      `json:"updatedAt"`
 	Icon            *uuid.UUID     `json:"icon"`
 	Banner          *uuid.UUID     `json:"banner"`
@@ -36,6 +36,7 @@ type DiscoverableGuild struct {
 }
 
 type UpdatedGuild struct {
+	ID              uuid.UUID  `json:"id"`
 	Name            string     `json:"name"`
 	Description     string     `json:"description"`
 	IsDiscoverable  bool       `json:"isDiscoverable"`

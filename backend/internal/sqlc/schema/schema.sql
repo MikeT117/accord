@@ -1,9 +1,7 @@
-CREATE EXTENSION "uuid-ossp" SCHEMA public;
-
-CREATE EXTENSION pgcrypto SCHEMA public;
+CREATE EXTENSION pg_uuidv7 SCHEMA public;
 
 CREATE TABLE oauth_accounts (
-  id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4 (),
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
   email text NOT NULL UNIQUE,
   provider varchar(255) NOT NULL,
   provider_token text NOT NULL,
@@ -14,7 +12,7 @@ CREATE TABLE oauth_accounts (
 );
 
 CREATE TABLE users (
-  id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4 (),
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
   username varchar (32) NOT NULL UNIQUE,
   display_name varchar (32) NOT NULL,
   public_flags int NOT NULL DEFAULT 1,
@@ -25,7 +23,7 @@ CREATE TABLE users (
 );
 
 CREATE TABLE user_sessions (
-  id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4 (),
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
   token text NOT NULL UNIQUE,
   user_id uuid NOT NULL REFERENCES users (id),
   expires_at timestamp without time zone NOT NULL,
@@ -34,7 +32,7 @@ CREATE TABLE user_sessions (
 );
 
 CREATE TABLE relationships (
-  id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4 (),
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
   creator_id uuid NOT NULL REFERENCES users (id),
   status int NOT NULL, -- 0 friends, 1 pending, 2 blocked
   created_at timestamp without time zone NOT NULL DEFAULT NOW(),
@@ -51,14 +49,14 @@ CREATE UNIQUE INDEX ON relationship_users (user_id, relationship_id);
 
 
 CREATE TABLE guild_categories (
-  id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4 (),
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
   name text NOT NULL UNIQUE,
   created_at timestamp without time zone NOT NULL DEFAULT NOW(),
   UNIQUE (name)
 );
 
 CREATE TABLE guilds (
-  id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4 (),
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
   name varchar (100) NOT NULL,
   description varchar(500) NOT NULL DEFAULT '',
   is_discoverable boolean NOT NULL DEFAULT FALSE,
@@ -91,7 +89,7 @@ CREATE TABLE guild_bans (
 CREATE UNIQUE INDEX ON guild_bans (user_id, guild_id);
 
 CREATE TABLE guild_roles (
-  id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4 (),
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
   name varchar(100) NOT NULL,
   permissions int NOT NULL DEFAULT 0,
   guild_id uuid NOT NULL REFERENCES guilds (id) ON DELETE CASCADE,
@@ -109,11 +107,10 @@ CREATE TABLE guild_role_users (
 CREATE UNIQUE INDEX ON guild_role_users (user_id, role_id);
 
 CREATE TABLE channels (
-  id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4 (),
-  name varchar(100) NOT NULL,
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
+  name varchar(100) NOT NULL DEFAULT '',
   topic varchar(512) NOT NULL DEFAULT '',
   channel_type smallint NOT NULL, -- 0 GuildChannel | 1 GuildChannelCategory | 2 DirectMessageChannel | 3 GroupMessageChannel | 4 VoiceChannel
-  parent_role_sync boolean NOT NULL DEFAULT false,
   parent_id uuid REFERENCES channels (id) ON DELETE SET NULL,
   creator_id uuid NOT NULL REFERENCES users (id),
   guild_id uuid REFERENCES guilds (id) ON DELETE CASCADE,
@@ -142,8 +139,8 @@ CREATE TABLE channel_users (
 CREATE UNIQUE INDEX ON channel_users (channel_id, user_id);
 
 CREATE TABLE guild_invites (
-  id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4 (),
-  status smallint NOT NULL DEFAULT 1, -- 0: disabled | 1: active
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
+  flags smallint NOT NULL DEFAULT 1, -- 0: disabled | 1: active
   used_count int NOT NULL DEFAULT 0,
   user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
   guild_id uuid NOT NULL REFERENCES guilds (id) ON DELETE CASCADE,
@@ -159,7 +156,7 @@ CREATE TABLE guild_role_channels (
 CREATE UNIQUE INDEX ON guild_role_channels (channel_id, role_id);
 
 CREATE TABLE channel_messages (
-  id uuid PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4 (),
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
   content varchar(2000) NOT NULL DEFAULT '',
   is_pinned boolean NOT NULL DEFAULT FALSE,
   flags int NOT NULL DEFAULT 1,
@@ -171,12 +168,11 @@ CREATE TABLE channel_messages (
 );
 
 CREATE TABLE attachments (
-  id uuid NOT NULL PRIMARY KEY DEFAULT uuid_generate_v4 (),
-  resource_type varchar(6) NOT NULL,
+  id uuid NOT NULL PRIMARY KEY DEFAULT uuid_generate_v7 (),
+  resource_type varchar(128) NOT NULL,
   signature text NOT NULL,
   unix_timestamp bigint NOT NULL,
   attached_by_id uuid NOT NULL REFERENCES users(id),
-  linked boolean NOT NULL DEFAULT false,
   height int NOT NULL,
   width int NOT NULL,
   filesize int NOT NULL,

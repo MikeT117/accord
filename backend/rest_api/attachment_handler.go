@@ -46,7 +46,11 @@ func (a *api) HandleAttachmentSign(c echo.Context) error {
 
 	rowsAffected, err := a.Queries.CreateAttachment(c.Request().Context(), createAttachmentParams)
 
-	if err != nil || rowsAffected != 1 {
+	if err != nil {
+		return NewServerError(err, "a.Queries.CreateAttachment")
+	}
+
+	if rowsAffected != 1 {
 		return NewServerError(nil, "a.Queries.CreateAttachment")
 	}
 

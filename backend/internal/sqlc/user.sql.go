@@ -126,3 +126,86 @@ func (q *Queries) GetUserByID(ctx context.Context, userID uuid.UUID) (GetUserByI
 	)
 	return i, err
 }
+
+const getUserByUsername = `-- name: GetUserByUsername :one
+SELECT
+u.id,
+u.username,
+u.display_name,
+u.public_flags,
+u.created_at
+FROM
+users u
+WHERE
+u.username = $1
+`
+
+type GetUserByUsernameRow struct {
+	ID          uuid.UUID
+	Username    string
+	DisplayName string
+	PublicFlags int32
+	CreatedAt   pgtype.Timestamp
+}
+
+func (q *Queries) GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error) {
+	row := q.db.QueryRow(ctx, getUserByUsername, username)
+	var i GetUserByUsernameRow
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.DisplayName,
+		&i.PublicFlags,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const updateUser = `-- name: UpdateUser :one
+WITH updated_user_cte AS (
+    UPDATE
+    users
+    SET
+    display_name = $1,
+    public_flags = $2
+    WHERE
+    id = $3
+    RETURNING
+    id,
+    display_name,
+    public_flags
+)
+
+SELECT
+uucte.id, uucte.display_name, uucte.public_flags,
+ua.attachment_id
+FROM
+updated_user_cte uucte
+LEFT JOIN
+user_attachments ua ON ua.user_id = uucte.id
+`
+
+type UpdateUserParams struct {
+	DisplayName string
+	PublicFlags int32
+	UserID      uuid.UUID
+}
+
+type UpdateUserRow struct {
+	ID           uuid.UUID
+	DisplayName  string
+	PublicFlags  int32
+	AttachmentID pgtype.UUID
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error) {
+	row := q.db.QueryRow(ctx, updateUser, arg.DisplayName, arg.PublicFlags, arg.UserID)
+	var i UpdateUserRow
+	err := row.Scan(
+		&i.ID,
+		&i.DisplayName,
+		&i.PublicFlags,
+		&i.AttachmentID,
+	)
+	return i, err
+}

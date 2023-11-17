@@ -3,7 +3,6 @@ package rest_api
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	message_queue "github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
@@ -12,7 +11,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (a *api) HandleChannelMessageRead(c echo.Context) error {
+func (a *api) HandleChannelMessageReadMany(c echo.Context) error {
 
 	channelID, err := uuid.Parse(c.Param("channel_id"))
 
@@ -26,27 +25,95 @@ func (a *api) HandleChannelMessageRead(c echo.Context) error {
 	}
 
 	if len(c.QueryParam("before")) != 0 {
-		i, err := strconv.ParseInt(c.QueryParam("before"), 10, 64)
+
+		id, err := uuid.Parse(c.QueryParam("before"))
 
 		if err != nil {
 			return NewClientError(err, http.StatusBadRequest, "invalid timestamp")
 		}
 
-		params.Before = pgtype.Timestamp{
-			Time:  time.Unix(i, 0),
+		params.Before = pgtype.UUID{
+			Bytes: id,
 			Valid: true,
 		}
 	}
 
 	if len(c.QueryParam("after")) != 0 {
-		i, err := strconv.ParseInt(c.QueryParam("after"), 10, 64)
+		id, err := uuid.Parse(c.QueryParam("after"))
 
 		if err != nil {
 			return NewClientError(err, http.StatusBadRequest, "invalid timestamp")
 		}
 
-		params.After = pgtype.Timestamp{
-			Time:  time.Unix(i, 0),
+		params.After = pgtype.UUID{
+			Bytes: id,
+			Valid: true,
+		}
+	}
+
+	if len(c.QueryParam("limit")) != 0 {
+		i, err := strconv.ParseInt(c.QueryParam("limit"), 10, 64)
+
+		if err != nil {
+			return NewClientError(err, http.StatusBadRequest, "invalid limit")
+		}
+
+		if i > 50 {
+			return NewClientError(nil, http.StatusBadRequest, "invalid limit")
+		}
+
+		params.ResultsLimit = i
+	}
+
+	sqlMessages, err := a.Queries.GetManyChannelMessagesByChannelID(c.Request().Context(), *params)
+
+	if err != nil {
+		return NewServerError(err, "GetManyGuildChannelMessagesByChannelIDBefore")
+	}
+
+	return NewSuccessfulResponse(c, http.StatusOK, a.Mapper.ConvertSQLCGetManyChannelMessagesByChannelIDRowsToManyMessage(sqlMessages))
+}
+
+func (a *api) HandleChannelPinsReadMany(c echo.Context) error {
+
+	channelID, err := uuid.Parse(c.Param("channel_id"))
+
+	if err != nil {
+		return NewClientError(err, http.StatusBadRequest, "invalid channel ID")
+	}
+
+	params := &sqlc.GetManyChannelMessagesByChannelIDParams{
+		ChannelID:    channelID,
+		ResultsLimit: 50,
+		Pinned: pgtype.Bool{
+			Bool:  true,
+			Valid: true,
+		},
+	}
+
+	if len(c.QueryParam("before")) != 0 {
+
+		id, err := uuid.Parse(c.QueryParam("before"))
+
+		if err != nil {
+			return NewClientError(err, http.StatusBadRequest, "invalid timestamp")
+		}
+
+		params.Before = pgtype.UUID{
+			Bytes: id,
+			Valid: true,
+		}
+	}
+
+	if len(c.QueryParam("after")) != 0 {
+		id, err := uuid.Parse(c.QueryParam("after"))
+
+		if err != nil {
+			return NewClientError(err, http.StatusBadRequest, "invalid timestamp")
+		}
+
+		params.After = pgtype.UUID{
+			Bytes: id,
 			Valid: true,
 		}
 	}
@@ -112,17 +179,27 @@ func (a *api) HandleChannelMessageCreate(c echo.Context) error {
 		return NewServerError(err, "CreateChannelMessage")
 	}
 
-	count, err := tx.LinkAttachmentsToChannelMessage(c.Request().Context(), sqlc.LinkAttachmentsToChannelMessageParams{
-		MessageID:     sqlMessage.ID,
-		AttachmentIds: body.Attachments,
-	})
+	message := a.Mapper.ConvertSQLCCreateChannelMessageRowToMessage(sqlMessage)
 
-	if err != nil {
-		return NewServerError(err, "LinkAttachmentsToChannelMessage")
-	}
+	if len(body.Attachments) != 0 {
 
-	if count != int64(len(body.Attachments)) {
-		return NewServerError(nil, "could not link some/all attachments")
+		count, err := tx.LinkAttachmentsToChannelMessage(c.Request().Context(), sqlc.LinkAttachmentsToChannelMessageParams{
+			MessageID:     sqlMessage.ID,
+			AttachmentIds: body.Attachments,
+		})
+
+		if err != nil {
+			return NewServerError(err, "LinkAttachmentsToChannelMessage")
+		}
+
+		if count != int64(len(body.Attachments)) {
+			return NewServerError(nil, "could not link some/all attachments")
+		}
+
+		for i := range body.Attachments {
+			message.Attachments = append(message.Attachments, string(body.Attachments[i].String()))
+		}
+
 	}
 
 	roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
@@ -132,8 +209,6 @@ func (a *api) HandleChannelMessageCreate(c echo.Context) error {
 	}
 
 	dbtx.Commit(c.Request().Context())
-
-	message := a.Mapper.ConvertSQLCCreateChannelMessageRowToMessage(sqlMessage)
 
 	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
 		Version: 0,
@@ -189,8 +264,8 @@ func (a *api) HandleChannelMessageUpdate(c echo.Context) error {
 	return NewSuccessfulResponse(c, http.StatusOK, a.Mapper.ConvertSQLCUpdateChannelMessageRowUpdatedMessage(message))
 }
 
-// TODO: Fire CHANNEL_PINS_UPDATE event - will clear frontend query cache and force a refetch upon viewing pins
-func (a *api) HandleChannelMessagePin(c echo.Context) error {
+// TODO: Fire MESSAGE_DELETE event with message info
+func (a *api) HandleOwnerChannelMessageDelete(c echo.Context) error {
 
 	channelID, err := uuid.Parse(c.Param("channel_id"))
 
@@ -204,75 +279,24 @@ func (a *api) HandleChannelMessagePin(c echo.Context) error {
 		return NewClientError(err, http.StatusBadRequest, "invalid message ID")
 	}
 
-	body := ChannelMessageUpdateBody{}
-
-	if err := c.Bind(&body); err != nil {
-		return NewClientError(err, http.StatusBadRequest, "Unable to bind body")
-	}
-
-	if valid, reason := body.Validate(); !valid {
-		return NewClientError(nil, http.StatusBadRequest, reason)
-	}
-
-	rowsAffected, err := a.Queries.PinChannelMessage(c.Request().Context(), sqlc.PinChannelMessageParams{
+	_, err = a.Queries.DeleteChannelMessage(c.Request().Context(), sqlc.DeleteChannelMessageParams{
 		ChannelID: channelID,
 		MessageID: messageID,
+		UserID: pgtype.UUID{
+			Bytes: c.(*APIContext).UserID,
+			Valid: true,
+		},
 	})
 
 	if err != nil {
-		return NewServerError(err, "PinChannelMessage")
-	}
-
-	if rowsAffected != 1 {
-		return NewClientError(nil, http.StatusNotFound, "message not found")
-	}
-
-	return NewSuccessfulResponse(c, http.StatusNoContent, nil)
-}
-
-// TODO: Fire CHANNEL_PINS_UPDATE event - will clear frontend query cache and force a refetch upon viewing pins
-func (a *api) HandleChannelMessageUnpin(c echo.Context) error {
-
-	channelID, err := uuid.Parse(c.Param("channel_id"))
-
-	if err != nil {
-		return NewClientError(err, http.StatusBadRequest, "invalid channel ID")
-	}
-
-	messageID, err := uuid.Parse(c.Param("message_id"))
-
-	if err != nil {
-		return NewClientError(err, http.StatusBadRequest, "invalid message ID")
-	}
-
-	body := ChannelMessageUpdateBody{}
-
-	if err := c.Bind(&body); err != nil {
-		return NewClientError(err, http.StatusBadRequest, "Unable to bind body")
-	}
-
-	if valid, reason := body.Validate(); !valid {
-		return NewClientError(nil, http.StatusBadRequest, reason)
-	}
-
-	rowsAffected, err := a.Queries.UnpinChannelMessage(c.Request().Context(), sqlc.UnpinChannelMessageParams{
-		ChannelID: channelID,
-		MessageID: messageID,
-	})
-
-	if err != nil {
-		return NewServerError(err, "UnpinChannelMessage")
-	}
-
-	if rowsAffected != 1 {
-		return NewClientError(nil, http.StatusNotFound, "message not found")
+		return NewServerError(err, "DeleteChannelMessage")
 	}
 
 	return NewSuccessfulResponse(c, http.StatusNoContent, nil)
 }
 
 // TODO: Fire MESSAGE_DELETE event with message info
-func (a *api) HandleChannelMessageDelete(c echo.Context) error {
+func (a *api) HandleAdminChannelMessageDelete(c echo.Context) error {
 
 	channelID, err := uuid.Parse(c.Param("channel_id"))
 
@@ -292,7 +316,7 @@ func (a *api) HandleChannelMessageDelete(c echo.Context) error {
 	})
 
 	if err != nil {
-		return NewServerError(err, "UnpinChannelMessage")
+		return NewServerError(err, "DeleteChannelMessage")
 	}
 
 	return NewSuccessfulResponse(c, http.StatusNoContent, nil)

@@ -26,8 +26,6 @@ WITH guilds_cte AS (
         WHEN sqlc.narg(name)::text IS NOT NULL THEN name ILIKE sqlc.narg(name)::text
         ELSE TRUE
     END)
-    ORDER BY
-    member_count DESC
     LIMIT
     @results_limit
 ),
@@ -55,9 +53,25 @@ LEFT JOIN icon_cte icte ON icte.guild_id = gcte.id
 LEFT JOIN banner_cte bcte ON bcte.guild_id = gcte.id;
 
 
+-- name: GetGuildDiscoverableStatusByID :one
+SELECT
+is_discoverable
+FROM
+guilds
+WHERE
+id = @guild_id;
+
+-- name: GetGuildByID :one
+SELECT
+*
+FROM
+guilds
+WHERE
+id = @guild_id;
+
 -- name: CreateGuild :one
-INSERT INTO guilds (name, is_discoverable, creator_id)
-VALUES (@name, @is_discoverable, @creator_id)
+INSERT INTO guilds (name, is_discoverable, creator_id, guild_category_id)
+VALUES (@name, @is_discoverable, @creator_id, @guild_category_id)
 RETURNING *;
 
 -- name: UpdateGuild :one

@@ -38,39 +38,93 @@ func (q *Queries) CreateUserSession(ctx context.Context, arg CreateUserSessionPa
 	return i, err
 }
 
-const deleteUserSession = `-- name: DeleteUserSession :exec
+const deleteUserSession = `-- name: DeleteUserSession :execrows
 DELETE
-FROM user_sessions
-WHERE id = $1
+FROM
+user_sessions
+WHERE
+id = $1
+AND
+user_id = $2
+AND
+token != $3
 `
 
-func (q *Queries) DeleteUserSession(ctx context.Context, sessionID uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteUserSession, sessionID)
-	return err
+type DeleteUserSessionParams struct {
+	SessionID uuid.UUID
+	UserID    uuid.UUID
+	Token     string
+}
+
+func (q *Queries) DeleteUserSession(ctx context.Context, arg DeleteUserSessionParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteUserSession, arg.SessionID, arg.UserID, arg.Token)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const getManyUserSessionsByID = `-- name: GetManyUserSessionsByID :many
-SELECT id, token, user_id, expires_at, created_at, updated_at
+SELECT
+id,
+created_at,
+expires_at,
+(CASE
+    WHEN token = $1 THEN true
+    ELSE false
+END) AS is_current_session
 FROM user_sessions
-WHERE user_id = $1
+WHERE
+user_id = $2
+AND
+(CASE
+    WHEN $3::uuid IS NOT NULL THEN id < $3::uuid
+    ELSE TRUE
+END)
+AND 
+(CASE
+    WHEN $4::uuid IS NOT NULL THEN id > $4::uuid
+    ELSE TRUE
+END)
+ORDER BY id
+LIMIT $5
 `
 
-func (q *Queries) GetManyUserSessionsByID(ctx context.Context, userID uuid.UUID) ([]UserSession, error) {
-	rows, err := q.db.Query(ctx, getManyUserSessionsByID, userID)
+type GetManyUserSessionsByIDParams struct {
+	Token        string
+	UserID       uuid.UUID
+	Before       pgtype.UUID
+	After        pgtype.UUID
+	ResultsLimit int64
+}
+
+type GetManyUserSessionsByIDRow struct {
+	ID               uuid.UUID
+	CreatedAt        pgtype.Timestamp
+	ExpiresAt        pgtype.Timestamp
+	IsCurrentSession bool
+}
+
+func (q *Queries) GetManyUserSessionsByID(ctx context.Context, arg GetManyUserSessionsByIDParams) ([]GetManyUserSessionsByIDRow, error) {
+	rows, err := q.db.Query(ctx, getManyUserSessionsByID,
+		arg.Token,
+		arg.UserID,
+		arg.Before,
+		arg.After,
+		arg.ResultsLimit,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []UserSession{}
+	items := []GetManyUserSessionsByIDRow{}
 	for rows.Next() {
-		var i UserSession
+		var i GetManyUserSessionsByIDRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.Token,
-			&i.UserID,
-			&i.ExpiresAt,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.ExpiresAt,
+			&i.IsCurrentSession,
 		); err != nil {
 			return nil, err
 		}

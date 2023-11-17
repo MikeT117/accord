@@ -101,13 +101,25 @@ func (q *Queries) CreateChannelMessage(ctx context.Context, arg CreateChannelMes
 
 const deleteChannelMessage = `-- name: DeleteChannelMessage :one
 DELETE FROM channel_messages
-WHERE id = $1 AND channel_id = $2
-RETURNING id, channel_id
+WHERE
+id = $1
+AND
+channel_id = $2
+AND
+(CASE
+    WHEN $3::uuid IS NOT NULL
+    THEN $3::uuid = user_id
+    ELSE TRUE
+END)
+RETURNING
+id,
+channel_id
 `
 
 type DeleteChannelMessageParams struct {
 	MessageID uuid.UUID
 	ChannelID uuid.UUID
+	UserID    pgtype.UUID
 }
 
 type DeleteChannelMessageRow struct {
@@ -116,7 +128,7 @@ type DeleteChannelMessageRow struct {
 }
 
 func (q *Queries) DeleteChannelMessage(ctx context.Context, arg DeleteChannelMessageParams) (DeleteChannelMessageRow, error) {
-	row := q.db.QueryRow(ctx, deleteChannelMessage, arg.MessageID, arg.ChannelID)
+	row := q.db.QueryRow(ctx, deleteChannelMessage, arg.MessageID, arg.ChannelID, arg.UserID)
 	var i DeleteChannelMessageRow
 	err := row.Scan(&i.ID, &i.ChannelID)
 	return i, err
@@ -146,16 +158,21 @@ WITH channel_messages_cte AS (
     LEFT JOIN guild_members gm ON gm.guild_id = cm.guild_id AND cm.user_id = gm.user_id
     WHERE cm.channel_id = $1 AND
     (CASE
-        WHEN $2::timestamp IS NOT NULL THEN cm.created_at < $2::timestamp
+        WHEN $2::uuid IS NOT NULL THEN cm.id < $2::uuid
         ELSE TRUE
     END)
     AND 
     (CASE
-        WHEN $3::timestamp IS NOT NULL THEN cm.created_at > $3::timestamp
+        WHEN $3::uuid IS NOT NULL THEN cm.id > $3::uuid
         ELSE TRUE
     END)
-    ORDER BY cm.created_at DESC
-    LIMIT $4
+    AND
+    (CASE
+        WHEN $4::boolean IS NOT NULL THEN cm.is_pinned = $4::boolean
+        ELSE TRUE
+    END)
+    ORDER BY cm.id DESC
+    LIMIT $5
 ),
 
 attachments_cte AS (
@@ -168,12 +185,14 @@ attachments_cte AS (
 SELECT cmcte.id, cmcte.user_id, cmcte.channel_id, cmcte.content, cmcte.is_pinned, cmcte.flags, cmcte.created_at, cmcte.updated_at, cmcte.display_name, cmcte.username, cmcte.public_flags, cmcte.attachment_id, COALESCE(acte.attachments, '{}')
 FROM channel_messages_cte cmcte
 LEFT JOIN attachments_cte acte ON acte.channel_message_id = cmcte.id
+ORDER BY cmcte.id DESC
 `
 
 type GetManyChannelMessagesByChannelIDParams struct {
 	ChannelID    uuid.UUID
-	Before       pgtype.Timestamp
-	After        pgtype.Timestamp
+	Before       pgtype.UUID
+	After        pgtype.UUID
+	Pinned       pgtype.Bool
 	ResultsLimit int64
 }
 
@@ -198,6 +217,7 @@ func (q *Queries) GetManyChannelMessagesByChannelID(ctx context.Context, arg Get
 		arg.ChannelID,
 		arg.Before,
 		arg.After,
+		arg.Pinned,
 		arg.ResultsLimit,
 	)
 	if err != nil {

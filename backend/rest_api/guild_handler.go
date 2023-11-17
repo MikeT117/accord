@@ -12,7 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (a *api) HandleGuildRead(c echo.Context) error {
+func (a *api) HandleGuildReadMany(c echo.Context) error {
 	params := &sqlc.GetManyDiscoverableGuildsParams{}
 
 	if len(c.QueryParam("before")) != 0 {
@@ -95,9 +95,10 @@ func (a *api) HandleGuildCreate(c echo.Context) error {
 	tx := a.Queries.WithTx(dbTx)
 
 	sqlGuild, err := tx.CreateGuild(reqCtx, sqlc.CreateGuildParams{
-		Name:           body.Name,
-		IsDiscoverable: body.IsDiscoverable,
-		CreatorID:      cctx.UserID,
+		Name:            body.Name,
+		IsDiscoverable:  body.IsDiscoverable,
+		GuildCategoryID: body.GuildCategoryID,
+		CreatorID:       cctx.UserID,
 	})
 
 	if err != nil {
@@ -235,7 +236,7 @@ func (a *api) HandleGuildUpdate(c echo.Context) error {
 		Name:            body.Name,
 		Description:     body.Description,
 		IsDiscoverable:  body.IsDiscoverable,
-		GuildCategoryID: body.CategoryID,
+		GuildCategoryID: body.GuildCategoryID,
 		GuildID:         guildID,
 	})
 
@@ -260,13 +261,13 @@ func (a *api) HandleGuildUpdate(c echo.Context) error {
 			return NewServerError(nil, "tx.LinkAttachmentToGuild")
 		}
 
-		updatedGuild.Banner = body.Icon
+		updatedGuild.Icon = body.Icon
 	}
 
 	if body.Banner != nil {
 		rowsAffected, err := tx.LinkAttachmentToGuild(reqCtx, sqlc.LinkAttachmentToGuildParams{
 			GuildID:      sqlUpdatedGuild.ID,
-			UsageType:    0,
+			UsageType:    1,
 			AttachmentID: *body.Banner,
 		})
 
@@ -285,6 +286,7 @@ func (a *api) HandleGuildUpdate(c echo.Context) error {
 	return NewSuccessfulResponse(c, http.StatusOK, &updatedGuild)
 }
 
+// Fire event to members
 func (a *api) HandleGuildDelete(c echo.Context) error {
 	guildID, err := uuid.Parse(c.Param("guild_id"))
 
@@ -297,14 +299,4 @@ func (a *api) HandleGuildDelete(c echo.Context) error {
 	}
 
 	return NewSuccessfulResponse(c, http.StatusOK, nil)
-}
-
-func (a *api) HandleGuildCategoryRead(c echo.Context) error {
-	sqlGuildCategories, err := a.Queries.GetManyGuildCategories(c.Request().Context())
-
-	if err != nil {
-		return NewServerError(err, "a.Queries.GetGuildCategories")
-	}
-
-	return NewSuccessfulResponse(c, http.StatusOK, a.Mapper.ConvertSQLCGuildCategoryToGuildCategories(sqlGuildCategories))
 }

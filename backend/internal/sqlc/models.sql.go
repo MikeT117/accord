@@ -15,7 +15,6 @@ type Attachment struct {
 	Signature     string
 	UnixTimestamp int64
 	AttachedByID  uuid.UUID
-	Linked        bool
 	Height        int32
 	Width         int32
 	Filesize      int32
@@ -24,16 +23,15 @@ type Attachment struct {
 }
 
 type Channel struct {
-	ID             uuid.UUID
-	Name           string
-	Topic          string
-	ChannelType    int16
-	ParentRoleSync bool
-	ParentID       pgtype.UUID
-	CreatorID      uuid.UUID
-	GuildID        pgtype.UUID
-	CreatedAt      pgtype.Timestamp
-	UpdatedAt      pgtype.Timestamp
+	ID          uuid.UUID
+	Name        string
+	Topic       string
+	ChannelType int16
+	ParentID    pgtype.UUID
+	CreatorID   uuid.UUID
+	GuildID     pgtype.UUID
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
 }
 
 type ChannelMessage struct {
@@ -93,7 +91,7 @@ type GuildCategory struct {
 
 type GuildInvite struct {
 	ID        uuid.UUID
-	Status    int16
+	Flags     int16
 	UsedCount int32
 	UserID    uuid.UUID
 	GuildID   uuid.UUID

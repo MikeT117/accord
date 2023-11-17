@@ -7,9 +7,10 @@ import (
 )
 
 type UserRelationship struct {
-	ID        uuid.UUID     `json:"id"`
-	Status    int           `json:"status"`
-	Members   []UserLimited `json:"members"`
-	CreatedAt time.Time     `json:"createdAt"`
-	UpdatedAt time.Time     `json:"updatedAt"`
+	ID        uuid.UUID   `json:"id"`
+	CreatorID uuid.UUID   `json:"creatorId"`
+	Status    int32       `json:"status"`
+	CreatedAt time.Time   `json:"createdAt"`
+	UpdatedAt time.Time   `json:"updatedAt"`
+	User      UserLimited `json:"user"`
 }

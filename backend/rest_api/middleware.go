@@ -17,7 +17,8 @@ import (
 
 type APIContext struct {
 	echo.Context
-	UserID uuid.UUID
+	UserID       uuid.UUID
+	Refreshtoken string
 }
 
 func (a *api) AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
@@ -27,8 +28,9 @@ func (a *api) AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		if _, userID, err := authentication.ValidateToken(accesstoken, []byte(os.Getenv("JWT_ACCESSTOKEN_KEY"))); err == nil {
 			cctx := &APIContext{
-				Context: c,
-				UserID:  userID,
+				Context:      c,
+				UserID:       userID,
+				Refreshtoken: refreshtoken,
 			}
 			return next(cctx)
 		}
@@ -66,8 +68,9 @@ func (a *api) AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		c.Response().Header().Set("Authorization", fmt.Sprintf("Bearer %s", newAccesstoken))
 
 		cctx := &APIContext{
-			Context: c,
-			UserID:  userID,
+			Context:      c,
+			UserID:       userID,
+			Refreshtoken: refreshtoken,
 		}
 
 		return next(cctx)
@@ -78,8 +81,6 @@ func (a *api) RequiredGuildPermission(permission int) func(next echo.HandlerFunc
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			guildID, err := uuid.Parse(c.Param("guild_id"))
-
-			fmt.Printf("GuildID: %s\n", c.Param("guild_id"))
 
 			if err != nil {
 				return NewClientError(err, http.StatusBadRequest, "invalid guild ID")

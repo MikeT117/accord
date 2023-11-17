@@ -12,34 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createGuildBan = `-- name: CreateGuildBan :execrows
-INSERT INTO guild_bans
-(user_id, reason, guild_id, creator_id)
-SELECT id, $1, $2, $3
-FROM users
-WHERE id = $4
-`
-
-type CreateGuildBanParams struct {
-	Reason    string
-	GuildID   uuid.UUID
-	CreatorID uuid.UUID
-	UserID    uuid.UUID
-}
-
-func (q *Queries) CreateGuildBan(ctx context.Context, arg CreateGuildBanParams) (int64, error) {
-	result, err := q.db.Exec(ctx, createGuildBan,
-		arg.Reason,
-		arg.GuildID,
-		arg.CreatorID,
-		arg.UserID,
-	)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
 const createGuildMember = `-- name: CreateGuildMember :one
 INSERT INTO guild_members (nickname, guild_id, user_id)
 VALUES ($1, $2, $3)
@@ -65,24 +37,6 @@ func (q *Queries) CreateGuildMember(ctx context.Context, arg CreateGuildMemberPa
 	return i, err
 }
 
-const deleteGuildBan = `-- name: DeleteGuildBan :execrows
-DELETE FROM guild_bans
-WHERE user_id  = $1 AND guild_id = $2
-`
-
-type DeleteGuildBanParams struct {
-	UserID  uuid.UUID
-	GuildID uuid.UUID
-}
-
-func (q *Queries) DeleteGuildBan(ctx context.Context, arg DeleteGuildBanParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteGuildBan, arg.UserID, arg.GuildID)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
 const deleteGuildMember = `-- name: DeleteGuildMember :one
 DELETE FROM guild_members
 WHERE user_id = $1 AND guild_id = $2
@@ -106,52 +60,84 @@ func (q *Queries) DeleteGuildMember(ctx context.Context, arg DeleteGuildMemberPa
 	return i, err
 }
 
-const getManyGuildBansByGuildID = `-- name: GetManyGuildBansByGuildID :many
-SELECT
-    gb.banned_at,
-    gb.reason,
+const getManyAssignableGuildMembersByGuildIDAndRoleID = `-- name: GetManyAssignableGuildMembersByGuildIDAndRoleID :many
+WITH guild_member_cte AS (
+	SELECT
+    gm.joined_at,
+    CASE
+        WHEN gm.nickname IS NOT NULL THEN gm.nickname
+        ELSE u.display_name
+    END::text AS display_name,
     u.id,
-    u.display_name,
     u.username,
     u.public_flags,
     ua.attachment_id
-FROM guild_bans gb
-INNER JOIN users u ON u.id = gb.user_id
-LEFT JOIN user_attachments ua ON ua.user_id = u.id
-WHERE gb.guild_id = $1 AND 
+	FROM guild_members gm
+	INNER JOIN users u ON u.id = gm.user_id
+	LEFT JOIN user_attachments ua ON ua.user_id = gm.user_id
+    WHERE
+    gm.guild_id = $1
+    AND
+    NOT EXISTS (
+        SELECT
+        1
+        FROM
+		guild_role_users gru
+		WHERE
+        gru.role_id = $2
+        AND
+        gru.user_id = gm.user_id
+    )
+    AND
     (CASE
-        WHEN $2::timestamp IS NOT NULL THEN gb.banned_at < $2::timestamp
+        WHEN $3::uuid IS NOT NULL THEN gm.user_id < $3::uuid
         ELSE TRUE
     END)
     AND
     (CASE
-	    WHEN $3::timestamp IS NOT NULL THEN gb.banned_at > $3::timestamp
+	    WHEN $4::uuid IS NOT NULL THEN gm.user_id > $4::uuid
 	    ELSE TRUE
     END)
-ORDER BY gb.banned_at DESC
-LIMIT $4
+    ORDER BY u.id DESC
+	LIMIT $5
+),
+
+user_roles_cte AS (
+	SELECT gru.user_id, ARRAY_AGG(gru.role_id)::uuid[] AS roles
+	FROM guild_role_users gru
+    INNER JOIN guild_roles gr ON gr.id = gru.role_id AND gr.guild_id = $1
+	INNER JOIN guild_member_cte gmcte ON gmcte.id = gru.user_id
+	GROUP BY gru.user_id
+)
+
+SELECT gmcte.joined_at, gmcte.display_name, gmcte.id, gmcte.username, gmcte.public_flags, gmcte.attachment_id, urcte.roles
+FROM guild_member_cte gmcte
+INNER JOIN user_roles_cte urcte ON urcte.user_id = gmcte.id
+ORDER BY gmcte.id DESC
 `
 
-type GetManyGuildBansByGuildIDParams struct {
+type GetManyAssignableGuildMembersByGuildIDAndRoleIDParams struct {
 	GuildID      uuid.UUID
-	Before       pgtype.Timestamp
-	After        pgtype.Timestamp
+	RoleID       uuid.UUID
+	Before       pgtype.UUID
+	After        pgtype.UUID
 	ResultsLimit int64
 }
 
-type GetManyGuildBansByGuildIDRow struct {
-	BannedAt     pgtype.Timestamp
-	Reason       string
-	ID           uuid.UUID
+type GetManyAssignableGuildMembersByGuildIDAndRoleIDRow struct {
+	JoinedAt     pgtype.Timestamp
 	DisplayName  string
+	ID           uuid.UUID
 	Username     string
 	PublicFlags  int32
 	AttachmentID pgtype.UUID
+	Roles        []uuid.UUID
 }
 
-func (q *Queries) GetManyGuildBansByGuildID(ctx context.Context, arg GetManyGuildBansByGuildIDParams) ([]GetManyGuildBansByGuildIDRow, error) {
-	rows, err := q.db.Query(ctx, getManyGuildBansByGuildID,
+func (q *Queries) GetManyAssignableGuildMembersByGuildIDAndRoleID(ctx context.Context, arg GetManyAssignableGuildMembersByGuildIDAndRoleIDParams) ([]GetManyAssignableGuildMembersByGuildIDAndRoleIDRow, error) {
+	rows, err := q.db.Query(ctx, getManyAssignableGuildMembersByGuildIDAndRoleID,
 		arg.GuildID,
+		arg.RoleID,
 		arg.Before,
 		arg.After,
 		arg.ResultsLimit,
@@ -160,17 +146,17 @@ func (q *Queries) GetManyGuildBansByGuildID(ctx context.Context, arg GetManyGuil
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetManyGuildBansByGuildIDRow{}
+	items := []GetManyAssignableGuildMembersByGuildIDAndRoleIDRow{}
 	for rows.Next() {
-		var i GetManyGuildBansByGuildIDRow
+		var i GetManyAssignableGuildMembersByGuildIDAndRoleIDRow
 		if err := rows.Scan(
-			&i.BannedAt,
-			&i.Reason,
-			&i.ID,
+			&i.JoinedAt,
 			&i.DisplayName,
+			&i.ID,
 			&i.Username,
 			&i.PublicFlags,
 			&i.AttachmentID,
+			&i.Roles,
 		); err != nil {
 			return nil, err
 		}
@@ -199,15 +185,15 @@ WITH guild_member_cte AS (
 	LEFT JOIN user_attachments ua ON ua.user_id = gm.user_id
     WHERE gm.guild_id = $1 AND 
     (CASE
-        WHEN $2::timestamp IS NOT NULL THEN gm.joined_at < $2::timestamp
+        WHEN $2::uuid IS NOT NULL THEN gm.user_id < $2::uuid
         ELSE TRUE
     END)
     AND
     (CASE
-	    WHEN $3::timestamp IS NOT NULL THEN gm.joined_at > $3::timestamp
+	    WHEN $3::uuid IS NOT NULL THEN gm.user_id > $3::uuid
 	    ELSE TRUE
     END)
-	ORDER BY gm.joined_at DESC
+    ORDER BY gm.user_id DESC
 	LIMIT $4
 ),
 
@@ -222,12 +208,13 @@ user_roles_cte AS (
 SELECT gmcte.joined_at, gmcte.display_name, gmcte.id, gmcte.username, gmcte.public_flags, gmcte.attachment_id, urcte.roles
 FROM guild_member_cte gmcte
 INNER JOIN user_roles_cte urcte ON urcte.user_id = gmcte.id
+ORDER BY gmcte.id DESC
 `
 
 type GetManyGuildMembersByGuildIDParams struct {
 	GuildID      uuid.UUID
-	Before       pgtype.Timestamp
-	After        pgtype.Timestamp
+	Before       pgtype.UUID
+	After        pgtype.UUID
 	ResultsLimit int64
 }
 
@@ -255,6 +242,106 @@ func (q *Queries) GetManyGuildMembersByGuildID(ctx context.Context, arg GetManyG
 	items := []GetManyGuildMembersByGuildIDRow{}
 	for rows.Next() {
 		var i GetManyGuildMembersByGuildIDRow
+		if err := rows.Scan(
+			&i.JoinedAt,
+			&i.DisplayName,
+			&i.ID,
+			&i.Username,
+			&i.PublicFlags,
+			&i.AttachmentID,
+			&i.Roles,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getManyUnassignableGuildMembersByGuildIDAndRoleID = `-- name: GetManyUnassignableGuildMembersByGuildIDAndRoleID :many
+WITH guild_member_cte AS (
+	SELECT
+    gm.joined_at,
+    CASE
+        WHEN gm.nickname IS NOT NULL THEN gm.nickname
+        ELSE u.display_name
+    END::text AS display_name,
+    u.id,
+    u.username,
+    u.public_flags,
+    ua.attachment_id
+	FROM guild_members gm
+	INNER JOIN users u ON u.id = gm.user_id
+    INNER JOIN guild_role_users gru ON gru.user_id = gm.user_id
+	LEFT JOIN user_attachments ua ON ua.user_id = gm.user_id
+    WHERE
+    gm.guild_id = $1
+    AND
+    gru.role_id = $2
+    AND
+    (CASE
+        WHEN $3::uuid IS NOT NULL THEN gm.user_id < $3::uuid
+        ELSE TRUE
+    END)
+    AND
+    (CASE
+	    WHEN $4::uuid IS NOT NULL THEN gm.user_id > $4::uuid
+	    ELSE TRUE
+    END)
+    ORDER BY gm.user_id DESC
+	LIMIT $5
+),
+
+user_roles_cte AS (
+	SELECT gru.user_id, ARRAY_AGG(gru.role_id)::uuid[] AS roles
+	FROM guild_role_users gru
+    INNER JOIN guild_roles gr ON gr.id = gru.role_id AND gr.guild_id = $1
+	INNER JOIN guild_member_cte gmcte ON gmcte.id = gru.user_id
+	GROUP BY gru.user_id
+)
+
+SELECT gmcte.joined_at, gmcte.display_name, gmcte.id, gmcte.username, gmcte.public_flags, gmcte.attachment_id, urcte.roles
+FROM guild_member_cte gmcte
+INNER JOIN user_roles_cte urcte ON urcte.user_id = gmcte.id
+ORDER BY gmcte.id DESC
+`
+
+type GetManyUnassignableGuildMembersByGuildIDAndRoleIDParams struct {
+	GuildID      uuid.UUID
+	RoleID       uuid.UUID
+	Before       pgtype.UUID
+	After        pgtype.UUID
+	ResultsLimit int64
+}
+
+type GetManyUnassignableGuildMembersByGuildIDAndRoleIDRow struct {
+	JoinedAt     pgtype.Timestamp
+	DisplayName  string
+	ID           uuid.UUID
+	Username     string
+	PublicFlags  int32
+	AttachmentID pgtype.UUID
+	Roles        []uuid.UUID
+}
+
+func (q *Queries) GetManyUnassignableGuildMembersByGuildIDAndRoleID(ctx context.Context, arg GetManyUnassignableGuildMembersByGuildIDAndRoleIDParams) ([]GetManyUnassignableGuildMembersByGuildIDAndRoleIDRow, error) {
+	rows, err := q.db.Query(ctx, getManyUnassignableGuildMembersByGuildIDAndRoleID,
+		arg.GuildID,
+		arg.RoleID,
+		arg.Before,
+		arg.After,
+		arg.ResultsLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetManyUnassignableGuildMembersByGuildIDAndRoleIDRow{}
+	for rows.Next() {
+		var i GetManyUnassignableGuildMembersByGuildIDAndRoleIDRow
 		if err := rows.Scan(
 			&i.JoinedAt,
 			&i.DisplayName,
