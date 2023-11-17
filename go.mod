@@ -5,6 +5,7 @@ go 1.21.3
 require (
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/websocket v1.5.1
+	github.com/joho/godotenv v1.5.1
 	github.com/pion/interceptor v0.1.25
 	github.com/pion/webrtc/v4 v4.0.0-beta.6
 )

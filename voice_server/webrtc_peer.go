@@ -6,8 +6,8 @@ import (
 )
 
 type Peer struct {
-	ID    string
-	Conn  *webrtc.PeerConnection
-	WS    *websocket.Conn
-	Track *webrtc.TrackLocalStaticRTP
+	id      string
+	channel *WebRTCChannel
+	pConn   *webrtc.PeerConnection
+	wConn   *websocket.Conn
 }

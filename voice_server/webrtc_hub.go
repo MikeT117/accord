@@ -7,7 +7,7 @@ import (
 
 type WebRTCHub struct {
 	WebRTCAPI *webrtc.API
-	Channels  map[string]*Channel
+	Channels  map[string]*WebRTCChannel
 }
 
 func CreateWebRTCHub() *WebRTCHub {
@@ -32,15 +32,15 @@ func CreateWebRTCHub() *WebRTCHub {
 
 	return &WebRTCHub{
 		WebRTCAPI: api,
-		Channels:  make(map[string]*Channel),
+		Channels:  make(map[string]*WebRTCChannel),
 	}
 }
 
-func (hub *WebRTCHub) GetOrCreateChannel(ID string) *Channel {
+func (hub *WebRTCHub) CreateChannel(ID string) *WebRTCChannel {
 	channel, ok := hub.Channels[ID]
 
 	if !ok {
-		channel = &Channel{
+		channel = &WebRTCChannel{
 			ID:          ID,
 			Hub:         hub,
 			Peers:       make(map[string]*Peer),
@@ -48,5 +48,6 @@ func (hub *WebRTCHub) GetOrCreateChannel(ID string) *Channel {
 		}
 		hub.Channels[ID] = channel
 	}
+
 	return channel
 }

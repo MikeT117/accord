@@ -6,52 +6,52 @@ import (
 	"log"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/pion/webrtc/v4"
 )
 
-type Channel struct {
+type WebRTCChannel struct {
 	ID          string
 	Hub         *WebRTCHub
 	Peers       map[string]*Peer
 	TrackLocals map[string]*webrtc.TrackLocalStaticRTP
 }
 
-func (c *Channel) AddTrack(track *webrtc.TrackRemote) *webrtc.TrackLocalStaticRTP {
+func (c *WebRTCChannel) AddTrack(track *webrtc.TrackRemote) *webrtc.TrackLocalStaticRTP {
 	defer func() {
 		c.SignalPeers()
 	}()
 
-	trackLocal, err := webrtc.NewTrackLocalStaticRTP(track.Codec().RTPCodecCapability, track.ID(), track.StreamID())
+	trackLocal, err := webrtc.NewTrackLocalStaticRTP(track.Codec().RTPCodecCapability, track.ID(), c.ID)
 
 	if err != nil {
 		panic(err)
 	}
 
-	// Possibly use the Peer ID here, as each peer should only have a single track
 	c.TrackLocals[track.ID()] = trackLocal
 	return trackLocal
 }
 
-func (c *Channel) RemoveTrack(track *webrtc.TrackLocalStaticRTP) {
+func (c *WebRTCChannel) RemoveTrack(track *webrtc.TrackLocalStaticRTP) {
 	defer func() {
 		c.SignalPeers()
 	}()
 	delete(c.TrackLocals, track.ID())
 }
 
-func (c *Channel) SignalPeers() {
+func (c *WebRTCChannel) SignalPeers() {
 
 	attemptSync := func() (tryagain bool) {
-		for i := range c.Peers {
-			if c.Peers[i].Conn.ConnectionState() == webrtc.PeerConnectionStateClosed {
-				delete(c.Peers, i)
+		for _, peer := range c.Peers {
+			if peer.pConn.ConnectionState() == webrtc.PeerConnectionStateClosed {
+				delete(c.Peers, peer.id)
 				return true
 			}
 
-			// map of sender we already are seanding, so we don't double send
+			// map of sender we already are sending, so we don't double send
 			existingSenders := map[string]bool{}
 
-			for _, sender := range c.Peers[i].Conn.GetSenders() {
+			for _, sender := range peer.pConn.GetSenders() {
 				if sender.Track() == nil {
 					continue
 				}
@@ -60,14 +60,14 @@ func (c *Channel) SignalPeers() {
 
 				// If we have a RTPSender that doesn't map to a existing track remove and signal
 				if _, ok := c.TrackLocals[sender.Track().ID()]; !ok {
-					if err := c.Peers[i].Conn.RemoveTrack(sender); err != nil {
+					if err := peer.pConn.RemoveTrack(sender); err != nil {
 						return true
 					}
 				}
 			}
 
 			// Don't receive videos we are sending, make sure we don't have loopback
-			for _, receiver := range c.Peers[i].Conn.GetReceivers() {
+			for _, receiver := range peer.pConn.GetReceivers() {
 				if receiver.Track() == nil {
 					continue
 				}
@@ -78,18 +78,18 @@ func (c *Channel) SignalPeers() {
 			// Add all track we aren't sending yet to the PeerConnection
 			for trackID := range c.TrackLocals {
 				if _, ok := existingSenders[trackID]; !ok {
-					if _, err := c.Peers[i].Conn.AddTrack(c.TrackLocals[trackID]); err != nil {
+					if _, err := peer.pConn.AddTrack(c.TrackLocals[trackID]); err != nil {
 						return true
 					}
 				}
 			}
 
-			offer, err := c.Peers[i].Conn.CreateOffer(nil)
+			offer, err := peer.pConn.CreateOffer(nil)
 			if err != nil {
 				return true
 			}
 
-			if err = c.Peers[i].Conn.SetLocalDescription(offer); err != nil {
+			if err = peer.pConn.SetLocalDescription(offer); err != nil {
 				return true
 			}
 
@@ -98,7 +98,7 @@ func (c *Channel) SignalPeers() {
 				return true
 			}
 
-			if err = c.Peers[i].WS.WriteJSON(&WebsocketMessage{
+			if err = peer.wConn.WriteJSON(&WebsocketMessage{
 				Event: "offer",
 				Data:  string(offerString),
 			}); err != nil {
@@ -109,8 +109,13 @@ func (c *Channel) SignalPeers() {
 		return
 	}
 
-	for syncAttempt := 0; ; syncAttempt++ {
+	for syncAttempt := 0; syncAttempt <= 25; syncAttempt++ {
 		fmt.Println("SYNC ATTEMPT: ", syncAttempt)
+
+		if !attemptSync() {
+			break
+		}
+
 		if syncAttempt == 25 {
 			go func() {
 				time.Sleep(time.Second * 3)
@@ -118,15 +123,12 @@ func (c *Channel) SignalPeers() {
 			}()
 			return
 		}
-		if !attemptSync() {
-			break
-		}
 	}
 }
 
-func (c *Channel) CreatePeer(ID string, wc *WebsocketClient) (*Peer, error) {
+func (c *WebRTCChannel) CreatePeer(ID string, wConn *websocket.Conn) (*Peer, error) {
 
-	conn, err := c.Hub.WebRTCAPI.NewPeerConnection(webrtc.Configuration{
+	pConn, err := c.Hub.WebRTCAPI.NewPeerConnection(webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
 			{
 				URLs: []string{"stun:stun.l.google.com:19302"},
@@ -138,7 +140,7 @@ func (c *Channel) CreatePeer(ID string, wc *WebsocketClient) (*Peer, error) {
 	}
 
 	for _, typ := range []webrtc.RTPCodecType{webrtc.RTPCodecTypeAudio} {
-		if _, err := conn.AddTransceiverFromKind(typ, webrtc.RTPTransceiverInit{
+		if _, err := pConn.AddTransceiverFromKind(typ, webrtc.RTPTransceiverInit{
 			Direction: webrtc.RTPTransceiverDirectionRecvonly,
 		}); err != nil {
 			return &Peer{}, err
@@ -146,12 +148,13 @@ func (c *Channel) CreatePeer(ID string, wc *WebsocketClient) (*Peer, error) {
 	}
 
 	peer := &Peer{
-		ID:   ID,
-		WS:   wc.conn,
-		Conn: conn,
+		id:      ID,
+		channel: c,
+		wConn:   wConn,
+		pConn:   pConn,
 	}
 
-	conn.OnICECandidate(func(i *webrtc.ICECandidate) {
+	pConn.OnICECandidate(func(i *webrtc.ICECandidate) {
 		if i == nil {
 			return
 		}
@@ -162,7 +165,7 @@ func (c *Channel) CreatePeer(ID string, wc *WebsocketClient) (*Peer, error) {
 			return
 		}
 
-		if writeErr := wc.conn.WriteJSON(&WebsocketMessage{
+		if writeErr := wConn.WriteJSON(&WebsocketMessage{
 			Event: "candidate",
 			Data:  string(candidateString),
 		}); err != nil {
@@ -170,10 +173,10 @@ func (c *Channel) CreatePeer(ID string, wc *WebsocketClient) (*Peer, error) {
 		}
 	})
 
-	conn.OnConnectionStateChange(func(p webrtc.PeerConnectionState) {
+	pConn.OnConnectionStateChange(func(p webrtc.PeerConnectionState) {
 		switch p {
 		case webrtc.PeerConnectionStateFailed:
-			if err := conn.Close(); err != nil {
+			if err := pConn.Close(); err != nil {
 				log.Print(err)
 			}
 		case webrtc.PeerConnectionStateClosed:
@@ -181,7 +184,7 @@ func (c *Channel) CreatePeer(ID string, wc *WebsocketClient) (*Peer, error) {
 		}
 	})
 
-	conn.OnTrack(func(remoteTrack *webrtc.TrackRemote, _ *webrtc.RTPReceiver) {
+	pConn.OnTrack(func(remoteTrack *webrtc.TrackRemote, _ *webrtc.RTPReceiver) {
 		fmt.Println("ON_TRACK")
 
 		trackLocal := c.AddTrack(remoteTrack)
@@ -201,17 +204,9 @@ func (c *Channel) CreatePeer(ID string, wc *WebsocketClient) (*Peer, error) {
 	})
 
 	if err != nil {
-		wc.CloseMessage(4001, "Failure to create peer")
+		return &Peer{}, err
 	}
 
-	wc.Peer = peer
-	wc.websocketHub.RegisterClient(wc)
 	c.Peers[ID] = peer
-
-	go wc.ReadMessages()
-	go wc.WriteMessages()
-
-	c.SignalPeers()
-
 	return peer, nil
 }

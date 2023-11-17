@@ -1,6 +1,6 @@
 function useVoice() {
   const peerConn = new RTCPeerConnection();
-  const wsConn = new WebSocket("wss://${env.HOST}/websocket");
+  const wsConn = new WebSocket("wss://${env.HOST}/api/websocket");
   wsConn.addEventListener("close", (e) => console.log("WS CLOSE EVENT: ", e));
   wsConn.addEventListener("error", (e) => console.error("WS ERROR EVENT: ", e));
 

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -13,14 +12,10 @@ import (
 )
 
 type WebsocketClient struct {
-	websocketHub *WebsocketHub
-	channel      *Channel
-	Peer         *Peer
-	conn         *websocket.Conn
-	id           uuid.UUID
-	pingInterval time.Duration
-	pongWait     time.Duration
-	writeWait    time.Duration
+	id   uuid.UUID
+	hub  *WebsocketHub
+	peer *Peer
+	conn *websocket.Conn
 }
 
 type WebsocketMessage struct {
@@ -34,10 +29,9 @@ func (wc *WebsocketClient) CloseMessage(status int, message string) {
 
 func (wc *WebsocketClient) ReadMessages() {
 
-	wc.conn.SetReadDeadline(time.Now().Add(wc.pongWait))
+	wc.conn.SetReadDeadline(time.Now().Add(wc.hub.pongWait))
 
 	message := &WebsocketMessage{}
-
 	for {
 		_, p, err := wc.conn.ReadMessage()
 		fmt.Println("READ_MESSAGE_EXECUTING")
@@ -59,7 +53,7 @@ func (wc *WebsocketClient) ReadMessages() {
 				return
 			}
 
-			if err := wc.Peer.Conn.AddICECandidate(candidate); err != nil {
+			if err := wc.peer.pConn.AddICECandidate(candidate); err != nil {
 				log.Println(err)
 				return
 			}
@@ -71,7 +65,7 @@ func (wc *WebsocketClient) ReadMessages() {
 				return
 			}
 
-			if err := wc.Peer.Conn.SetRemoteDescription(answer); err != nil {
+			if err := wc.peer.pConn.SetRemoteDescription(answer); err != nil {
 				log.Println(err)
 				return
 			}
@@ -82,7 +76,7 @@ func (wc *WebsocketClient) ReadMessages() {
 
 func (wc *WebsocketClient) WriteMessages() {
 
-	ticker := time.NewTicker(wc.pingInterval)
+	ticker := time.NewTicker(wc.hub.pingInterval)
 
 	defer func() {
 		ticker.Stop()
@@ -91,42 +85,11 @@ func (wc *WebsocketClient) WriteMessages() {
 	for {
 		<-ticker.C
 		fmt.Println("SENDING_PING")
-		wc.conn.SetWriteDeadline(time.Now().Add(wc.writeWait))
+		wc.conn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
 		if err := wc.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 			wc.CloseMessage(1002, "PING_FAILURE")
 			return
 		}
 
 	}
-}
-
-func CreateWebsocketClient(websocketHub *WebsocketHub, channel *Channel, conn *websocket.Conn) {
-
-	wc := &WebsocketClient{
-		websocketHub: websocketHub,
-		conn:         conn,
-		channel:      channel,
-		pingInterval: time.Duration(15 * time.Second),
-		pongWait:     time.Duration(20 * time.Second),
-		writeWait:    time.Duration(5 * time.Second),
-	}
-
-	wc.conn.SetPongHandler(func(string) error {
-		fmt.Println("RECIEVING_PONG")
-		if err := wc.conn.SetReadDeadline(time.Now().Add(wc.pongWait)); err != nil {
-			log.Printf("PONG_ERROR: %v\n", err.Error())
-			wc.CloseMessage(1002, "PONG_TIMEOUT")
-		}
-		return nil
-	})
-
-	wc.conn.SetCloseHandler(func(code int, text string) error {
-		fmt.Printf("CLOSE_HANDLER - Reason: %s\n", text)
-		wc.conn.Close()
-		wc.websocketHub.unregister <- wc.id
-		return nil
-	})
-
-	wc.channel.CreatePeer(strconv.FormatInt(time.Now().UnixNano(), 10), wc)
-
 }
