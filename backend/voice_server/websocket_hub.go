@@ -5,17 +5,28 @@ import (
 	"log"
 	"time"
 
+	"github.com/MikeT117/accord/backend/internal/message_queue"
+	"github.com/MikeT117/accord/backend/internal/sqlc"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
 type WebsocketHub struct {
+	queries      *sqlc.Queries
+	webRTCHub    *WebRTCHub
+	messageQueue *message_queue.MessageQueue
 	clients      map[uuid.UUID]*WebsocketClient
+	local        chan *message_queue.LocalPayload
 	register     chan *WebsocketClient
 	unregister   chan uuid.UUID
+	authTimeout  time.Duration
 	pingInterval time.Duration
 	pongWait     time.Duration
 	writeWait    time.Duration
+}
+
+func (wh *WebsocketHub) RegisterClient(client *WebsocketClient) {
+	wh.register <- client
 }
 
 func (wh *WebsocketHub) CreateClient(hub *WebsocketHub, conn *websocket.Conn) *WebsocketClient {
@@ -41,7 +52,9 @@ func (wh *WebsocketHub) CreateClient(hub *WebsocketHub, conn *websocket.Conn) *W
 		return nil
 	})
 
-	wh.register <- wc
+	go wc.ReadMessages()
+	go wc.WriteMessages()
+
 	return wc
 }
 
@@ -61,11 +74,16 @@ func (wh *WebsocketHub) Run() {
 	}
 }
 
-func CreateWebsocketHub() *WebsocketHub {
+func CreateWebsocketHub(queries *sqlc.Queries, webRTCHub *WebRTCHub, messageQueue *message_queue.MessageQueue) *WebsocketHub {
 	hub := &WebsocketHub{
+		queries:      queries,
+		messageQueue: messageQueue,
+		webRTCHub:    webRTCHub,
 		clients:      make(map[uuid.UUID]*WebsocketClient),
+		local:        make(chan *message_queue.LocalPayload),
 		register:     make(chan *WebsocketClient),
 		unregister:   make(chan uuid.UUID),
+		authTimeout:  time.Duration(10 * time.Second),
 		pingInterval: time.Duration(15 * time.Second),
 		pongWait:     time.Duration(20 * time.Second),
 		writeWait:    time.Duration(5 * time.Second),

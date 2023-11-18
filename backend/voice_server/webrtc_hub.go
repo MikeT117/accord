@@ -1,13 +1,14 @@
 package voice_server
 
 import (
+	"github.com/google/uuid"
 	"github.com/pion/interceptor"
 	"github.com/pion/webrtc/v4"
 )
 
 type WebRTCHub struct {
 	WebRTCAPI *webrtc.API
-	Channels  map[string]*WebRTCChannel
+	Channels  map[uuid.UUID]*WebRTCChannel
 }
 
 func CreateWebRTCHub() *WebRTCHub {
@@ -32,11 +33,11 @@ func CreateWebRTCHub() *WebRTCHub {
 
 	return &WebRTCHub{
 		WebRTCAPI: api,
-		Channels:  make(map[string]*WebRTCChannel),
+		Channels:  make(map[uuid.UUID]*WebRTCChannel),
 	}
 }
 
-func (hub *WebRTCHub) CreateChannel(ID string) *WebRTCChannel {
+func (hub *WebRTCHub) CreateChannel(ID uuid.UUID) *WebRTCChannel {
 	channel, ok := hub.Channels[ID]
 
 	if !ok {

@@ -100,7 +100,7 @@ func (a *api) HandleUserRelationshipCreate(c echo.Context) error {
 
 		for _, user := range users {
 			if user.ID == c.(*APIContext).UserID {
-				// TODO: Send to recipient
+				// TODO: FIRE RELATIONSHIP_CREATE - All fields
 			} else {
 				relationship.User = user
 			}
@@ -152,7 +152,7 @@ func (a *api) HandleUserRelationshipUpdate(c echo.Context) error {
 		return NewServerError(err, "DeleteRelationship")
 	}
 
-	// TODO: Send event to other member
+	// TODO: FIRE RELATIONSHIP_UPDATE event
 
 	return NewSuccessfulResponse(c, http.StatusNoContent, nil)
 }

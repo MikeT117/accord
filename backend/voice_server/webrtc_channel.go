@@ -6,12 +6,13 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pion/webrtc/v4"
 )
 
 type WebRTCChannel struct {
-	ID          string
+	ID          uuid.UUID
 	Hub         *WebRTCHub
 	Peers       map[string]*Peer
 	TrackLocals map[string]*webrtc.TrackLocalStaticRTP
@@ -22,7 +23,7 @@ func (c *WebRTCChannel) AddTrack(track *webrtc.TrackRemote) *webrtc.TrackLocalSt
 		c.SignalPeers()
 	}()
 
-	trackLocal, err := webrtc.NewTrackLocalStaticRTP(track.Codec().RTPCodecCapability, track.ID(), c.ID)
+	trackLocal, err := webrtc.NewTrackLocalStaticRTP(track.Codec().RTPCodecCapability, track.ID(), c.ID.String())
 
 	if err != nil {
 		panic(err)
@@ -98,9 +99,9 @@ func (c *WebRTCChannel) SignalPeers() {
 				return true
 			}
 
-			if err = peer.wConn.WriteJSON(&WebsocketMessage{
-				Event: "offer",
-				Data:  string(offerString),
+			if err = peer.wConn.WriteJSON(&OutgoingWebsocketMessage{
+				Op: "OFFER",
+				D:  string(offerString),
 			}); err != nil {
 				return true
 			}
@@ -165,9 +166,9 @@ func (c *WebRTCChannel) CreatePeer(ID string, wConn *websocket.Conn) (*Peer, err
 			return
 		}
 
-		if writeErr := wConn.WriteJSON(&WebsocketMessage{
-			Event: "candidate",
-			Data:  string(candidateString),
+		if writeErr := wConn.WriteJSON(&OutgoingWebsocketMessage{
+			Op: "CANDIDATE",
+			D:  string(candidateString),
 		}); err != nil {
 			log.Print(writeErr)
 		}

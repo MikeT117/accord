@@ -1,17 +1,14 @@
 package websocket_api
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	message_queue "github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
 	"github.com/gorilla/websocket"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var upgrader = websocket.Upgrader{
@@ -19,9 +16,9 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-func CreateWebsocketServer(ctx context.Context, pool *pgxpool.Pool, queries *sqlc.Queries, messageQueue *message_queue.MessageQueue) {
+func CreateWebsocketServer(queries *sqlc.Queries, messageQueue *message_queue.MessageQueue) {
 
-	websocketHub := CreateWebsocketHub(queries, time.Second*5)
+	websocketHub := CreateWebsocketHub(queries)
 
 	go messageQueue.CreateSubscription("ACCORD.FORWARD", websocketHub.HandleFowardedEvent)
 	go messageQueue.CreateSubscription("ACCORD.LOCAL", websocketHub.HandleLocalEvent)

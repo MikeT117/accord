@@ -36,7 +36,7 @@ func (wh *WebsocketHub) Run() {
 	}
 }
 
-func CreateWebsocketHub(queries *sqlc.Queries, pingInterval time.Duration) *WebsocketHub {
+func CreateWebsocketHub(queries *sqlc.Queries) *WebsocketHub {
 	hub := &WebsocketHub{
 		queries:      queries,
 		clients:      make(map[uuid.UUID]*WebsocketClient),
