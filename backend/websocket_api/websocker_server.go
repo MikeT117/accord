@@ -22,7 +22,6 @@ var upgrader = websocket.Upgrader{
 func CreateWebsocketServer(ctx context.Context, pool *pgxpool.Pool, queries *sqlc.Queries, messageQueue *message_queue.MessageQueue) {
 
 	websocketHub := CreateWebsocketHub(queries, time.Second*5)
-	go websocketHub.Run()
 
 	go messageQueue.CreateSubscription("ACCORD.FORWARD", websocketHub.HandleFowardedEvent)
 	go messageQueue.CreateSubscription("ACCORD.LOCAL", websocketHub.HandleLocalEvent)

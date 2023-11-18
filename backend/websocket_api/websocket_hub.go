@@ -9,16 +9,16 @@ import (
 )
 
 type WebsocketHub struct {
-	queries    *sqlc.Queries
-	clients    map[uuid.UUID]*WebsocketClient
-	forward    chan *message_queue.ForwardedPayload
-	local      chan *message_queue.LocalPayload
-	register   chan *WebsocketClient
-	unregister chan uuid.UUID
-}
-
-func (wh *WebsocketHub) GetClientByID(id uuid.UUID) *WebsocketClient {
-	return wh.clients[id]
+	queries      *sqlc.Queries
+	clients      map[uuid.UUID]*WebsocketClient
+	forward      chan *message_queue.ForwardedPayload
+	local        chan *message_queue.LocalPayload
+	register     chan *WebsocketClient
+	unregister   chan uuid.UUID
+	authTimeout  time.Duration
+	pingInterval time.Duration
+	pongWait     time.Duration
+	writeWait    time.Duration
 }
 
 func (wh *WebsocketHub) RegisterClient(client *WebsocketClient) {
@@ -37,12 +37,19 @@ func (wh *WebsocketHub) Run() {
 }
 
 func CreateWebsocketHub(queries *sqlc.Queries, pingInterval time.Duration) *WebsocketHub {
-	return &WebsocketHub{
-		queries:    queries,
-		clients:    make(map[uuid.UUID]*WebsocketClient),
-		forward:    make(chan *message_queue.ForwardedPayload),
-		local:      make(chan *message_queue.LocalPayload),
-		register:   make(chan *WebsocketClient),
-		unregister: make(chan uuid.UUID),
+	hub := &WebsocketHub{
+		queries:      queries,
+		clients:      make(map[uuid.UUID]*WebsocketClient),
+		forward:      make(chan *message_queue.ForwardedPayload),
+		local:        make(chan *message_queue.LocalPayload),
+		register:     make(chan *WebsocketClient),
+		unregister:   make(chan uuid.UUID),
+		authTimeout:  time.Duration(10 * time.Second),
+		pingInterval: time.Duration(15 * time.Second),
+		pongWait:     time.Duration(20 * time.Second),
+		writeWait:    time.Duration(5 * time.Second),
 	}
+
+	go hub.Run()
+	return hub
 }

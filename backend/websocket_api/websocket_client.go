@@ -25,7 +25,7 @@ type AuthenticatePayload struct {
 }
 
 type WebsocketClient struct {
-	websocketHub          *WebsocketHub
+	hub                   *WebsocketHub
 	conn                  *websocket.Conn
 	id                    uuid.UUID
 	authenticated         bool
@@ -34,10 +34,6 @@ type WebsocketClient struct {
 	accesstokenExpiresAt  time.Time
 	refreshtokenExpiresAt time.Time
 	roles                 map[string]bool
-	authTimeout           time.Duration
-	pingInterval          time.Duration
-	pongWait              time.Duration
-	writeWait             time.Duration
 }
 
 func (wc *WebsocketClient) CloseMessage(status int, message string) {
@@ -52,7 +48,7 @@ func (wc *WebsocketClient) CheckTokens() error {
 			return errors.New("EXPIRED_TOKENS")
 		}
 
-		session, err := wc.websocketHub.queries.GetUserSessionByToken(context.Background(), wc.refreshtoken)
+		session, err := wc.hub.queries.GetUserSessionByToken(context.Background(), wc.refreshtoken)
 
 		if err != nil {
 			wc.conn.WriteMessage(websocket.CloseMessage, []byte("INVALID_TOKENS"))
@@ -95,7 +91,7 @@ func (wc *WebsocketClient) Identify(accesstoken string, refreshtoken string) {
 		return
 	}
 
-	session, err := wc.websocketHub.queries.GetUserSessionByToken(context.Background(), refreshtoken)
+	session, err := wc.hub.queries.GetUserSessionByToken(context.Background(), refreshtoken)
 
 	if err != nil {
 		if database.IsPGErrNoRows(err) {
@@ -106,12 +102,12 @@ func (wc *WebsocketClient) Identify(accesstoken string, refreshtoken string) {
 		return
 	}
 
-	if wc.websocketHub.GetClientByID(refreshtokenID) != nil {
+	if _, ok := wc.hub.clients[refreshtokenID]; ok {
 		wc.CloseMessage(1003, "DUPLICATE_CONNECTION")
 		return
 	}
 
-	roles, err := wc.websocketHub.queries.GetManyGuildRoleIDsByUserID(context.Background(), session.UserID)
+	roles, err := wc.hub.queries.GetManyGuildRoleIDsByUserID(context.Background(), session.UserID)
 
 	if err != nil {
 		wc.CloseMessage(1002, "INTERNAL_SERVER_ERROR")
@@ -132,13 +128,13 @@ func (wc *WebsocketClient) Identify(accesstoken string, refreshtoken string) {
 	wc.refreshtokenExpiresAt = refreshtokenJwt.Expiration()
 	wc.roles = roleIDs
 
-	wc.websocketHub.RegisterClient(wc)
+	wc.hub.RegisterClient(wc)
 	wc.SendInitialisationPayload()
 }
 
 func (wc *WebsocketClient) ReadMessages() {
 
-	wc.conn.SetReadDeadline(time.Now().Add(wc.pongWait))
+	wc.conn.SetReadDeadline(time.Now().Add(wc.hub.pongWait))
 
 	for {
 		_, p, err := wc.conn.ReadMessage()
@@ -175,7 +171,7 @@ func (wc *WebsocketClient) ReadMessages() {
 
 func (wc *WebsocketClient) WriteMessages() {
 
-	ticker := time.NewTicker(wc.pingInterval)
+	ticker := time.NewTicker(wc.hub.pingInterval)
 
 	defer func() {
 		ticker.Stop()
@@ -185,12 +181,12 @@ func (wc *WebsocketClient) WriteMessages() {
 		select {
 		case <-ticker.C:
 			fmt.Println("SENDING_PING")
-			wc.conn.SetWriteDeadline(time.Now().Add(wc.writeWait))
+			wc.conn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
 			if err := wc.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				wc.CloseMessage(1002, "PING_FAILURE")
 				return
 			}
-		case msg := <-wc.websocketHub.forward:
+		case msg := <-wc.hub.forward:
 			if !wc.authenticated {
 				continue
 			}
@@ -205,7 +201,7 @@ func (wc *WebsocketClient) WriteMessages() {
 				fmt.Println("CHECKING ROLEIDS")
 				for idx := range msg.RoleIDs {
 					if wc.roles[msg.RoleIDs[idx]] {
-						wc.conn.SetWriteDeadline(time.Now().Add(wc.writeWait))
+						wc.conn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
 						payload, _ := json.Marshal(msg.Data)
 						wc.conn.WriteMessage(websocket.TextMessage, payload)
 						break
@@ -215,7 +211,7 @@ func (wc *WebsocketClient) WriteMessages() {
 				fmt.Println("CHECKING USERIDS")
 				for idx := range msg.UserIDs {
 					if wc.id.String() == msg.UserIDs[idx] {
-						wc.conn.SetWriteDeadline(time.Now().Add(wc.writeWait))
+						wc.conn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
 						payload, _ := json.Marshal(msg.Data)
 						wc.conn.WriteMessage(websocket.TextMessage, payload)
 						break
@@ -228,7 +224,7 @@ func (wc *WebsocketClient) WriteMessages() {
 
 func (wc *WebsocketClient) SendInitialisationPayload() {
 
-	InitData, err := wc.websocketHub.queries.GetWebsocketInitialisationPayload(context.Background(), wc.id)
+	InitData, err := wc.hub.queries.GetWebsocketInitialisationPayload(context.Background(), wc.id)
 
 	if err != nil {
 		fmt.Printf("GetInitialGuilds err: %v\n", err)
@@ -246,21 +242,17 @@ func (wc *WebsocketClient) SendInitialisationPayload() {
 
 }
 
-func CreateWebsocketClient(websocketHub *WebsocketHub, conn *websocket.Conn) {
+func CreateWebsocketClient(hub *WebsocketHub, conn *websocket.Conn) {
 
 	wc := &WebsocketClient{
-		websocketHub:  websocketHub,
+		hub:           hub,
 		conn:          conn,
 		authenticated: false,
-		authTimeout:   time.Duration(10 * time.Second),
-		pingInterval:  time.Duration(15 * time.Second),
-		pongWait:      time.Duration(20 * time.Second),
-		writeWait:     time.Duration(5 * time.Second),
 	}
 
 	wc.conn.SetPongHandler(func(string) error {
 		fmt.Println("RECIEVING_PONG")
-		if err := wc.conn.SetReadDeadline(time.Now().Add(wc.pongWait)); err != nil {
+		if err := wc.conn.SetReadDeadline(time.Now().Add(wc.hub.pongWait)); err != nil {
 			log.Printf("PONG_ERROR: %v\n", err.Error())
 			wc.CloseMessage(1002, "PONG_TIMEOUT")
 		}
@@ -271,7 +263,7 @@ func CreateWebsocketClient(websocketHub *WebsocketHub, conn *websocket.Conn) {
 		fmt.Printf("CLOSE_HANDLER - Reason: %s\n", text)
 		wc.conn.Close()
 		if wc.authenticated {
-			wc.websocketHub.unregister <- wc.id
+			wc.hub.unregister <- wc.id
 		}
 		return nil
 	})
@@ -279,7 +271,7 @@ func CreateWebsocketClient(websocketHub *WebsocketHub, conn *websocket.Conn) {
 	go wc.ReadMessages()
 	go wc.WriteMessages()
 
-	time.Sleep(wc.authTimeout)
+	time.Sleep(wc.hub.authTimeout)
 
 	if !wc.authenticated {
 		log.Printf("AUTHENTICATION_DEADLINE_REACHED\n")
