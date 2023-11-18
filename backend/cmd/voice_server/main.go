@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/MikeT117/go_web_rtc/voice_server"
+	"github.com/MikeT117/accord/backend/voice_server"
 	"github.com/joho/godotenv"
 )
 
