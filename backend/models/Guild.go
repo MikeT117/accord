@@ -19,7 +19,7 @@ type Guild struct {
 	UpdatedAt       time.Time      `json:"updatedAt"`
 	Icon            *uuid.UUID     `json:"icon"`
 	Banner          *uuid.UUID     `json:"banner"`
-	Member          GuildMember    `json:"members"`
+	Member          GuildMember    `json:"member"`
 	Roles           []GuildRole    `json:"roles"`
 	Channels        []GuildChannel `json:"channels"`
 }
@@ -43,4 +43,8 @@ type UpdatedGuild struct {
 	Icon            *uuid.UUID `json:"icon"`
 	Banner          *uuid.UUID `json:"banner"`
 	GuildCategoryID *uuid.UUID `json:"guildCategoryId"`
+}
+
+type DeletedGuild struct {
+	ID uuid.UUID `json:"id"`
 }

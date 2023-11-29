@@ -53,6 +53,10 @@ func ConvertGetManyGuildInvitesByGuildIDRowToGuildInviteToCreator(source sqlc.Ge
 	return CreateUserLimited(source.UserID, source.DisplayName, source.Username, source.PublicFlags, source.AttachmentID)
 }
 
+func ConvertSQLCCreateVoiceChannelStateRowToVoiceChannelStateUser(source sqlc.CreateVoiceChannelStateRow) models.UserLimited {
+	return CreateUserLimited(source.ID, source.DisplayName, source.Username, source.PublicFlags, source.AttachmentID)
+}
+
 // Field conversion extensions
 
 func ConvertInt32ToUint32(b int32) uint32 {

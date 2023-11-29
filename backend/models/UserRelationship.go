@@ -14,3 +14,12 @@ type UserRelationship struct {
 	UpdatedAt time.Time   `json:"updatedAt"`
 	User      UserLimited `json:"user"`
 }
+
+type DeletedUserRelationship struct {
+	ID uuid.UUID `json:"id"`
+}
+
+type UpdatedUserRelationship struct {
+	ID     uuid.UUID `json:"id"`
+	Status int32     `json:"status"`
+}

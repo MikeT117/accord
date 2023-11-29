@@ -21,6 +21,7 @@ type GuildInviteLimited struct {
 	Description string     `json:"description"`
 	MemberCount int32      `json:"memberCount"`
 	GuildID     uuid.UUID  `json:"guildId"`
+	Flags       int16      `json:"flags"`
 	Icon        *uuid.UUID `json:"icon"`
 	Banner      *uuid.UUID `json:"banner"`
 }

@@ -110,4 +110,12 @@ type Converter interface {
 
 	// goverter:ignore User
 	ConvertSQLCRelationshipToRelationship(source sqlc.Relationship) models.UserRelationship
+
+	// goverter:ignore Roles
+	// goverter:ignore Channels
+	// goverter:ignore Member
+	ConvertSQLCGetGuildByIDRowToGuild(source sqlc.GetGuildByIDRow) models.Guild
+
+	// goverter:map . User | ConvertSQLCCreateVoiceChannelStateRowToVoiceChannelStateUser
+	ConvertSQLCCreateVoiceChannelStateRowToVoiceChannelState(source sqlc.CreateVoiceChannelStateRow) models.VoiceChannelState
 }

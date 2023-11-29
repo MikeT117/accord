@@ -32,10 +32,26 @@ type PrivateChannel struct {
 }
 
 type UpdatedChannel struct {
+	ID          uuid.UUID   `json:"id"`
+	Name        string      `json:"name"`
+	Topic       string      `json:"topic"`
+	ChannelType int16       `json:"channelType"`
+	GuildID     pgtype.UUID `json:"guildId"`
+	ParentID    pgtype.UUID `json:"parentId"`
+	Roles       []uuid.UUID `json:"roles,omitempty"`
+}
+
+type UpdatedGuildChannelParent struct {
+	ID       uuid.UUID   `json:"id"`
+	GuildID  uuid.UUID   `json:"guildId"`
+	ParentID pgtype.UUID `json:"parentId,omitempty"`
+	Roles    []uuid.UUID `json:"roles,omitempty"`
+}
+
+type UpdatedGuildChannelRoles struct {
 	ID      uuid.UUID   `json:"id"`
-	Name    string      `json:"name"`
-	Topic   string      `json:"topic"`
-	GuildID pgtype.UUID `json:"guildId"`
+	GuildID uuid.UUID   `json:"guildId"`
+	Roles   []uuid.UUID `json:"roles,omitempty"`
 }
 
 type DeletedChannel struct {
