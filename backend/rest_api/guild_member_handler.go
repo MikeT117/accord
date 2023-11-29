@@ -6,6 +6,7 @@ import (
 
 	message_queue "github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
+	"github.com/MikeT117/accord/backend/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
@@ -81,7 +82,7 @@ func (a *api) HandleGuildMemberCreate(c echo.Context) error {
 	}
 
 	if len(c.QueryParam("invite_id")) != 0 {
-		inviteID, err := uuid.Parse(c.Param("invite_id"))
+		inviteID, err := uuid.Parse(c.QueryParam("invite_id"))
 
 		if err != nil {
 			return NewClientError(err, http.StatusBadRequest, "invalid invite ID")
@@ -145,9 +146,7 @@ func (a *api) HandleGuildMemberCreate(c echo.Context) error {
 		return NewServerError(err, "tx.AssignRoleToGuildMember")
 	}
 
-	dbtx.Commit(c.Request().Context())
-
-	sqlUser, err := a.Queries.GetUserByID(c.Request().Context(), c.(APIContext).UserID)
+	sqlUser, err := a.Queries.GetUserByID(c.Request().Context(), c.(*APIContext).UserID)
 
 	if err != nil {
 		return NewServerError(err, "tx.AssignRoleToGuildMember")
@@ -171,9 +170,11 @@ func (a *api) HandleGuildMemberCreate(c echo.Context) error {
 		return NewServerError(err, "tx.AssignRoleToGuildMember")
 	}
 
+	dbtx.Commit(c.Request().Context())
+
 	guildMember := a.Mapper.ConvertSQLCGuildMemberToGuildMember(sqlGuildMember)
 	guildMember.Roles = []uuid.UUID{sqlDefaultRoleId}
-	guild := a.Mapper.ConvertSQLCGuildToGuild(sqlGuild)
+	guild := a.Mapper.ConvertSQLCGetGuildByIDRowToGuild(sqlGuild)
 	guildMember.User = a.Mapper.ConvertGetUserByIDRowToUser(sqlUser)
 	guild.Member = guildMember
 	guild.Channels = a.Mapper.ConvertSQLCGetManyGuildChannelsByGuildIDRowToGuildChannel(sqlGuildChannels)
@@ -182,15 +183,13 @@ func (a *api) HandleGuildMemberCreate(c echo.Context) error {
 	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
 		Version: 0,
 		Op:      "GUILD_CREATE",
-		RoleIDs: []string{},
-		UserIDs: []string{c.(*APIContext).UserID.String()},
+		UserIDs: []uuid.UUID{c.(*APIContext).UserID},
 		Data:    guild,
 	})
 
-	return NewSuccessfulResponse(c, http.StatusNoContent, nil)
+	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }
 
-// TODO: Fire GUILD_MEMBER_UPDATE - all properties are included
 func (a *api) HandleGuildMemberUpdate(c echo.Context) error {
 
 	guildID, err := uuid.Parse(c.Param("guild_id"))
@@ -232,7 +231,6 @@ func (a *api) HandleGuildMemberUpdate(c echo.Context) error {
 	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }
 
-// TODO: Fire GUILD_MEMBER_DELETE - ID, GuildID included
 func (a *api) HandleGuildMemberDelete(c echo.Context) error {
 	guildID, err := uuid.Parse(c.Param("guild_id"))
 
@@ -246,6 +244,12 @@ func (a *api) HandleGuildMemberDelete(c echo.Context) error {
 		return NewClientError(err, http.StatusBadRequest, "invalid member ID")
 	}
 
+	roleIDs, err := a.Queries.GetManyGuildRoleIDsByUserID(c.Request().Context(), c.(*APIContext).UserID)
+
+	if err != nil {
+		return NewServerError(err, "GetManyGuildRoleIDsByUserID")
+	}
+
 	_, err = a.Queries.DeleteGuildMember(c.Request().Context(), sqlc.DeleteGuildMemberParams{
 		UserID:  userID,
 		GuildID: guildID,
@@ -255,15 +259,36 @@ func (a *api) HandleGuildMemberDelete(c echo.Context) error {
 		return NewServerError(err, "a.Queries.DeleteGuildMember")
 	}
 
+	a.MessageQueue.PublishLocalPayload(&message_queue.LocalPayload{
+		Op:      "ROLE_DELETE",
+		Version: 0,
+		UserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		Data:    roleIDs,
+	})
+
+	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
+		Op:      "GUILD_DELETE",
+		Version: 0,
+		UserIDs: []uuid.UUID{userID},
+		Data: &models.DeletedGuild{
+			ID: guildID,
+		},
+	})
+
 	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }
 
-// TODO: Fire GUILD_MEMBER_DELETE - ID, GuildID included
 func (a *api) HandleGuildMemberLeave(c echo.Context) error {
 	guildID, err := uuid.Parse(c.Param("guild_id"))
 
 	if err != nil {
 		return NewClientError(err, http.StatusBadRequest, "invalid guild ID")
+	}
+
+	roleIDs, err := a.Queries.GetManyGuildRoleIDsByUserID(c.Request().Context(), c.(*APIContext).UserID)
+
+	if err != nil {
+		return NewServerError(err, "GetManyGuildRoleIDsByUserID")
 	}
 
 	_, err = a.Queries.DeleteGuildMember(c.Request().Context(), sqlc.DeleteGuildMemberParams{
@@ -274,6 +299,13 @@ func (a *api) HandleGuildMemberLeave(c echo.Context) error {
 	if err != nil {
 		return NewServerError(err, "a.Queries.DeleteGuildMember")
 	}
+
+	a.MessageQueue.PublishLocalPayload(&message_queue.LocalPayload{
+		Op:      "ROLE_DELETE",
+		Version: 0,
+		UserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		Data:    roleIDs,
+	})
 
 	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }
