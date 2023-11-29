@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
 	"github.com/MikeT117/accord/backend/models"
 	"github.com/google/uuid"
@@ -283,10 +284,24 @@ func (a *api) HandleGuildUpdate(c echo.Context) error {
 	}
 
 	dbTx.Commit(reqCtx)
+
+	sqlDefaultRoleId, err := a.Queries.GetDefaultGuildRole(c.Request().Context(), guildID)
+
+	if err != nil {
+		return NewServerError(err, "a.Queries.GetDefaultGuildRole")
+	}
+
+	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
+		Op:              "GUILD_UPDATE",
+		Version:         0,
+		RoleIDs:         []uuid.UUID{sqlDefaultRoleId},
+		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		Data:            &updatedGuild,
+	})
+
 	return NewSuccessfulResponse(c, http.StatusOK, &updatedGuild)
 }
 
-// Fire event to members
 func (a *api) HandleGuildDelete(c echo.Context) error {
 	guildID, err := uuid.Parse(c.Param("guild_id"))
 
@@ -297,6 +312,22 @@ func (a *api) HandleGuildDelete(c echo.Context) error {
 	if err := a.Queries.DeleteGuild(c.Request().Context(), guildID); err != nil {
 		return NewServerError(err, "a.Queries.DeleteGuild")
 	}
+
+	sqlDefaultRoleId, err := a.Queries.GetDefaultGuildRole(c.Request().Context(), guildID)
+
+	if err != nil {
+		return NewServerError(err, "a.Queries.GetDefaultGuildRole")
+	}
+
+	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
+		Op:              "GUILD_DELETE",
+		Version:         0,
+		RoleIDs:         []uuid.UUID{sqlDefaultRoleId},
+		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		Data: &models.DeletedGuild{
+			ID: guildID,
+		},
+	})
 
 	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }
