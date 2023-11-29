@@ -10,7 +10,7 @@ type Store struct {
 }
 
 func (s *Store) Insert(key string) {
-	s.states[key] = time.Now().Add(time.Second * 10).UnixNano()
+	s.states[key] = time.Now().Add(time.Second * 30).UnixNano()
 }
 
 func (s *Store) Get(key string) bool {

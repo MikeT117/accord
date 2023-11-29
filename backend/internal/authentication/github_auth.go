@@ -55,8 +55,8 @@ type GithubEmail struct {
 }
 
 var (
-	ProfileURL = "https://api.github.com/user"
-	EmailURL   = "https://api.github.com/user/emails"
+	GithubProfileURL = "https://api.github.com/user"
+	GuthubEmailURL   = "https://api.github.com/user/emails"
 )
 
 func NewGithubOAuthConfig() *oauth2.Config {
@@ -70,7 +70,7 @@ func NewGithubOAuthConfig() *oauth2.Config {
 }
 
 func GetGithubProfile(token *oauth2.Token) (*GithubProfile, error) {
-	req, err := http.NewRequest(http.MethodGet, ProfileURL, nil)
+	req, err := http.NewRequest(http.MethodGet, GithubProfileURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func GetGithubProfile(token *oauth2.Token) (*GithubProfile, error) {
 }
 
 func GetGithubEmails(token *oauth2.Token) ([]GithubEmail, error) {
-	req, err := http.NewRequest(http.MethodGet, EmailURL, nil)
+	req, err := http.NewRequest(http.MethodGet, GuthubEmailURL, nil)
 	if err != nil {
 		return nil, err
 	}
