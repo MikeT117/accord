@@ -3,12 +3,12 @@ package rest_api
 import (
 	"net/http"
 
+	"github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
-// TODO: Fire CHANNEL_PINS_UPDATE event - will clear frontend query cache and force a refetch upon viewing pins
 func (a *api) HandleChannelMessagePinCreate(c echo.Context) error {
 
 	channelID, err := uuid.Parse(c.Param("channel_id"))
@@ -36,10 +36,23 @@ func (a *api) HandleChannelMessagePinCreate(c echo.Context) error {
 		return NewClientError(nil, http.StatusNotFound, "message not found")
 	}
 
-	return NewSuccessfulResponse(c, http.StatusNoContent, nil)
+	roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
+
+	if err != nil {
+		return NewServerError(err, "GetRoleIDsByChannelID")
+	}
+
+	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
+		Version:         0,
+		Op:              "CHANNEL_PINS_UPDATE",
+		RoleIDs:         roleIDs,
+		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		Data:            nil,
+	})
+
+	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }
 
-// TODO: Fire CHANNEL_PINS_UPDATE event - will clear frontend query cache and force a refetch upon viewing pins
 func (a *api) HandleChannelMessagePinDelete(c echo.Context) error {
 
 	channelID, err := uuid.Parse(c.Param("channel_id"))
@@ -67,10 +80,23 @@ func (a *api) HandleChannelMessagePinDelete(c echo.Context) error {
 		return NewClientError(nil, http.StatusNotFound, "message not found")
 	}
 
-	return NewSuccessfulResponse(c, http.StatusNoContent, nil)
+	roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
+
+	if err != nil {
+		return NewServerError(err, "GetRoleIDsByChannelID")
+	}
+
+	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
+		Version:         0,
+		Op:              "CHANNEL_PINS_UPDATE",
+		RoleIDs:         roleIDs,
+		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		Data:            nil,
+	})
+
+	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }
 
-// TODO: Fire GUILD_CHANNEL_CREATE/CHANNEL_CREATE event - all properties are included
 func (a *api) HandleChannelUpdate(c echo.Context) error {
 	channelID, err := uuid.Parse(c.Param("channel_id"))
 
@@ -110,5 +136,32 @@ func (a *api) HandleChannelUpdate(c echo.Context) error {
 
 	channel := a.Mapper.ConvertSQLCChannelToUpdatedChannel(sqlChannel)
 
+	updatedChannel := &message_queue.ForwardedPayload{
+		Version:         0,
+		Op:              "CHANNEL_UPDATE",
+		Data:            channel,
+		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
+	}
+
+	if channel.ChannelType < 2 || channel.ChannelType > 3 {
+		roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		updatedChannel.RoleIDs = roleIDs
+	} else {
+
+		userIDs, err := a.Queries.GetPrivateChannelUserIDs(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetPrivateChannelUserIDs")
+		}
+
+		updatedChannel.UserIDs = userIDs
+	}
+
+	a.MessageQueue.PublishForwardPayload(updatedChannel)
 	return NewSuccessfulResponse(c, http.StatusOK, &channel)
 }
