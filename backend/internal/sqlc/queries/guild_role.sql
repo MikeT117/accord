@@ -75,15 +75,52 @@ DELETE
 FROM guild_role_channels
 WHERE role_id = @role_id and channel_id = @channel_id;
 
+-- name: UnassignAllRolesFromUser :many
+DELETE
+FROM
+guild_role_users
+WHERE
+user_id = @user_id
+AND
+role_id IN (
+    SELECT
+        id
+    FROM
+        guild_roles
+    WHERE
+        guild_id = @guild_id
+)
+RETURNING
+role_id;
+
 -- name: GetManyGuildRolesByGuildID :many
 SELECT *
 FROM guild_roles
 WHERE guild_id = @guild_id;
 
--- name: GetManyGuildRoleIDsByUserID :many
+-- name: GetManyGuildRoleIDsByUserID :one
 SELECT role_id
 FROM guild_role_users
 WHERE user_id = @user_id;
+
+-- name: GetManyGuildRoleIDsByUserIDAndGuildI :one
+SELECT gru.role_id
+FROM guild_role_users gru
+INNER JOIN guild_roles gr ON gr.id = gru.role_id
+WHERE 
+gr.guild_id = @guild_id
+AND
+gru.user_id = @user_id;
+
+-- name: GetDefaultGuildRole :one
+SELECT
+id
+FROM
+guild_roles
+WHERE
+guild_id = @guild_id
+AND
+name = '@default';
 
 -- name: GetGuildRolePermissionsByUserIDAndGuildID :one
 Select COALESCE(bit_or(gr.permissions), -1)::int as permissions
@@ -100,50 +137,58 @@ WHERE gru.user_id = @user_id AND grc.channel_id = @channel_id;
 
 -- name: GetRoleIDsByChannelID :one
 Select
-ARRAY_AGG(grc.role_id)::text[] AS role_ids
+ARRAY_AGG(grc.role_id) AS role_ids
 FROM
 guild_role_channels grc
 WHERE
 grc.channel_id = @channel_id;
 
--- name: UpdateChannelParentIDAndSyncPermissions :one
-WITH update_channel_cte AS (
-  UPDATE channels
-  SET
-  parent_id = @parent_id::uuid
-  WHERE
-  id = @channel_id
-  AND
-  guild_id = @guild_id::uuid
-  RETURNING id, parent_id
+-- name: UnassignAllRolesFromChannel :many
+DELETE
+FROM
+guild_role_channels
+WHERE
+channel_id = @channel_id
+RETURNING
+role_id;
+
+-- name: AssignParentRolesToChannel :many
+INSERT INTO guild_role_channels (role_id, channel_id)
+SELECT
+grc.role_id,
+@channel_id
+FROM
+guild_role_channels grc
+WHERE
+channel_id = @parent_id
+RETURNING
+role_id;
+
+-- name: AssignParentRolesToSyncedChannels :many
+WITH parent_channel_roles_cte AS (
+	SELECT
+	ARRAY_AGG(role_id) role_ids
+	FROM
+	guild_role_channels
+	WHERE
+	channel_id = @parent_id
 ),
 
-delete_existing_roles AS (
-  DELETE
-  FROM guild_role_channels
-  WHERE channel_id = (
-    SELECT id
-    FROM update_channel_cte
-  )
-),
-
-insert_parent_roles AS (
-  INSERT INTO guild_role_channels (role_id, channel_id)
-  SELECT grc.role_id, @channel_id
-  FROM guild_role_channels grc
-  INNER JOIN update_channel_cte uccte ON uccte.parent_id = grc.channel_id
-  RETURNING role_id
+child_channels_roles_cte AS (
+	SELECT
+	c.id,
+	ARRAY_AGG(grc.role_id) role_ids
+	FROM
+	guild_role_channels grc
+	INNER JOIN
+	channels c ON c.id = grc.channel_id
+	WHERE c.parent_id = @parent_id
+	GROUP BY c.id
 )
 
-SELECT ARRAY_AGG(role_id)::uuid[] as roles
-FROM insert_parent_roles;
-
--- name: UpdateChannelParentID :one
-UPDATE channels
-SET
-parent_id = @parent_id::uuid
+SELECT
+ccrcte.id
+FROM
+child_channels_roles_cte ccrcte, parent_channel_roles_cte pcrcte
 WHERE
-id = @channel_id
-AND
-guild_id = @guild_id::uuid
-RETURNING id, parent_id;
+ccrcte.role_ids != pcrcte.role_ids;

@@ -164,38 +164,25 @@ func (q *Queries) GetManyUserRelationshipsByUserID(ctx context.Context, userID u
 	return items, nil
 }
 
-const getRelationshipUsersByRelationshipID = `-- name: GetRelationshipUsersByRelationshipID :many
-SELECT u.id, u.display_name, u.username, u.public_flags
+const getRelationshipUserIDsByRelationshipID = `-- name: GetRelationshipUserIDsByRelationshipID :many
+SELECT ru.user_id
 FROM relationship_users ru
-INNER JOIN users u ON u.id = ru.user_id
-WHERE relationship_id = $1
+WHERE ru.relationship_id = $1
 `
 
-type GetRelationshipUsersByRelationshipIDRow struct {
-	ID          uuid.UUID
-	DisplayName string
-	Username    string
-	PublicFlags int32
-}
-
-func (q *Queries) GetRelationshipUsersByRelationshipID(ctx context.Context, relationshipID uuid.UUID) ([]GetRelationshipUsersByRelationshipIDRow, error) {
-	rows, err := q.db.Query(ctx, getRelationshipUsersByRelationshipID, relationshipID)
+func (q *Queries) GetRelationshipUserIDsByRelationshipID(ctx context.Context, relationshipID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, getRelationshipUserIDsByRelationshipID, relationshipID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetRelationshipUsersByRelationshipIDRow{}
+	items := []uuid.UUID{}
 	for rows.Next() {
-		var i GetRelationshipUsersByRelationshipIDRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.DisplayName,
-			&i.Username,
-			&i.PublicFlags,
-		); err != nil {
+		var user_id uuid.UUID
+		if err := rows.Scan(&user_id); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, user_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -203,38 +190,82 @@ func (q *Queries) GetRelationshipUsersByRelationshipID(ctx context.Context, rela
 	return items, nil
 }
 
-const isUserBlocked = `-- name: IsUserBlocked :execrows
-SELECT 1
+const hasBlockedRelationship = `-- name: HasBlockedRelationship :execrows
+SELECT true
 FROM
 relationship_users ru
 INNER JOIN
 relationships r ON r.id = ru.relationship_id
 WHERE
 (
+    (
     r.creator_id = $1
     AND
     ru.user_id = $2
-)
-OR
-(
+    )
+    OR
+    (
     r.creator_id = $2
     AND
     ru.user_id = $1
+    )
 )
+AND
+status = 2
+GROUP BY r.id
 LIMIT 1
 `
 
-type IsUserBlockedParams struct {
+type HasBlockedRelationshipParams struct {
+	RequestUserID uuid.UUID
 	UserID        uuid.UUID
-	CurrentUserID uuid.UUID
 }
 
-func (q *Queries) IsUserBlocked(ctx context.Context, arg IsUserBlockedParams) (int64, error) {
-	result, err := q.db.Exec(ctx, isUserBlocked, arg.UserID, arg.CurrentUserID)
+func (q *Queries) HasBlockedRelationship(ctx context.Context, arg HasBlockedRelationshipParams) (int64, error) {
+	result, err := q.db.Exec(ctx, hasBlockedRelationship, arg.RequestUserID, arg.UserID)
 	if err != nil {
 		return 0, err
 	}
 	return result.RowsAffected(), nil
+}
+
+const hasFriendRelationship = `-- name: HasFriendRelationship :one
+SELECT true
+FROM
+relationship_users ru
+INNER JOIN
+relationships r ON r.id = ru.relationship_id
+WHERE
+(
+    (
+    r.creator_id = $1
+    AND
+    ru.user_id = ANY($2::uuid[])
+    )
+    OR
+    (
+    r.creator_id = ANY($2::uuid[])
+    AND
+    ru.user_id = $1
+    )
+)
+AND
+status = 0
+GROUP BY r.id
+HAVING COUNT(r.id) = $3
+`
+
+type HasFriendRelationshipParams struct {
+	RequestUserID uuid.UUID
+	UserIds       []uuid.UUID
+	UsersLen      int64
+}
+
+func (q *Queries) HasFriendRelationship(ctx context.Context, arg HasFriendRelationshipParams) (bool, error) {
+	row := q.db.QueryRow(ctx, hasFriendRelationship, arg.RequestUserID, arg.UserIds, arg.UsersLen)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const linkManyRelationshipUsers = `-- name: LinkManyRelationshipUsers :many

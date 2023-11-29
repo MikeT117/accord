@@ -1,3 +1,4 @@
+
 -- name: CreateVoiceChannelState :one
 WITH delete_voice_channel_state AS (
     DELETE FROM
@@ -17,10 +18,27 @@ insert_voice_channel_state AS (
     channels c
     WHERE
     c.id = @channel_id::uuid
-    RETURNING *
+    RETURNING
+    mute,
+    self_mute,
+    self_deaf,
+    channel_id,
+    guild_id
 )
 
-SELECT * from insert_voice_channel_state;
+SELECT
+ivcscte.*,
+u.id,
+ua.attachment_id,
+CASE 
+    WHEN gm.nickname IS NOT NULL THEN gm.nickname
+    ELSE u.display_name
+END::text AS display_name,
+u.username,
+u.public_flags
+FROM guild_members gm, insert_voice_channel_state ivcscte
+INNER JOIN users u ON u.id = @user_id
+LEFT JOIN user_attachments ua ON ua.user_id = u.id;
 
 -- name: UpdateVoiceChannelState :one
 UPDATE voice_channel_states

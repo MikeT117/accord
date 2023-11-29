@@ -193,7 +193,7 @@ WITH guild_member_cte AS (
 	    WHEN $3::uuid IS NOT NULL THEN gm.user_id > $3::uuid
 	    ELSE TRUE
     END)
-    ORDER BY gm.user_id DESC
+    ORDER BY gm.user_id
 	LIMIT $4
 ),
 
@@ -208,7 +208,7 @@ user_roles_cte AS (
 SELECT gmcte.joined_at, gmcte.display_name, gmcte.id, gmcte.username, gmcte.public_flags, gmcte.attachment_id, urcte.roles
 FROM guild_member_cte gmcte
 INNER JOIN user_roles_cte urcte ON urcte.user_id = gmcte.id
-ORDER BY gmcte.id DESC
+ORDER BY gmcte.id
 `
 
 type GetManyGuildMembersByGuildIDParams struct {

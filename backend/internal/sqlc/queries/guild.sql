@@ -62,12 +62,36 @@ WHERE
 id = @guild_id;
 
 -- name: GetGuildByID :one
-SELECT
-*
-FROM
-guilds
-WHERE
-id = @guild_id;
+WITH guild_cte AS (
+    SELECT
+    *
+    FROM
+    guilds
+    WHERE
+    id = @guild_id
+),
+
+icon_cte AS (
+  SELECT attachment_id, guild_id
+  FROM guild_attachments ga
+  WHERE guild_id IN (
+    SELECT id
+    FROM guild_cte
+  ) AND usage_type = 0
+),
+
+banner_cte AS (
+  SELECT attachment_id, guild_id
+  FROM guild_attachments ga
+  WHERE guild_id IN (
+    SELECT id FROM guild_cte
+  ) AND usage_type = 1
+)
+
+SELECT gcte.*, icte.attachment_id as icon, bcte.attachment_id as banner
+FROM guild_cte gcte
+LEFT JOIN icon_cte icte ON icte.guild_id = gcte.id
+LEFT JOIN banner_cte bcte ON bcte.guild_id = gcte.id;
 
 -- name: CreateGuild :one
 INSERT INTO guilds (name, is_discoverable, creator_id, guild_category_id)

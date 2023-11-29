@@ -60,17 +60,56 @@ func (q *Queries) DeleteGuild(ctx context.Context, guildID uuid.UUID) error {
 }
 
 const getGuildByID = `-- name: GetGuildByID :one
-SELECT
-id, name, description, is_discoverable, channel_count, member_count, creator_id, guild_category_id, created_at, updated_at
-FROM
-guilds
-WHERE
-id = $1
+WITH guild_cte AS (
+    SELECT
+    id, name, description, is_discoverable, channel_count, member_count, creator_id, guild_category_id, created_at, updated_at
+    FROM
+    guilds
+    WHERE
+    id = $1
+),
+
+icon_cte AS (
+  SELECT attachment_id, guild_id
+  FROM guild_attachments ga
+  WHERE guild_id IN (
+    SELECT id
+    FROM guild_cte
+  ) AND usage_type = 0
+),
+
+banner_cte AS (
+  SELECT attachment_id, guild_id
+  FROM guild_attachments ga
+  WHERE guild_id IN (
+    SELECT id FROM guild_cte
+  ) AND usage_type = 1
+)
+
+SELECT gcte.id, gcte.name, gcte.description, gcte.is_discoverable, gcte.channel_count, gcte.member_count, gcte.creator_id, gcte.guild_category_id, gcte.created_at, gcte.updated_at, icte.attachment_id as icon, bcte.attachment_id as banner
+FROM guild_cte gcte
+LEFT JOIN icon_cte icte ON icte.guild_id = gcte.id
+LEFT JOIN banner_cte bcte ON bcte.guild_id = gcte.id
 `
 
-func (q *Queries) GetGuildByID(ctx context.Context, guildID uuid.UUID) (Guild, error) {
+type GetGuildByIDRow struct {
+	ID              uuid.UUID
+	Name            string
+	Description     string
+	IsDiscoverable  bool
+	ChannelCount    int32
+	MemberCount     int32
+	CreatorID       uuid.UUID
+	GuildCategoryID pgtype.UUID
+	CreatedAt       pgtype.Timestamp
+	UpdatedAt       pgtype.Timestamp
+	Icon            pgtype.UUID
+	Banner          pgtype.UUID
+}
+
+func (q *Queries) GetGuildByID(ctx context.Context, guildID uuid.UUID) (GetGuildByIDRow, error) {
 	row := q.db.QueryRow(ctx, getGuildByID, guildID)
-	var i Guild
+	var i GetGuildByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -82,6 +121,8 @@ func (q *Queries) GetGuildByID(ctx context.Context, guildID uuid.UUID) (Guild, e
 		&i.GuildCategoryID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Icon,
+		&i.Banner,
 	)
 	return i, err
 }

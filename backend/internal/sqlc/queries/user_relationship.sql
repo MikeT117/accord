@@ -48,12 +48,10 @@ relationship_cte rcte
 INNER JOIN
 user_cte ucte ON ucte.relationship_id = rcte.id;
 
-
--- name: GetRelationshipUsersByRelationshipID :many
-SELECT u.id, u.display_name, u.username, u.public_flags
+-- name: GetRelationshipUserIDsByRelationshipID :many
+SELECT ru.user_id
 FROM relationship_users ru
-INNER JOIN users u ON u.id = ru.user_id
-WHERE relationship_id = @relationship_id;
+WHERE ru.relationship_id = @relationship_id;
 
 -- name: CreateRelationship :one
 INSERT INTO relationships (status, creator_id)
@@ -134,22 +132,52 @@ id = (
     relationship_id = @relationship_id
 );
 
--- name: IsUserBlocked :execrows
-SELECT 1
+-- name: HasFriendRelationship :one
+SELECT true
 FROM
 relationship_users ru
 INNER JOIN
 relationships r ON r.id = ru.relationship_id
 WHERE
 (
-    r.creator_id = @user_id
+    (
+    r.creator_id = @request_user_id
     AND
-    ru.user_id = @current_user_id
+    ru.user_id = ANY(@user_ids::uuid[])
+    )
+    OR
+    (
+    r.creator_id = ANY(@user_ids::uuid[])
+    AND
+    ru.user_id = @request_user_id
+    )
 )
-OR
+AND
+status = 0
+GROUP BY r.id
+HAVING COUNT(r.id) = @users_len;
+
+-- name: HasBlockedRelationship :execrows
+SELECT true
+FROM
+relationship_users ru
+INNER JOIN
+relationships r ON r.id = ru.relationship_id
+WHERE
 (
-    r.creator_id = @current_user_id
+    (
+    r.creator_id = @request_user_id
     AND
     ru.user_id = @user_id
+    )
+    OR
+    (
+    r.creator_id = @user_id
+    AND
+    ru.user_id = @request_user_id
+    )
 )
+AND
+status = 2
+GROUP BY r.id
 LIMIT 1;

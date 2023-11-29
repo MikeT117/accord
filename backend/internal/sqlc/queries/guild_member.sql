@@ -23,7 +23,7 @@ WITH guild_member_cte AS (
 	    WHEN sqlc.narg(after)::uuid IS NOT NULL THEN gm.user_id > sqlc.narg(after)::uuid
 	    ELSE TRUE
     END)
-    ORDER BY gm.user_id DESC
+    ORDER BY gm.user_id
 	LIMIT @results_limit
 ),
 
@@ -38,7 +38,7 @@ user_roles_cte AS (
 SELECT gmcte.*, urcte.roles
 FROM guild_member_cte gmcte
 INNER JOIN user_roles_cte urcte ON urcte.user_id = gmcte.id
-ORDER BY gmcte.id DESC;
+ORDER BY gmcte.id;
 
 
 -- name: GetManyUnassignableGuildMembersByGuildIDAndRoleID :many

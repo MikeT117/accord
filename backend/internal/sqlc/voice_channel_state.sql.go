@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createVoiceChannelState = `-- name: CreateVoiceChannelState :one
@@ -30,10 +31,27 @@ insert_voice_channel_state AS (
     channels c
     WHERE
     c.id = $2::uuid
-    RETURNING mute, self_mute, self_deaf, channel_id, user_id, guild_id
+    RETURNING
+    mute,
+    self_mute,
+    self_deaf,
+    channel_id,
+    guild_id
 )
 
-SELECT mute, self_mute, self_deaf, channel_id, user_id, guild_id from insert_voice_channel_state
+SELECT
+ivcscte.mute, ivcscte.self_mute, ivcscte.self_deaf, ivcscte.channel_id, ivcscte.guild_id,
+u.id,
+ua.attachment_id,
+CASE 
+    WHEN gm.nickname IS NOT NULL THEN gm.nickname
+    ELSE u.display_name
+END::text AS display_name,
+u.username,
+u.public_flags
+FROM guild_members gm, insert_voice_channel_state ivcscte
+INNER JOIN users u ON u.id = $1
+LEFT JOIN user_attachments ua ON ua.user_id = u.id
 `
 
 type CreateVoiceChannelStateParams struct {
@@ -42,12 +60,16 @@ type CreateVoiceChannelStateParams struct {
 }
 
 type CreateVoiceChannelStateRow struct {
-	Mute      bool
-	SelfMute  bool
-	SelfDeaf  bool
-	ChannelID uuid.UUID
-	UserID    uuid.UUID
-	GuildID   uuid.UUID
+	Mute         bool
+	SelfMute     bool
+	SelfDeaf     bool
+	ChannelID    uuid.UUID
+	GuildID      uuid.UUID
+	ID           uuid.UUID
+	AttachmentID pgtype.UUID
+	DisplayName  string
+	Username     string
+	PublicFlags  int32
 }
 
 func (q *Queries) CreateVoiceChannelState(ctx context.Context, arg CreateVoiceChannelStateParams) (CreateVoiceChannelStateRow, error) {
@@ -58,8 +80,12 @@ func (q *Queries) CreateVoiceChannelState(ctx context.Context, arg CreateVoiceCh
 		&i.SelfMute,
 		&i.SelfDeaf,
 		&i.ChannelID,
-		&i.UserID,
 		&i.GuildID,
+		&i.ID,
+		&i.AttachmentID,
+		&i.DisplayName,
+		&i.Username,
+		&i.PublicFlags,
 	)
 	return i, err
 }

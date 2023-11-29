@@ -119,6 +119,39 @@ func (q *Queries) DeleteGuildChannel(ctx context.Context, arg DeleteGuildChannel
 	return result.RowsAffected(), nil
 }
 
+const getGuildChannelByID = `-- name: GetGuildChannelByID :one
+SELECT
+id, name, topic, channel_type, parent_id, creator_id, guild_id, created_at, updated_at
+FROM
+channels
+WHERE
+id = $1
+AND
+guild_id = $2::uuid
+`
+
+type GetGuildChannelByIDParams struct {
+	ChannelID uuid.UUID
+	GuildID   uuid.UUID
+}
+
+func (q *Queries) GetGuildChannelByID(ctx context.Context, arg GetGuildChannelByIDParams) (Channel, error) {
+	row := q.db.QueryRow(ctx, getGuildChannelByID, arg.ChannelID, arg.GuildID)
+	var i Channel
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Topic,
+		&i.ChannelType,
+		&i.ParentID,
+		&i.CreatorID,
+		&i.GuildID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getManyGuildChannelsByGuildID = `-- name: GetManyGuildChannelsByGuildID :many
 WITH guild_channels_cte AS (
   SELECT id, name, topic, channel_type, parent_id, creator_id, guild_id, created_at, updated_at
@@ -248,6 +281,22 @@ func (q *Queries) GetPrivateChannelUserByChannelIDAndUserID(ctx context.Context,
 	return result.RowsAffected(), nil
 }
 
+const getPrivateChannelUserIDs = `-- name: GetPrivateChannelUserIDs :one
+Select
+ARRAY_AGG(cu.user_id) AS user_ids
+FROM
+channel_users cu
+WHERE
+cu.channel_id = $1
+`
+
+func (q *Queries) GetPrivateChannelUserIDs(ctx context.Context, channelID uuid.UUID) ([]uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, getPrivateChannelUserIDs, channelID)
+	var user_ids []uuid.UUID
+	err := row.Scan(&user_ids)
+	return user_ids, err
+}
+
 const updateChannel = `-- name: UpdateChannel :one
 UPDATE channels
 SET
@@ -291,19 +340,27 @@ func (q *Queries) UpdateChannel(ctx context.Context, arg UpdateChannelParams) (C
 	return i, err
 }
 
-const updateGuildChannelCategory = `-- name: UpdateGuildChannelCategory :one
+const updateGuildChannel = `-- name: UpdateGuildChannel :one
 UPDATE channels
-SET name = $1
-WHERE id = $2 RETURNING id, name, topic, channel_type, parent_id, creator_id, guild_id, created_at, updated_at
+SET
+parent_id = (
+CASE
+    WHEN $1::uuid IS NOT NULL THEN $1::uuid
+    ELSE NULL
+END
+)
+WHERE
+id = $2
+RETURNING id, name, topic, channel_type, parent_id, creator_id, guild_id, created_at, updated_at
 `
 
-type UpdateGuildChannelCategoryParams struct {
-	Name      string
+type UpdateGuildChannelParams struct {
+	ParentID  pgtype.UUID
 	ChannelID uuid.UUID
 }
 
-func (q *Queries) UpdateGuildChannelCategory(ctx context.Context, arg UpdateGuildChannelCategoryParams) (Channel, error) {
-	row := q.db.QueryRow(ctx, updateGuildChannelCategory, arg.Name, arg.ChannelID)
+func (q *Queries) UpdateGuildChannel(ctx context.Context, arg UpdateGuildChannelParams) (Channel, error) {
+	row := q.db.QueryRow(ctx, updateGuildChannel, arg.ParentID, arg.ChannelID)
 	var i Channel
 	err := row.Scan(
 		&i.ID,

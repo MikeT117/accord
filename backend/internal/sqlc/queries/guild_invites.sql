@@ -36,6 +36,7 @@ WITH guild_guild_invite_cte AS (
     SELECT
     gi.id,
     gi.guild_id,
+    gi.flags,
     g.name,
     g.description,
     g.member_count
@@ -45,8 +46,6 @@ WITH guild_guild_invite_cte AS (
     guilds g ON g.id = gi.guild_id
     WHERE
     gi.id = @invite_id
-    AND
-    gi.flags = 1
 ),
 
 icon_cte AS (

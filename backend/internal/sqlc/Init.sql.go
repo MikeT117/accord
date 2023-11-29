@@ -127,53 +127,57 @@ channels_roles_cte AS (
 	)::JSON as channels
 	FROM channels_cte c
 	INNER JOIN channel_roles_cte crcte ON crcte.channel_id = c.id 
-	WHERE c.channel_type != 4
+	WHERE c.channel_type NOT IN (2, 3)
 	GROUP BY c.guild_id
 ),
 
 voice_channel_states_cte AS (
-	SELECT vcs.mute, vcs.self_mute, vcs.self_deaf, vcs.channel_id, vcs.user_id, vcs.guild_id
+	SELECT
+    vcs.user_id,
+    vcs.mute,
+    vcs.self_mute,
+    vcs.self_deaf,
+    vcs.channel_id,
+    vcs.guild_id
 	FROM voice_channel_states vcs
 	INNER JOIN channels_cte ccte ON ccte.id = vcs.channel_id 
 	WHERE ccte.channel_type = 4
 ),
 
-voice_channel_state_members_cte AS (
-	SELECT gm.user_id, JSON_BUILD_OBJECT(
-		'joinedAt', gm.joined_at,
-		'user', JSON_BUILD_OBJECT(
-			'id', u.id,
-			'avatar', ua.attachment_id,
-			'displayName', CASE
-				WHEN gm.nickname IS NOT NULL THEN gm.nickname
-				ELSE u.display_name
-				END::text,
-			'username', u.username,
-			'publicFlags', u.public_flags
-		),
-		'roles', COALESCE(JSON_AGG(DISTINCT gru.role_id), '[]'::JSON)
-	)::JSON AS member
-	FROM guild_members gm
-	INNER JOIN users u ON u.id = gm.user_id
-	LEFT JOIN guild_role_users gru ON gru.user_id = gm.user_id
-	LEFT JOIN user_attachments ua ON ua.user_id = u.id
-	INNER JOIN voice_channel_states_cte vcscte ON vcscte.user_id = gm.user_id
-	GROUP BY gm.user_id, gm.nickname, gm.joined_at, u.id, ua.attachment_id
+voice_channel_state_user_cte AS (
+    SELECT
+        u.id,
+        JSON_BUILD_OBJECT(
+            'id', u.id,
+            'avatar', ua.attachment_id,
+            'displayName',  CASE
+                            WHEN gm.nickname IS NOT NULL THEN gm.nickname
+                            ELSE u.display_name
+                            END::text,
+            'username', u.username,
+            'publicFlags', u.public_flags
+	    )::JSON AS user
+    FROM guild_members gm
+    INNER JOIN voice_channel_states_cte vcscte ON vcscte.user_id = gm.user_id
+    INNER JOIN users u ON u.id = gm.user_id
+    LEFT JOIN user_attachments ua ON ua.user_id = u.id
 ),
 
-voice_states_members_cte AS (
-	SELECT COALESCE(JSON_AGG(
-		JSON_BUILD_OBJECT(
-			'mute', vcscte.mute,
-			'selfMute', vcscte.self_mute,
-			'selfDeaf', vcscte.self_deaf,
-			'channelId', vcscte.channel_id,
-			'guildId', vcscte.guild_id,
-			'member', vsmcte.member
-		)
-	), '[]'::JSON)::JSON as "voiceChannelStates"
-	FROM voice_channel_states_cte vcscte
-	INNER JOIN voice_channel_state_members_cte vsmcte ON vsmcte.user_id = vcscte.user_id
+voice_states_users_cte AS (
+    SELECT
+        COALESCE(JSON_AGG(
+            JSON_BUILD_OBJECT(
+            'mute', vcscte.mute,
+            'selfMute', vcscte.self_mute,
+            'selfDeaf', vcscte.self_deaf,
+            'channelId', vcscte.channel_id,
+            'guildId', vcscte.guild_id,
+            'user', vcsucte.user
+            )
+        ),
+	'[]'::JSON)::JSON AS "voiceChannelStates"
+    FROM voice_channel_states_cte vcscte
+    INNER JOIN voice_channel_state_user_cte vcsucte ON vcsucte.id = vcscte.user_id
 ),
 
 private_channels_cte AS (
@@ -245,8 +249,8 @@ INNER JOIN user_cte ucte ON ucte.id IS NOT NULL
 LEFT JOIN channels_roles_cte ch ON ch.guild_id = g.id
 )
 
-SELECT ucte.user, grmccte.guilds, pcucte."privateChannels", vsmcte."voiceChannelStates"
-FROM user_cte ucte, guilds_roles_members_channels_cte grmccte, private_channels_users_cte pcucte, voice_states_members_cte vsmcte
+SELECT ucte.user, grmccte.guilds, pcucte."privateChannels", vsucte."voiceChannelStates"
+FROM user_cte ucte, guilds_roles_members_channels_cte grmccte, private_channels_users_cte pcucte, voice_states_users_cte vsucte
 `
 
 type GetWebsocketInitialisationPayloadRow struct {

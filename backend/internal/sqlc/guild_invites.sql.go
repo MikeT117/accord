@@ -56,6 +56,7 @@ WITH guild_guild_invite_cte AS (
     SELECT
     gi.id,
     gi.guild_id,
+    gi.flags,
     g.name,
     g.description,
     g.member_count
@@ -65,8 +66,6 @@ WITH guild_guild_invite_cte AS (
     guilds g ON g.id = gi.guild_id
     WHERE
     gi.id = $1
-    AND
-    gi.flags = 1
 ),
 
 icon_cte AS (
@@ -91,7 +90,7 @@ banner_cte AS (
 )
 
 SELECT
-ggicte.id, ggicte.guild_id, ggicte.name, ggicte.description, ggicte.member_count,
+ggicte.id, ggicte.guild_id, ggicte.flags, ggicte.name, ggicte.description, ggicte.member_count,
 icte.attachment_id AS icon,
 bcte.attachment_id AS banner
 FROM
@@ -105,6 +104,7 @@ banner_cte bcte ON bcte IS NOT NULL
 type GetGuildInviteByIDRow struct {
 	ID          uuid.UUID
 	GuildID     uuid.UUID
+	Flags       int16
 	Name        string
 	Description string
 	MemberCount int32
@@ -118,6 +118,7 @@ func (q *Queries) GetGuildInviteByID(ctx context.Context, inviteID uuid.UUID) (G
 	err := row.Scan(
 		&i.ID,
 		&i.GuildID,
+		&i.Flags,
 		&i.Name,
 		&i.Description,
 		&i.MemberCount,

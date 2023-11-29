@@ -3,15 +3,56 @@ INSERT INTO channels (guild_id, name, topic, channel_type, creator_id)
 VALUES (@guild_id, @name, @topic, @channel_type, @creator_id)
 RETURNING *;
 
--- name: CreatePrivateChannel :one
-INSERT INTO channels (channel_type, creator_id)
-VALUES (@channel_type, @creator_id)
+-- name: UpdateGuildChannel :one
+UPDATE channels
+SET
+parent_id = (
+CASE
+    WHEN sqlc.narg(parent_id)::uuid IS NOT NULL THEN sqlc.narg(parent_id)::uuid
+    ELSE NULL
+END
+)
+WHERE
+id = @channel_id
 RETURNING *;
 
--- name: UpdateGuildChannelCategory :one
-UPDATE channels
-SET name = @name
-WHERE id = @channel_id RETURNING *;
+-- name: DeleteGuildChannel :execrows
+DELETE
+FROM
+channels
+WHERE
+id = @channel_id
+AND
+guild_id = @guild_id::uuid;
+
+-- name: GetGuildChannelByID :one
+SELECT
+*
+FROM
+channels
+WHERE
+id = @channel_id
+AND
+guild_id = @guild_id::uuid;
+
+-- name: GetManyGuildChannelsByGuildID :many
+WITH guild_channels_cte AS (
+  SELECT *
+  FROM channels
+  WHERE guild_id = @guild_id::uuid
+),
+
+guild_role_channels_cte AS (
+  SELECT channel_id, ARRAY_AGG(role_id) AS roles
+  FROM guild_role_channels
+  WHERE channel_id IN (
+    SELECT id FROM guild_channels_cte
+  ) GROUP BY channel_id
+)
+
+SELECT gcc.*, grcc.roles::UUID[] as roles
+FROM guild_channels_cte gcc
+INNER JOIN guild_role_channels_cte grcc ON grcc.channel_id = gcc.id;
 
 -- name: UpdateChannel :one
 UPDATE channels
@@ -32,38 +73,15 @@ WHERE
 id = @channel_id
 RETURNING *;
 
--- name: DeleteGuildChannel :execrows
-DELETE
-FROM
-channels
-WHERE
-id = @channel_id
-AND
-guild_id = @guild_id::uuid;
+-- name: CreatePrivateChannel :one
+INSERT INTO channels (channel_type, creator_id)
+VALUES (@channel_type, @creator_id)
+RETURNING *;
 
 -- name: CreatePrivateChannelRecipients :execrows
 INSERT INTO channel_users (channel_id, user_id)
 SELECT @channel_id, id FROM users
 WHERE id = ANY(@user_ids::uuid[]);
-
--- name: GetManyGuildChannelsByGuildID :many
-WITH guild_channels_cte AS (
-  SELECT *
-  FROM channels
-  WHERE guild_id = @guild_id::uuid
-),
-
-guild_role_channels_cte AS (
-  SELECT channel_id, ARRAY_AGG(role_id) AS roles
-  FROM guild_role_channels
-  WHERE channel_id IN (
-    SELECT id FROM guild_channels_cte
-  ) GROUP BY channel_id
-)
-
-SELECT gcc.*, grcc.roles::UUID[] as roles
-FROM guild_channels_cte gcc
-INNER JOIN guild_role_channels_cte grcc ON grcc.channel_id = gcc.id;
 
 -- name: GetPrivateChannelUserByChannelIDAndUserID :execrows
 SELECT 1
@@ -92,3 +110,11 @@ id = (
     FROM
     private_channel_cte
 );
+
+-- name: GetPrivateChannelUserIDs :one
+Select
+ARRAY_AGG(cu.user_id) AS user_ids
+FROM
+channel_users cu
+WHERE
+cu.channel_id = $1;
