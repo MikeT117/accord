@@ -205,3 +205,30 @@ func (b *UserRelationshipCreateRequestBody) Validate() (bool, string) {
 
 	return true, ""
 }
+
+func (b *GuildChannelUpdateRequestBody) Validate() (bool, string) {
+	val0 := v.
+		Is(v.Bool(b.LockPermissions, "LockPermissions")).
+		Is(v.Bool(b.ParentID.Valid, "ParentID").True())
+
+	val1 := v.
+		Is(v.Bool(b.LockPermissions, "LockPermissions").False()).
+		Is(v.Bool(b.ParentID.Valid, "ParentID").False())
+
+	if !val0.Valid() {
+		messages := []string{}
+
+		for _, v := range val0.Errors() {
+			messages = append(messages, v.Messages()...)
+		}
+
+		if !val1.Valid() {
+			for _, v := range val1.Errors() {
+				messages = append(messages, v.Messages()...)
+			}
+			return false, strings.Join(messages, ", ")
+		}
+	}
+
+	return true, ""
+}

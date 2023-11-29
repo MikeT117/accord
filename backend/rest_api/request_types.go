@@ -27,7 +27,7 @@ type GuildRoleUpdateRequestBody struct {
 }
 
 type GuildRoleMemberCreateBody struct {
-	UserIDs []uuid.UUID `json:"userIDs"`
+	UserIDs []uuid.UUID `json:"userIds"`
 }
 
 type GuildRoleChannelCreateBody struct {
@@ -60,8 +60,8 @@ type ChannelUpdateRequestBody struct {
 }
 
 type GuildChannelUpdateRequestBody struct {
-	ParentID uuid.UUID `json:"parentId"`
-	Sync     bool      `json:"sync"`
+	ParentID        pgtype.UUID `json:"parentId"`
+	LockPermissions bool        `json:"lockPermissions"`
 }
 
 type AttachmentSignBody struct {
