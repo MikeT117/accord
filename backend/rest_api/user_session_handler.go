@@ -87,5 +87,5 @@ func (a *api) HandleUserSessionDelete(c echo.Context) error {
 		return NewClientError(nil, http.StatusNotFound, "session not found")
 	}
 
-	return NewSuccessfulResponse(c, http.StatusNoContent, nil)
+	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }
