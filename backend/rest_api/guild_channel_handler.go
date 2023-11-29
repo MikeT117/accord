@@ -3,6 +3,8 @@ package rest_api
 import (
 	"net/http"
 
+	"github.com/MikeT117/accord/backend/internal/database"
+	"github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
 	"github.com/MikeT117/accord/backend/models"
 	"github.com/google/uuid"
@@ -10,7 +12,6 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// TODO: Fire GUILD_CHANNEL_CREATE/CHANNEL_CREATE event - all properties are included
 func (a *api) HandleGuildChannelCreate(c echo.Context) error {
 	guildID, err := uuid.Parse(c.Param("guild_id"))
 
@@ -102,12 +103,25 @@ func (a *api) HandleGuildChannelCreate(c echo.Context) error {
 
 	guildChannel.Roles = append(guildChannel.Roles, sqlOwnerGuildRoleID)
 
+	defaultRoleID, err := a.Queries.GetDefaultGuildRole(c.Request().Context(), guildID)
+
+	if err != nil {
+		return NewServerError(err, "a.Queries.GetDefaultGuildRole")
+	}
+
 	dbtx.Commit(reqCtx)
+
+	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
+		Op:              "CHANNEL_CREATE",
+		Version:         0,
+		RoleIDs:         []uuid.UUID{defaultRoleID},
+		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		Data:            &guildChannel,
+	})
 
 	return NewSuccessfulResponse(c, http.StatusOK, &guildChannel)
 }
 
-// TODO: Fire GUILD_CHANNEL_ROLE_UPDATE/CHANNEL_ROLE_UPDATE event - GuildID, ChannelID and Roles included
 func (a *api) HandleGuildChannelUpdate(c echo.Context) error {
 	guildID, err := uuid.Parse(c.Param("guild_id"))
 
@@ -124,27 +138,126 @@ func (a *api) HandleGuildChannelUpdate(c echo.Context) error {
 	body := GuildChannelUpdateRequestBody{}
 
 	if err := c.Bind(&body); err != nil {
-		return NewClientError(err, http.StatusBadRequest, "Unable to bind body")
+		return NewClientError(err, http.StatusBadRequest, "unable to bind body")
 	}
 
-	if err != nil {
-		return NewClientError(err, http.StatusBadRequest, "Invalid member ID")
+	if valid, reason := body.Validate(); !valid {
+		return NewClientError(nil, http.StatusBadRequest, reason)
 	}
 
-	_, err = a.Queries.UpdateChannelParentID(c.Request().Context(), sqlc.UpdateChannelParentIDParams{
+	channel, err := a.Queries.GetGuildChannelByID(c.Request().Context(), sqlc.GetGuildChannelByIDParams{
 		ChannelID: channelID,
-		ParentID:  body.ParentID,
 		GuildID:   guildID,
 	})
 
 	if err != nil {
-		return NewServerError(err, "a.Queries.UpdateChannelParentID")
+		if database.IsPGErrNoRows(err) {
+			return NewClientError(err, http.StatusNotFound, "channel not found")
+		}
+		return NewServerError(err, "a.Queries.GetGuildChannelByID")
 	}
+
+	if channel.ChannelType > 0 && channel.ChannelType < 4 {
+		return NewClientError(err, http.StatusBadRequest, "invalid channel")
+	}
+
+	/*
+		If the channel already has no parent and the request
+		is to set the parent to null this is a no-op.
+	*/
+	if !channel.ParentID.Valid && !body.ParentID.Valid {
+		return NewSuccessfulResponse(c, http.StatusOK, nil)
+	}
+
+	/*
+		Verify the parent ID is for a valid channel
+	*/
+	if body.ParentID.Valid {
+		parentChannel, err := a.Queries.GetGuildChannelByID(c.Request().Context(), sqlc.GetGuildChannelByIDParams{
+			ChannelID: body.ParentID.Bytes,
+			GuildID:   guildID,
+		})
+
+		if err != nil {
+			if database.IsPGErrNoRows(err) {
+				return NewClientError(err, http.StatusNotFound, "parent channel not found")
+			}
+			return NewServerError(err, "a.Queries.GetGuildChannelByID")
+		}
+
+		if parentChannel.ChannelType != 1 {
+			return NewClientError(err, http.StatusBadRequest, "invalid parent channel")
+		}
+
+		if channel.ParentID.Bytes == parentChannel.ID {
+			return NewSuccessfulResponse(c, http.StatusOK, nil)
+		}
+	}
+
+	dbtx, err := a.Pool.Begin(c.Request().Context())
+
+	if err != nil {
+		return NewServerError(err, "a.Pool.Begin")
+	}
+
+	defer dbtx.Rollback(c.Request().Context())
+	tx := a.Queries.WithTx(dbtx)
+
+	_, err = tx.UpdateGuildChannel(c.Request().Context(), sqlc.UpdateGuildChannelParams{
+		ParentID:  body.ParentID,
+		ChannelID: channelID,
+	})
+
+	if err != nil {
+		return NewServerError(err, "tx.UpdateChannel")
+	}
+
+	updatedChannel := &models.UpdatedGuildChannelParent{
+		ID:       channelID,
+		GuildID:  guildID,
+		ParentID: body.ParentID,
+	}
+
+	if body.LockPermissions {
+		_, err := tx.UnassignAllRolesFromChannel(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "tx.UnassignAllRolesFromChannel")
+		}
+
+		roleIDs, err := tx.AssignParentRolesToChannel(c.Request().Context(), sqlc.AssignParentRolesToChannelParams{
+			ChannelID: pgtype.UUID{
+				Bytes: channelID,
+				Valid: true,
+			},
+			ParentID: body.ParentID,
+		})
+
+		if err != nil {
+			return NewServerError(err, "tx.AssignParentRolesToChannel")
+		}
+
+		updatedChannel.Roles = roleIDs
+	}
+
+	defaultRoleID, err := a.Queries.GetDefaultGuildRole(c.Request().Context(), guildID)
+
+	if err != nil {
+		return NewServerError(err, "a.Queries.UpdateChannelParentIDAndSyncPermissions")
+	}
+
+	dbtx.Commit(c.Request().Context())
+
+	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
+		Op:      "CHANNEL_UPDATE",
+		Version: 0,
+		RoleIDs: []uuid.UUID{defaultRoleID},
+		Data:    updatedChannel,
+	})
 
 	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }
 
-// TODO: Fire CHANNEL_DELETE event - all properties are included
 func (a *api) HandleGuildChannelDelete(c echo.Context) error {
 	guildID, err := uuid.Parse(c.Param("guild_id"))
 
@@ -171,7 +284,22 @@ func (a *api) HandleGuildChannelDelete(c echo.Context) error {
 		return NewClientError(nil, http.StatusNotFound, "channel not found")
 	}
 
-	// TODO: Fire CHANNEL_DELETE event
+	defaultRoleID, err := a.Queries.GetDefaultGuildRole(c.Request().Context(), guildID)
+
+	if err != nil {
+		return NewServerError(err, "a.Queries.UpdateChannelParentIDAndSyncPermissions")
+	}
+
+	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
+		Op:              "CHANNEL_DELETE",
+		Version:         0,
+		RoleIDs:         []uuid.UUID{defaultRoleID},
+		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		Data: &models.DeletedChannel{
+			ID:      channelID,
+			GuildID: guildID,
+		},
+	})
 
 	return NewSuccessfulResponse(c, http.StatusOK, &models.DeletedChannel{
 		ID:      channelID,
