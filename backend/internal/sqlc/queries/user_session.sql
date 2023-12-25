@@ -1,18 +1,24 @@
 -- name: CreateUserSession :one
-INSERT INTO user_sessions (user_id, token, expires_at)
-VALUES (@user_id, @token, @expires_at)
-RETURNING *;
+INSERT INTO
+user_sessions
+(user_id, token, expires_at)
+VALUES
+(@user_id, @token, @expires_at)
+RETURNING
+*;
 
 -- name: GetManyUserSessionsByID :many
 SELECT
 id,
-created_at,
 expires_at,
-(CASE
-    WHEN token = @token THEN true
-    ELSE false
-END) AS is_current_session
-FROM user_sessions
+(
+    CASE
+        WHEN token = @token THEN true
+        ELSE false
+    END
+) AS is_current_session
+FROM
+user_sessions
 WHERE
 user_id = @user_id
 AND
@@ -25,18 +31,23 @@ AND
     WHEN sqlc.narg(after)::uuid IS NOT NULL THEN id > sqlc.narg(after)::uuid
     ELSE TRUE
 END)
-ORDER BY id
+ORDER BY
+CASE
+    WHEN sqlc.narg(after)::uuid IS NOT NULL THEN id
+END ASC,
+CASE
+    WHEN sqlc.narg(after)::uuid IS NULL THEN id
+END DESC
 LIMIT @results_limit;
 
--- name: GetUserSessionByID :one
-SELECT *
-FROM user_sessions
-WHERE id = @session_id;
 
 -- name: GetUserSessionByToken :one
-SELECT *
-FROM user_sessions
-WHERE token = @token;
+SELECT
+*
+FROM
+user_sessions
+WHERE
+token = @token;
 
 -- name: DeleteUserSession :execrows
 DELETE

@@ -13,9 +13,13 @@ import (
 )
 
 const createUserSession = `-- name: CreateUserSession :one
-INSERT INTO user_sessions (user_id, token, expires_at)
-VALUES ($1, $2, $3)
-RETURNING id, token, user_id, expires_at, created_at, updated_at
+INSERT INTO
+user_sessions
+(user_id, token, expires_at)
+VALUES
+($1, $2, $3)
+RETURNING
+id, token, user_id, expires_at, updated_at
 `
 
 type CreateUserSessionParams struct {
@@ -32,7 +36,6 @@ func (q *Queries) CreateUserSession(ctx context.Context, arg CreateUserSessionPa
 		&i.Token,
 		&i.UserID,
 		&i.ExpiresAt,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
@@ -67,13 +70,15 @@ func (q *Queries) DeleteUserSession(ctx context.Context, arg DeleteUserSessionPa
 const getManyUserSessionsByID = `-- name: GetManyUserSessionsByID :many
 SELECT
 id,
-created_at,
 expires_at,
-(CASE
-    WHEN token = $1 THEN true
-    ELSE false
-END) AS is_current_session
-FROM user_sessions
+(
+    CASE
+        WHEN token = $1 THEN true
+        ELSE false
+    END
+) AS is_current_session
+FROM
+user_sessions
 WHERE
 user_id = $2
 AND
@@ -86,7 +91,13 @@ AND
     WHEN $4::uuid IS NOT NULL THEN id > $4::uuid
     ELSE TRUE
 END)
-ORDER BY id
+ORDER BY
+CASE
+    WHEN $4::uuid IS NOT NULL THEN id
+END ASC,
+CASE
+    WHEN $4::uuid IS NULL THEN id
+END DESC
 LIMIT $5
 `
 
@@ -100,7 +111,6 @@ type GetManyUserSessionsByIDParams struct {
 
 type GetManyUserSessionsByIDRow struct {
 	ID               uuid.UUID
-	CreatedAt        pgtype.Timestamp
 	ExpiresAt        pgtype.Timestamp
 	IsCurrentSession bool
 }
@@ -120,12 +130,7 @@ func (q *Queries) GetManyUserSessionsByID(ctx context.Context, arg GetManyUserSe
 	items := []GetManyUserSessionsByIDRow{}
 	for rows.Next() {
 		var i GetManyUserSessionsByIDRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.CreatedAt,
-			&i.ExpiresAt,
-			&i.IsCurrentSession,
-		); err != nil {
+		if err := rows.Scan(&i.ID, &i.ExpiresAt, &i.IsCurrentSession); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -136,30 +141,13 @@ func (q *Queries) GetManyUserSessionsByID(ctx context.Context, arg GetManyUserSe
 	return items, nil
 }
 
-const getUserSessionByID = `-- name: GetUserSessionByID :one
-SELECT id, token, user_id, expires_at, created_at, updated_at
-FROM user_sessions
-WHERE id = $1
-`
-
-func (q *Queries) GetUserSessionByID(ctx context.Context, sessionID uuid.UUID) (UserSession, error) {
-	row := q.db.QueryRow(ctx, getUserSessionByID, sessionID)
-	var i UserSession
-	err := row.Scan(
-		&i.ID,
-		&i.Token,
-		&i.UserID,
-		&i.ExpiresAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const getUserSessionByToken = `-- name: GetUserSessionByToken :one
-SELECT id, token, user_id, expires_at, created_at, updated_at
-FROM user_sessions
-WHERE token = $1
+SELECT
+id, token, user_id, expires_at, updated_at
+FROM
+user_sessions
+WHERE
+token = $1
 `
 
 func (q *Queries) GetUserSessionByToken(ctx context.Context, token string) (UserSession, error) {
@@ -170,7 +158,6 @@ func (q *Queries) GetUserSessionByToken(ctx context.Context, token string) (User
 		&i.Token,
 		&i.UserID,
 		&i.ExpiresAt,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err

@@ -11,7 +11,6 @@ type UserSession struct {
 	IsCurrentSession bool      `json:"isCurrentSession"`
 	Token            string    `json:"token"`
 	UserID           uuid.UUID `json:"userId"`
-	CreatedAt        time.Time `json:"createdAt"`
 	ExpiresAt        time.Time `json:"expiresAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
 }
@@ -19,6 +18,5 @@ type UserSession struct {
 type UserSessionLimited struct {
 	ID               uuid.UUID `json:"id"`
 	IsCurrentSession bool      `json:"isCurrentSession"`
-	CreatedAt        time.Time `json:"createdAt"`
 	ExpiresAt        time.Time `json:"expiresAt"`
 }

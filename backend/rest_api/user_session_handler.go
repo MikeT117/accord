@@ -13,8 +13,8 @@ import (
 func (a *api) HandleUserSessionReadMany(c echo.Context) error {
 
 	params := &sqlc.GetManyUserSessionsByIDParams{
-		Token:  c.(*APIContext).Refreshtoken,
-		UserID: c.(*APIContext).UserID,
+		Token:  c.(*CustomCtx).Refreshtoken,
+		UserID: c.(*CustomCtx).UserID,
 	}
 
 	if len(c.QueryParam("before")) != 0 {
@@ -75,8 +75,8 @@ func (a *api) HandleUserSessionDelete(c echo.Context) error {
 
 	rowsAffected, err := a.Queries.DeleteUserSession(c.Request().Context(), sqlc.DeleteUserSessionParams{
 		SessionID: sessionID,
-		UserID:    c.(*APIContext).UserID,
-		Token:     c.(*APIContext).Refreshtoken,
+		UserID:    c.(*CustomCtx).UserID,
+		Token:     c.(*CustomCtx).Refreshtoken,
 	})
 
 	if err != nil {
