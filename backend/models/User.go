@@ -14,7 +14,6 @@ type User struct {
 	PublicFlags       int32      `json:"publicFlags"`
 	RelationshipCount int32      `json:"relationshipCount"`
 	OauthAccountID    uuid.UUID  `json:"oauthAccountId"`
-	CreatedAt         time.Time  `json:"createdAt"`
 	UpdatedAt         time.Time  `json:"updatedAt"`
 }
 

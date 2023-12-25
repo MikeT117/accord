@@ -13,11 +13,16 @@ import (
 )
 
 const createOrGetUser = `-- name: CreateOrGetUser :one
-INSERT INTO users (display_name, username, oauth_account_id)
-VALUES ($1, $2, $3)
+INSERT INTO
+users
+(display_name, username, oauth_account_id)
+VALUES
+($1, $2, $3)
 ON CONFLICT (oauth_account_id) DO UPDATE
-SET display_name = users.display_name
-RETURNING id, username, display_name, public_flags, relationship_count, oauth_account_id, created_at, updated_at
+SET
+display_name = users.display_name
+RETURNING
+id, username, display_name, public_flags, relationship_count, oauth_account_id, updated_at
 `
 
 type CreateOrGetUserParams struct {
@@ -36,17 +41,21 @@ func (q *Queries) CreateOrGetUser(ctx context.Context, arg CreateOrGetUserParams
 		&i.PublicFlags,
 		&i.RelationshipCount,
 		&i.OauthAccountID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getManyUsersByIDs = `-- name: GetManyUsersByIDs :many
-SELECT u.id, u.username, u.display_name, u.public_flags, u.relationship_count, u.oauth_account_id, u.created_at, u.updated_at, ua.attachment_id
-FROM users u
-LEFT JOIN user_attachments ua ON ua.user_id = u.id
-WHERE u.id = ANY ($1::uuid[])
+SELECT
+u.id, u.username, u.display_name, u.public_flags, u.relationship_count, u.oauth_account_id, u.updated_at,
+ua.attachment_id
+FROM
+users u
+LEFT JOIN
+user_attachments ua ON ua.user_id = u.id
+WHERE
+u.id = ANY ($1::uuid[])
 `
 
 type GetManyUsersByIDsRow struct {
@@ -56,7 +65,6 @@ type GetManyUsersByIDsRow struct {
 	PublicFlags       int32
 	RelationshipCount int32
 	OauthAccountID    uuid.UUID
-	CreatedAt         pgtype.Timestamp
 	UpdatedAt         pgtype.Timestamp
 	AttachmentID      pgtype.UUID
 }
@@ -77,7 +85,6 @@ func (q *Queries) GetManyUsersByIDs(ctx context.Context, userIds []uuid.UUID) ([
 			&i.PublicFlags,
 			&i.RelationshipCount,
 			&i.OauthAccountID,
-			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.AttachmentID,
 		); err != nil {
@@ -92,10 +99,15 @@ func (q *Queries) GetManyUsersByIDs(ctx context.Context, userIds []uuid.UUID) ([
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT u.id, u.username, u.display_name, u.public_flags, u.relationship_count, u.oauth_account_id, u.created_at, u.updated_at, ua.attachment_id
-FROM users u
-LEFT JOIN user_attachments ua ON ua.user_id = u.id
-WHERE u.id = $1
+SELECT
+u.id, u.username, u.display_name, u.public_flags, u.relationship_count, u.oauth_account_id, u.updated_at,
+ua.attachment_id
+FROM
+users u
+LEFT JOIN
+user_attachments ua ON ua.user_id = u.id
+WHERE
+u.id = $1
 `
 
 type GetUserByIDRow struct {
@@ -105,7 +117,6 @@ type GetUserByIDRow struct {
 	PublicFlags       int32
 	RelationshipCount int32
 	OauthAccountID    uuid.UUID
-	CreatedAt         pgtype.Timestamp
 	UpdatedAt         pgtype.Timestamp
 	AttachmentID      pgtype.UUID
 }
@@ -120,7 +131,6 @@ func (q *Queries) GetUserByID(ctx context.Context, userID uuid.UUID) (GetUserByI
 		&i.PublicFlags,
 		&i.RelationshipCount,
 		&i.OauthAccountID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.AttachmentID,
 	)
@@ -133,19 +143,21 @@ u.id,
 u.username,
 u.display_name,
 u.public_flags,
-u.created_at
+ua.attachment_id
 FROM
 users u
+LEFT JOIN
+user_attachments ua ON ua.user_id = u.id
 WHERE
 u.username = $1
 `
 
 type GetUserByUsernameRow struct {
-	ID          uuid.UUID
-	Username    string
-	DisplayName string
-	PublicFlags int32
-	CreatedAt   pgtype.Timestamp
+	ID           uuid.UUID
+	Username     string
+	DisplayName  string
+	PublicFlags  int32
+	AttachmentID pgtype.UUID
 }
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (GetUserByUsernameRow, error) {
@@ -156,7 +168,7 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (GetUs
 		&i.Username,
 		&i.DisplayName,
 		&i.PublicFlags,
-		&i.CreatedAt,
+		&i.AttachmentID,
 	)
 	return i, err
 }
