@@ -22,7 +22,8 @@ WITH delete_voice_channel_state AS (
 
 insert_voice_channel_state AS (
     INSERT INTO
-    voice_channel_states (channel_id, guild_id, user_id)
+    voice_channel_states
+    (channel_id, guild_id, user_id)
     SELECT
     c.id,
     c.guild_id,
@@ -32,7 +33,6 @@ insert_voice_channel_state AS (
     WHERE
     c.id = $2::uuid
     RETURNING
-    mute,
     self_mute,
     self_deaf,
     channel_id,
@@ -40,18 +40,23 @@ insert_voice_channel_state AS (
 )
 
 SELECT
-ivcscte.mute, ivcscte.self_mute, ivcscte.self_deaf, ivcscte.channel_id, ivcscte.guild_id,
+ivcscte.self_mute, ivcscte.self_deaf, ivcscte.channel_id, ivcscte.guild_id,
 u.id,
 ua.attachment_id,
-CASE 
-    WHEN gm.nickname IS NOT NULL THEN gm.nickname
-    ELSE u.display_name
-END::text AS display_name,
+(   CASE 
+        WHEN gm.nickname IS NOT NULL THEN gm.nickname
+        ELSE u.display_name
+    END
+)::text AS display_name,
 u.username,
 u.public_flags
-FROM guild_members gm, insert_voice_channel_state ivcscte
-INNER JOIN users u ON u.id = $1
-LEFT JOIN user_attachments ua ON ua.user_id = u.id
+FROM
+guild_members gm,
+insert_voice_channel_state ivcscte
+INNER JOIN
+users u ON u.id = $1
+LEFT JOIN
+user_attachments ua ON ua.user_id = u.id
 `
 
 type CreateVoiceChannelStateParams struct {
@@ -60,7 +65,6 @@ type CreateVoiceChannelStateParams struct {
 }
 
 type CreateVoiceChannelStateRow struct {
-	Mute         bool
 	SelfMute     bool
 	SelfDeaf     bool
 	ChannelID    uuid.UUID
@@ -76,7 +80,6 @@ func (q *Queries) CreateVoiceChannelState(ctx context.Context, arg CreateVoiceCh
 	row := q.db.QueryRow(ctx, createVoiceChannelState, arg.UserID, arg.ChannelID)
 	var i CreateVoiceChannelStateRow
 	err := row.Scan(
-		&i.Mute,
 		&i.SelfMute,
 		&i.SelfDeaf,
 		&i.ChannelID,
@@ -103,13 +106,15 @@ func (q *Queries) DeleteVoiceChannelState(ctx context.Context, userID uuid.UUID)
 }
 
 const updateVoiceChannelState = `-- name: UpdateVoiceChannelState :one
-UPDATE voice_channel_states
+UPDATE
+voice_channel_states
 SET
 self_mute = $1,
 self_deaf = $2
 WHERE
 user_id = $3
-RETURNING mute, self_mute, self_deaf, channel_id, user_id, guild_id
+RETURNING
+self_mute, self_deaf, channel_id, user_id, guild_id
 `
 
 type UpdateVoiceChannelStateParams struct {
@@ -122,7 +127,6 @@ func (q *Queries) UpdateVoiceChannelState(ctx context.Context, arg UpdateVoiceCh
 	row := q.db.QueryRow(ctx, updateVoiceChannelState, arg.SelfMute, arg.SelfDeaf, arg.UserID)
 	var i VoiceChannelState
 	err := row.Scan(
-		&i.Mute,
 		&i.SelfMute,
 		&i.SelfDeaf,
 		&i.ChannelID,
