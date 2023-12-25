@@ -27,7 +27,7 @@ func (a *api) HandleAttachmentSign(c echo.Context) error {
 		return NewClientError(nil, http.StatusBadRequest, reason)
 	}
 
-	cctx := c.(*APIContext)
+	cctx := c.(*CustomCtx)
 
 	createAttachmentParams := sqlc.CreateAttachmentParams{
 		ID:            uuid.New(),
@@ -79,18 +79,17 @@ func (a *api) HandleAttachmentDelete(c echo.Context) error {
 		return NewServerError(err, "a.Queries.GetAttachmentByID")
 	}
 
-	response, err := http.Post(fmt.Sprintf("https://api.cloudinary.com/v1_1/dm3guxnpr/image/destroy?api_key=%s&signature=%s&timestamp=%d&public_id=%s", os.Getenv("CLOUDINARY_API_KEY"), sqlAttachment.Signature, sqlAttachment.UnixTimestamp, sqlAttachment.ID), "application/json", nil)
+	response, err := http.Post(fmt.Sprintf("https://api.cloudinary.com/v1_1/%s/image/destroy?api_key=%s&signature=%s&timestamp=%d&public_id=%s", os.Getenv("CLOUDINARY_ENVIRONMENT"), os.Getenv("CLOUDINARY_API_KEY"), sqlAttachment.Signature, sqlAttachment.UnixTimestamp, sqlAttachment.ID), "application/json", nil)
 
-	// TODO: Determine the nature of the error, if the file is already deleted, delete the entry in the DB otherwise mark it as deleted, have a worker retry later.
 	if err != nil {
 		return NewServerError(err, "destroy request failed")
 	}
 
 	if response.StatusCode != 200 {
-		return NewClientError(nil, http.StatusBadRequest, "OH NOOOO cloudinary destroy request failed")
+		return NewServerError(nil, "unable to delete file")
 	}
 
-	cctx := c.(*APIContext)
+	cctx := c.(*CustomCtx)
 
 	rowsAffected, err := a.Queries.DeleteAttachment(c.Request().Context(), sqlc.DeleteAttachmentParams{
 		AttachmentID: attachmentID,

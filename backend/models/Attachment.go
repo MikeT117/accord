@@ -12,7 +12,6 @@ type Attachment struct {
 	Signature     string    `json:"signature"`
 	UnixTimestamp int64     `json:"unixTimestamp"`
 	AttachedByID  uuid.UUID `json:"attachedById"`
-	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 }
 

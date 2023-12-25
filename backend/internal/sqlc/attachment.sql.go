@@ -12,8 +12,11 @@ import (
 )
 
 const createAttachment = `-- name: CreateAttachment :execrows
-INSERT INTO attachments (id, resource_type, signature, attached_by_id, unix_timestamp, height, width, filesize)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO
+attachments
+(id, resource_type, signature, attached_by_id, unix_timestamp, height, width, filesize)
+VALUES
+($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type CreateAttachmentParams struct {
@@ -46,8 +49,12 @@ func (q *Queries) CreateAttachment(ctx context.Context, arg CreateAttachmentPara
 
 const deleteAttachment = `-- name: DeleteAttachment :execrows
 DELETE
-FROM attachments
-WHERE id = $1 AND attached_by_id = $2
+FROM
+attachments
+WHERE
+id = $1
+AND
+attached_by_id = $2
 `
 
 type DeleteAttachmentParams struct {
@@ -64,9 +71,12 @@ func (q *Queries) DeleteAttachment(ctx context.Context, arg DeleteAttachmentPara
 }
 
 const getAttachmentByID = `-- name: GetAttachmentByID :one
-SELECT id, resource_type, signature, unix_timestamp, attached_by_id, height, width, filesize, created_at, updated_at
-FROM attachments
-WHERE id = $1
+SELECT
+id, resource_type, signature, unix_timestamp, attached_by_id, height, width, filesize, updated_at
+FROM
+attachments
+WHERE
+id = $1
 `
 
 func (q *Queries) GetAttachmentByID(ctx context.Context, attachmentID uuid.UUID) (Attachment, error) {
@@ -81,42 +91,39 @@ func (q *Queries) GetAttachmentByID(ctx context.Context, attachmentID uuid.UUID)
 		&i.Height,
 		&i.Width,
 		&i.Filesize,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const linkAttachmentToChannelMessage = `-- name: LinkAttachmentToChannelMessage :execrows
-INSERT INTO channel_message_attachments (attachment_id, channel_message_id)
-SELECT id, $1
-FROM attachments
-WHERE id = $2
+const getAttachmentCountByMessageID = `-- name: GetAttachmentCountByMessageID :one
+SELECT
+COUNT(attachment_id)
+FROM
+channel_message_attachments
+WHERE
+channel_message_id = $1
 `
 
-type LinkAttachmentToChannelMessageParams struct {
-	MessageID    uuid.UUID
-	AttachmentID uuid.UUID
-}
-
-func (q *Queries) LinkAttachmentToChannelMessage(ctx context.Context, arg LinkAttachmentToChannelMessageParams) (int64, error) {
-	result, err := q.db.Exec(ctx, linkAttachmentToChannelMessage, arg.MessageID, arg.AttachmentID)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+func (q *Queries) GetAttachmentCountByMessageID(ctx context.Context, messageID uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, getAttachmentCountByMessageID, messageID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const linkAttachmentToGuild = `-- name: LinkAttachmentToGuild :execrows
 WITH unlink_existing_cte AS (
-  DELETE FROM guild_attachments
+  DELETE FROM
+  guild_attachments
   WHERE
   guild_id = $2
   AND
   usage_type = $3
 )
 
-INSERT INTO guild_attachments
+INSERT INTO
+guild_attachments
 (attachment_id, guild_id, usage_type)
 VALUES
 ($1, $2, $3)
@@ -138,12 +145,14 @@ func (q *Queries) LinkAttachmentToGuild(ctx context.Context, arg LinkAttachmentT
 
 const linkAttachmentToUser = `-- name: LinkAttachmentToUser :execrows
 WITH unlink_existing_cte AS (
-  DELETE FROM user_attachments
+  DELETE FROM
+  user_attachments
   WHERE
   user_id = $2
 )
 
-INSERT INTO user_attachments
+INSERT INTO
+user_attachments
 (attachment_id, user_id)
 VALUES
 ($1, $2)
@@ -163,10 +172,15 @@ func (q *Queries) LinkAttachmentToUser(ctx context.Context, arg LinkAttachmentTo
 }
 
 const linkAttachmentsToChannelMessage = `-- name: LinkAttachmentsToChannelMessage :execrows
-INSERT INTO channel_message_attachments (attachment_id, channel_message_id)
-SELECT id, $1
-FROM attachments
-WHERE id = ANY($2::uuid[])
+INSERT INTO
+channel_message_attachments (attachment_id, channel_message_id)
+SELECT
+id,
+$1
+FROM
+attachments
+WHERE
+id = ANY($2::uuid[])
 `
 
 type LinkAttachmentsToChannelMessageParams struct {
