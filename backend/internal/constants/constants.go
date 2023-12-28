@@ -47,7 +47,7 @@ const DetailUnauthorized = "This Resource Requires Authentication"
 
 const DetailsParseTweetId = "Unable To Parse Tweet ID"
 
-// Permissions offsets
+// Role permissions offsets
 const VIEW_GUILD_CHANNEL = 0
 const MANAGE_GUILD_CHANNELS = 1
 const CREATE_CHANNEL_MESSAGE = 2
@@ -58,3 +58,7 @@ const GUILD_SUPER_ADMIN = 6
 const GUILD_OWNER = 7
 const VIEW_GUILD_MEMBERS = 8
 const CREATE_CHANNEL_PIN = 9
+
+// User public flags offsets
+const ALLOW_GUILD_MEMBER_DMS = 0
+const ALLOW_FRIEND_REQUESTS = 1

@@ -13,9 +13,13 @@ import (
 )
 
 const createRelationship = `-- name: CreateRelationship :one
-INSERT INTO relationships (status, creator_id)
-VALUES ($1, $2)
-RETURNING id, creator_id, status, created_at, updated_at
+INSERT INTO
+relationships
+(status, creator_id)
+VALUES
+($1, $2)
+RETURNING
+id, creator_id, status, updated_at
 `
 
 type CreateRelationshipParams struct {
@@ -30,7 +34,6 @@ func (q *Queries) CreateRelationship(ctx context.Context, arg CreateRelationship
 		&i.ID,
 		&i.CreatorID,
 		&i.Status,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
@@ -40,7 +43,11 @@ const deleteRelationship = `-- name: DeleteRelationship :execrows
 DELETE FROM
 relationships
 WHERE
-(creator_id = $1 AND status = 2)
+(
+    creator_id = $1
+    AND
+    status = 2
+)
 OR
 id = (
     SELECT
@@ -73,7 +80,6 @@ WITH relationship_cte AS (
     r.id,
     r.creator_id,
     r.status,
-    r.created_at,
     r.updated_at
     FROM
     relationships r
@@ -110,7 +116,7 @@ user_cte AS (
 )
 
 SELECT
-rcte.id, rcte.creator_id, rcte.status, rcte.created_at, rcte.updated_at,
+rcte.id, rcte.creator_id, rcte.status, rcte.updated_at,
 ucte.relationship_id, ucte.u_id, ucte.display_name, ucte.username, ucte.public_flags, ucte.attachment_id
 FROM
 relationship_cte rcte
@@ -122,7 +128,6 @@ type GetManyUserRelationshipsByUserIDRow struct {
 	ID             uuid.UUID
 	CreatorID      uuid.UUID
 	Status         int32
-	CreatedAt      pgtype.Timestamp
 	UpdatedAt      pgtype.Timestamp
 	RelationshipID uuid.UUID
 	UID            uuid.UUID
@@ -145,7 +150,6 @@ func (q *Queries) GetManyUserRelationshipsByUserID(ctx context.Context, userID u
 			&i.ID,
 			&i.CreatorID,
 			&i.Status,
-			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.RelationshipID,
 			&i.UID,
@@ -165,9 +169,12 @@ func (q *Queries) GetManyUserRelationshipsByUserID(ctx context.Context, userID u
 }
 
 const getRelationshipUserIDsByRelationshipID = `-- name: GetRelationshipUserIDsByRelationshipID :many
-SELECT ru.user_id
-FROM relationship_users ru
-WHERE ru.relationship_id = $1
+SELECT
+ru.user_id
+FROM
+relationship_users ru
+WHERE
+ru.relationship_id = $1
 `
 
 func (q *Queries) GetRelationshipUserIDsByRelationshipID(ctx context.Context, relationshipID uuid.UUID) ([]uuid.UUID, error) {
@@ -190,30 +197,33 @@ func (q *Queries) GetRelationshipUserIDsByRelationshipID(ctx context.Context, re
 	return items, nil
 }
 
-const hasBlockedRelationship = `-- name: HasBlockedRelationship :execrows
-SELECT true
-FROM
-relationship_users ru
-INNER JOIN
-relationships r ON r.id = ru.relationship_id
-WHERE
-(
+const hasBlockedRelationship = `-- name: HasBlockedRelationship :one
+SELECT CASE WHEN EXISTS (
+    SELECT
+    FROM
+    relationship_users ru
+    INNER JOIN
+    relationships r ON r.id = ru.relationship_id
+    WHERE
     (
-    r.creator_id = $1
-    AND
-    ru.user_id = $2
+        (
+        r.creator_id = $1
+        AND
+        ru.user_id = $2
+        )
+        OR
+        (
+        r.creator_id = $2
+        AND
+        ru.user_id = $1
+        )
     )
-    OR
-    (
-    r.creator_id = $2
     AND
-    ru.user_id = $1
-    )
+    status = 2
+    GROUP BY r.id
 )
-AND
-status = 2
-GROUP BY r.id
-LIMIT 1
+THEN TRUE
+ELSE FALSE END
 `
 
 type HasBlockedRelationshipParams struct {
@@ -221,38 +231,41 @@ type HasBlockedRelationshipParams struct {
 	UserID        uuid.UUID
 }
 
-func (q *Queries) HasBlockedRelationship(ctx context.Context, arg HasBlockedRelationshipParams) (int64, error) {
-	result, err := q.db.Exec(ctx, hasBlockedRelationship, arg.RequestUserID, arg.UserID)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+func (q *Queries) HasBlockedRelationship(ctx context.Context, arg HasBlockedRelationshipParams) (bool, error) {
+	row := q.db.QueryRow(ctx, hasBlockedRelationship, arg.RequestUserID, arg.UserID)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
 }
 
 const hasFriendRelationship = `-- name: HasFriendRelationship :one
-SELECT true
-FROM
-relationship_users ru
-INNER JOIN
-relationships r ON r.id = ru.relationship_id
-WHERE
-(
+SELECT CASE WHEN EXISTS (
+    SELECT
+    FROM
+    relationship_users ru
+    INNER JOIN
+    relationships r ON r.id = ru.relationship_id
+    WHERE
     (
-    r.creator_id = $1
-    AND
-    ru.user_id = ANY($2::uuid[])
+        (
+        r.creator_id = $1
+        AND
+        ru.user_id = ANY($2::uuid[])
+        )
+        OR
+        (
+        r.creator_id = ANY($2::uuid[])
+        AND
+        ru.user_id = $1
+        )
     )
-    OR
-    (
-    r.creator_id = ANY($2::uuid[])
     AND
-    ru.user_id = $1
-    )
+    status = 0
+    GROUP BY r.id
+    HAVING COUNT(r.id) = $3
 )
-AND
-status = 0
-GROUP BY r.id
-HAVING COUNT(r.id) = $3
+THEN TRUE
+ELSE FALSE END
 `
 
 type HasFriendRelationshipParams struct {
@@ -268,111 +281,52 @@ func (q *Queries) HasFriendRelationship(ctx context.Context, arg HasFriendRelati
 	return column_1, err
 }
 
-const linkManyRelationshipUsers = `-- name: LinkManyRelationshipUsers :many
-WITH users_cte AS (
-    SELECT u.id, u.display_name, u.username, u.public_flags, ua.attachment_id
-    FROM users u
-    LEFT JOIN user_attachments ua ON ua.user_id = u.id
-    WHERE u.id = ANY($1::uuid[])
-),
-
-insert_relationship_users_cte AS (
-    INSERT INTO relationship_users (relationship_id, user_id)
-    SELECT $2, id
-    FROM users_cte
-)
-
-SELECT id, display_name, username, public_flags, attachment_id
-FROM
-users_cte
+const linkManyRelationshipUsers = `-- name: LinkManyRelationshipUsers :execrows
+INSERT INTO
+relationship_users
+(relationship_id, user_id)
+SELECT
+$1,
+UNNEST($2::uuid[])
 `
 
 type LinkManyRelationshipUsersParams struct {
-	UserIds        []uuid.UUID
 	RelationshipID uuid.UUID
+	UserIds        []uuid.UUID
 }
 
-type LinkManyRelationshipUsersRow struct {
-	ID           uuid.UUID
-	DisplayName  string
-	Username     string
-	PublicFlags  int32
-	AttachmentID pgtype.UUID
-}
-
-func (q *Queries) LinkManyRelationshipUsers(ctx context.Context, arg LinkManyRelationshipUsersParams) ([]LinkManyRelationshipUsersRow, error) {
-	rows, err := q.db.Query(ctx, linkManyRelationshipUsers, arg.UserIds, arg.RelationshipID)
+func (q *Queries) LinkManyRelationshipUsers(ctx context.Context, arg LinkManyRelationshipUsersParams) (int64, error) {
+	result, err := q.db.Exec(ctx, linkManyRelationshipUsers, arg.RelationshipID, arg.UserIds)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	defer rows.Close()
-	items := []LinkManyRelationshipUsersRow{}
-	for rows.Next() {
-		var i LinkManyRelationshipUsersRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.DisplayName,
-			&i.Username,
-			&i.PublicFlags,
-			&i.AttachmentID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+	return result.RowsAffected(), nil
 }
 
-const linkRelationshipUser = `-- name: LinkRelationshipUser :one
-WITH users_cte AS (
-    SELECT u.id, u.display_name, u.username, u.public_flags, ua.attachment_id
-    FROM users u
-    LEFT JOIN user_attachments ua ON ua.user_id = u.id
-    WHERE u.id = $1
-),
-
-insert_relationship_users_cte AS (
-    INSERT INTO relationship_users (relationship_id, user_id)
-    SELECT $2, id
-    FROM users_cte
-)
-
-SELECT id, display_name, username, public_flags, attachment_id
-FROM
-users_cte
+const linkRelationshipUser = `-- name: LinkRelationshipUser :execrows
+INSERT INTO
+relationship_users
+(relationship_id, user_id)
+VALUES
+($1, $2)
 `
 
 type LinkRelationshipUserParams struct {
-	UserID         uuid.UUID
 	RelationshipID uuid.UUID
+	UserID         uuid.UUID
 }
 
-type LinkRelationshipUserRow struct {
-	ID           uuid.UUID
-	DisplayName  string
-	Username     string
-	PublicFlags  int32
-	AttachmentID pgtype.UUID
-}
-
-func (q *Queries) LinkRelationshipUser(ctx context.Context, arg LinkRelationshipUserParams) (LinkRelationshipUserRow, error) {
-	row := q.db.QueryRow(ctx, linkRelationshipUser, arg.UserID, arg.RelationshipID)
-	var i LinkRelationshipUserRow
-	err := row.Scan(
-		&i.ID,
-		&i.DisplayName,
-		&i.Username,
-		&i.PublicFlags,
-		&i.AttachmentID,
-	)
-	return i, err
+func (q *Queries) LinkRelationshipUser(ctx context.Context, arg LinkRelationshipUserParams) (int64, error) {
+	result, err := q.db.Exec(ctx, linkRelationshipUser, arg.RelationshipID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const updateRelationship = `-- name: UpdateRelationship :one
-UPDATE relationships
+UPDATE
+relationships
 SET
 status = $1
 WHERE
@@ -390,7 +344,8 @@ AND
 status = 1
 AND
 creator_id != $3
-RETURNING id, creator_id, status, created_at, updated_at
+RETURNING
+id, creator_id, status, updated_at
 `
 
 type UpdateRelationshipParams struct {
@@ -406,7 +361,6 @@ func (q *Queries) UpdateRelationship(ctx context.Context, arg UpdateRelationship
 		&i.ID,
 		&i.CreatorID,
 		&i.Status,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
