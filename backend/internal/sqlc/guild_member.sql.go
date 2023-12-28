@@ -13,8 +13,11 @@ import (
 )
 
 const createGuildMember = `-- name: CreateGuildMember :one
-INSERT INTO guild_members (nickname, guild_id, user_id)
-VALUES ($1, $2, $3)
+INSERT INTO
+guild_members
+(nickname, guild_id, user_id)
+VALUES
+($1, $2, $3)
 RETURNING nickname, joined_at, updated_at, user_id, guild_id
 `
 
@@ -38,9 +41,15 @@ func (q *Queries) CreateGuildMember(ctx context.Context, arg CreateGuildMemberPa
 }
 
 const deleteGuildMember = `-- name: DeleteGuildMember :one
-DELETE FROM guild_members
-WHERE user_id = $1 AND guild_id = $2
-RETURNING user_id, guild_id
+DELETE FROM
+guild_members
+WHERE
+user_id = $1
+AND
+guild_id = $2
+RETURNING
+user_id,
+guild_id
 `
 
 type DeleteGuildMemberParams struct {
@@ -72,9 +81,12 @@ WITH guild_member_cte AS (
     u.username,
     u.public_flags,
     ua.attachment_id
-	FROM guild_members gm
-	INNER JOIN users u ON u.id = gm.user_id
-	LEFT JOIN user_attachments ua ON ua.user_id = gm.user_id
+	FROM
+    guild_members gm
+	INNER JOIN
+    users u ON u.id = gm.user_id
+	LEFT JOIN
+    user_attachments ua ON ua.user_id = gm.user_id
     WHERE
     gm.guild_id = $1
     AND
@@ -90,37 +102,56 @@ WITH guild_member_cte AS (
     )
     AND
     (CASE
-        WHEN $3::uuid IS NOT NULL THEN gm.user_id < $3::uuid
+        WHEN $3::timestamp IS NOT NULL THEN gm.joined_at < $3::timestamp
         ELSE TRUE
     END)
     AND
     (CASE
-	    WHEN $4::uuid IS NOT NULL THEN gm.user_id > $4::uuid
+	    WHEN $4::timestamp IS NOT NULL THEN gm.joined_at > $4::timestamp
 	    ELSE TRUE
     END)
-    ORDER BY u.id DESC
+    ORDER BY 
+    CASE
+        WHEN $4::timestamp IS NOT NULL THEN gm.joined_at
+    END ASC,
+    CASE
+        WHEN $4::timestamp IS NULL THEN gm.joined_at
+    END DESC
 	LIMIT $5
 ),
 
 user_roles_cte AS (
-	SELECT gru.user_id, ARRAY_AGG(gru.role_id)::uuid[] AS roles
-	FROM guild_role_users gru
-    INNER JOIN guild_roles gr ON gr.id = gru.role_id AND gr.guild_id = $1
-	INNER JOIN guild_member_cte gmcte ON gmcte.id = gru.user_id
-	GROUP BY gru.user_id
+	SELECT
+    gru.user_id,
+    ARRAY_AGG(gru.role_id)::uuid[] AS roles
+	FROM
+    guild_role_users gru
+    INNER JOIN
+    guild_roles gr ON gr.id = gru.role_id
+    AND
+    gr.guild_id = $1
+	INNER JOIN
+    guild_member_cte gmcte ON gmcte.id = gru.user_id
+	GROUP BY
+    gru.user_id
 )
 
-SELECT gmcte.joined_at, gmcte.display_name, gmcte.id, gmcte.username, gmcte.public_flags, gmcte.attachment_id, urcte.roles
-FROM guild_member_cte gmcte
-INNER JOIN user_roles_cte urcte ON urcte.user_id = gmcte.id
-ORDER BY gmcte.id DESC
+SELECT
+gmcte.joined_at, gmcte.display_name, gmcte.id, gmcte.username, gmcte.public_flags, gmcte.attachment_id,
+urcte.roles
+FROM
+guild_member_cte gmcte
+INNER JOIN
+user_roles_cte urcte ON urcte.user_id = gmcte.id
+ORDER BY
+gmcte.joined_at DESC
 `
 
 type GetManyAssignableGuildMembersByGuildIDAndRoleIDParams struct {
 	GuildID      uuid.UUID
 	RoleID       uuid.UUID
-	Before       pgtype.UUID
-	After        pgtype.UUID
+	Before       pgtype.Timestamp
+	After        pgtype.Timestamp
 	ResultsLimit int64
 }
 
@@ -180,10 +211,15 @@ WITH guild_member_cte AS (
     u.username,
     u.public_flags,
     ua.attachment_id
-	FROM guild_members gm
-	INNER JOIN users u ON u.id = gm.user_id
-	LEFT JOIN user_attachments ua ON ua.user_id = gm.user_id
-    WHERE gm.guild_id = $1 AND 
+	FROM
+    guild_members gm
+	INNER JOIN
+    users u ON u.id = gm.user_id
+	LEFT JOIN
+    user_attachments ua ON ua.user_id = gm.user_id
+    WHERE
+    gm.guild_id = $1
+    AND
     (CASE
         WHEN $2::uuid IS NOT NULL THEN gm.user_id < $2::uuid
         ELSE TRUE
@@ -193,22 +229,34 @@ WITH guild_member_cte AS (
 	    WHEN $3::uuid IS NOT NULL THEN gm.user_id > $3::uuid
 	    ELSE TRUE
     END)
-    ORDER BY gm.user_id
 	LIMIT $4
 ),
 
 user_roles_cte AS (
-	SELECT gru.user_id, ARRAY_AGG(gru.role_id)::uuid[] AS roles
-	FROM guild_role_users gru
-    INNER JOIN guild_roles gr ON gr.id = gru.role_id AND gr.guild_id = $1
-	INNER JOIN guild_member_cte gmcte ON gmcte.id = gru.user_id
-	GROUP BY gru.user_id
+	SELECT
+    gru.user_id,
+    ARRAY_AGG(gru.role_id)::uuid[] AS roles
+	FROM
+    guild_role_users gru
+    INNER JOIN
+    guild_roles gr ON gr.id = gru.role_id
+    AND
+    gr.guild_id = $1
+	INNER JOIN
+    guild_member_cte gmcte ON gmcte.id = gru.user_id
+	GROUP BY
+    gru.user_id
 )
 
-SELECT gmcte.joined_at, gmcte.display_name, gmcte.id, gmcte.username, gmcte.public_flags, gmcte.attachment_id, urcte.roles
-FROM guild_member_cte gmcte
-INNER JOIN user_roles_cte urcte ON urcte.user_id = gmcte.id
-ORDER BY gmcte.id
+SELECT
+gmcte.joined_at, gmcte.display_name, gmcte.id, gmcte.username, gmcte.public_flags, gmcte.attachment_id,
+urcte.roles
+FROM
+guild_member_cte gmcte
+INNER JOIN
+user_roles_cte urcte ON urcte.user_id = gmcte.id
+ORDER BY
+gmcte.joined_at DESC
 `
 
 type GetManyGuildMembersByGuildIDParams struct {
@@ -273,10 +321,14 @@ WITH guild_member_cte AS (
     u.username,
     u.public_flags,
     ua.attachment_id
-	FROM guild_members gm
-	INNER JOIN users u ON u.id = gm.user_id
-    INNER JOIN guild_role_users gru ON gru.user_id = gm.user_id
-	LEFT JOIN user_attachments ua ON ua.user_id = gm.user_id
+	FROM
+    guild_members gm
+	INNER JOIN
+    users u ON u.id = gm.user_id
+    INNER JOIN
+    guild_role_users gru ON gru.user_id = gm.user_id
+	LEFT JOIN
+    user_attachments ua ON ua.user_id = gm.user_id
     WHERE
     gm.guild_id = $1
     AND
@@ -291,22 +343,34 @@ WITH guild_member_cte AS (
 	    WHEN $4::uuid IS NOT NULL THEN gm.user_id > $4::uuid
 	    ELSE TRUE
     END)
-    ORDER BY gm.user_id DESC
 	LIMIT $5
 ),
 
 user_roles_cte AS (
-	SELECT gru.user_id, ARRAY_AGG(gru.role_id)::uuid[] AS roles
-	FROM guild_role_users gru
-    INNER JOIN guild_roles gr ON gr.id = gru.role_id AND gr.guild_id = $1
-	INNER JOIN guild_member_cte gmcte ON gmcte.id = gru.user_id
-	GROUP BY gru.user_id
+	SELECT
+    gru.user_id,
+    ARRAY_AGG(gru.role_id)::uuid[] AS roles
+	FROM
+    guild_role_users gru
+    INNER JOIN
+    guild_roles gr ON gr.id = gru.role_id
+    AND
+    gr.guild_id = $1
+	INNER JOIN
+    guild_member_cte gmcte ON gmcte.id = gru.user_id
+	GROUP BY
+    gru.user_id
 )
 
-SELECT gmcte.joined_at, gmcte.display_name, gmcte.id, gmcte.username, gmcte.public_flags, gmcte.attachment_id, urcte.roles
-FROM guild_member_cte gmcte
-INNER JOIN user_roles_cte urcte ON urcte.user_id = gmcte.id
-ORDER BY gmcte.id DESC
+SELECT
+gmcte.joined_at, gmcte.display_name, gmcte.id, gmcte.username, gmcte.public_flags, gmcte.attachment_id,
+urcte.roles
+FROM
+guild_member_cte gmcte
+INNER JOIN
+user_roles_cte urcte ON urcte.user_id = gmcte.id
+ORDER BY
+gmcte.id DESC
 `
 
 type GetManyUnassignableGuildMembersByGuildIDAndRoleIDParams struct {
@@ -361,10 +425,58 @@ func (q *Queries) GetManyUnassignableGuildMembersByGuildIDAndRoleID(ctx context.
 	return items, nil
 }
 
+const hasMutualGuilds = `-- name: HasMutualGuilds :one
+WITH request_user_guilds AS (
+    SELECT
+    guild_id
+    FROM
+    guild_members
+    WHERE
+    user_id = $3::uuid
+)
+
+SELECT CASE WHEN EXISTS (
+	SELECT FROM
+	guild_members gm
+	WHERE
+	gm.user_id = ANY($1::uuid[])
+	AND
+	gm.guild_id IN (
+	SELECT
+		guild_id
+	FROM
+		request_user_guilds
+	)
+	GROUP BY
+    gm.user_id
+	HAVING COUNT(gm.user_id) = $2::int
+)
+THEN TRUE
+ELSE FALSE END
+`
+
+type HasMutualGuildsParams struct {
+	UserIds       []uuid.UUID
+	UsersCount    int32
+	RequestUserID uuid.UUID
+}
+
+func (q *Queries) HasMutualGuilds(ctx context.Context, arg HasMutualGuildsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, hasMutualGuilds, arg.UserIds, arg.UsersCount, arg.RequestUserID)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const updateGuildMember = `-- name: UpdateGuildMember :execrows
-UPDATE guild_members
-SET nickname = $1
-WHERE guild_id = $2 AND user_id = $3
+UPDATE
+guild_members
+SET
+nickname = $1
+WHERE
+guild_id = $2
+AND
+user_id = $3
 `
 
 type UpdateGuildMemberParams struct {
