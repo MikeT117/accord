@@ -2,10 +2,12 @@ package rest_api
 
 import (
 	"net/http"
+	"slices"
 	"strconv"
 
 	message_queue "github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
+	"github.com/MikeT117/accord/backend/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
@@ -141,7 +143,6 @@ func (a *api) HandleChannelPinsReadMany(c echo.Context) error {
 	return NewSuccessfulResponse(c, http.StatusOK, a.Mapper.ConvertSQLCGetManyChannelMessagesByChannelIDRowsToManyMessage(sqlMessages))
 }
 
-// TODO: Fire MESSAGE_CREATE event - all properties are included
 func (a *api) HandleChannelMessageCreate(c echo.Context) error {
 
 	channelID, err := uuid.Parse(c.Param("channel_id"))
@@ -170,7 +171,7 @@ func (a *api) HandleChannelMessageCreate(c echo.Context) error {
 	tx := a.Queries.WithTx(dbtx)
 
 	sqlMessage, err := tx.CreateChannelMessage(c.Request().Context(), sqlc.CreateChannelMessageParams{
-		UserID:    c.(*APIContext).UserID,
+		UserID:    c.(*CustomCtx).UserID,
 		ChannelID: channelID,
 		Content:   body.Content,
 	})
@@ -202,26 +203,41 @@ func (a *api) HandleChannelMessageCreate(c echo.Context) error {
 
 	}
 
-	roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
-
-	if err != nil {
-		return NewServerError(err, "GetRoleIDsByChannelID")
-	}
-
 	dbtx.Commit(c.Request().Context())
 
-	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
+	forwardedPayload := &message_queue.ForwardedPayload{
 		Version: 0,
 		Op:      "MESSAGE_CREATE",
-		RoleIDs: roleIDs,
-		UserIDs: []string{c.(*APIContext).UserID.String()},
 		Data:    message,
-	})
+	}
 
+	if c.(*CustomCtx).IsGuildChannel {
+
+		roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		forwardedPayload.RoleIDs = roleIDs
+		forwardedPayload.ExcludedUserIDs = []uuid.UUID{c.(*CustomCtx).UserID}
+
+	} else {
+		userIDs, err := a.Queries.GetPrivateChannelUserIDs(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		forwardedPayload.UserIDs = slices.DeleteFunc[[]uuid.UUID, uuid.UUID](userIDs, func(id uuid.UUID) bool {
+			return id == c.(*CustomCtx).UserID
+		})
+	}
+
+	a.MessageQueue.PublishForwardPayload(forwardedPayload)
 	return NewSuccessfulResponse(c, http.StatusCreated, &message)
 }
 
-// TODO: Fire MESSAGE_UPDATE event - with only the updated properties of the message
 func (a *api) HandleChannelMessageUpdate(c echo.Context) error {
 
 	channelID, err := uuid.Parse(c.Param("channel_id"))
@@ -246,9 +262,17 @@ func (a *api) HandleChannelMessageUpdate(c echo.Context) error {
 		return NewClientError(nil, http.StatusBadRequest, reason)
 	}
 
-	// TODO: Check if the message has any attachments, if not return an error, as the message should be deleted rather than edited to an empty state
 	if len(body.Content) == 0 {
-		return NewClientError(nil, http.StatusBadRequest, "cannot send an empty message")
+
+		count, err := a.Queries.GetAttachmentCountByMessageID(c.Request().Context(), messageID)
+
+		if err != nil {
+			return NewServerError(err, "GetAttachmentCountByMessageID")
+		}
+
+		if count < 1 {
+			return NewClientError(nil, http.StatusBadRequest, "cannot send an empty message")
+		}
 	}
 
 	message, err := a.Queries.UpdateChannelMessage(c.Request().Context(), sqlc.UpdateChannelMessageParams{
@@ -261,10 +285,39 @@ func (a *api) HandleChannelMessageUpdate(c echo.Context) error {
 		return NewServerError(err, "UpdateChannelMessage")
 	}
 
+	forwardedPayload := &message_queue.ForwardedPayload{
+		Version: 0,
+		Op:      "MESSAGE_UPDATE",
+		Data:    message,
+	}
+
+	if c.(*CustomCtx).IsGuildChannel {
+
+		roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		forwardedPayload.RoleIDs = roleIDs
+		forwardedPayload.ExcludedUserIDs = []uuid.UUID{c.(*CustomCtx).UserID}
+
+	} else {
+		userIDs, err := a.Queries.GetPrivateChannelUserIDs(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		forwardedPayload.UserIDs = slices.DeleteFunc[[]uuid.UUID, uuid.UUID](userIDs, func(id uuid.UUID) bool {
+			return id == c.(*CustomCtx).UserID
+		})
+	}
+
+	a.MessageQueue.PublishForwardPayload(forwardedPayload)
 	return NewSuccessfulResponse(c, http.StatusOK, a.Mapper.ConvertSQLCUpdateChannelMessageRowUpdatedMessage(message))
 }
 
-// TODO: Fire MESSAGE_DELETE event with message info
 func (a *api) HandleOwnerChannelMessageDelete(c echo.Context) error {
 
 	channelID, err := uuid.Parse(c.Param("channel_id"))
@@ -279,11 +332,11 @@ func (a *api) HandleOwnerChannelMessageDelete(c echo.Context) error {
 		return NewClientError(err, http.StatusBadRequest, "invalid message ID")
 	}
 
-	_, err = a.Queries.DeleteChannelMessage(c.Request().Context(), sqlc.DeleteChannelMessageParams{
+	sqlDeletedChannelMessage, err := a.Queries.DeleteChannelMessage(c.Request().Context(), sqlc.DeleteChannelMessageParams{
 		ChannelID: channelID,
 		MessageID: messageID,
 		UserID: pgtype.UUID{
-			Bytes: c.(*APIContext).UserID,
+			Bytes: c.(*CustomCtx).UserID,
 			Valid: true,
 		},
 	})
@@ -292,10 +345,42 @@ func (a *api) HandleOwnerChannelMessageDelete(c echo.Context) error {
 		return NewServerError(err, "DeleteChannelMessage")
 	}
 
-	return NewSuccessfulResponse(c, http.StatusNoContent, nil)
+	forwardedPayload := &message_queue.ForwardedPayload{
+		Version: 0,
+		Op:      "MESSAGE_DELETE",
+		Data: &models.DeletedChannelMessage{
+			ID:        sqlDeletedChannelMessage.ID,
+			ChannelID: sqlDeletedChannelMessage.ChannelID,
+		},
+	}
+
+	if c.(*CustomCtx).IsGuildChannel {
+
+		roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		forwardedPayload.RoleIDs = roleIDs
+		forwardedPayload.ExcludedUserIDs = []uuid.UUID{c.(*CustomCtx).UserID}
+
+	} else {
+		userIDs, err := a.Queries.GetPrivateChannelUserIDs(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		forwardedPayload.UserIDs = slices.DeleteFunc[[]uuid.UUID, uuid.UUID](userIDs, func(id uuid.UUID) bool {
+			return id == c.(*CustomCtx).UserID
+		})
+	}
+
+	a.MessageQueue.PublishForwardPayload(forwardedPayload)
+	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }
 
-// TODO: Fire MESSAGE_DELETE event with message info
 func (a *api) HandleAdminChannelMessageDelete(c echo.Context) error {
 
 	channelID, err := uuid.Parse(c.Param("channel_id"))
@@ -310,7 +395,7 @@ func (a *api) HandleAdminChannelMessageDelete(c echo.Context) error {
 		return NewClientError(err, http.StatusBadRequest, "invalid message ID")
 	}
 
-	_, err = a.Queries.DeleteChannelMessage(c.Request().Context(), sqlc.DeleteChannelMessageParams{
+	sqlDeletedChannelMessage, err := a.Queries.DeleteChannelMessage(c.Request().Context(), sqlc.DeleteChannelMessageParams{
 		ChannelID: channelID,
 		MessageID: messageID,
 	})
@@ -319,5 +404,38 @@ func (a *api) HandleAdminChannelMessageDelete(c echo.Context) error {
 		return NewServerError(err, "DeleteChannelMessage")
 	}
 
-	return NewSuccessfulResponse(c, http.StatusNoContent, nil)
+	forwardedPayload := &message_queue.ForwardedPayload{
+		Version: 0,
+		Op:      "MESSAGE_DELETE",
+		Data: &models.DeletedChannelMessage{
+			ID:        sqlDeletedChannelMessage.ID,
+			ChannelID: sqlDeletedChannelMessage.ChannelID,
+		},
+	}
+
+	if c.(*CustomCtx).IsGuildChannel {
+
+		roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		forwardedPayload.RoleIDs = roleIDs
+		forwardedPayload.ExcludedUserIDs = []uuid.UUID{c.(*CustomCtx).UserID}
+
+	} else {
+		userIDs, err := a.Queries.GetPrivateChannelUserIDs(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		forwardedPayload.UserIDs = slices.DeleteFunc[[]uuid.UUID, uuid.UUID](userIDs, func(id uuid.UUID) bool {
+			return id == c.(*CustomCtx).UserID
+		})
+	}
+
+	a.MessageQueue.PublishForwardPayload(forwardedPayload)
+	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }

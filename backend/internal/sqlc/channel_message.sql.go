@@ -14,10 +14,17 @@ import (
 
 const createChannelMessage = `-- name: CreateChannelMessage :one
 WITH channel_message_insert_cte AS (
-    INSERT INTO channel_messages (content, user_id, channel_id, guild_id)
-    SELECT $1, $2, c.id, c.guild_id
-    FROM channels c
-    WHERE c.id = $3
+    INSERT INTO
+    channel_messages (content, user_id, channel_id, guild_id)
+    SELECT
+    $1,
+    $2,
+    c.id,
+    c.guild_id
+    FROM
+    channels c
+    WHERE
+    c.id = $3
     RETURNING id, content, is_pinned, flags, user_id, channel_id, guild_id, created_at, updated_at
 ),
 
@@ -38,22 +45,37 @@ channel_messages_cte AS (
     u.username,
     u.public_flags,
     ua.attachment_id
-    FROM channel_message_insert_cte cmicte
-    INNER JOIN users u ON u.id = cmicte.user_id
-    LEFT JOIN user_attachments ua ON ua.user_id = u.id
-    LEFT JOIN guild_members gm ON gm.guild_id = cmicte.guild_id AND cmicte.user_id = gm.user_id
+    FROM
+    channel_message_insert_cte cmicte
+    INNER JOIN
+    users u ON u.id = cmicte.user_id
+    LEFT JOIN
+    user_attachments ua ON ua.user_id = u.id
+    LEFT JOIN
+    guild_members gm ON gm.guild_id = cmicte.guild_id
+    AND
+    cmicte.user_id = gm.user_id
 ),
 
 attachments_cte AS (
-    SELECT cma.channel_message_id, ARRAY_AGG(cma.attachment_id)::text[] AS attachments
-    FROM channel_message_attachments cma
-    INNER JOIN channel_messages_cte cmcte ON cmcte.id = cma.channel_message_id
-    GROUP BY cma.channel_message_id
+    SELECT
+    cma.channel_message_id,
+    ARRAY_AGG(cma.attachment_id)::text[] AS attachments
+    FROM
+    channel_message_attachments cma
+    INNER JOIN
+    channel_messages_cte cmcte ON cmcte.id = cma.channel_message_id
+    GROUP BY
+    cma.channel_message_id
 )
 
-SELECT cmcte.id, cmcte.user_id, cmcte.channel_id, cmcte.content, cmcte.is_pinned, cmcte.flags, cmcte.created_at, cmcte.updated_at, cmcte.display_name, cmcte.username, cmcte.public_flags, cmcte.attachment_id, COALESCE(acte.attachments, '{}')
-FROM channel_messages_cte cmcte
-LEFT JOIN attachments_cte acte ON acte.channel_message_id = cmcte.id
+SELECT
+cmcte.id, cmcte.user_id, cmcte.channel_id, cmcte.content, cmcte.is_pinned, cmcte.flags, cmcte.created_at, cmcte.updated_at, cmcte.display_name, cmcte.username, cmcte.public_flags, cmcte.attachment_id,
+COALESCE(acte.attachments, '{}')
+FROM
+channel_messages_cte cmcte
+LEFT JOIN
+attachments_cte acte ON acte.channel_message_id = cmcte.id
 `
 
 type CreateChannelMessageParams struct {
@@ -100,7 +122,8 @@ func (q *Queries) CreateChannelMessage(ctx context.Context, arg CreateChannelMes
 }
 
 const deleteChannelMessage = `-- name: DeleteChannelMessage :one
-DELETE FROM channel_messages
+DELETE FROM
+channel_messages
 WHERE
 id = $1
 AND
@@ -152,11 +175,17 @@ WITH channel_messages_cte AS (
     u.username,
     u.public_flags,
     ua.attachment_id
-    FROM channel_messages cm
-    INNER JOIN users u ON u.id = cm.user_id
-    LEFT JOIN user_attachments ua ON ua.user_id = u.id
-    LEFT JOIN guild_members gm ON gm.guild_id = cm.guild_id AND cm.user_id = gm.user_id
-    WHERE cm.channel_id = $1 AND
+    FROM
+    channel_messages cm
+    INNER JOIN
+    users u ON u.id = cm.user_id
+    LEFT JOIN
+    user_attachments ua ON ua.user_id = u.id
+    LEFT JOIN
+    guild_members gm ON gm.guild_id = cm.guild_id AND cm.user_id = gm.user_id
+    WHERE
+    cm.channel_id = $1
+    AND
     (CASE
         WHEN $2::uuid IS NOT NULL THEN cm.id < $2::uuid
         ELSE TRUE
@@ -171,21 +200,37 @@ WITH channel_messages_cte AS (
         WHEN $4::boolean IS NOT NULL THEN cm.is_pinned = $4::boolean
         ELSE TRUE
     END)
-    ORDER BY cm.id DESC
+    ORDER BY
+    CASE
+		WHEN $3::uuid IS NOT NULL THEN cm.id
+	END ASC,
+	CASE
+        WHEN $3::uuid IS NULL THEN cm.id
+	END DESC
     LIMIT $5
 ),
 
 attachments_cte AS (
-    SELECT cma.channel_message_id, ARRAY_AGG(cma.attachment_id)::text[] AS attachments
-    FROM channel_message_attachments cma
-    INNER JOIN channel_messages_cte cmcte ON cmcte.id = cma.channel_message_id
-    GROUP BY cma.channel_message_id
+    SELECT
+    cma.channel_message_id,
+    ARRAY_AGG(cma.attachment_id)::text[] AS attachments
+    FROM
+    channel_message_attachments cma
+    INNER JOIN
+    channel_messages_cte cmcte ON cmcte.id = cma.channel_message_id
+    GROUP BY
+    cma.channel_message_id
 )
 
-SELECT cmcte.id, cmcte.user_id, cmcte.channel_id, cmcte.content, cmcte.is_pinned, cmcte.flags, cmcte.created_at, cmcte.updated_at, cmcte.display_name, cmcte.username, cmcte.public_flags, cmcte.attachment_id, COALESCE(acte.attachments, '{}')
-FROM channel_messages_cte cmcte
-LEFT JOIN attachments_cte acte ON acte.channel_message_id = cmcte.id
-ORDER BY cmcte.id DESC
+SELECT
+cmcte.id, cmcte.user_id, cmcte.channel_id, cmcte.content, cmcte.is_pinned, cmcte.flags, cmcte.created_at, cmcte.updated_at, cmcte.display_name, cmcte.username, cmcte.public_flags, cmcte.attachment_id,
+COALESCE(acte.attachments, '{}')
+FROM
+channel_messages_cte cmcte
+LEFT JOIN
+attachments_cte acte ON acte.channel_message_id = cmcte.id
+ORDER BY
+cmcte.id DESC
 `
 
 type GetManyChannelMessagesByChannelIDParams struct {
@@ -253,10 +298,19 @@ func (q *Queries) GetManyChannelMessagesByChannelID(ctx context.Context, arg Get
 }
 
 const pinChannelMessage = `-- name: PinChannelMessage :execrows
-UPDATE channel_messages
-SET is_pinned = true
-WHERE id = $1 AND channel_id = $2
-RETURNING id, channel_id, content, is_pinned
+UPDATE
+channel_messages
+SET
+is_pinned = true
+WHERE
+id = $1
+AND
+channel_id = $2
+RETURNING
+id,
+channel_id,
+content,
+is_pinned
 `
 
 type PinChannelMessageParams struct {
@@ -280,10 +334,19 @@ func (q *Queries) PinChannelMessage(ctx context.Context, arg PinChannelMessagePa
 }
 
 const unpinChannelMessage = `-- name: UnpinChannelMessage :execrows
-UPDATE channel_messages
-SET is_pinned = false
-WHERE id = $1 AND channel_id = $2
-RETURNING id, channel_id, content, is_pinned
+UPDATE
+channel_messages
+SET
+is_pinned = false
+WHERE
+id = $1
+AND
+channel_id = $2
+RETURNING
+id,
+channel_id,
+content,
+is_pinned
 `
 
 type UnpinChannelMessageParams struct {
@@ -307,10 +370,21 @@ func (q *Queries) UnpinChannelMessage(ctx context.Context, arg UnpinChannelMessa
 }
 
 const updateChannelMessage = `-- name: UpdateChannelMessage :one
-UPDATE channel_messages
-SET content = $1, updated_at = NOW()
-WHERE id = $2 AND channel_id = $3
-RETURNING id, channel_id, content, is_pinned, updated_at
+UPDATE
+channel_messages
+SET
+content = $1,
+updated_at = NOW()
+WHERE
+id = $2
+AND
+channel_id = $3
+RETURNING
+id,
+channel_id,
+content,
+is_pinned,
+updated_at
 `
 
 type UpdateChannelMessageParams struct {
