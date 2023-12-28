@@ -19,8 +19,8 @@ func main() {
 	ctx := context.Background()
 	pool := database.Create(ctx)
 	queries := sqlc.New(pool)
-	messageQueue := message_queue.CreateMessageQueue()
-	defer messageQueue.Conn.Close()
+	nats := message_queue.CreateNATSConnection()
+	defer nats.Conn.Drain()
 
-	websocket_api.CreateWebsocketServer(ctx, pool, queries, messageQueue)
+	websocket_api.CreateWebsocketServer(queries, nats)
 }

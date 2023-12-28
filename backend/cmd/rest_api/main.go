@@ -18,9 +18,9 @@ func main() {
 
 	ctx := context.Background()
 	pool := database.Create(ctx)
-	querues := sqlc.New(pool)
-	messageQueue := message_queue.CreateMessageQueue()
-	defer messageQueue.Conn.Close()
+	queries := sqlc.New(pool)
+	nats := message_queue.CreateNATSConnection()
+	defer nats.Conn.Drain()
 
-	rest_api.CreateRestAPI(querues, pool, messageQueue)
+	rest_api.CreateRestAPI(queries, pool, nats)
 }
