@@ -81,12 +81,6 @@ func (a *api) HandleGuildBanCreate(c echo.Context) error {
 		return NewClientError(err, http.StatusBadRequest, "invalid guild ID")
 	}
 
-	userID, err := uuid.Parse(c.Param("user_id"))
-
-	if err != nil {
-		return NewClientError(err, http.StatusBadRequest, "invalid member ID")
-	}
-
 	var body BannedGuildMemberCreateBody
 
 	if err := c.Bind(&body); err != nil {
@@ -109,9 +103,9 @@ func (a *api) HandleGuildBanCreate(c echo.Context) error {
 
 	rowsAffected, err := tx.CreateGuildBan(c.Request().Context(), sqlc.CreateGuildBanParams{
 		Reason:    body.Reason,
-		UserID:    userID,
+		UserID:    body.UserID,
 		GuildID:   guildID,
-		CreatorID: c.(*APIContext).UserID,
+		CreatorID: c.(*CustomCtx).UserID,
 	})
 
 	if err != nil {
@@ -126,7 +120,7 @@ func (a *api) HandleGuildBanCreate(c echo.Context) error {
 	}
 
 	_, err = tx.DeleteGuildMember(c.Request().Context(), sqlc.DeleteGuildMemberParams{
-		UserID:  userID,
+		UserID:  body.UserID,
 		GuildID: guildID,
 	})
 
@@ -135,7 +129,7 @@ func (a *api) HandleGuildBanCreate(c echo.Context) error {
 	}
 
 	roleIDs, err := tx.UnassignAllRolesFromUser(c.Request().Context(), sqlc.UnassignAllRolesFromUserParams{
-		UserID:  userID,
+		UserID:  body.UserID,
 		GuildID: guildID,
 	})
 
@@ -146,14 +140,14 @@ func (a *api) HandleGuildBanCreate(c echo.Context) error {
 	a.MessageQueue.PublishLocalPayload(&message_queue.LocalPayload{
 		Op:      "ROLE_DELETE",
 		Version: 0,
-		UserIDs: []uuid.UUID{c.(*APIContext).UserID},
-		Data:    roleIDs,
+		UserIDs: []uuid.UUID{c.(*CustomCtx).UserID},
+		RoleIDs: roleIDs,
 	})
 
 	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
 		Op:      "GUILD_DELETE",
 		Version: 0,
-		UserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		UserIDs: []uuid.UUID{c.(*CustomCtx).UserID},
 		Data: &models.DeletedGuild{
 			ID: guildID,
 		},
@@ -170,14 +164,14 @@ func (a *api) HandleGuildBanDelete(c echo.Context) error {
 		return NewClientError(err, http.StatusBadRequest, "invalid guild ID")
 	}
 
-	userID, err := uuid.Parse(c.Param("user_id"))
+	banID, err := uuid.Parse(c.Param("ban_id"))
 
 	if err != nil {
 		return NewClientError(err, http.StatusBadRequest, "invalid member ID")
 	}
 
 	rowsAffected, err := a.Queries.DeleteGuildBan(c.Request().Context(), sqlc.DeleteGuildBanParams{
-		UserID:  userID,
+		BanID:   banID,
 		GuildID: guildID,
 	})
 

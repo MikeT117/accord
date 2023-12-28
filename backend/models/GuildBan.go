@@ -1,11 +1,9 @@
 package models
 
-import (
-	"time"
-)
+import "github.com/google/uuid"
 
 type GuildBan struct {
-	Reason   string      `json:"reason"`
-	BannedAt time.Time   `json:"bannedAt"`
-	User     UserLimited `json:"user"`
+	ID     uuid.UUID   `json:"id"`
+	Reason string      `json:"reason"`
+	User   UserLimited `json:"user"`
 }

@@ -13,26 +13,26 @@ import (
 )
 
 const createGuildBan = `-- name: CreateGuildBan :execrows
-INSERT INTO guild_bans
+INSERT INTO
+guild_bans
 (user_id, reason, guild_id, creator_id)
-SELECT id, $1, $2, $3
-FROM users
-WHERE id = $4
+VALUES
+($1, $2, $3, $4)
 `
 
 type CreateGuildBanParams struct {
+	UserID    uuid.UUID
 	Reason    string
 	GuildID   uuid.UUID
 	CreatorID uuid.UUID
-	UserID    uuid.UUID
 }
 
 func (q *Queries) CreateGuildBan(ctx context.Context, arg CreateGuildBanParams) (int64, error) {
 	result, err := q.db.Exec(ctx, createGuildBan,
+		arg.UserID,
 		arg.Reason,
 		arg.GuildID,
 		arg.CreatorID,
-		arg.UserID,
 	)
 	if err != nil {
 		return 0, err
@@ -41,17 +41,21 @@ func (q *Queries) CreateGuildBan(ctx context.Context, arg CreateGuildBanParams) 
 }
 
 const deleteGuildBan = `-- name: DeleteGuildBan :execrows
-DELETE FROM guild_bans
-WHERE user_id  = $1 AND guild_id = $2
+DELETE FROM
+guild_bans
+WHERE
+id = $1
+AND
+guild_id = $2
 `
 
 type DeleteGuildBanParams struct {
-	UserID  uuid.UUID
+	BanID   uuid.UUID
 	GuildID uuid.UUID
 }
 
 func (q *Queries) DeleteGuildBan(ctx context.Context, arg DeleteGuildBanParams) (int64, error) {
-	result, err := q.db.Exec(ctx, deleteGuildBan, arg.UserID, arg.GuildID)
+	result, err := q.db.Exec(ctx, deleteGuildBan, arg.BanID, arg.GuildID)
 	if err != nil {
 		return 0, err
 	}
@@ -60,7 +64,7 @@ func (q *Queries) DeleteGuildBan(ctx context.Context, arg DeleteGuildBanParams) 
 
 const getGuildBanCountByUserIDAndGuildID = `-- name: GetGuildBanCountByUserIDAndGuildID :execrows
 SELECT
-user_id
+id
 FROM
 guild_bans
 WHERE
@@ -84,27 +88,37 @@ func (q *Queries) GetGuildBanCountByUserIDAndGuildID(ctx context.Context, arg Ge
 
 const getManyGuildBansByGuildID = `-- name: GetManyGuildBansByGuildID :many
 SELECT
-    gb.banned_at,
+    gb.id,
     gb.reason,
-    u.id,
+    gb.user_id,
     u.display_name,
     u.username,
     u.public_flags,
     ua.attachment_id
-FROM guild_bans gb
-INNER JOIN users u ON u.id = gb.user_id
-LEFT JOIN user_attachments ua ON ua.user_id = u.id
-WHERE gb.guild_id = $1 AND 
+FROM
+guild_bans gb
+INNER JOIN
+users u ON u.id = gb.user_id
+LEFT JOIN
+user_attachments ua ON ua.user_id = u.id
+WHERE
+gb.guild_id = $1 AND 
     (CASE
-        WHEN $2::uuid IS NOT NULL THEN gb.user_id < $2::uuid
+        WHEN $2::uuid IS NOT NULL THEN gb.id < $2::uuid
         ELSE TRUE
     END)
     AND
     (CASE
-	    WHEN $3::uuid IS NOT NULL THEN gb.user_id > $3::uuid
-	    ELSE TRUE
+        WHEN $3::uuid IS NOT NULL THEN gb.id > $3::uuid
+        ELSE TRUE
     END)
-ORDER BY gb.user_id DESC
+ORDER BY
+CASE
+    WHEN $3::uuid IS NOT NULL THEN gb.id
+END ASC,
+CASE
+    WHEN $3::uuid IS NULL THEN gb.id
+END DESC
 LIMIT $4
 `
 
@@ -116,9 +130,9 @@ type GetManyGuildBansByGuildIDParams struct {
 }
 
 type GetManyGuildBansByGuildIDRow struct {
-	BannedAt     pgtype.Timestamp
-	Reason       string
 	ID           uuid.UUID
+	Reason       string
+	UserID       uuid.UUID
 	DisplayName  string
 	Username     string
 	PublicFlags  int32
@@ -140,9 +154,9 @@ func (q *Queries) GetManyGuildBansByGuildID(ctx context.Context, arg GetManyGuil
 	for rows.Next() {
 		var i GetManyGuildBansByGuildIDRow
 		if err := rows.Scan(
-			&i.BannedAt,
-			&i.Reason,
 			&i.ID,
+			&i.Reason,
+			&i.UserID,
 			&i.DisplayName,
 			&i.Username,
 			&i.PublicFlags,
