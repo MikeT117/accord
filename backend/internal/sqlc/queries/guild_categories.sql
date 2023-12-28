@@ -1,11 +1,15 @@
 -- name: CreateOrGetGuildCategory :one
-INSERT INTO guild_categories (name)
-VALUES (@name)
+INSERT INTO
+guild_categories
+(name)
+VALUES
+(@name)
 ON CONFLICT (name) DO UPDATE
 SET NAME = guild_categories.name
-RETURNING *;
-
+RETURNING
+*;
 
 -- name: GetManyGuildCategories :many
-SELECT *
+SELECT
+*
 FROM guild_categories;

@@ -10,22 +10,27 @@ import (
 )
 
 const createOrGetGuildCategory = `-- name: CreateOrGetGuildCategory :one
-INSERT INTO guild_categories (name)
-VALUES ($1)
+INSERT INTO
+guild_categories
+(name)
+VALUES
+($1)
 ON CONFLICT (name) DO UPDATE
 SET NAME = guild_categories.name
-RETURNING id, name, created_at
+RETURNING
+id, name
 `
 
 func (q *Queries) CreateOrGetGuildCategory(ctx context.Context, name string) (GuildCategory, error) {
 	row := q.db.QueryRow(ctx, createOrGetGuildCategory, name)
 	var i GuildCategory
-	err := row.Scan(&i.ID, &i.Name, &i.CreatedAt)
+	err := row.Scan(&i.ID, &i.Name)
 	return i, err
 }
 
 const getManyGuildCategories = `-- name: GetManyGuildCategories :many
-SELECT id, name, created_at
+SELECT
+id, name
 FROM guild_categories
 `
 
@@ -38,7 +43,7 @@ func (q *Queries) GetManyGuildCategories(ctx context.Context) ([]GuildCategory, 
 	items := []GuildCategory{}
 	for rows.Next() {
 		var i GuildCategory
-		if err := rows.Scan(&i.ID, &i.Name, &i.CreatedAt); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
