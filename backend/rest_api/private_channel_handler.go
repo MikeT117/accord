@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	"github.com/MikeT117/accord/backend/internal/database"
+	"github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
 	"github.com/labstack/echo/v4"
 )
 
-// TODO: Check users have not blocked each other
 func (a *api) HandlePrivateChannelCreate(c echo.Context) error {
 	var body PrivateChannelCreateBody
 
@@ -16,8 +16,34 @@ func (a *api) HandlePrivateChannelCreate(c echo.Context) error {
 		return NewClientError(err, http.StatusBadRequest, "Unable to bind body")
 	}
 
+	isFriends, err := a.Queries.HasFriendRelationship(c.Request().Context(), sqlc.HasFriendRelationshipParams{
+		RequestUserID: c.(*CustomCtx).UserID,
+		UserIds:       body.Recipients,
+		UsersLen:      int64(len(body.Recipients)),
+	})
+
+	if err != nil {
+		return NewServerError(err, "HasFriendRelationship")
+	}
+
+	if !isFriends {
+		hasMutualGuilds, err := a.Queries.HasMutualGuilds(c.Request().Context(), sqlc.HasMutualGuildsParams{
+			UserIds:       body.Recipients,
+			RequestUserID: c.(*CustomCtx).UserID,
+			UsersCount:    int32(len(body.Recipients)),
+		})
+
+		if err != nil {
+			return NewServerError(err, "HasFriendRelationship")
+		}
+
+		if !hasMutualGuilds {
+			return NewClientError(nil, http.StatusBadRequest, "user(s) not found")
+		}
+	}
+
 	sqlPrivateChannel, err := a.Queries.GetPrivateChannelByUsers(c.Request().Context(), sqlc.GetPrivateChannelByUsersParams{
-		UserIds:  append(body.Recipients, c.(*APIContext).UserID),
+		UserIds:  append(body.Recipients, c.(*CustomCtx).UserID),
 		UsersLen: int32(len(body.Recipients) + 1),
 	})
 
@@ -40,7 +66,7 @@ func (a *api) HandlePrivateChannelCreate(c echo.Context) error {
 			channelType = 2
 		}
 
-		cctx := c.(*APIContext)
+		cctx := c.(*CustomCtx)
 
 		sqlPrivateChannel, err = tx.CreatePrivateChannel(reqCtx, sqlc.CreatePrivateChannelParams{
 			ChannelType: channelType,
@@ -71,7 +97,7 @@ func (a *api) HandlePrivateChannelCreate(c echo.Context) error {
 		return NewServerError(err, "GetPrivateChannelByUsers")
 	}
 
-	sqlUsers, err := a.Queries.GetManyUsersByIDs(c.Request().Context(), body.Recipients)
+	sqlUsers, err := a.Queries.GetManyUsersByIDs(c.Request().Context(), append(body.Recipients, c.(*CustomCtx).UserID))
 
 	if err != nil {
 		return NewServerError(err, "a.Queries.GetManyUsersByIds")
@@ -79,6 +105,13 @@ func (a *api) HandlePrivateChannelCreate(c echo.Context) error {
 
 	privateChannel := a.Mapper.ConvertSQLCChannelToPrivateChannel(sqlPrivateChannel)
 	privateChannel.Users = a.Mapper.ConvertSQLCGetManyUsersByIDsRowToUsers(sqlUsers)
+
+	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
+		Op:      "CHANNEL_CREATE",
+		Version: 0,
+		UserIDs: body.Recipients,
+		Data:    &privateChannel,
+	})
 
 	return NewSuccessfulResponse(c, http.StatusOK, &privateChannel)
 }

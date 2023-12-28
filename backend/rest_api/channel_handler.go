@@ -2,6 +2,7 @@ package rest_api
 
 import (
 	"net/http"
+	"slices"
 
 	"github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
@@ -36,25 +37,41 @@ func (a *api) HandleChannelMessagePinCreate(c echo.Context) error {
 		return NewClientError(nil, http.StatusNotFound, "message not found")
 	}
 
-	roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
-
-	if err != nil {
-		return NewServerError(err, "GetRoleIDsByChannelID")
+	forwardedPayload := &message_queue.ForwardedPayload{
+		Version: 0,
+		Op:      "CHANNEL_PINS_UPDATE",
+		Data:    channelID,
 	}
 
-	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
-		Version:         0,
-		Op:              "CHANNEL_PINS_UPDATE",
-		RoleIDs:         roleIDs,
-		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
-		Data:            nil,
-	})
+	if c.(*CustomCtx).IsGuildChannel {
 
+		roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		forwardedPayload.RoleIDs = roleIDs
+		forwardedPayload.ExcludedUserIDs = []uuid.UUID{c.(*CustomCtx).UserID}
+
+	} else {
+		userIDs, err := a.Queries.GetPrivateChannelUserIDs(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		forwardedPayload.UserIDs = slices.DeleteFunc[[]uuid.UUID, uuid.UUID](userIDs, func(id uuid.UUID) bool {
+			return id == c.(*CustomCtx).UserID
+		})
+
+	}
+
+	a.MessageQueue.PublishForwardPayload(forwardedPayload)
 	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }
 
 func (a *api) HandleChannelMessagePinDelete(c echo.Context) error {
-
 	channelID, err := uuid.Parse(c.Param("channel_id"))
 
 	if err != nil {
@@ -80,20 +97,37 @@ func (a *api) HandleChannelMessagePinDelete(c echo.Context) error {
 		return NewClientError(nil, http.StatusNotFound, "message not found")
 	}
 
-	roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
-
-	if err != nil {
-		return NewServerError(err, "GetRoleIDsByChannelID")
+	forwardedPayload := &message_queue.ForwardedPayload{
+		Version: 0,
+		Op:      "CHANNEL_PINS_UPDATE",
+		Data:    channelID,
 	}
 
-	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
-		Version:         0,
-		Op:              "CHANNEL_PINS_UPDATE",
-		RoleIDs:         roleIDs,
-		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
-		Data:            nil,
-	})
+	if c.(*CustomCtx).IsGuildChannel {
 
+		roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		forwardedPayload.RoleIDs = roleIDs
+		forwardedPayload.ExcludedUserIDs = []uuid.UUID{c.(*CustomCtx).UserID}
+
+	} else {
+		userIDs, err := a.Queries.GetPrivateChannelUserIDs(c.Request().Context(), channelID)
+
+		if err != nil {
+			return NewServerError(err, "GetRoleIDsByChannelID")
+		}
+
+		forwardedPayload.UserIDs = slices.DeleteFunc[[]uuid.UUID, uuid.UUID](userIDs, func(id uuid.UUID) bool {
+			return id == c.(*CustomCtx).UserID
+		})
+
+	}
+
+	a.MessageQueue.PublishForwardPayload(forwardedPayload)
 	return NewSuccessfulResponse(c, http.StatusOK, nil)
 }
 
@@ -136,32 +170,36 @@ func (a *api) HandleChannelUpdate(c echo.Context) error {
 
 	channel := a.Mapper.ConvertSQLCChannelToUpdatedChannel(sqlChannel)
 
-	updatedChannel := &message_queue.ForwardedPayload{
+	forwardedPayload := &message_queue.ForwardedPayload{
 		Version:         0,
 		Op:              "CHANNEL_UPDATE",
 		Data:            channel,
-		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		ExcludedUserIDs: []uuid.UUID{c.(*CustomCtx).UserID},
 	}
 
-	if channel.ChannelType < 2 || channel.ChannelType > 3 {
+	if c.(*CustomCtx).IsGuildChannel {
+
 		roleIDs, err := a.Queries.GetRoleIDsByChannelID(c.Request().Context(), channelID)
 
 		if err != nil {
 			return NewServerError(err, "GetRoleIDsByChannelID")
 		}
 
-		updatedChannel.RoleIDs = roleIDs
-	} else {
+		forwardedPayload.RoleIDs = roleIDs
+		forwardedPayload.ExcludedUserIDs = []uuid.UUID{c.(*CustomCtx).UserID}
 
+	} else {
 		userIDs, err := a.Queries.GetPrivateChannelUserIDs(c.Request().Context(), channelID)
 
 		if err != nil {
-			return NewServerError(err, "GetPrivateChannelUserIDs")
+			return NewServerError(err, "GetRoleIDsByChannelID")
 		}
 
-		updatedChannel.UserIDs = userIDs
+		forwardedPayload.UserIDs = slices.DeleteFunc[[]uuid.UUID, uuid.UUID](userIDs, func(id uuid.UUID) bool {
+			return id == c.(*CustomCtx).UserID
+		})
 	}
 
-	a.MessageQueue.PublishForwardPayload(updatedChannel)
+	a.MessageQueue.PublishForwardPayload(forwardedPayload)
 	return NewSuccessfulResponse(c, http.StatusOK, &channel)
 }

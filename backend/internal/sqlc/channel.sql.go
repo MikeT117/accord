@@ -13,9 +13,12 @@ import (
 )
 
 const createGuildChannel = `-- name: CreateGuildChannel :one
-INSERT INTO channels (guild_id, name, topic, channel_type, creator_id)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, name, topic, channel_type, parent_id, creator_id, guild_id, created_at, updated_at
+INSERT INTO
+channels
+(guild_id, name, topic, channel_type, creator_id)
+VALUES
+($1, $2, $3, $4, $5)
+RETURNING id, name, topic, channel_type, parent_id, creator_id, guild_id, updated_at
 `
 
 type CreateGuildChannelParams struct {
@@ -43,16 +46,18 @@ func (q *Queries) CreateGuildChannel(ctx context.Context, arg CreateGuildChannel
 		&i.ParentID,
 		&i.CreatorID,
 		&i.GuildID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const createPrivateChannel = `-- name: CreatePrivateChannel :one
-INSERT INTO channels (channel_type, creator_id)
-VALUES ($1, $2)
-RETURNING id, name, topic, channel_type, parent_id, creator_id, guild_id, created_at, updated_at
+INSERT INTO
+channels
+(channel_type, creator_id)
+VALUES
+($1, $2)
+RETURNING id, name, topic, channel_type, parent_id, creator_id, guild_id, updated_at
 `
 
 type CreatePrivateChannelParams struct {
@@ -71,16 +76,22 @@ func (q *Queries) CreatePrivateChannel(ctx context.Context, arg CreatePrivateCha
 		&i.ParentID,
 		&i.CreatorID,
 		&i.GuildID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const createPrivateChannelRecipients = `-- name: CreatePrivateChannelRecipients :execrows
-INSERT INTO channel_users (channel_id, user_id)
-SELECT $1, id FROM users
-WHERE id = ANY($2::uuid[])
+INSERT INTO
+channel_users
+(channel_id, user_id)
+SELECT
+$1,
+id
+FROM
+users
+WHERE
+id = ANY($2::uuid[])
 `
 
 type CreatePrivateChannelRecipientsParams struct {
@@ -121,7 +132,7 @@ func (q *Queries) DeleteGuildChannel(ctx context.Context, arg DeleteGuildChannel
 
 const getGuildChannelByID = `-- name: GetGuildChannelByID :one
 SELECT
-id, name, topic, channel_type, parent_id, creator_id, guild_id, created_at, updated_at
+id, name, topic, channel_type, parent_id, creator_id, guild_id, updated_at
 FROM
 channels
 WHERE
@@ -146,7 +157,6 @@ func (q *Queries) GetGuildChannelByID(ctx context.Context, arg GetGuildChannelBy
 		&i.ParentID,
 		&i.CreatorID,
 		&i.GuildID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
@@ -154,22 +164,37 @@ func (q *Queries) GetGuildChannelByID(ctx context.Context, arg GetGuildChannelBy
 
 const getManyGuildChannelsByGuildID = `-- name: GetManyGuildChannelsByGuildID :many
 WITH guild_channels_cte AS (
-  SELECT id, name, topic, channel_type, parent_id, creator_id, guild_id, created_at, updated_at
-  FROM channels
-  WHERE guild_id = $1::uuid
+  SELECT
+  id, name, topic, channel_type, parent_id, creator_id, guild_id, updated_at
+  FROM
+  channels
+  WHERE
+  guild_id = $1::uuid
 ),
 
 guild_role_channels_cte AS (
-  SELECT channel_id, ARRAY_AGG(role_id) AS roles
-  FROM guild_role_channels
-  WHERE channel_id IN (
-    SELECT id FROM guild_channels_cte
-  ) GROUP BY channel_id
+  SELECT
+  channel_id, ARRAY_AGG(role_id) AS roles
+  FROM
+  guild_role_channels
+  WHERE
+  channel_id IN (
+    SELECT
+    id
+    FROM
+    guild_channels_cte
+  )
+  GROUP BY
+  channel_id
 )
 
-SELECT gcc.id, gcc.name, gcc.topic, gcc.channel_type, gcc.parent_id, gcc.creator_id, gcc.guild_id, gcc.created_at, gcc.updated_at, grcc.roles::UUID[] as roles
-FROM guild_channels_cte gcc
-INNER JOIN guild_role_channels_cte grcc ON grcc.channel_id = gcc.id
+SELECT
+gcc.id, gcc.name, gcc.topic, gcc.channel_type, gcc.parent_id, gcc.creator_id, gcc.guild_id, gcc.updated_at,
+grcc.roles::UUID[] as roles
+FROM
+guild_channels_cte gcc
+INNER JOIN
+guild_role_channels_cte grcc ON grcc.channel_id = gcc.id
 `
 
 type GetManyGuildChannelsByGuildIDRow struct {
@@ -180,7 +205,6 @@ type GetManyGuildChannelsByGuildIDRow struct {
 	ParentID    pgtype.UUID
 	CreatorID   uuid.UUID
 	GuildID     pgtype.UUID
-	CreatedAt   pgtype.Timestamp
 	UpdatedAt   pgtype.Timestamp
 	Roles       []uuid.UUID
 }
@@ -202,7 +226,6 @@ func (q *Queries) GetManyGuildChannelsByGuildID(ctx context.Context, guildID uui
 			&i.ParentID,
 			&i.CreatorID,
 			&i.GuildID,
-			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Roles,
 		); err != nil {
@@ -218,16 +241,20 @@ func (q *Queries) GetManyGuildChannelsByGuildID(ctx context.Context, guildID uui
 
 const getPrivateChannelByUsers = `-- name: GetPrivateChannelByUsers :one
 WITH private_channel_cte AS (
-    SELECT channel_id
-    FROM channel_users
-    WHERE user_id = ANY($1::uuid[])
-    GROUP BY channel_id
+    SELECT
+    channel_id
+    FROM
+    channel_users
+    WHERE
+    user_id = ANY($1::uuid[])
+    GROUP BY
+    channel_id
     HAVING COUNT(*) = $2::int
     LIMIT 1
 )
 
 SELECT
-id, name, topic, channel_type, parent_id, creator_id, guild_id, created_at, updated_at
+id, name, topic, channel_type, parent_id, creator_id, guild_id, updated_at
 FROM
 channels
 WHERE
@@ -255,16 +282,20 @@ func (q *Queries) GetPrivateChannelByUsers(ctx context.Context, arg GetPrivateCh
 		&i.ParentID,
 		&i.CreatorID,
 		&i.GuildID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getPrivateChannelUserByChannelIDAndUserID = `-- name: GetPrivateChannelUserByChannelIDAndUserID :execrows
-SELECT 1
-FROM channel_users
-WHERE channel_id = $1 AND user_id = $2
+SELECT
+1
+FROM
+channel_users
+WHERE
+channel_id = $1
+AND
+user_id = $2
 LIMIT 1
 `
 
@@ -298,7 +329,8 @@ func (q *Queries) GetPrivateChannelUserIDs(ctx context.Context, channelID uuid.U
 }
 
 const updateChannel = `-- name: UpdateChannel :one
-UPDATE channels
+UPDATE
+channels
 SET
 name = (
 CASE
@@ -314,7 +346,7 @@ END
 )
 WHERE
 id = $3
-RETURNING id, name, topic, channel_type, parent_id, creator_id, guild_id, created_at, updated_at
+RETURNING id, name, topic, channel_type, parent_id, creator_id, guild_id, updated_at
 `
 
 type UpdateChannelParams struct {
@@ -334,24 +366,24 @@ func (q *Queries) UpdateChannel(ctx context.Context, arg UpdateChannelParams) (C
 		&i.ParentID,
 		&i.CreatorID,
 		&i.GuildID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const updateGuildChannel = `-- name: UpdateGuildChannel :one
-UPDATE channels
+UPDATE
+channels
 SET
 parent_id = (
 CASE
     WHEN $1::uuid IS NOT NULL THEN $1::uuid
     ELSE NULL
-END
-)
+END)
 WHERE
 id = $2
-RETURNING id, name, topic, channel_type, parent_id, creator_id, guild_id, created_at, updated_at
+RETURNING
+id, name, topic, channel_type, parent_id, creator_id, guild_id, updated_at
 `
 
 type UpdateGuildChannelParams struct {
@@ -370,7 +402,6 @@ func (q *Queries) UpdateGuildChannel(ctx context.Context, arg UpdateGuildChannel
 		&i.ParentID,
 		&i.CreatorID,
 		&i.GuildID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err

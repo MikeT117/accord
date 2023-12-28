@@ -15,7 +15,6 @@ type GuildChannel struct {
 	ChannelType int16       `json:"channelType"`
 	ParentID    pgtype.UUID `json:"parentId"`
 	CreatorID   uuid.UUID   `json:"creatorId"`
-	CreatedAt   time.Time   `json:"createdAt"`
 	UpdatedAt   time.Time   `json:"updatedAt"`
 	Roles       []uuid.UUID `json:"roles"`
 }
@@ -26,7 +25,6 @@ type PrivateChannel struct {
 	Topic       *string       `json:"topic"`
 	ChannelType int16         `json:"channelType"`
 	CreatorID   uuid.UUID     `json:"creatorId"`
-	CreatedAt   time.Time     `json:"createdAt"`
 	UpdatedAt   time.Time     `json:"updatedAt"`
 	Users       []UserLimited `json:"users"`
 }
@@ -38,7 +36,6 @@ type UpdatedChannel struct {
 	ChannelType int16       `json:"channelType"`
 	GuildID     pgtype.UUID `json:"guildId"`
 	ParentID    pgtype.UUID `json:"parentId"`
-	Roles       []uuid.UUID `json:"roles,omitempty"`
 }
 
 type UpdatedGuildChannelParent struct {

@@ -32,7 +32,7 @@ func (a *api) HandleGuildChannelCreate(c echo.Context) error {
 	createGuildChannelParams := sqlc.CreateGuildChannelParams{
 		Topic:       body.Topic,
 		Name:        body.Name,
-		CreatorID:   c.(*APIContext).UserID,
+		CreatorID:   c.(*CustomCtx).UserID,
 		ChannelType: body.ChannelType,
 		GuildID: pgtype.UUID{
 			Bytes: guildID,
@@ -75,7 +75,7 @@ func (a *api) HandleGuildChannelCreate(c echo.Context) error {
 			return NewClientError(nil, http.StatusBadRequest, "role not found")
 		}
 
-		guildChannel.Roles = append(guildChannel.Roles, guildChannel.Roles...)
+		guildChannel.Roles = append(guildChannel.Roles, body.Roles...)
 
 	}
 
@@ -97,6 +97,12 @@ func (a *api) HandleGuildChannelCreate(c echo.Context) error {
 		GuildID:    guildID,
 	})
 
+	if err := tx.IncrementGuildChannelCount(c.Request().Context(), guildID); err != nil {
+		return NewServerError(err, "tx.IncrementGuildChannelCount")
+	}
+
+	dbtx.Commit(reqCtx)
+
 	if err != nil {
 		return NewServerError(err, "tx.AssignDefaultRoleToGuildChannels")
 	}
@@ -109,13 +115,11 @@ func (a *api) HandleGuildChannelCreate(c echo.Context) error {
 		return NewServerError(err, "a.Queries.GetDefaultGuildRole")
 	}
 
-	dbtx.Commit(reqCtx)
-
 	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
 		Op:              "CHANNEL_CREATE",
 		Version:         0,
 		RoleIDs:         []uuid.UUID{defaultRoleID},
-		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		ExcludedUserIDs: []uuid.UUID{c.(*CustomCtx).UserID},
 		Data:            &guildChannel,
 	})
 
@@ -187,10 +191,6 @@ func (a *api) HandleGuildChannelUpdate(c echo.Context) error {
 
 		if parentChannel.ChannelType != 1 {
 			return NewClientError(err, http.StatusBadRequest, "invalid parent channel")
-		}
-
-		if channel.ParentID.Bytes == parentChannel.ID {
-			return NewSuccessfulResponse(c, http.StatusOK, nil)
 		}
 	}
 
@@ -271,18 +271,34 @@ func (a *api) HandleGuildChannelDelete(c echo.Context) error {
 		return NewClientError(err, http.StatusBadRequest, "invalid channel ID")
 	}
 
-	rowsAffected, err := a.Queries.DeleteGuildChannel(c.Request().Context(), sqlc.DeleteGuildChannelParams{
+	reqCtx := c.Request().Context()
+	dbtx, err := a.Pool.Begin(reqCtx)
+
+	if err != nil {
+		return NewServerError(err, "a.Pool.Begin")
+	}
+
+	defer dbtx.Rollback(reqCtx)
+	tx := a.Queries.WithTx(dbtx)
+
+	rowsAffected, err := tx.DeleteGuildChannel(c.Request().Context(), sqlc.DeleteGuildChannelParams{
 		ChannelID: channelID,
 		GuildID:   guildID,
 	})
 
 	if err != nil {
-		return NewServerError(err, "a.Queries.DeleteChannel")
+		return NewServerError(err, "tx.DeleteChannel")
 	}
 
 	if rowsAffected != 1 {
 		return NewClientError(nil, http.StatusNotFound, "channel not found")
 	}
+
+	if err := tx.DecrementGuildChannelCount(c.Request().Context(), guildID); err != nil {
+		return NewServerError(err, "tx.IncrementGuildChannelCount")
+	}
+
+	dbtx.Commit(c.Request().Context())
 
 	defaultRoleID, err := a.Queries.GetDefaultGuildRole(c.Request().Context(), guildID)
 
@@ -294,7 +310,7 @@ func (a *api) HandleGuildChannelDelete(c echo.Context) error {
 		Op:              "CHANNEL_DELETE",
 		Version:         0,
 		RoleIDs:         []uuid.UUID{defaultRoleID},
-		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		ExcludedUserIDs: []uuid.UUID{c.(*CustomCtx).UserID},
 		Data: &models.DeletedChannel{
 			ID:      channelID,
 			GuildID: guildID,
