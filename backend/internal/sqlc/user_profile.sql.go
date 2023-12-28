@@ -35,7 +35,6 @@ WITH user_cte AS (
     u.display_name,
     u.username,
     u.public_flags,
-    u.created_at,
     ua.attachment_id
     FROM
     users u 
@@ -59,7 +58,7 @@ mutual_guilds_cte AS (
 )
 
 SELECT
-ucte.id, ucte.display_name, ucte.username, ucte.public_flags, ucte.created_at, ucte.attachment_id,
+ucte.id, ucte.display_name, ucte.username, ucte.public_flags, ucte.attachment_id,
 COALESCE(mgcte.mutual_guilds, '{}') AS mutual_guilds
 FROM
 user_cte ucte,
@@ -76,7 +75,6 @@ type GetUserProfileByIDRow struct {
 	DisplayName  string
 	Username     string
 	PublicFlags  int32
-	CreatedAt    pgtype.Timestamp
 	AttachmentID pgtype.UUID
 	MutualGuilds []uuid.UUID
 }
@@ -89,7 +87,6 @@ func (q *Queries) GetUserProfileByID(ctx context.Context, arg GetUserProfileByID
 		&i.DisplayName,
 		&i.Username,
 		&i.PublicFlags,
-		&i.CreatedAt,
 		&i.AttachmentID,
 		&i.MutualGuilds,
 	)
@@ -100,13 +97,12 @@ const getUserProfileByIDAndGuildID = `-- name: GetUserProfileByIDAndGuildID :one
 WITH user_cte AS (
 	SELECT
     u.id,
-    CASE
+    (CASE
         WHEN gm.nickname IS NOT NULL THEN gm.nickname
         ELSE u.display_name
-    END::text AS display_name,
+    END)::text AS display_name,
     u.username,
     u.public_flags,
-    u.created_at,
     ua.attachment_id,
     gm.joined_at
     FROM
@@ -148,7 +144,7 @@ mutual_guilds_cte AS (
 )
 
 SELECT
-ucte.id, ucte.display_name, ucte.username, ucte.public_flags, ucte.created_at, ucte.attachment_id, ucte.joined_at,
+ucte.id, ucte.display_name, ucte.username, ucte.public_flags, ucte.attachment_id, ucte.joined_at,
 COALESCE(gmrcte.roles, '{}') AS roles,
 COALESCE(mgcte.mutual_guilds, '{}') AS mutual_guilds
 FROM
@@ -168,7 +164,6 @@ type GetUserProfileByIDAndGuildIDRow struct {
 	DisplayName  string
 	Username     string
 	PublicFlags  int32
-	CreatedAt    pgtype.Timestamp
 	AttachmentID pgtype.UUID
 	JoinedAt     pgtype.Timestamp
 	Roles        []uuid.UUID
@@ -183,7 +178,6 @@ func (q *Queries) GetUserProfileByIDAndGuildID(ctx context.Context, arg GetUserP
 		&i.DisplayName,
 		&i.Username,
 		&i.PublicFlags,
-		&i.CreatedAt,
 		&i.AttachmentID,
 		&i.JoinedAt,
 		&i.Roles,

@@ -18,8 +18,6 @@ func (a *api) HandleUserProfileReadOne(c echo.Context) error {
 
 	if len(c.QueryParam("guild_id")) != 0 {
 
-		// TODO: Check the user is a member / has the MEMBER_READ permission (new permission to be added)
-
 		guildID, err := uuid.Parse(c.QueryParam("guild_id"))
 
 		if err != nil {
@@ -29,7 +27,7 @@ func (a *api) HandleUserProfileReadOne(c echo.Context) error {
 		sqlUserProfile, err := a.Queries.GetUserProfileByIDAndGuildID(c.Request().Context(), sqlc.GetUserProfileByIDAndGuildIDParams{
 			UserID:      userID,
 			GuildID:     guildID,
-			RequestorID: c.(*APIContext).UserID,
+			RequestorID: c.(*CustomCtx).UserID,
 		})
 
 		if err != nil {
@@ -41,7 +39,7 @@ func (a *api) HandleUserProfileReadOne(c echo.Context) error {
 
 	sqlUserProfile, err := a.Queries.GetUserProfileByID(c.Request().Context(), sqlc.GetUserProfileByIDParams{
 		UserID:      userID,
-		RequestorID: c.(*APIContext).UserID,
+		RequestorID: c.(*CustomCtx).UserID,
 	})
 
 	if err != nil {
@@ -76,7 +74,7 @@ func (a *api) HandleUserProfileUpdate(c echo.Context) error {
 	sqlUser, err := tx.UpdateUser(c.Request().Context(), sqlc.UpdateUserParams{
 		DisplayName: body.DisplayName,
 		PublicFlags: body.PublicFlags,
-		UserID:      c.(*APIContext).UserID,
+		UserID:      c.(*CustomCtx).UserID,
 	})
 
 	if err != nil {
@@ -87,7 +85,7 @@ func (a *api) HandleUserProfileUpdate(c echo.Context) error {
 
 	if body.Avatar != nil {
 		rowsAffected, err := tx.LinkAttachmentToUser(c.Request().Context(), sqlc.LinkAttachmentToUserParams{
-			UserID:       c.(*APIContext).UserID,
+			UserID:       c.(*CustomCtx).UserID,
 			AttachmentID: *body.Avatar,
 		})
 

@@ -2,13 +2,12 @@
 WITH user_cte AS (
 	SELECT
     u.id,
-    CASE
+    (CASE
         WHEN gm.nickname IS NOT NULL THEN gm.nickname
         ELSE u.display_name
-    END::text AS display_name,
+    END)::text AS display_name,
     u.username,
     u.public_flags,
-    u.created_at,
     ua.attachment_id,
     gm.joined_at
     FROM
@@ -66,7 +65,6 @@ WITH user_cte AS (
     u.display_name,
     u.username,
     u.public_flags,
-    u.created_at,
     ua.attachment_id
     FROM
     users u 
