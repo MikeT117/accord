@@ -12,7 +12,6 @@ type GuildRole struct {
 	Permissions int32     `json:"permissions"`
 	GuildID     uuid.UUID `json:"guildId"`
 	CreatorID   uuid.UUID `json:"creatorId"`
-	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
 

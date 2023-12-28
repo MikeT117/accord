@@ -13,12 +13,24 @@ import (
 )
 
 const assignDefaultRoleToManyGuildChannels = `-- name: AssignDefaultRoleToManyGuildChannels :one
-INSERT INTO guild_role_channels (role_id, channel_id)
-SELECT gr.id, c.id
-FROM channels c
-INNER JOIN guild_roles gr ON gr.guild_id = c.guild_id
-WHERE c.id = ANY($1::uuid[]) AND gr.name = '@default' AND gr.guild_id = $2
-RETURNING role_id
+INSERT INTO
+guild_role_channels
+(role_id, channel_id)
+SELECT
+gr.id,
+c.id
+FROM
+channels c
+INNER JOIN
+guild_roles gr ON gr.guild_id = c.guild_id
+WHERE
+c.id = ANY($1::uuid[])
+AND
+gr.name = '@default'
+AND
+gr.guild_id = $2
+RETURNING
+role_id
 `
 
 type AssignDefaultRoleToManyGuildChannelsParams struct {
@@ -34,12 +46,24 @@ func (q *Queries) AssignDefaultRoleToManyGuildChannels(ctx context.Context, arg 
 }
 
 const assignDefaultRoleToUser = `-- name: AssignDefaultRoleToUser :one
-INSERT INTO guild_role_users (role_id, user_id)
-SELECT gr.id, gm.user_id
-FROM guild_members gm
-INNER JOIN guild_roles gr ON gr.guild_id = gm.guild_id
-WHERE gm.user_id = $1 AND gr.name = '@default' AND gm.guild_id = $2
-RETURNING role_id
+INSERT INTO
+guild_role_users
+(role_id, user_id)
+SELECT
+gr.id,
+gm.user_id
+FROM
+guild_members gm
+INNER JOIN
+guild_roles gr ON gr.guild_id = gm.guild_id
+WHERE
+gm.user_id = $1
+AND
+gr.name = '@default'
+AND
+gm.guild_id = $2
+RETURNING
+role_id
 `
 
 type AssignDefaultRoleToUserParams struct {
@@ -55,11 +79,21 @@ func (q *Queries) AssignDefaultRoleToUser(ctx context.Context, arg AssignDefault
 }
 
 const assignManyRolesToGuildChannel = `-- name: AssignManyRolesToGuildChannel :execrows
-INSERT INTO guild_role_channels (role_id, channel_id)
-SELECT gr.id, c.id
-FROM channels c
-INNER JOIN guild_roles gr ON gr.guild_id = c.guild_id
-WHERE c.id = $1 AND gr.id = ANY($2::uuid[]) AND gr.guild_id = $3
+INSERT INTO
+guild_role_channels (role_id, channel_id)
+SELECT
+gr.id,
+c.id
+FROM
+channels c
+INNER JOIN
+guild_roles gr ON gr.guild_id = c.guild_id
+WHERE
+c.id = $1
+AND
+gr.id = ANY($2::uuid[])
+AND
+gr.guild_id = $3
 `
 
 type AssignManyRolesToGuildChannelParams struct {
@@ -77,11 +111,22 @@ func (q *Queries) AssignManyRolesToGuildChannel(ctx context.Context, arg AssignM
 }
 
 const assignManyRolesToUser = `-- name: AssignManyRolesToUser :execrows
-INSERT INTO guild_role_users (role_id, user_id)
-SELECT gr.id, gm.user_id
-FROM guild_members gm
-INNER JOIN guild_roles gr ON gr.guild_id = gm.guild_id
-WHERE gm.user_id = $1 AND gr.id = ANY($2::uuid[])AND gm.guild_id = $3
+INSERT INTO
+guild_role_users
+(role_id, user_id)
+SELECT
+gr.id,
+gm.user_id
+FROM 
+guild_members gm
+INNER JOIN
+guild_roles gr ON gr.guild_id = gm.guild_id
+WHERE
+gm.user_id = $1
+AND
+gr.id = ANY($2::uuid[])
+AND
+gm.guild_id = $3
 `
 
 type AssignManyRolesToUserParams struct {
@@ -99,12 +144,24 @@ func (q *Queries) AssignManyRolesToUser(ctx context.Context, arg AssignManyRoles
 }
 
 const assignOwnerRoleToManyGuildChannels = `-- name: AssignOwnerRoleToManyGuildChannels :one
-INSERT INTO guild_role_channels (role_id, channel_id)
-SELECT gr.id, c.id
-FROM channels c
-INNER JOIN guild_roles gr ON gr.guild_id = c.guild_id
-WHERE c.id = ANY($1::uuid[]) AND gr.name = '@owner' AND gr.guild_id = $2
-RETURNING role_id
+INSERT INTO
+guild_role_channels
+(role_id, channel_id)
+SELECT
+gr.id,
+c.id
+FROM
+channels c
+INNER JOIN
+guild_roles gr ON gr.guild_id = c.guild_id
+WHERE
+c.id = ANY($1::uuid[])
+AND
+gr.name = '@owner'
+AND
+gr.guild_id = $2
+RETURNING
+role_id
 `
 
 type AssignOwnerRoleToManyGuildChannelsParams struct {
@@ -120,7 +177,9 @@ func (q *Queries) AssignOwnerRoleToManyGuildChannels(ctx context.Context, arg As
 }
 
 const assignParentRolesToChannel = `-- name: AssignParentRolesToChannel :many
-INSERT INTO guild_role_channels (role_id, channel_id)
+INSERT INTO
+guild_role_channels
+(role_id, channel_id)
 SELECT
 grc.role_id,
 $1
@@ -157,62 +216,23 @@ func (q *Queries) AssignParentRolesToChannel(ctx context.Context, arg AssignPare
 	return items, nil
 }
 
-const assignParentRolesToSyncedChannels = `-- name: AssignParentRolesToSyncedChannels :many
-WITH parent_channel_roles_cte AS (
-	SELECT
-	ARRAY_AGG(role_id) role_ids
-	FROM
-	guild_role_channels
-	WHERE
-	channel_id = $1
-),
-
-child_channels_roles_cte AS (
-	SELECT
-	c.id,
-	ARRAY_AGG(grc.role_id) role_ids
-	FROM
-	guild_role_channels grc
-	INNER JOIN
-	channels c ON c.id = grc.channel_id
-	WHERE c.parent_id = $1
-	GROUP BY c.id
-)
-
-SELECT
-ccrcte.id
-FROM
-child_channels_roles_cte ccrcte, parent_channel_roles_cte pcrcte
-WHERE
-ccrcte.role_ids != pcrcte.role_ids
-`
-
-func (q *Queries) AssignParentRolesToSyncedChannels(ctx context.Context, parentID pgtype.UUID) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, assignParentRolesToSyncedChannels, parentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []uuid.UUID{}
-	for rows.Next() {
-		var id uuid.UUID
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		items = append(items, id)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const assignRoleToManyGuildChannels = `-- name: AssignRoleToManyGuildChannels :execrows
-INSERT INTO guild_role_channels (role_id, channel_id)
-SELECT gr.id, c.id
-FROM channels c
-INNER JOIN guild_roles gr ON gr.guild_id = c.guild_id
-WHERE c.id = ANY($1::uuid[]) AND gr.id = $2 AND gr.guild_id = $3
+INSERT INTO
+guild_role_channels
+(role_id, channel_id)
+SELECT
+gr.id,
+c.id
+FROM
+channels c
+INNER JOIN
+guild_roles gr ON gr.guild_id = c.guild_id
+WHERE
+c.id = ANY($1::uuid[])
+AND
+gr.id = $2
+AND
+gr.guild_id = $3
 `
 
 type AssignRoleToManyGuildChannelsParams struct {
@@ -230,11 +250,22 @@ func (q *Queries) AssignRoleToManyGuildChannels(ctx context.Context, arg AssignR
 }
 
 const assignRoleToManyUsers = `-- name: AssignRoleToManyUsers :execrows
-INSERT INTO guild_role_users (role_id, user_id)
-SELECT gr.id, gm.user_id
-FROM guild_members gm
-INNER JOIN guild_roles gr ON gr.guild_id = gm.guild_id
-WHERE gm.user_id = ANY($1::uuid[]) AND gr.id = $2 AND gm.guild_id = $3
+INSERT INTO
+guild_role_users
+(role_id, user_id)
+SELECT
+gr.id,
+gm.user_id
+FROM
+guild_members gm
+INNER JOIN
+guild_roles gr ON gr.guild_id = gm.guild_id
+WHERE
+gm.user_id = ANY($1::uuid[])
+AND
+gr.id = $2
+AND
+gm.guild_id = $3
 `
 
 type AssignRoleToManyUsersParams struct {
@@ -252,9 +283,13 @@ func (q *Queries) AssignRoleToManyUsers(ctx context.Context, arg AssignRoleToMan
 }
 
 const creatGuildRole = `-- name: CreatGuildRole :one
-INSERT INTO guild_roles (name, creator_id, guild_id, permissions)
-VALUES ($1, $2, $3, $4)
-RETURNING id, name, permissions, guild_id, creator_id, created_at, updated_at
+INSERT INTO
+guild_roles
+(name, creator_id, guild_id, permissions)
+VALUES
+($1, $2, $3, $4)
+RETURNING
+id, name, permissions, guild_id, creator_id, updated_at
 `
 
 type CreatGuildRoleParams struct {
@@ -278,7 +313,6 @@ func (q *Queries) CreatGuildRole(ctx context.Context, arg CreatGuildRoleParams) 
 		&i.Permissions,
 		&i.GuildID,
 		&i.CreatorID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
@@ -286,8 +320,12 @@ func (q *Queries) CreatGuildRole(ctx context.Context, arg CreatGuildRoleParams) 
 
 const deleteGuildRole = `-- name: DeleteGuildRole :execrows
 DELETE
-FROM guild_roles
-WHERE id = $1 AND guild_id = $2
+FROM
+guild_roles
+WHERE
+id = $1
+AND
+guild_id = $2
 `
 
 type DeleteGuildRoleParams struct {
@@ -322,11 +360,18 @@ func (q *Queries) GetDefaultGuildRole(ctx context.Context, guildID uuid.UUID) (u
 }
 
 const getGuildRolePermissionsByUserIDAndChannelID = `-- name: GetGuildRolePermissionsByUserIDAndChannelID :one
-Select COALESCE(bit_or(gr.permissions), -1)::int as permissions
-FROM guild_roles gr
-INNER JOIN guild_role_users gru ON gru.role_id = gr.id
-INNER JOIN guild_role_channels grc ON grc.role_id = gr.id
-WHERE gru.user_id = $1 AND grc.channel_id = $2
+Select
+COALESCE(bit_or(gr.permissions), -1)::int as permissions
+FROM
+guild_roles gr
+INNER JOIN
+guild_role_users gru ON gru.role_id = gr.id
+INNER JOIN
+guild_role_channels grc ON grc.role_id = gr.id
+WHERE
+gru.user_id = $1
+AND
+grc.channel_id = $2
 `
 
 type GetGuildRolePermissionsByUserIDAndChannelIDParams struct {
@@ -342,10 +387,16 @@ func (q *Queries) GetGuildRolePermissionsByUserIDAndChannelID(ctx context.Contex
 }
 
 const getGuildRolePermissionsByUserIDAndGuildID = `-- name: GetGuildRolePermissionsByUserIDAndGuildID :one
-Select COALESCE(bit_or(gr.permissions), -1)::int as permissions
-FROM guild_roles gr
-INNER JOIN guild_role_users gru ON gru.role_id = gr.id
-WHERE gr.guild_id = $1 AND gru.user_id = $2
+Select
+COALESCE(bit_or(gr.permissions), -1)::int as permissions
+FROM
+guild_roles gr
+INNER JOIN
+guild_role_users gru ON gru.role_id = gr.id
+WHERE
+gr.guild_id = $1
+AND
+gru.user_id = $2
 `
 
 type GetGuildRolePermissionsByUserIDAndGuildIDParams struct {
@@ -360,45 +411,42 @@ func (q *Queries) GetGuildRolePermissionsByUserIDAndGuildID(ctx context.Context,
 	return permissions, err
 }
 
-const getManyGuildRoleIDsByUserID = `-- name: GetManyGuildRoleIDsByUserID :one
-SELECT role_id
-FROM guild_role_users
-WHERE user_id = $1
+const getManyGuildRoleIDsByUserID = `-- name: GetManyGuildRoleIDsByUserID :many
+SELECT
+role_id
+FROM
+guild_role_users
+WHERE
+user_id = $1
 `
 
-func (q *Queries) GetManyGuildRoleIDsByUserID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, getManyGuildRoleIDsByUserID, userID)
-	var role_id uuid.UUID
-	err := row.Scan(&role_id)
-	return role_id, err
-}
-
-const getManyGuildRoleIDsByUserIDAndGuildI = `-- name: GetManyGuildRoleIDsByUserIDAndGuildI :one
-SELECT gru.role_id
-FROM guild_role_users gru
-INNER JOIN guild_roles gr ON gr.id = gru.role_id
-WHERE 
-gr.guild_id = $1
-AND
-gru.user_id = $2
-`
-
-type GetManyGuildRoleIDsByUserIDAndGuildIParams struct {
-	GuildID uuid.UUID
-	UserID  uuid.UUID
-}
-
-func (q *Queries) GetManyGuildRoleIDsByUserIDAndGuildI(ctx context.Context, arg GetManyGuildRoleIDsByUserIDAndGuildIParams) (uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, getManyGuildRoleIDsByUserIDAndGuildI, arg.GuildID, arg.UserID)
-	var role_id uuid.UUID
-	err := row.Scan(&role_id)
-	return role_id, err
+func (q *Queries) GetManyGuildRoleIDsByUserID(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, getManyGuildRoleIDsByUserID, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []uuid.UUID{}
+	for rows.Next() {
+		var role_id uuid.UUID
+		if err := rows.Scan(&role_id); err != nil {
+			return nil, err
+		}
+		items = append(items, role_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getManyGuildRolesByGuildID = `-- name: GetManyGuildRolesByGuildID :many
-SELECT id, name, permissions, guild_id, creator_id, created_at, updated_at
-FROM guild_roles
-WHERE guild_id = $1
+SELECT
+id, name, permissions, guild_id, creator_id, updated_at
+FROM
+guild_roles
+WHERE
+guild_id = $1
 `
 
 func (q *Queries) GetManyGuildRolesByGuildID(ctx context.Context, guildID uuid.UUID) ([]GuildRole, error) {
@@ -416,7 +464,6 @@ func (q *Queries) GetManyGuildRolesByGuildID(ctx context.Context, guildID uuid.U
 			&i.Permissions,
 			&i.GuildID,
 			&i.CreatorID,
-			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
@@ -429,9 +476,9 @@ func (q *Queries) GetManyGuildRolesByGuildID(ctx context.Context, guildID uuid.U
 	return items, nil
 }
 
-const getRoleIDsByChannelID = `-- name: GetRoleIDsByChannelID :one
+const getRoleIDsByChannelID = `-- name: GetRoleIDsByChannelID :many
 Select
-ARRAY_AGG(grc.role_id) AS role_ids
+grc.role_id
 FROM
 guild_role_channels grc
 WHERE
@@ -439,10 +486,77 @@ grc.channel_id = $1
 `
 
 func (q *Queries) GetRoleIDsByChannelID(ctx context.Context, channelID uuid.UUID) ([]uuid.UUID, error) {
-	row := q.db.QueryRow(ctx, getRoleIDsByChannelID, channelID)
-	var role_ids []uuid.UUID
-	err := row.Scan(&role_ids)
-	return role_ids, err
+	rows, err := q.db.Query(ctx, getRoleIDsByChannelID, channelID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []uuid.UUID{}
+	for rows.Next() {
+		var role_id uuid.UUID
+		if err := rows.Scan(&role_id); err != nil {
+			return nil, err
+		}
+		items = append(items, role_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getSyncedChannelIDsByParentID = `-- name: GetSyncedChannelIDsByParentID :many
+WITH parent_channel_roles_cte AS (
+	SELECT
+	ARRAY_AGG(role_id) role_ids
+	FROM
+	guild_role_channels
+	WHERE
+	channel_id = $1::uuid
+),
+
+child_channels_roles_cte AS (
+	SELECT
+	c.id,
+	ARRAY_AGG(grc.role_id) role_ids
+	FROM
+	guild_role_channels grc
+	INNER JOIN
+	channels c ON c.id = grc.channel_id
+	WHERE
+    c.parent_id = $1::uuid
+	GROUP BY
+    c.id
+)
+
+SELECT
+ccrcte.id
+FROM
+child_channels_roles_cte ccrcte, parent_channel_roles_cte pcrcte
+WHERE
+array_length(ccrcte.role_ids, 1) = array_length(pcrcte.role_ids, 1)
+AND
+ccrcte.role_ids @> pcrcte.role_ids
+`
+
+func (q *Queries) GetSyncedChannelIDsByParentID(ctx context.Context, parentID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, getSyncedChannelIDsByParentID, parentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []uuid.UUID{}
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const unassignAllRolesFromChannel = `-- name: UnassignAllRolesFromChannel :many
@@ -521,8 +635,12 @@ func (q *Queries) UnassignAllRolesFromUser(ctx context.Context, arg UnassignAllR
 
 const unassignRoleFromGuildChannel = `-- name: UnassignRoleFromGuildChannel :execrows
 DELETE
-FROM guild_role_channels
-WHERE role_id = $1 and channel_id = $2
+FROM
+guild_role_channels
+WHERE
+role_id = $1
+AND
+channel_id = $2
 `
 
 type UnassignRoleFromGuildChannelParams struct {
@@ -538,10 +656,36 @@ func (q *Queries) UnassignRoleFromGuildChannel(ctx context.Context, arg Unassign
 	return result.RowsAffected(), nil
 }
 
+const unassignRoleFromManyGuildChannels = `-- name: UnassignRoleFromManyGuildChannels :execrows
+DELETE FROM
+guild_role_channels
+WHERE 
+role_id = $1
+AND
+channel_id = ANY($2::uuid[])
+`
+
+type UnassignRoleFromManyGuildChannelsParams struct {
+	RoleID     uuid.UUID
+	ChannelIds []uuid.UUID
+}
+
+func (q *Queries) UnassignRoleFromManyGuildChannels(ctx context.Context, arg UnassignRoleFromManyGuildChannelsParams) (int64, error) {
+	result, err := q.db.Exec(ctx, unassignRoleFromManyGuildChannels, arg.RoleID, arg.ChannelIds)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const unassignRoleFromUser = `-- name: UnassignRoleFromUser :execrows
 DELETE
-FROM guild_role_users
-WHERE role_id = $1 AND user_id = $2
+FROM
+guild_role_users
+WHERE
+role_id = $1
+AND
+user_id = $2
 `
 
 type UnassignRoleFromUserParams struct {
@@ -558,9 +702,18 @@ func (q *Queries) UnassignRoleFromUser(ctx context.Context, arg UnassignRoleFrom
 }
 
 const updateGuildRole = `-- name: UpdateGuildRole :one
-UPDATE guild_roles
-SET name = $1, permissions = $2, updated_at = NOW()
-WHERE id = $3 AND guild_id = $4 RETURNING id, name, permissions, guild_id, creator_id, created_at, updated_at
+UPDATE
+guild_roles
+SET
+name = $1,
+permissions = $2,
+updated_at = NOW()
+WHERE
+id = $3
+AND
+guild_id = $4
+RETURNING
+id, name, permissions, guild_id, creator_id, updated_at
 `
 
 type UpdateGuildRoleParams struct {
@@ -584,7 +737,6 @@ func (q *Queries) UpdateGuildRole(ctx context.Context, arg UpdateGuildRoleParams
 		&i.Permissions,
 		&i.GuildID,
 		&i.CreatorID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
