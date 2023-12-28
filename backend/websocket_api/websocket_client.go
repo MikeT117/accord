@@ -4,14 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"os"
+	"slices"
+	"sync"
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/authentication"
 	"github.com/MikeT117/accord/backend/internal/database"
+	message_queue "github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
+	"github.com/MikeT117/accord/backend/internal/utils"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
@@ -24,42 +27,148 @@ type AuthenticatePayload struct {
 	} `json:"d"`
 }
 
+type ForwardedClientPayload struct {
+	Op   string      `json:"op"`
+	Data interface{} `json:"d"`
+}
+
 type WebsocketClient struct {
+	id                    uuid.UUID
+	userID                uuid.UUID
 	hub                   *WebsocketHub
 	conn                  *websocket.Conn
-	id                    uuid.UUID
+	forward               chan *message_queue.ForwardedPayload
+	local                 chan *message_queue.LocalPayload
 	authenticated         bool
 	accesstoken           string
 	refreshtoken          string
 	accesstokenExpiresAt  time.Time
 	refreshtokenExpiresAt time.Time
-	roles                 map[string]bool
+	roleIDs               utils.SafeRWMutexMap[map[uuid.UUID]bool]
+	authDeadline          *time.Timer
 }
 
-func (wc *WebsocketClient) CloseMessage(status int, message string) {
-	wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(status, message))
+func (wh *WebsocketHub) CreateClient(conn *websocket.Conn) {
+	wc := &WebsocketClient{
+		id:            uuid.New(),
+		hub:           wh,
+		conn:          conn,
+		authenticated: false,
+		forward:       make(chan *message_queue.ForwardedPayload),
+		local:         make(chan *message_queue.LocalPayload),
+		roleIDs: utils.SafeRWMutexMap[map[uuid.UUID]bool]{
+			Mutex: sync.RWMutex{},
+			Data:  make(map[uuid.UUID]bool),
+		},
+	}
+
+	wc.conn.SetPongHandler(func(string) error {
+		if err := wc.conn.SetReadDeadline(time.Now().Add(wc.hub.pongWait)); err != nil {
+			wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "PONG_TIMEOUT"))
+			return err
+		}
+		return nil
+	})
+
+	wc.conn.SetCloseHandler(func(code int, text string) error {
+		close(wc.forward)
+		close(wc.local)
+		wc.hub.DelClient(wc.id)
+		return nil
+	})
+
+	go wc.ReadMessages()
+	go wc.HandlePing()
+	go wc.HandleForwardedPayload()
+	go wc.HandleLocalPayload()
+
+	wc.authDeadline = time.AfterFunc(wc.hub.authTimeout, func() {
+		if !wc.authenticated {
+			wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "AUTHENTICATION_TIMEOUT"))
+		}
+	})
 }
 
-func (wc *WebsocketClient) CheckTokens() error {
-	fmt.Println("TOKENS_CHECK")
+func (wc *WebsocketClient) AddRoles(roleIDs []uuid.UUID) {
+	wc.roleIDs.Mutex.Lock()
+	defer wc.roleIDs.Mutex.Unlock()
+	for _, roleID := range roleIDs {
+		wc.roleIDs.Data[roleID] = true
+	}
+}
+
+func (wc *WebsocketClient) DelRoles(roleIDs []uuid.UUID) {
+	wc.roleIDs.Mutex.Lock()
+	defer wc.roleIDs.Mutex.Unlock()
+	for roleID := range wc.roleIDs.Data {
+		if slices.Contains[[]uuid.UUID, uuid.UUID](roleIDs, roleID) {
+			delete(wc.roleIDs.Data, roleID)
+		}
+	}
+}
+
+func (wc *WebsocketClient) AuthenticateClient(accesstoken string, refreshtoken string) error {
+
+	accesstokenJwt, accesstokenID, err := authentication.ValidateToken(accesstoken, []byte(os.Getenv("JWT_ACCESSTOKEN_KEY")))
+
+	if err != nil {
+		return errors.New("INVALID_TOKENS")
+	}
+
+	refreshtokenJwt, refreshtokenID, err := authentication.ValidateToken(refreshtoken, []byte(os.Getenv("JWT_REFRESHTOKEN_KEY")))
+
+	if err != nil {
+		return errors.New("INVALID_TOKENS")
+	}
+
+	if accesstokenID != refreshtokenID {
+		return errors.New("INVALID_TOKENS")
+	}
+
+	_, err = wc.hub.queries.GetUserSessionByToken(context.Background(), refreshtoken)
+
+	if err != nil {
+		if database.IsPGErrNoRows(err) {
+			return errors.New("INVALID_SESSION")
+		}
+		return errors.New("INTERNAL_SERVER_ERROR")
+	}
+
+	wc.authenticated = true
+	wc.authDeadline.Stop()
+
+	wc.userID = accesstokenID
+	wc.accesstoken = accesstoken
+	wc.refreshtoken = refreshtoken
+	wc.accesstokenExpiresAt = accesstokenJwt.Expiration()
+	wc.refreshtokenExpiresAt = refreshtokenJwt.Expiration()
+
+	return nil
+}
+
+func (wc *WebsocketClient) ValidateTokens() error {
 	if wc.accesstokenExpiresAt.Before(time.Now().Add(time.Minute * 5)) {
+		log.Println("REFRESHING ACCESSTOKN")
 		if wc.refreshtokenExpiresAt.Before(time.Now()) {
-			wc.conn.WriteMessage(websocket.CloseMessage, []byte("EXPIRED_TOKENS"))
 			return errors.New("EXPIRED_TOKENS")
 		}
 
 		session, err := wc.hub.queries.GetUserSessionByToken(context.Background(), wc.refreshtoken)
 
 		if err != nil {
-			wc.conn.WriteMessage(websocket.CloseMessage, []byte("INVALID_TOKENS"))
-			return errors.New("INVALID_TOKENS")
+			log.Printf("GetUserSessionByToken err: %v\n", err)
+			return errors.New("INTERNAL_SERVER_ERROR")
 		}
 
-		accesstokenJwt, accesstoken, err := authentication.CreateAndSignToken(session.UserID.String(), []byte(os.Getenv("JWT_ACCESSTOKEN_KEY")), uuid.NewString(), time.Now().Add(time.Hour))
+		accesstokenJwt, accesstoken, err := authentication.CreateAndSignToken(
+			session.UserID.String(),
+			[]byte(os.Getenv("JWT_ACCESSTOKEN_KEY")),
+			uuid.NewString(),
+			time.Now().Add(time.Hour),
+		)
 
 		if err != nil {
-			log.Printf("accord_authentication.CreateAndSignToken err: %v\n", err)
-			wc.conn.WriteMessage(websocket.CloseInternalServerErr, []byte("INTERNAL_SERVER_ERROR"))
+			log.Printf("CreateAndSignToken err: %v\n", err)
 			return errors.New("INTERNAL_SERVER_ERROR")
 		}
 
@@ -70,82 +179,26 @@ func (wc *WebsocketClient) CheckTokens() error {
 	return nil
 }
 
-func (wc *WebsocketClient) Identify(accesstoken string, refreshtoken string) {
-
-	accesstokenJwt, accesstokenID, err := authentication.ValidateToken(accesstoken, []byte(os.Getenv("JWT_ACCESSTOKEN_KEY")))
-
-	if err != nil {
-		wc.CloseMessage(1003, "INVALID_TOKENS")
-		return
-	}
-
-	refreshtokenJwt, refreshtokenID, err := authentication.ValidateToken(refreshtoken, []byte(os.Getenv("JWT_REFRESHTOKEN_KEY")))
+func (wc *WebsocketClient) RetrieveAuthenticatedClientRoles() error {
+	roleIDs, err := wc.hub.queries.GetManyGuildRoleIDsByUserID(context.Background(), wc.userID)
 
 	if err != nil {
-		wc.CloseMessage(1003, "INVALID_TOKENS")
-		return
+		return errors.New("INTERNAL_SERVER_ERROR")
 	}
 
-	if accesstokenID != refreshtokenID {
-		wc.CloseMessage(1003, "INVALID_TOKENS")
-		return
-	}
-
-	session, err := wc.hub.queries.GetUserSessionByToken(context.Background(), refreshtoken)
-
-	if err != nil {
-		if database.IsPGErrNoRows(err) {
-			wc.CloseMessage(1003, "INVALID_SESSION")
-		} else {
-			wc.CloseMessage(1002, "INTERNAL_SERVER_ERROR")
-		}
-		return
-	}
-
-	if _, ok := wc.hub.clients[refreshtokenID]; ok {
-		wc.CloseMessage(1003, "DUPLICATE_CONNECTION")
-		return
-	}
-
-	roles, err := wc.hub.queries.GetManyGuildRoleIDsByUserID(context.Background(), session.UserID)
-
-	if err != nil {
-		wc.CloseMessage(1002, "INTERNAL_SERVER_ERROR")
-		return
-	}
-
-	roleIDs := make(map[string]bool)
-
-	for i := range roles {
-		roleIDs[roles[i].String()] = true
-	}
-
-	wc.authenticated = true
-	wc.id = accesstokenID
-	wc.accesstoken = accesstoken
-	wc.refreshtoken = refreshtoken
-	wc.accesstokenExpiresAt = accesstokenJwt.Expiration()
-	wc.refreshtokenExpiresAt = refreshtokenJwt.Expiration()
-	wc.roles = roleIDs
-
-	wc.hub.RegisterClient(wc)
-	wc.SendInitialisationPayload()
+	wc.AddRoles(roleIDs)
+	return nil
 }
 
 func (wc *WebsocketClient) ReadMessages() {
-
 	wc.conn.SetReadDeadline(time.Now().Add(wc.hub.pongWait))
 
 	for {
 		_, p, err := wc.conn.ReadMessage()
-		fmt.Println("READ_MESSAGE_EXECUTING")
 
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("Error unexpected close: %v\n", err)
-			} else {
-				log.Printf("Unknown error: %v\n", err)
-			}
+			log.Printf("READ_MESSAGE_ERROR: %v\n", err)
+			wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "INTERNAL_SERVER_ERROR"))
 			return
 		}
 
@@ -153,128 +206,150 @@ func (wc *WebsocketClient) ReadMessages() {
 			authenticatePayload := AuthenticatePayload{}
 
 			if err := json.Unmarshal(p, &authenticatePayload); err != nil {
-				log.Printf("UNABLE_TO_PARSE_MESSAGE\n")
-				wc.CloseMessage(1003, "INVALID_AUTHENTICATION_PAYLOAD")
+				log.Printf("PAYLOAD UNMARSHAL_ERROR: %v\n", err)
+				wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "INVALID_AUTHENTICATION_PAYLOAD"))
 				return
 			}
 
 			if authenticatePayload.Op != "AUTHENTICATE_OP" {
-				log.Printf("INVALID OP\n")
-				wc.CloseMessage(1003, "INVALID_AUTHENTICATION_PAYLOAD")
+				log.Printf("INVALID_OPERATION: %v\n", err)
+				wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "INVALID_AUTHENTICATION_PAYLOAD"))
 				return
 			}
 
-			wc.Identify(authenticatePayload.D.Accesstoken, authenticatePayload.D.Refreshtoken)
+			if err := wc.AuthenticateClient(authenticatePayload.D.Accesstoken, authenticatePayload.D.Refreshtoken); err != nil {
+				wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, err.Error()))
+				return
+			}
+
+			if err := wc.RetrieveAuthenticatedClientRoles(); err != nil {
+				wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, err.Error()))
+				return
+			}
+
+			if err := wc.SendInitialisationPayload(); err != nil {
+				wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, err.Error()))
+				return
+			}
+
+			wc.hub.AddClient(wc)
 		}
 	}
 }
 
-func (wc *WebsocketClient) WriteMessages() {
-
+func (wc *WebsocketClient) HandlePing() {
 	ticker := time.NewTicker(wc.hub.pingInterval)
-
-	defer func() {
-		ticker.Stop()
-	}()
+	defer ticker.Stop()
 
 	for {
-		select {
-		case <-ticker.C:
-			fmt.Println("SENDING_PING")
-			wc.conn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
-			if err := wc.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				wc.CloseMessage(1002, "PING_FAILURE")
-				return
-			}
-		case msg := <-wc.hub.forward:
-			if !wc.authenticated {
-				continue
-			}
+		<-ticker.C
+		if !wc.authenticated {
+			continue
+		}
 
-			if err := wc.CheckTokens(); err != nil {
-				log.Printf("Tokens check failed: %v\n", err.Error())
-				wc.CloseMessage(1002, "REAUTHENTICATION_REQUIRED")
-				return
-			}
+		wc.conn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
+		if err := wc.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "WRITE_MESSAGE_FAILURE"))
+			return
+		}
 
-			if len(msg.RoleIDs) != 0 {
-				fmt.Println("CHECKING ROLEIDS")
-				for idx := range msg.RoleIDs {
-					if wc.roles[msg.RoleIDs[idx]] {
-						wc.conn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
-						payload, _ := json.Marshal(msg.Data)
-						wc.conn.WriteMessage(websocket.TextMessage, payload)
-						break
-					}
+	}
+}
+
+func (wc *WebsocketClient) HandleLocalPayload() {
+	for {
+		msg, ok := <-wc.local
+
+		if !ok {
+			return
+		}
+
+		if len(msg.RoleIDs) < 1 {
+			continue
+		}
+
+		switch msg.Op {
+		case "ADD_ROLE":
+			wc.AddRoles(msg.RoleIDs)
+		case "DEL_ROLE":
+			wc.DelRoles(msg.RoleIDs)
+		default:
+			log.Printf("Unknown local payload Op: %s\n", msg.Op)
+		}
+	}
+}
+
+func (wc *WebsocketClient) HandleForwardedPayload() {
+	for {
+		msg, ok := <-wc.forward
+
+		if !ok {
+			return
+		}
+
+		if !wc.authenticated || slices.Contains(msg.ExcludedUserIDs, wc.userID) {
+			continue
+		}
+
+		if err := wc.ValidateTokens(); err != nil {
+			wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, err.Error()))
+			return
+		}
+
+		if len(msg.RoleIDs) != 0 {
+			wc.roleIDs.Mutex.RLock()
+			for idx := range msg.RoleIDs {
+				if !wc.roleIDs.Data[msg.RoleIDs[idx]] {
+					continue
 				}
-			} else if len(msg.UserIDs) != 0 {
-				fmt.Println("CHECKING USERIDS")
-				for idx := range msg.UserIDs {
-					if wc.id.String() == msg.UserIDs[idx] {
-						wc.conn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
-						payload, _ := json.Marshal(msg.Data)
-						wc.conn.WriteMessage(websocket.TextMessage, payload)
-						break
-					}
+
+				wc.roleIDs.Mutex.RUnlock()
+
+				wc.conn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
+				if err := wc.conn.WriteJSON(ForwardedClientPayload{Op: msg.Op, Data: msg.Data}); err != nil {
+					wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "WRITE_MESSAGE_FAILURE"))
+					return
 				}
+
+				break
+			}
+		} else if len(msg.UserIDs) != 0 {
+			for idx := range msg.UserIDs {
+				if wc.userID != msg.UserIDs[idx] {
+					continue
+				}
+
+				wc.conn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
+				if err := wc.conn.WriteJSON(ForwardedClientPayload{Op: msg.Op, Data: msg.Data}); err != nil {
+					wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "WRITE_MESSAGE_FAILURE"))
+					return
+				}
+
+				break
 			}
 		}
 	}
 }
 
-func (wc *WebsocketClient) SendInitialisationPayload() {
+func (wc *WebsocketClient) SendInitialisationPayload() error {
 
-	InitData, err := wc.hub.queries.GetWebsocketInitialisationPayload(context.Background(), wc.id)
+	InitData, err := wc.hub.queries.GetWebsocketInitialisationPayload(context.Background(), wc.userID)
 
 	if err != nil {
-		fmt.Printf("GetInitialGuilds err: %v\n", err)
-		wc.CloseMessage(1002, "INTERNAL_SERVER_ERROR")
-		return
+		log.Printf("GetWebsocketInitialisationPayload ERR: %v\n", err)
+		return err
 	}
 
-	wc.conn.WriteJSON(struct {
+	wc.conn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
+	if err := wc.conn.WriteJSON(struct {
 		Op string                                    `json:"op"`
 		D  sqlc.GetWebsocketInitialisationPayloadRow `json:"d"`
 	}{
-		Op: "CLIENT_READY_OP",
+		Op: "CLIENT_READY",
 		D:  InitData,
-	})
-
-}
-
-func CreateWebsocketClient(hub *WebsocketHub, conn *websocket.Conn) {
-
-	wc := &WebsocketClient{
-		hub:           hub,
-		conn:          conn,
-		authenticated: false,
+	}); err != nil {
+		return err
 	}
 
-	wc.conn.SetPongHandler(func(string) error {
-		fmt.Println("RECIEVING_PONG")
-		if err := wc.conn.SetReadDeadline(time.Now().Add(wc.hub.pongWait)); err != nil {
-			log.Printf("PONG_ERROR: %v\n", err.Error())
-			wc.CloseMessage(1002, "PONG_TIMEOUT")
-		}
-		return nil
-	})
-
-	wc.conn.SetCloseHandler(func(code int, text string) error {
-		fmt.Printf("CLOSE_HANDLER - Reason: %s\n", text)
-		wc.conn.Close()
-		if wc.authenticated {
-			wc.hub.unregister <- wc.id
-		}
-		return nil
-	})
-
-	go wc.ReadMessages()
-	go wc.WriteMessages()
-
-	time.Sleep(wc.hub.authTimeout)
-
-	if !wc.authenticated {
-		log.Printf("AUTHENTICATION_DEADLINE_REACHED\n")
-		wc.CloseMessage(1002, "AUTHENTICATION_TIMEOUT")
-	}
+	return nil
 }
