@@ -15,10 +15,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type APIContext struct {
+type CustomCtx struct {
 	echo.Context
-	UserID       uuid.UUID
-	Refreshtoken string
+	UserID         uuid.UUID
+	Refreshtoken   string
+	IsGuildChannel bool
 }
 
 func (a *api) AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
@@ -27,7 +28,7 @@ func (a *api) AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		refreshtoken := c.Request().Header.Get("X-App-Token")
 
 		if _, userID, err := authentication.ValidateToken(accesstoken, []byte(os.Getenv("JWT_ACCESSTOKEN_KEY"))); err == nil {
-			cctx := &APIContext{
+			cctx := &CustomCtx{
 				Context:      c,
 				UserID:       userID,
 				Refreshtoken: refreshtoken,
@@ -67,7 +68,7 @@ func (a *api) AuthenticationMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		c.Response().Header().Set("Authorization", fmt.Sprintf("Bearer %s", newAccesstoken))
 
-		cctx := &APIContext{
+		cctx := &CustomCtx{
 			Context:      c,
 			UserID:       userID,
 			Refreshtoken: refreshtoken,
@@ -88,7 +89,7 @@ func (a *api) RequiredGuildPermission(permission int) func(next echo.HandlerFunc
 
 			permissions, err := a.Queries.GetGuildRolePermissionsByUserIDAndGuildID(c.Request().Context(), sqlc.GetGuildRolePermissionsByUserIDAndGuildIDParams{
 				GuildID: guildID,
-				UserID:  c.(*APIContext).UserID,
+				UserID:  c.(*CustomCtx).UserID,
 			})
 
 			if err != nil {
@@ -117,11 +118,11 @@ func (a *api) RequiredChannelPermission(permission int) func(next echo.HandlerFu
 				return NewClientError(err, http.StatusBadRequest, "invalid channel ID")
 			}
 
-			userID := c.(*APIContext).UserID
+			userID := c.(*CustomCtx).UserID
 
 			permissions, err := a.Queries.GetGuildRolePermissionsByUserIDAndChannelID(c.Request().Context(), sqlc.GetGuildRolePermissionsByUserIDAndChannelIDParams{
 				ChannelID: channelID,
-				UserID:    c.(*APIContext).UserID,
+				UserID:    c.(*CustomCtx).UserID,
 			})
 
 			if err != nil {
@@ -139,6 +140,7 @@ func (a *api) RequiredChannelPermission(permission int) func(next echo.HandlerFu
 				}
 
 				if count == 1 {
+					c.(*CustomCtx).IsGuildChannel = false
 					return next(c)
 				}
 
@@ -149,6 +151,7 @@ func (a *api) RequiredChannelPermission(permission int) func(next echo.HandlerFu
 				return NewClientError(nil, http.StatusUnauthorized, "you are not authorised to access this resource")
 			}
 
+			c.(*CustomCtx).IsGuildChannel = true
 			return next(c)
 		}
 	}
