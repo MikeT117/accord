@@ -1,7 +1,6 @@
 package message_queue
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -11,18 +10,21 @@ import (
 )
 
 func (mq *MessageQueue) CreateSubscription(subject string, handler func(data []byte)) {
-	if _, err := mq.Conn.Subscribe(subject, func(msg *nats.Msg) {
+	sub, err := mq.Conn.Subscribe(subject, func(msg *nats.Msg) {
 		handler(msg.Data)
-	}); err != nil {
-		if err != nil {
-			log.Panicf("Unable to subscribe to subject: %v\n", err)
-		}
+	})
+
+	if err != nil {
+		log.Panicf("Unable to subscribe to subject: %v\n", err)
 	}
+
+	defer sub.Unsubscribe()
+
+	log.Printf("NATS_SUBSCRIPTION_CREATED %s\n", subject)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
 
-	fmt.Println("Exiting...")
 	os.Exit(0)
 }

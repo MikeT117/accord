@@ -2,21 +2,24 @@ package message_queue
 
 import (
 	"encoding/json"
+
+	"github.com/google/uuid"
 )
 
 type ForwardedPayload struct {
-	Op      string
-	Version int
-	RoleIDs []string
-	UserIDs []string
-	Data    interface{}
+	Op              string
+	Version         int
+	RoleIDs         []uuid.UUID
+	UserIDs         []uuid.UUID
+	ExcludedUserIDs []uuid.UUID
+	Data            interface{}
 }
 
 type LocalPayload struct {
 	Op      string
 	Version int
-	UserIDs []string
-	Data    interface{}
+	UserIDs []uuid.UUID
+	RoleIDs []uuid.UUID
 }
 
 func (mq *MessageQueue) PublishLocalPayload(msg *LocalPayload) error {
@@ -36,5 +39,5 @@ func (mq *MessageQueue) PublishForwardPayload(msg *ForwardedPayload) error {
 		return err
 	}
 
-	return mq.Conn.Publish("ACCORD.LOCAL", body)
+	return mq.Conn.Publish("ACCORD.FORWARD", body)
 }
