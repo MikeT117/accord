@@ -13,12 +13,12 @@ type GuildCreateRequestBody struct {
 }
 
 type GuildUpdateRequestBody struct {
-	Name            string      `json:"name"`
-	Description     string      `json:"description"`
-	IsDiscoverable  bool        `json:"isDiscoverable"`
-	Icon            *uuid.UUID  `json:"icon"`
-	Banner          *uuid.UUID  `json:"banner"`
-	GuildCategoryID pgtype.UUID `json:"guildCategoryId"`
+	Name           string      `json:"name"`
+	Description    string      `json:"description"`
+	IsDiscoverable bool        `json:"isDiscoverable"`
+	Icon           *uuid.UUID  `json:"icon"`
+	Banner         *uuid.UUID  `json:"banner"`
+	CategoryID     pgtype.UUID `json:"categoryId"`
 }
 
 type GuildRoleUpdateRequestBody struct {
@@ -51,7 +51,8 @@ type PrivateChannelCreateBody struct {
 }
 
 type BannedGuildMemberCreateBody struct {
-	Reason string `json:"reason"`
+	UserID uuid.UUID `json:"userId"`
+	Reason string    `json:"reason"`
 }
 
 type ChannelUpdateRequestBody struct {

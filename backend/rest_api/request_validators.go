@@ -9,7 +9,7 @@ import (
 )
 
 func (b *GuildCreateRequestBody) Validate() (bool, string) {
-	val := v.Is(v.String(b.Name, "Name").Not().Blank().OfLengthBetween(2, 100)).
+	val := v.Is(v.String(b.Name, "Name").Not().Blank().OfLengthBetween(3, 100)).
 		Is(v.Bool(b.IsDiscoverable, "IsDiscoverable"))
 
 	if !val.Valid() {
@@ -24,8 +24,8 @@ func (b *GuildCreateRequestBody) Validate() (bool, string) {
 }
 
 func (b *GuildUpdateRequestBody) Validate() (bool, string) {
-	val := v.Is(v.String(b.Name, "Name").Not().Blank().OfLengthBetween(2, 100)).
-		Is(v.String(b.Description, "Description").OfLengthBetween(0, 500)).
+	val := v.Is(v.String(b.Name, "Name").Not().Blank().OfLengthBetween(3, 100)).
+		Is(v.String(b.Description, "Description").OfLengthBetween(0, 512)).
 		Is(v.Bool(b.IsDiscoverable, "IsDiscoverable"))
 
 	if !val.Valid() {
@@ -40,7 +40,7 @@ func (b *GuildUpdateRequestBody) Validate() (bool, string) {
 }
 
 func (b *GuildRoleUpdateRequestBody) Validate() (bool, string) {
-	val := v.Is(v.String(b.Name, "Name").Not().Blank().OfLengthBetween(2, 100)).
+	val := v.Is(v.String(b.Name, "Name").Not().Blank().OfLengthBetween(2, 100).Not().MatchingTo(regexp.MustCompile(`\s+`))).
 		Is(v.Int32(b.Permissions, "Permissions").Between(0, 2147483647))
 
 	if !val.Valid() {
@@ -55,7 +55,7 @@ func (b *GuildRoleUpdateRequestBody) Validate() (bool, string) {
 }
 
 func (b *GuildMemberUpdateBody) Validate() (bool, string) {
-	val := v.Is(v.String(b.Nickname.String, "Nickname").Not().Blank().OfLengthBetween(2, 100))
+	val := v.Is(v.String(b.Nickname.String, "Nickname").Not().Blank().OfLengthBetween(0, 100))
 
 	if !val.Valid() {
 		messages := []string{}
@@ -69,7 +69,7 @@ func (b *GuildMemberUpdateBody) Validate() (bool, string) {
 }
 
 func (b *GuildChannelCreateBody) Validate() (bool, string) {
-	val := v.Is(v.String(b.Name, "Name").Not().Blank().OfLengthBetween(2, 100)).
+	val := v.Is(v.String(b.Name, "Name").Not().Blank().OfLengthBetween(3, 100).Not().MatchingTo(regexp.MustCompile(`\s+`))).
 		Is(v.String(b.Topic, "Topic").OfLengthBetween(0, 512)).
 		Is(v.Bool(b.IsPrivate, "IsPrivate")).
 		Is(v.Int16(b.ChannelType, "ChannelType").InSlice([]int16{0, 1, 4}))
@@ -103,14 +103,22 @@ func (b *ChannelUpdateRequestBody) Validate(private bool) (bool, string) {
 
 	val := v.
 		Is(v.Any(b.Name).Passing(func(val any) bool {
-			if val.(pgtype.Text).Valid {
-				return private && len(val.(pgtype.Text).String) >= 0 && len(val.(pgtype.Text).String) <= 100 || !private && len(val.(pgtype.Text).String) > 2 && len(val.(pgtype.Text).String) <= 100
+			if !val.(pgtype.Text).Valid {
+				return true
 			}
 
-			return true
+			if !private {
+				return v.Is(v.String(val.(pgtype.Text).String, "name").Not().Blank().OfLengthBetween(3, 100).Not().MatchingTo(regexp.MustCompile(`\s+`))).IsValid("name")
+			}
+
+			return v.Is(v.String(val.(pgtype.Text).String, "name").Not().Blank().OfLengthBetween(0, 100).Not().MatchingTo(regexp.MustCompile(`\s+`))).IsValid("name")
 		})).
 		Is(v.Any(b.Topic).Passing(func(val any) bool {
-			return (val.(pgtype.Text).Valid && len(val.(pgtype.Text).String) >= 0 && len(val.(pgtype.Text).String) <= 100) || !val.(pgtype.Text).Valid
+			if !val.(pgtype.Text).Valid {
+				return true
+			}
+
+			return v.Is(v.String(val.(pgtype.Text).String, "topic").OfLengthBetween(0, 512)).IsValid("topic")
 		}))
 
 	if !val.Valid() {
@@ -192,7 +200,7 @@ func (b *UserProfileUpdateRequestBody) Validate() (bool, string) {
 
 func (b *UserRelationshipCreateRequestBody) Validate() (bool, string) {
 	val := v.
-		Is(v.String(b.Username, "Username").Not().Blank().OfLengthBetween(6, 32)).
+		Is(v.String(b.Username, "Username").Not().Blank().OfLengthBetween(3, 32)).
 		Is(v.Int32(b.Status).Between(1, 2))
 
 	if !val.Valid() {
