@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
@@ -17,26 +18,28 @@ var upgrader = websocket.Upgrader{
 
 func CreateWebsocketServer(queries *sqlc.Queries, messageQueue *message_queue.MessageQueue) {
 
-	var webRTCHub *WebRTCHub = CreateWebRTCHub()
-	var websocketHub *WebsocketHub = CreateWebsocketHub(queries, webRTCHub, messageQueue)
+	var hub *VoiceServerHub = CreateHub(
+		queries,
+		messageQueue,
+		time.Duration(15*time.Second),
+		time.Duration(30*time.Second),
+		time.Duration(60*time.Second),
+		time.Duration(10*time.Second),
+	)
 
-	http.HandleFunc("/api/websocket", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/rtc", func(w http.ResponseWriter, r *http.Request) {
 
 		conn, err := upgrader.Upgrade(w, r, nil)
 
 		if err != nil {
-			log.Print(err)
+			log.Println("Upgrade Error: ", err)
+			w.Header().Add("X-App-Error", "UNABLE_TO_ESTABLISH_WEBSOCKET_CONNECTION")
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(err.Error()))
 			return
 		}
 
-		websocketHub.CreateClient(websocketHub, conn)
+		hub.CreateClient(conn)
 	})
 
-	if err := http.ListenAndServe(os.Getenv("LISTEN"), nil); err != nil {
-		if err != nil {
-			log.Print(err)
-		}
-	}
+	log.Println(http.ListenAndServe(os.Getenv("WEBRTC_WS_PORT"), nil))
 }

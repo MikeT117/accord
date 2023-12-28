@@ -1,94 +1,155 @@
 package voice_server
 
 import (
-	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
+	"github.com/MikeT117/accord/backend/internal/utils"
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
+	"github.com/pion/interceptor"
+	"github.com/pion/webrtc/v4"
 )
 
-type WebsocketHub struct {
-	queries      *sqlc.Queries
-	webRTCHub    *WebRTCHub
-	messageQueue *message_queue.MessageQueue
-	clients      map[uuid.UUID]*WebsocketClient
-	local        chan *message_queue.LocalPayload
-	register     chan *WebsocketClient
-	unregister   chan uuid.UUID
+type VoiceServerHub struct {
+	clients      utils.SafeRWMutexMap[map[uuid.UUID]*WebsocketClient]
+	channels     utils.SafeRWMutexMap[map[uuid.UUID]*WebRTCChannel]
 	authTimeout  time.Duration
 	pingInterval time.Duration
 	pongWait     time.Duration
 	writeWait    time.Duration
+	queries      *sqlc.Queries
+	messageQueue *message_queue.MessageQueue
+	webrtcAPI    *webrtc.API
 }
 
-func (wh *WebsocketHub) RegisterClient(client *WebsocketClient) {
-	wh.register <- client
+func (wh *VoiceServerHub) GetClient(ID uuid.UUID) (*WebsocketClient, bool) {
+	wh.clients.Mutex.RLock()
+	defer wh.clients.Mutex.RUnlock()
+	c, ok := wh.clients.Data[ID]
+	return c, ok
 }
 
-func (wh *WebsocketHub) CreateClient(hub *WebsocketHub, conn *websocket.Conn) *WebsocketClient {
+func (wh *VoiceServerHub) AddClient(client *WebsocketClient) {
+	wh.clients.Mutex.Lock()
+	defer wh.clients.Mutex.Unlock()
+	wh.clients.Data[client.id] = client
+}
 
-	wc := &WebsocketClient{
-		hub:  hub,
-		conn: conn,
+func (wh *VoiceServerHub) DelClient(id uuid.UUID) {
+	wh.clients.Mutex.Lock()
+	defer wh.clients.Mutex.Unlock()
+	delete(wh.clients.Data, id)
+}
+
+func (h *VoiceServerHub) GetChannel(ID uuid.UUID) (*WebRTCChannel, bool) {
+	h.channels.Mutex.RLock()
+	defer h.channels.Mutex.RUnlock()
+	c, ok := h.channels.Data[ID]
+	return c, ok
+}
+
+func (h *VoiceServerHub) AddChannel(vsc *WebRTCChannel) *WebRTCChannel {
+	h.channels.Mutex.Lock()
+	defer h.channels.Mutex.Unlock()
+	h.channels.Data[vsc.id] = vsc
+	return vsc
+}
+
+func (h *VoiceServerHub) DelChannel(ID uuid.UUID) {
+	h.channels.Mutex.Lock()
+	defer h.channels.Mutex.Unlock()
+	delete(h.channels.Data, ID)
+}
+
+func (h *VoiceServerHub) CloseHub() {
+	log.Println("CLOSING HUB")
+
+	h.clients.Mutex.Lock()
+	h.channels.Mutex.Lock()
+
+	defer func() {
+		h.channels.Mutex.Unlock()
+		h.clients.Mutex.Unlock()
+	}()
+
+	for idx := range h.channels.Data {
+		h.channels.Data[idx].CloseChannel()
 	}
 
-	wc.conn.SetPongHandler(func(string) error {
-		fmt.Println("RECIEVING_PONG")
-		if err := wc.conn.SetReadDeadline(time.Now().Add(wh.pongWait)); err != nil {
-			log.Printf("PONG_ERROR: %v\n", err.Error())
-			wc.CloseMessage(1002, "PONG_TIMEOUT")
-		}
-		return nil
-	})
-
-	wc.conn.SetCloseHandler(func(code int, text string) error {
-		fmt.Printf("CLOSE_HANDLER - Reason: %s\n", text)
-		wc.conn.Close()
-		wc.hub.unregister <- wc.id
-		return nil
-	})
-
-	go wc.ReadMessages()
-	go wc.WriteMessages()
-
-	return wc
-}
-
-func (wh *WebsocketHub) Run() {
-	for {
-		select {
-		case client := <-wh.register:
-			wh.clients[client.id] = client
-		case id := <-wh.unregister:
-			if client, ok := wh.clients[id]; ok {
-				client.peer.pConn.Close()
-				client.conn.Close()
-				delete(wh.clients, id)
-			}
-
-		}
+	for idx := range h.clients.Data {
+		h.clients.Data[idx].CloseClient()
 	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	<-c
+
+	os.Exit(0)
 }
 
-func CreateWebsocketHub(queries *sqlc.Queries, webRTCHub *WebRTCHub, messageQueue *message_queue.MessageQueue) *WebsocketHub {
-	hub := &WebsocketHub{
+func CreateHub(
+	queries *sqlc.Queries,
+	messageQueue *message_queue.MessageQueue,
+	authTimeout time.Duration,
+	pingInterval time.Duration,
+	pongWait time.Duration,
+	writeWait time.Duration,
+) *VoiceServerHub {
+	settingsEngine := webrtc.SettingEngine{}
+
+	settingsEngine.SetEphemeralUDPPortRange(10001, 10049)
+	settingsEngine.SetNetworkTypes([]webrtc.NetworkType{
+		webrtc.NetworkTypeTCP4,
+		webrtc.NetworkTypeUDP4,
+	})
+
+	m := &webrtc.MediaEngine{}
+	if err := m.RegisterDefaultCodecs(); err != nil {
+		panic(err)
+	}
+
+	i := &interceptor.Registry{}
+	if err := webrtc.RegisterDefaultInterceptors(m, i); err != nil {
+		panic(err)
+	}
+
+	api := webrtc.NewAPI(webrtc.WithSettingEngine(settingsEngine), webrtc.WithMediaEngine(m), webrtc.WithInterceptorRegistry(i))
+
+	hub := &VoiceServerHub{
+		clients: utils.SafeRWMutexMap[map[uuid.UUID]*WebsocketClient]{
+			Mutex: sync.RWMutex{},
+			Data:  make(map[uuid.UUID]*WebsocketClient),
+		},
+		channels: utils.SafeRWMutexMap[map[uuid.UUID]*WebRTCChannel]{
+			Mutex: sync.RWMutex{},
+			Data:  make(map[uuid.UUID]*WebRTCChannel),
+		},
+		authTimeout:  authTimeout,
+		pingInterval: pingInterval,
+		pongWait:     pongWait,
+		writeWait:    writeWait,
 		queries:      queries,
 		messageQueue: messageQueue,
-		webRTCHub:    webRTCHub,
-		clients:      make(map[uuid.UUID]*WebsocketClient),
-		local:        make(chan *message_queue.LocalPayload),
-		register:     make(chan *WebsocketClient),
-		unregister:   make(chan uuid.UUID),
-		authTimeout:  time.Duration(10 * time.Second),
-		pingInterval: time.Duration(15 * time.Second),
-		pongWait:     time.Duration(20 * time.Second),
-		writeWait:    time.Duration(5 * time.Second),
+		webrtcAPI:    api,
 	}
 
-	go hub.Run()
+	go func() {
+
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+		<-c
+		log.Println("HUB SUTTING DOWN")
+		hub.CloseHub()
+		os.Exit(0)
+
+	}()
+
 	return hub
 }

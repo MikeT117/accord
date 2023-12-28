@@ -12,8 +12,10 @@ import (
 	"github.com/MikeT117/accord/backend/internal/authentication"
 	"github.com/MikeT117/accord/backend/internal/constants"
 	"github.com/MikeT117/accord/backend/internal/database"
+	"github.com/MikeT117/accord/backend/internal/goverter"
 	"github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
+	"github.com/MikeT117/accord/backend/models"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/pion/webrtc/v4"
@@ -21,56 +23,81 @@ import (
 
 type WebsocketClient struct {
 	id                    uuid.UUID
-	hub                   *WebsocketHub
-	peer                  *Peer
-	conn                  *websocket.Conn
 	authenticated         bool
 	accesstoken           string
 	refreshtoken          string
 	accesstokenExpiresAt  time.Time
 	refreshtokenExpiresAt time.Time
+	hub                   *VoiceServerHub
+	wConn                 *websocket.Conn
+	local                 chan *message_queue.LocalPayload
+	authDeadline          *time.Timer
+	channel               *WebRTCChannel
+	pConn                 *webrtc.PeerConnection
 }
 
-type IncomingWebsocketMessage struct {
-	Op string `json:"op"`
-	D  struct {
-		Accesstoken  string                    `json:"accesstoken"`
-		Refreshtoken string                    `json:"refreshtoken"`
-		Answer       webrtc.SessionDescription `json:"answer"`
-		Candidate    webrtc.ICECandidateInit   `json:"candidate"`
-		ChannelID    uuid.UUID                 `json:"channelId"`
+func (hub *VoiceServerHub) CreateClient(conn *websocket.Conn) {
+
+	wc := &WebsocketClient{
+		hub:           hub,
+		authenticated: false,
+		wConn:         conn,
+		local:         make(chan *message_queue.LocalPayload),
 	}
+
+	conn.SetPongHandler(func(string) error {
+		if err := conn.SetReadDeadline(time.Now().Add(hub.pongWait)); err != nil {
+			wc.CloseMessage(websocket.ClosePolicyViolation, "PONG_TIMEOUT")
+			return err
+		}
+		return nil
+	})
+
+	conn.SetCloseHandler(func(code int, text string) error {
+		fmt.Println("CLOSE_HANDLER - Reason: ", text)
+		close(wc.local)
+		hub.DelClient(wc.id)
+		return nil
+	})
+
+	wc.authDeadline = time.AfterFunc(hub.authTimeout, func() {
+		if !wc.authenticated {
+			log.Println("AUTHENTICATION_DEADLINE_REACHED")
+			wc.CloseMessage(websocket.ClosePolicyViolation, "AUTHENTICATION_TIMEOUT")
+		}
+	})
+
+	go wc.ReadMessages()
+	go wc.HandlePing()
+	go wc.HandleLocalPayload()
 }
 
-type OutgoingWebsocketMessage struct {
-	Op string `json:"op"`
-	D  string `json:"d"`
+func (wc *WebsocketClient) CloseClient() {
+	close(wc.local)
+	wc.wConn.Close()
 }
 
 func (wc *WebsocketClient) CloseMessage(status int, message string) {
-	wc.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(status, message))
+	wc.wConn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(status, message))
 }
 
 func (wc *WebsocketClient) CheckTokens() error {
-	fmt.Println("TOKENS_CHECK")
 	if wc.accesstokenExpiresAt.Before(time.Now().Add(time.Minute * 5)) {
 		if wc.refreshtokenExpiresAt.Before(time.Now()) {
-			wc.conn.WriteMessage(websocket.CloseMessage, []byte("EXPIRED_TOKENS"))
 			return errors.New("EXPIRED_TOKENS")
 		}
 
 		session, err := wc.hub.queries.GetUserSessionByToken(context.Background(), wc.refreshtoken)
 
 		if err != nil {
-			wc.conn.WriteMessage(websocket.CloseMessage, []byte("INVALID_TOKENS"))
+			log.Println("GetUserSessionByToken Error: ", err)
 			return errors.New("INVALID_TOKENS")
 		}
 
 		accesstokenJwt, accesstoken, err := authentication.CreateAndSignToken(session.UserID.String(), []byte(os.Getenv("JWT_ACCESSTOKEN_KEY")), uuid.NewString(), time.Now().Add(time.Hour))
 
 		if err != nil {
-			log.Printf("accord_authentication.CreateAndSignToken err: %v\n", err)
-			wc.conn.WriteMessage(websocket.CloseInternalServerErr, []byte("INTERNAL_SERVER_ERROR"))
+			log.Println("CreateAndSignToken Error: ", err)
 			return errors.New("INTERNAL_SERVER_ERROR")
 		}
 
@@ -81,137 +108,133 @@ func (wc *WebsocketClient) CheckTokens() error {
 	return nil
 }
 
-func (wc *WebsocketClient) Identify(accesstoken string, refreshtoken string) {
+func (wc *WebsocketClient) AuthenticateClient(accesstoken string, refreshtoken string) error {
 
 	accesstokenJwt, accesstokenID, err := authentication.ValidateToken(accesstoken, []byte(os.Getenv("JWT_ACCESSTOKEN_KEY")))
 
 	if err != nil {
-		wc.CloseMessage(1003, "INVALID_TOKENS")
-		return
+		return errors.New("INVALID_TOKENS")
 	}
 
 	refreshtokenJwt, refreshtokenID, err := authentication.ValidateToken(refreshtoken, []byte(os.Getenv("JWT_REFRESHTOKEN_KEY")))
 
 	if err != nil {
-		wc.CloseMessage(1003, "INVALID_TOKENS")
-		return
+		return errors.New("INVALID_TOKENS")
 	}
 
 	if accesstokenID != refreshtokenID {
-		wc.CloseMessage(1003, "INVALID_TOKENS")
-		return
+		return errors.New("INVALID_TOKENS")
 	}
 
 	session, err := wc.hub.queries.GetUserSessionByToken(context.Background(), refreshtoken)
 
 	if err != nil {
 		if database.IsPGErrNoRows(err) {
-			wc.CloseMessage(1003, "INVALID_SESSION")
-		} else {
-			wc.CloseMessage(1002, "INTERNAL_SERVER_ERROR")
+			return errors.New("INVALID_SESSION")
 		}
-		return
+		return errors.New("INTERNAL_SERVER_ERROR")
 	}
 
-	if _, ok := wc.hub.clients[refreshtokenID]; ok {
-		wc.CloseMessage(1003, "DUPLICATE_CONNECTION")
-		return
+	if _, ok := wc.hub.GetClient(refreshtokenID); ok {
+		return errors.New("DUPLICATE_CONNECTION")
 	}
+
+	wc.authenticated = true
+	wc.authDeadline.Stop()
 
 	wc.id = session.UserID
-	wc.authenticated = true
 	wc.accesstoken = accesstoken
 	wc.refreshtoken = refreshtoken
 	wc.accesstokenExpiresAt = accesstokenJwt.Expiration()
 	wc.refreshtokenExpiresAt = refreshtokenJwt.Expiration()
 
-	wc.hub.RegisterClient(wc)
+	return nil
 }
 
-func (wc *WebsocketClient) Authorise(channelID uuid.UUID, permission int) {
+func (wc *WebsocketClient) AuthoriseClient(channelID uuid.UUID, permission int) error {
 	permissions, err := wc.hub.queries.GetGuildRolePermissionsByUserIDAndChannelID(context.Background(), sqlc.GetGuildRolePermissionsByUserIDAndChannelIDParams{
 		UserID:    wc.id,
 		ChannelID: channelID,
 	})
 
 	if err != nil {
-		wc.CloseMessage(4001, "internal error occurred")
-		return
+		return errors.New("INTERNAL_SERVER_ERROR")
 	}
 
 	if permissions == -1 {
-		wc.CloseMessage(4001, "channel not found")
-		return
+		return errors.New("CHANNEL_NOT_FOUND")
 	}
 
 	if permissions&(1<<permission) == 0 {
-		wc.CloseMessage(4001, "you are not authorised to access this resource")
-		return
+		return errors.New("FORBIDDEN")
 	}
+
+	return nil
 }
 
 func (wc *WebsocketClient) ReadMessages() {
-
-	wc.conn.SetReadDeadline(time.Now().Add(wc.hub.pongWait))
+	wc.wConn.SetReadDeadline(time.Now().Add(wc.hub.pongWait))
 
 	message := &IncomingWebsocketMessage{}
 	for {
-		_, p, err := wc.conn.ReadMessage()
-		fmt.Println("READ_MESSAGE_EXECUTING")
+		_, p, err := wc.wConn.ReadMessage()
 
 		if err != nil {
-			log.Println(err)
+			log.Println("READ_MESSAGE_ERROR: ", err)
+			wc.CloseMessage(websocket.ClosePolicyViolation, "INTERNAL_SERVER_ERROR")
 			return
-		} else if err := json.Unmarshal(p, &message); err != nil {
-			log.Println(err)
+		}
+
+		if err := json.Unmarshal(p, &message); err != nil {
+			log.Println("PAYLOAD UNMARSHAL_ERROR: ", err)
+			wc.CloseMessage(websocket.ClosePolicyViolation, "INVALID_AUTHENTICATION_PAYLOAD")
 			return
 		}
 
 		fmt.Println("READ MESSAGE - OP: ", message.Op)
+
 		switch message.Op {
-		case "IDENTIFY":
-			/*
-				TODO: Consider validating the payload!
-				TODO: Deal with role permissions or role assignments changing
+		case "AUTHENTICATE_OP":
 
-				When a connection is made:
-					1: Verify the user's tokens
-					2: Verify the user has the rights to connect to the channel
-			*/
-
-			wc.Identify(message.D.Accesstoken, message.D.Refreshtoken)
-			wc.Authorise(message.D.ChannelID, constants.VIEW_GUILD_CHANNEL)
-
-			channel := wc.hub.webRTCHub.CreateChannel(message.D.ChannelID)
-			peer, err := channel.CreatePeer(wc.id.String(), wc.conn)
-
-			if err != nil {
-				log.Println(err)
-				wc.CloseMessage(4001, "peer could not be created")
+			if err := wc.AuthenticateClient(message.D.Accesstoken, message.D.Refreshtoken); err != nil {
+				wc.CloseMessage(websocket.ClosePolicyViolation, err.Error())
 				return
 			}
 
-			wc.peer = peer
-			channel.SignalPeers()
-
-			sqlVoiceChannelState, err := wc.hub.queries.CreateVoiceChannelState(context.Background(), sqlc.CreateVoiceChannelStateParams{
-				UserID:    wc.id,
-				ChannelID: channel.ID,
-			})
-
-			if err != nil {
-				log.Println(err)
-				peer.pConn.Close()
-				wc.CloseMessage(4001, "peer could not be created")
+			if err := wc.AuthoriseClient(message.D.ChannelID, constants.VIEW_GUILD_CHANNEL); err != nil {
+				wc.CloseMessage(websocket.ClosePolicyViolation, err.Error())
 				return
 			}
 
-			roleIDs, err := wc.hub.queries.GetRoleIDsByChannelID(context.Background(), channel.ID)
+			wc.hub.AddClient(wc)
+
+			channel := wc.hub.CreateChannel(message.D.ChannelID, message.D.GuildID)
+			err := channel.CreatePeer(wc)
 
 			if err != nil {
-				log.Println(err)
-				peer.pConn.Close()
-				wc.CloseMessage(4001, "peer could not be created")
+				log.Println("CreatePeer Error: ", err.Error())
+				wc.CloseMessage(websocket.ClosePolicyViolation, err.Error())
+				return
+			}
+
+			sqlVoiceChannelState, err := wc.hub.queries.CreateVoiceChannelState(
+				context.Background(),
+				sqlc.CreateVoiceChannelStateParams{
+					UserID:    wc.id,
+					ChannelID: channel.id,
+				})
+
+			if err != nil {
+				log.Println("CreateVoiceChannelState Error: ", err)
+				wc.CloseMessage(websocket.ClosePolicyViolation, "INTERNAL_SERVER_ERROR")
+				return
+			}
+
+			roleIDs, err := wc.hub.queries.GetRoleIDsByChannelID(context.Background(), channel.id)
+
+			if err != nil {
+				log.Println("GetRoleIDsByChannelID Error: ", err)
+				wc.CloseMessage(websocket.ClosePolicyViolation, "INTERNAL_SERVER_ERROR")
 				return
 			}
 
@@ -219,20 +242,66 @@ func (wc *WebsocketClient) ReadMessages() {
 				Version: 0,
 				Op:      "VOICE_CHANNEL_STATE_CREATE",
 				RoleIDs: roleIDs,
-				UserIDs: []string{},
-				Data:    sqlVoiceChannelState,
+				Data: &models.VoiceChannelState{
+					SelfMute:  sqlVoiceChannelState.SelfMute,
+					SelfDeaf:  sqlVoiceChannelState.SelfDeaf,
+					ChannelID: sqlVoiceChannelState.ChannelID,
+					GuildID:   sqlVoiceChannelState.GuildID,
+					User: models.UserLimited{
+						ID:          sqlVoiceChannelState.ID,
+						Avatar:      goverter.PGTypeUUIDToNullableUUID(sqlVoiceChannelState.AttachmentID),
+						DisplayName: sqlVoiceChannelState.DisplayName,
+						Username:    sqlVoiceChannelState.Username,
+						PublicFlags: sqlVoiceChannelState.PublicFlags,
+					},
+				},
+			})
+
+			channel.Signalpeers()
+
+		case "SELF_MUTE":
+			updatedVoiceChannelState, err := wc.hub.queries.UpdateVoiceChannelState(context.Background(), sqlc.UpdateVoiceChannelStateParams{
+				SelfMute: message.D.SelfMute,
+				UserID:   wc.id,
+			})
+
+			if err != nil {
+				log.Println("GetRoleIDsByChannelID Error: ", err)
+				wc.CloseMessage(websocket.ClosePolicyViolation, "INTERNAL_SERVER_ERROR")
+				return
+			}
+
+			roleIDs, err := wc.hub.queries.GetRoleIDsByChannelID(context.Background(), wc.channel.id)
+
+			if err != nil {
+				log.Println("GetRoleIDsByChannelID Error: ", err)
+				wc.CloseMessage(websocket.ClosePolicyViolation, "INTERNAL_SERVER_ERROR")
+				return
+			}
+
+			wc.hub.messageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
+				Version: 0,
+				Op:      "VOICE_CHANNEL_STATE_UPDATE",
+				RoleIDs: roleIDs,
+				Data: &models.UpdatedVoiceChannelState{
+					SelfMute:  updatedVoiceChannelState.SelfMute,
+					SelfDeaf:  updatedVoiceChannelState.SelfDeaf,
+					ChannelID: updatedVoiceChannelState.ChannelID,
+					GuildID:   updatedVoiceChannelState.GuildID,
+					UserID:    updatedVoiceChannelState.UserID,
+				},
 			})
 
 		case "CANDIDATE":
-			if err := wc.peer.pConn.AddICECandidate(message.D.Candidate); err != nil {
-				log.Println(err)
-				wc.CloseMessage(4001, "peer could not be created")
+			if err := wc.pConn.AddICECandidate(message.D.Candidate); err != nil {
+				log.Println("AddICECandidate Error: ", err)
+				wc.CloseMessage(websocket.ClosePolicyViolation, "INTERNAL_SERVER_ERROR")
 				return
 			}
 		case "ANSWER":
-			if err := wc.peer.pConn.SetRemoteDescription(message.D.Answer); err != nil {
-				log.Println(err)
-				wc.CloseMessage(4001, "peer could not be created")
+			if err := wc.pConn.SetRemoteDescription(message.D.Answer); err != nil {
+				log.Println("SetRemoteDescription Error: ", err)
+				wc.CloseMessage(websocket.ClosePolicyViolation, "INTERNAL_SERVER_ERROR")
 				return
 			}
 		}
@@ -240,20 +309,37 @@ func (wc *WebsocketClient) ReadMessages() {
 	}
 }
 
-func (wc *WebsocketClient) WriteMessages() {
-
+func (wc *WebsocketClient) HandlePing() {
 	ticker := time.NewTicker(wc.hub.pingInterval)
-
-	defer func() {
-		ticker.Stop()
-	}()
+	defer ticker.Stop()
 
 	for {
 		<-ticker.C
-		fmt.Println("SENDING_PING")
-		wc.conn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
-		if err := wc.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-			wc.CloseMessage(1002, "PING_FAILURE")
+		if !wc.authenticated {
+			continue
+		}
+
+		wc.wConn.SetWriteDeadline(time.Now().Add(wc.hub.writeWait))
+		if err := wc.wConn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			wc.CloseMessage(websocket.ClosePolicyViolation, "WRITE_MESSAGE_FAILURE")
+			return
+		}
+
+	}
+}
+
+func (wc *WebsocketClient) HandleLocalPayload() {
+
+	defer func() {
+		fmt.Println("RETURNING HANDLE_LOCAL_PAYLOAD FOR: ", wc.id)
+	}()
+
+	for {
+		_, ok := <-wc.local
+
+		// REAUTHORISE_CLIENTS
+
+		if !ok {
 			return
 		}
 
