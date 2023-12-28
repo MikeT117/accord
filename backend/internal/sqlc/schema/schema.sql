@@ -6,7 +6,6 @@ CREATE TABLE oauth_accounts (
   provider varchar(255) NOT NULL,
   provider_token text NOT NULL,
   provider_id varchar(255) NOT NULL,
-  created_at timestamp without time zone NOT NULL DEFAULT NOW(),
   updated_at timestamp without time zone NOT NULL DEFAULT NOW(),
   UNIQUE(provider, provider_id)
 );
@@ -15,10 +14,9 @@ CREATE TABLE users (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
   username varchar (32) NOT NULL UNIQUE,
   display_name varchar (32) NOT NULL,
-  public_flags int NOT NULL DEFAULT 1,
+  public_flags int NOT NULL DEFAULT 0,
   relationship_count int NOT NULL DEFAULT 0,
   oauth_account_id uuid NOT NULL UNIQUE REFERENCES oauth_accounts (id),
-  created_at timestamp without time zone NOT NULL DEFAULT NOW(),
   updated_at timestamp without time zone NOT NULL DEFAULT NOW()
 );
 
@@ -27,7 +25,6 @@ CREATE TABLE user_sessions (
   token text NOT NULL UNIQUE,
   user_id uuid NOT NULL REFERENCES users (id),
   expires_at timestamp without time zone NOT NULL,
-  created_at timestamp without time zone NOT NULL DEFAULT NOW(),
   updated_at timestamp without time zone NOT NULL DEFAULT NOW()
 );
 
@@ -35,7 +32,6 @@ CREATE TABLE relationships (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
   creator_id uuid NOT NULL REFERENCES users (id),
   status int NOT NULL, -- 0 friends, 1 pending, 2 blocked
-  created_at timestamp without time zone NOT NULL DEFAULT NOW(),
   updated_at timestamp without time zone NOT NULL DEFAULT NOW()
 );
 
@@ -51,20 +47,18 @@ CREATE UNIQUE INDEX ON relationship_users (user_id, relationship_id);
 CREATE TABLE guild_categories (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
   name text NOT NULL UNIQUE,
-  created_at timestamp without time zone NOT NULL DEFAULT NOW(),
   UNIQUE (name)
 );
 
 CREATE TABLE guilds (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
   name varchar (100) NOT NULL,
-  description varchar(500) NOT NULL DEFAULT '',
+  description varchar(512) NOT NULL DEFAULT '',
   is_discoverable boolean NOT NULL DEFAULT FALSE,
   channel_count int NOT NULL DEFAULT 0,
   member_count int NOT NULL DEFAULT 1,
   creator_id uuid NOT NULL REFERENCES users (id),
   guild_category_id uuid REFERENCES guild_categories (id) ON DELETE SET NULL,
-  created_at timestamp without time zone NOT NULL DEFAULT NOW(),
   updated_at timestamp without time zone NOT NULL DEFAULT NOW()
 );
 
@@ -79,12 +73,11 @@ CREATE TABLE guild_members (
 CREATE UNIQUE INDEX ON guild_members (user_id, guild_id);
 
 CREATE TABLE guild_bans (
+    id uuid PRIMARY KEY DEFAULT uuid_generate_v7 (),
     user_id uuid NOT NULL REFERENCES users(id),
     guild_id uuid NOT NULL REFERENCES guilds(id),
     reason varchar(512) NOT NULL,
-    creator_id uuid NOT NULL REFERENCES users(id),
-    banned_at timestamp without time zone NOT NULL DEFAULT NOW(),
-    PRIMARY KEY(guild_id, user_id)
+    creator_id uuid NOT NULL REFERENCES users(id)
 );
 CREATE UNIQUE INDEX ON guild_bans (user_id, guild_id);
 
@@ -94,7 +87,6 @@ CREATE TABLE guild_roles (
   permissions int NOT NULL DEFAULT 0,
   guild_id uuid NOT NULL REFERENCES guilds (id) ON DELETE CASCADE,
   creator_id uuid NOT NULL REFERENCES users(id),
-  created_at timestamp without time zone NOT NULL DEFAULT NOW(),
   updated_at timestamp without time zone NOT NULL DEFAULT NOW()
 );
 CREATE INDEX guild_roles_idx_guild_id ON guild_roles (guild_id);
@@ -114,14 +106,12 @@ CREATE TABLE channels (
   parent_id uuid REFERENCES channels (id) ON DELETE SET NULL,
   creator_id uuid NOT NULL REFERENCES users (id),
   guild_id uuid REFERENCES guilds (id) ON DELETE CASCADE,
-  created_at timestamp without time zone NOT NULL DEFAULT NOW(),
   updated_at timestamp without time zone NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX channels_idx_guild_id ON channels (guild_id);
 
 CREATE TABLE voice_channel_states (
-  mute boolean NOT NULL DEFAULT FALSE,
   self_mute boolean NOT NULL DEFAULT FALSE,
   self_deaf boolean NOT NULL DEFAULT FALSE,
   channel_id uuid NOT NULL REFERENCES channels (id),
@@ -144,7 +134,6 @@ CREATE TABLE guild_invites (
   used_count int NOT NULL DEFAULT 0,
   user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
   guild_id uuid NOT NULL REFERENCES guilds (id) ON DELETE CASCADE,
-  created_at timestamp without time zone NOT NULL DEFAULT NOW(),
   updated_at timestamp without time zone NOT NULL DEFAULT NOW()
 );
 
@@ -176,7 +165,6 @@ CREATE TABLE attachments (
   height int NOT NULL,
   width int NOT NULL,
   filesize int NOT NULL,
-  created_at timestamp without time zone NOT NULL DEFAULT NOW(),
   updated_at timestamp without time zone NOT NULL DEFAULT NOW()
 );
 
@@ -204,4 +192,8 @@ CREATE TABLE user_attachments (
 );
 CREATE UNIQUE INDEX ON user_attachments (attachment_id, user_id);
 
+
+-- Initialisation --
+
+INSERT INTO guild_categories (name) VALUES ('Music'), ('Entertainment'), ('Science & Tech'), ('Gaming');
 

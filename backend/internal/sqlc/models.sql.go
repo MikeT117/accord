@@ -18,7 +18,6 @@ type Attachment struct {
 	Height        int32
 	Width         int32
 	Filesize      int32
-	CreatedAt     pgtype.Timestamp
 	UpdatedAt     pgtype.Timestamp
 }
 
@@ -30,7 +29,6 @@ type Channel struct {
 	ParentID    pgtype.UUID
 	CreatorID   uuid.UUID
 	GuildID     pgtype.UUID
-	CreatedAt   pgtype.Timestamp
 	UpdatedAt   pgtype.Timestamp
 }
 
@@ -65,7 +63,6 @@ type Guild struct {
 	MemberCount     int32
 	CreatorID       uuid.UUID
 	GuildCategoryID pgtype.UUID
-	CreatedAt       pgtype.Timestamp
 	UpdatedAt       pgtype.Timestamp
 }
 
@@ -76,17 +73,16 @@ type GuildAttachment struct {
 }
 
 type GuildBan struct {
+	ID        uuid.UUID
 	UserID    uuid.UUID
 	GuildID   uuid.UUID
 	Reason    string
 	CreatorID uuid.UUID
-	BannedAt  pgtype.Timestamp
 }
 
 type GuildCategory struct {
-	ID        uuid.UUID
-	Name      string
-	CreatedAt pgtype.Timestamp
+	ID   uuid.UUID
+	Name string
 }
 
 type GuildInvite struct {
@@ -95,7 +91,6 @@ type GuildInvite struct {
 	UsedCount int32
 	UserID    uuid.UUID
 	GuildID   uuid.UUID
-	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
 }
 
@@ -113,7 +108,6 @@ type GuildRole struct {
 	Permissions int32
 	GuildID     uuid.UUID
 	CreatorID   uuid.UUID
-	CreatedAt   pgtype.Timestamp
 	UpdatedAt   pgtype.Timestamp
 }
 
@@ -133,7 +127,6 @@ type OauthAccount struct {
 	Provider      string
 	ProviderToken string
 	ProviderID    string
-	CreatedAt     pgtype.Timestamp
 	UpdatedAt     pgtype.Timestamp
 }
 
@@ -141,7 +134,6 @@ type Relationship struct {
 	ID        uuid.UUID
 	CreatorID uuid.UUID
 	Status    int32
-	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
 }
 
@@ -157,7 +149,6 @@ type User struct {
 	PublicFlags       int32
 	RelationshipCount int32
 	OauthAccountID    uuid.UUID
-	CreatedAt         pgtype.Timestamp
 	UpdatedAt         pgtype.Timestamp
 }
 
@@ -171,12 +162,10 @@ type UserSession struct {
 	Token     string
 	UserID    uuid.UUID
 	ExpiresAt pgtype.Timestamp
-	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
 }
 
 type VoiceChannelState struct {
-	Mute      bool
 	SelfMute  bool
 	SelfDeaf  bool
 	ChannelID uuid.UUID
