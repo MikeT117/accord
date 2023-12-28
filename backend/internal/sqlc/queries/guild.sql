@@ -5,20 +5,19 @@ WITH guilds_cte AS (
     name,
     description,
     member_count,
-    guild_category_id,
-    created_at
+    guild_category_id
     FROM
     guilds
     WHERE
     is_discoverable
     AND
     (CASE
-        WHEN sqlc.narg(before)::timestamp IS NOT NULL THEN created_at < sqlc.narg(before)::timestamp
+        WHEN sqlc.narg(before)::uuid IS NOT NULL THEN id < sqlc.narg(before)::uuid
         ELSE TRUE
     END)
     AND
     (CASE
-        WHEN sqlc.narg(after)::timestamp IS NOT NULL THEN created_at > sqlc.narg(after)::timestamp
+        WHEN sqlc.narg(after)::uuid IS NOT NULL THEN id > sqlc.narg(after)::uuid
         ELSE TRUE
     END)
     AND
@@ -26,31 +25,62 @@ WITH guilds_cte AS (
         WHEN sqlc.narg(name)::text IS NOT NULL THEN name ILIKE sqlc.narg(name)::text
         ELSE TRUE
     END)
+    AND
+    (CASE
+        WHEN sqlc.narg(category_id)::uuid IS NOT NULL THEN guild_category_id = sqlc.narg(category_id)::uuid
+        ELSE TRUE
+    END)
+    ORDER BY
+    CASE
+        WHEN sqlc.narg(after)::uuid IS NOT NULL THEN id
+    END ASC,
+    CASE
+        WHEN sqlc.narg(after)::uuid IS NULL THEN id
+    END DESC
     LIMIT
     @results_limit
 ),
 
 icon_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
-    SELECT id
-    FROM guilds_cte
-  ) AND usage_type = 0
+  SELECT
+  attachment_id, guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
+    SELECT
+    id
+    FROM
+    guilds_cte
+  ) AND
+  usage_type = 0
 ),
 
 banner_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
-    SELECT id FROM guilds_cte
-  ) AND usage_type = 1
+  SELECT
+  attachment_id, guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
+    SELECT
+    id
+    FROM
+    guilds_cte
+  ) AND
+  usage_type = 1
 )
 
-SELECT gcte.*, icte.attachment_id as icon, bcte.attachment_id as banner
-FROM guilds_cte gcte
-LEFT JOIN icon_cte icte ON icte.guild_id = gcte.id
-LEFT JOIN banner_cte bcte ON bcte.guild_id = gcte.id;
+SELECT
+gcte.*,
+icte.attachment_id as icon,
+bcte.attachment_id as banner
+FROM
+guilds_cte gcte
+LEFT JOIN
+icon_cte icte ON icte.guild_id = gcte.id
+LEFT JOIN
+banner_cte bcte ON bcte.guild_id = gcte.id;
 
 
 -- name: GetGuildDiscoverableStatusByID :one
@@ -72,31 +102,55 @@ WITH guild_cte AS (
 ),
 
 icon_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
-    SELECT id
-    FROM guild_cte
-  ) AND usage_type = 0
+  SELECT
+  attachment_id,
+  guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
+    SELECT
+    id
+    FROM
+    guild_cte
+  ) AND
+  usage_type = 0
 ),
 
 banner_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
-    SELECT id FROM guild_cte
-  ) AND usage_type = 1
+  SELECT
+  attachment_id, guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
+    SELECT
+    id
+    FROM
+    guild_cte
+  ) AND
+  usage_type = 1
 )
 
-SELECT gcte.*, icte.attachment_id as icon, bcte.attachment_id as banner
-FROM guild_cte gcte
-LEFT JOIN icon_cte icte ON icte.guild_id = gcte.id
-LEFT JOIN banner_cte bcte ON bcte.guild_id = gcte.id;
+SELECT
+gcte.*,
+icte.attachment_id as icon,
+bcte.attachment_id as banner
+FROM
+guild_cte gcte
+LEFT JOIN
+icon_cte icte ON icte.guild_id = gcte.id
+LEFT JOIN
+banner_cte bcte ON bcte.guild_id = gcte.id;
 
 -- name: CreateGuild :one
-INSERT INTO guilds (name, is_discoverable, creator_id, guild_category_id)
-VALUES (@name, @is_discoverable, @creator_id, @guild_category_id)
-RETURNING *;
+INSERT INTO
+guilds
+(name, is_discoverable, creator_id, guild_category_id)
+VALUES
+(@name, @is_discoverable, @creator_id, @guild_category_id)
+RETURNING
+*;
 
 -- name: UpdateGuild :one
 WITH updated_guild_cte AS (
@@ -114,34 +168,95 @@ WITH updated_guild_cte AS (
 ),
 
 icon_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
+  SELECT
+  attachment_id,
+  guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
     SELECT
     id
     FROM
     updated_guild_cte
-  ) AND usage_type = 0
+  ) AND
+  usage_type = 0
 ),
 
 banner_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
+  SELECT
+  attachment_id,
+  guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
     SELECT
     id
     FROM
     updated_guild_cte
-  ) AND usage_type = 1
+  ) AND
+  usage_type = 1
 )
 
-SELECT ugcte.*, icte.attachment_id as icon, bcte.attachment_id as banner
-FROM updated_guild_cte ugcte
-LEFT JOIN icon_cte icte ON icte.guild_id = ugcte.id
-LEFT JOIN banner_cte bcte ON bcte.guild_id = ugcte.id;
+SELECT
+ugcte.*,
+icte.attachment_id as icon,
+bcte.attachment_id as banner
+FROM
+updated_guild_cte ugcte
+LEFT JOIN
+icon_cte icte ON icte.guild_id = ugcte.id
+LEFT JOIN
+banner_cte bcte ON bcte.guild_id = ugcte.id;
 
 
 -- name: DeleteGuild :exec
 DELETE
-FROM guilds
-WHERE id = @guild_id;
+FROM
+guilds
+WHERE
+id = @guild_id;
+
+-- name: IncrementGuildMemberCount :exec
+UPDATE
+guilds
+SET
+member_count = member_count + 1
+WHERE
+id = @guild_id;
+
+-- name: DecrementGuildMemberCount :exec
+UPDATE
+guilds
+SET
+member_count = (
+    CASE
+        WHEN member_count > 0 THEN member_count - 1
+        ELSE member_count
+    END
+)
+WHERE
+id = @guild_id;
+
+
+-- name: IncrementGuildChannelCount :exec
+UPDATE
+guilds
+SET
+channel_count = channel_count + 1
+WHERE
+id = @guild_id;
+
+-- name: DecrementGuildChannelCount :exec
+UPDATE
+guilds
+SET
+channel_count = (
+    CASE
+        WHEN channel_count > 0 THEN channel_count - 1
+        ELSE channel_count
+    END
+)
+WHERE
+id = @guild_id;

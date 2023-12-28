@@ -13,9 +13,13 @@ import (
 )
 
 const createGuild = `-- name: CreateGuild :one
-INSERT INTO guilds (name, is_discoverable, creator_id, guild_category_id)
-VALUES ($1, $2, $3, $4)
-RETURNING id, name, description, is_discoverable, channel_count, member_count, creator_id, guild_category_id, created_at, updated_at
+INSERT INTO
+guilds
+(name, is_discoverable, creator_id, guild_category_id)
+VALUES
+($1, $2, $3, $4)
+RETURNING
+id, name, description, is_discoverable, channel_count, member_count, creator_id, guild_category_id, updated_at
 `
 
 type CreateGuildParams struct {
@@ -42,16 +46,55 @@ func (q *Queries) CreateGuild(ctx context.Context, arg CreateGuildParams) (Guild
 		&i.MemberCount,
 		&i.CreatorID,
 		&i.GuildCategoryID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
+const decrementGuildChannelCount = `-- name: DecrementGuildChannelCount :exec
+UPDATE
+guilds
+SET
+channel_count = (
+    CASE
+        WHEN channel_count > 0 THEN channel_count - 1
+        ELSE channel_count
+    END
+)
+WHERE
+id = $1
+`
+
+func (q *Queries) DecrementGuildChannelCount(ctx context.Context, guildID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, decrementGuildChannelCount, guildID)
+	return err
+}
+
+const decrementGuildMemberCount = `-- name: DecrementGuildMemberCount :exec
+UPDATE
+guilds
+SET
+member_count = (
+    CASE
+        WHEN member_count > 0 THEN member_count - 1
+        ELSE member_count
+    END
+)
+WHERE
+id = $1
+`
+
+func (q *Queries) DecrementGuildMemberCount(ctx context.Context, guildID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, decrementGuildMemberCount, guildID)
+	return err
+}
+
 const deleteGuild = `-- name: DeleteGuild :exec
 DELETE
-FROM guilds
-WHERE id = $1
+FROM
+guilds
+WHERE
+id = $1
 `
 
 func (q *Queries) DeleteGuild(ctx context.Context, guildID uuid.UUID) error {
@@ -62,7 +105,7 @@ func (q *Queries) DeleteGuild(ctx context.Context, guildID uuid.UUID) error {
 const getGuildByID = `-- name: GetGuildByID :one
 WITH guild_cte AS (
     SELECT
-    id, name, description, is_discoverable, channel_count, member_count, creator_id, guild_category_id, created_at, updated_at
+    id, name, description, is_discoverable, channel_count, member_count, creator_id, guild_category_id, updated_at
     FROM
     guilds
     WHERE
@@ -70,26 +113,46 @@ WITH guild_cte AS (
 ),
 
 icon_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
-    SELECT id
-    FROM guild_cte
-  ) AND usage_type = 0
+  SELECT
+  attachment_id,
+  guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
+    SELECT
+    id
+    FROM
+    guild_cte
+  ) AND
+  usage_type = 0
 ),
 
 banner_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
-    SELECT id FROM guild_cte
-  ) AND usage_type = 1
+  SELECT
+  attachment_id, guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
+    SELECT
+    id
+    FROM
+    guild_cte
+  ) AND
+  usage_type = 1
 )
 
-SELECT gcte.id, gcte.name, gcte.description, gcte.is_discoverable, gcte.channel_count, gcte.member_count, gcte.creator_id, gcte.guild_category_id, gcte.created_at, gcte.updated_at, icte.attachment_id as icon, bcte.attachment_id as banner
-FROM guild_cte gcte
-LEFT JOIN icon_cte icte ON icte.guild_id = gcte.id
-LEFT JOIN banner_cte bcte ON bcte.guild_id = gcte.id
+SELECT
+gcte.id, gcte.name, gcte.description, gcte.is_discoverable, gcte.channel_count, gcte.member_count, gcte.creator_id, gcte.guild_category_id, gcte.updated_at,
+icte.attachment_id as icon,
+bcte.attachment_id as banner
+FROM
+guild_cte gcte
+LEFT JOIN
+icon_cte icte ON icte.guild_id = gcte.id
+LEFT JOIN
+banner_cte bcte ON bcte.guild_id = gcte.id
 `
 
 type GetGuildByIDRow struct {
@@ -101,7 +164,6 @@ type GetGuildByIDRow struct {
 	MemberCount     int32
 	CreatorID       uuid.UUID
 	GuildCategoryID pgtype.UUID
-	CreatedAt       pgtype.Timestamp
 	UpdatedAt       pgtype.Timestamp
 	Icon            pgtype.UUID
 	Banner          pgtype.UUID
@@ -119,7 +181,6 @@ func (q *Queries) GetGuildByID(ctx context.Context, guildID uuid.UUID) (GetGuild
 		&i.MemberCount,
 		&i.CreatorID,
 		&i.GuildCategoryID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Icon,
 		&i.Banner,
@@ -150,20 +211,19 @@ WITH guilds_cte AS (
     name,
     description,
     member_count,
-    guild_category_id,
-    created_at
+    guild_category_id
     FROM
     guilds
     WHERE
     is_discoverable
     AND
     (CASE
-        WHEN $1::timestamp IS NOT NULL THEN created_at < $1::timestamp
+        WHEN $1::uuid IS NOT NULL THEN id < $1::uuid
         ELSE TRUE
     END)
     AND
     (CASE
-        WHEN $2::timestamp IS NOT NULL THEN created_at > $2::timestamp
+        WHEN $2::uuid IS NOT NULL THEN id > $2::uuid
         ELSE TRUE
     END)
     AND
@@ -171,37 +231,69 @@ WITH guilds_cte AS (
         WHEN $3::text IS NOT NULL THEN name ILIKE $3::text
         ELSE TRUE
     END)
+    AND
+    (CASE
+        WHEN $4::uuid IS NOT NULL THEN guild_category_id = $4::uuid
+        ELSE TRUE
+    END)
+    ORDER BY
+    CASE
+        WHEN $2::uuid IS NOT NULL THEN id
+    END ASC,
+    CASE
+        WHEN $2::uuid IS NULL THEN id
+    END DESC
     LIMIT
-    $4
+    $5
 ),
 
 icon_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
-    SELECT id
-    FROM guilds_cte
-  ) AND usage_type = 0
+  SELECT
+  attachment_id, guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
+    SELECT
+    id
+    FROM
+    guilds_cte
+  ) AND
+  usage_type = 0
 ),
 
 banner_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
-    SELECT id FROM guilds_cte
-  ) AND usage_type = 1
+  SELECT
+  attachment_id, guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
+    SELECT
+    id
+    FROM
+    guilds_cte
+  ) AND
+  usage_type = 1
 )
 
-SELECT gcte.id, gcte.name, gcte.description, gcte.member_count, gcte.guild_category_id, gcte.created_at, icte.attachment_id as icon, bcte.attachment_id as banner
-FROM guilds_cte gcte
-LEFT JOIN icon_cte icte ON icte.guild_id = gcte.id
-LEFT JOIN banner_cte bcte ON bcte.guild_id = gcte.id
+SELECT
+gcte.id, gcte.name, gcte.description, gcte.member_count, gcte.guild_category_id,
+icte.attachment_id as icon,
+bcte.attachment_id as banner
+FROM
+guilds_cte gcte
+LEFT JOIN
+icon_cte icte ON icte.guild_id = gcte.id
+LEFT JOIN
+banner_cte bcte ON bcte.guild_id = gcte.id
 `
 
 type GetManyDiscoverableGuildsParams struct {
-	Before       pgtype.Timestamp
-	After        pgtype.Timestamp
+	Before       pgtype.UUID
+	After        pgtype.UUID
 	Name         pgtype.Text
+	CategoryID   pgtype.UUID
 	ResultsLimit int64
 }
 
@@ -211,7 +303,6 @@ type GetManyDiscoverableGuildsRow struct {
 	Description     string
 	MemberCount     int32
 	GuildCategoryID pgtype.UUID
-	CreatedAt       pgtype.Timestamp
 	Icon            pgtype.UUID
 	Banner          pgtype.UUID
 }
@@ -221,6 +312,7 @@ func (q *Queries) GetManyDiscoverableGuilds(ctx context.Context, arg GetManyDisc
 		arg.Before,
 		arg.After,
 		arg.Name,
+		arg.CategoryID,
 		arg.ResultsLimit,
 	)
 	if err != nil {
@@ -236,7 +328,6 @@ func (q *Queries) GetManyDiscoverableGuilds(ctx context.Context, arg GetManyDisc
 			&i.Description,
 			&i.MemberCount,
 			&i.GuildCategoryID,
-			&i.CreatedAt,
 			&i.Icon,
 			&i.Banner,
 		); err != nil {
@@ -248,6 +339,34 @@ func (q *Queries) GetManyDiscoverableGuilds(ctx context.Context, arg GetManyDisc
 		return nil, err
 	}
 	return items, nil
+}
+
+const incrementGuildChannelCount = `-- name: IncrementGuildChannelCount :exec
+UPDATE
+guilds
+SET
+channel_count = channel_count + 1
+WHERE
+id = $1
+`
+
+func (q *Queries) IncrementGuildChannelCount(ctx context.Context, guildID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, incrementGuildChannelCount, guildID)
+	return err
+}
+
+const incrementGuildMemberCount = `-- name: IncrementGuildMemberCount :exec
+UPDATE
+guilds
+SET
+member_count = member_count + 1
+WHERE
+id = $1
+`
+
+func (q *Queries) IncrementGuildMemberCount(ctx context.Context, guildID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, incrementGuildMemberCount, guildID)
+	return err
 }
 
 const updateGuild = `-- name: UpdateGuild :one
@@ -262,35 +381,51 @@ WITH updated_guild_cte AS (
     WHERE
     id = $5
     RETURNING
-    id, name, description, is_discoverable, channel_count, member_count, creator_id, guild_category_id, created_at, updated_at
+    id, name, description, is_discoverable, channel_count, member_count, creator_id, guild_category_id, updated_at
 ),
 
 icon_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
+  SELECT
+  attachment_id,
+  guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
     SELECT
     id
     FROM
     updated_guild_cte
-  ) AND usage_type = 0
+  ) AND
+  usage_type = 0
 ),
 
 banner_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
+  SELECT
+  attachment_id,
+  guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
     SELECT
     id
     FROM
     updated_guild_cte
-  ) AND usage_type = 1
+  ) AND
+  usage_type = 1
 )
 
-SELECT ugcte.id, ugcte.name, ugcte.description, ugcte.is_discoverable, ugcte.channel_count, ugcte.member_count, ugcte.creator_id, ugcte.guild_category_id, ugcte.created_at, ugcte.updated_at, icte.attachment_id as icon, bcte.attachment_id as banner
-FROM updated_guild_cte ugcte
-LEFT JOIN icon_cte icte ON icte.guild_id = ugcte.id
-LEFT JOIN banner_cte bcte ON bcte.guild_id = ugcte.id
+SELECT
+ugcte.id, ugcte.name, ugcte.description, ugcte.is_discoverable, ugcte.channel_count, ugcte.member_count, ugcte.creator_id, ugcte.guild_category_id, ugcte.updated_at,
+icte.attachment_id as icon,
+bcte.attachment_id as banner
+FROM
+updated_guild_cte ugcte
+LEFT JOIN
+icon_cte icte ON icte.guild_id = ugcte.id
+LEFT JOIN
+banner_cte bcte ON bcte.guild_id = ugcte.id
 `
 
 type UpdateGuildParams struct {
@@ -310,7 +445,6 @@ type UpdateGuildRow struct {
 	MemberCount     int32
 	CreatorID       uuid.UUID
 	GuildCategoryID pgtype.UUID
-	CreatedAt       pgtype.Timestamp
 	UpdatedAt       pgtype.Timestamp
 	Icon            pgtype.UUID
 	Banner          pgtype.UUID
@@ -334,7 +468,6 @@ func (q *Queries) UpdateGuild(ctx context.Context, arg UpdateGuildParams) (Updat
 		&i.MemberCount,
 		&i.CreatorID,
 		&i.GuildCategoryID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Icon,
 		&i.Banner,

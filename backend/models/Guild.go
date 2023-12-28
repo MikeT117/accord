@@ -15,7 +15,6 @@ type Guild struct {
 	GuildCategoryID *uuid.UUID     `json:"guildCategoryId"`
 	ChannelCount    int32          `json:"channelCount"`
 	MemberCount     int32          `json:"memberCount"`
-	CreatedAt       time.Time      `json:"createdAt"`
 	UpdatedAt       time.Time      `json:"updatedAt"`
 	Icon            *uuid.UUID     `json:"icon"`
 	Banner          *uuid.UUID     `json:"banner"`
@@ -30,7 +29,6 @@ type DiscoverableGuild struct {
 	Description     string     `json:"description"`
 	MemberCount     int32      `json:"memberCount"`
 	GuildCategoryID *uuid.UUID `json:"guildCategoryId"`
-	CreatedAt       time.Time  `json:"createdAt"`
 	Icon            *uuid.UUID `json:"icon"`
 	Banner          *uuid.UUID `json:"banner"`
 }

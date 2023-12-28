@@ -1,9 +1,10 @@
 package rest_api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
-	"time"
+	"strings"
 
 	"github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
@@ -17,27 +18,27 @@ func (a *api) HandleGuildReadMany(c echo.Context) error {
 	params := &sqlc.GetManyDiscoverableGuildsParams{}
 
 	if len(c.QueryParam("before")) != 0 {
-		i, err := strconv.ParseInt(c.QueryParam("before"), 10, 64)
+		id, err := uuid.Parse(c.QueryParam("before"))
 
 		if err != nil {
-			return NewClientError(err, http.StatusBadRequest, "invalid timestamp")
+			return NewClientError(err, http.StatusBadRequest, "invalid id")
 		}
 
-		params.Before = pgtype.Timestamp{
-			Time:  time.Unix(i, 0),
+		params.Before = pgtype.UUID{
+			Bytes: id,
 			Valid: true,
 		}
 	}
 
 	if len(c.QueryParam("after")) != 0 {
-		i, err := strconv.ParseInt(c.QueryParam("after"), 10, 64)
+		id, err := uuid.Parse(c.QueryParam("before"))
 
 		if err != nil {
-			return NewClientError(err, http.StatusBadRequest, "invalid timestamp")
+			return NewClientError(err, http.StatusBadRequest, "invalid id")
 		}
 
-		params.After = pgtype.Timestamp{
-			Time:  time.Unix(i, 0),
+		params.After = pgtype.UUID{
+			Bytes: id,
 			Valid: true,
 		}
 	}
@@ -58,8 +59,21 @@ func (a *api) HandleGuildReadMany(c echo.Context) error {
 
 	if len(c.QueryParam("name")) != 0 {
 		params.Name = pgtype.Text{
-			String: c.QueryParam("name"),
+			String: fmt.Sprintf("%s%s%s", "%", strings.ReplaceAll(c.QueryParam("name"), "+", " "), "%"),
 			Valid:  true,
+		}
+	}
+
+	if len(c.QueryParam("category_id")) != 0 {
+		id, err := uuid.Parse(c.QueryParam("category_id"))
+
+		if err != nil {
+			return NewClientError(err, http.StatusBadRequest, "invalid category_id")
+		}
+
+		params.CategoryID = pgtype.UUID{
+			Bytes: id,
+			Valid: true,
 		}
 	}
 
@@ -83,7 +97,7 @@ func (a *api) HandleGuildCreate(c echo.Context) error {
 		return NewClientError(nil, http.StatusBadRequest, reason)
 	}
 
-	cctx := c.(*APIContext)
+	cctx := c.(*CustomCtx)
 	reqCtx := c.Request().Context()
 
 	dbTx, err := a.Pool.Begin(reqCtx)
@@ -153,9 +167,9 @@ func (a *api) HandleGuildCreate(c echo.Context) error {
 		return NewServerError(err, "tx.CreatGuildRole")
 	}
 
-	rowsAffected, err := tx.AssignRoleToManyUsers(reqCtx, sqlc.AssignRoleToManyUsersParams{
-		RoleID:  sqlOwnerRole.ID,
-		UserIds: []uuid.UUID{sqlGuildOwner.UserID},
+	rowsAffected, err := tx.AssignManyRolesToUser(reqCtx, sqlc.AssignManyRolesToUserParams{
+		RoleIds: []uuid.UUID{sqlOwnerRole.ID, sqlDefaultRole.ID},
+		UserID:  sqlGuildOwner.UserID,
 		GuildID: sqlGuild.ID,
 	})
 
@@ -163,21 +177,7 @@ func (a *api) HandleGuildCreate(c echo.Context) error {
 		return NewServerError(err, "tx.AssignRoleToGuildMember")
 	}
 
-	if rowsAffected != 1 {
-		return NewClientError(nil, http.StatusNotFound, "Row/Member not found")
-	}
-
-	rowsAffected, err = tx.AssignRoleToManyUsers(reqCtx, sqlc.AssignRoleToManyUsersParams{
-		RoleID:  sqlDefaultRole.ID,
-		UserIds: []uuid.UUID{sqlGuildOwner.UserID},
-		GuildID: sqlGuild.ID,
-	})
-
-	if err != nil {
-		return NewServerError(err, "tx.AssignRoleToGuildMember")
-	}
-
-	if rowsAffected != 1 {
+	if rowsAffected != 2 {
 		return NewClientError(nil, http.StatusNotFound, "Row/Member not found")
 	}
 
@@ -237,7 +237,7 @@ func (a *api) HandleGuildUpdate(c echo.Context) error {
 		Name:            body.Name,
 		Description:     body.Description,
 		IsDiscoverable:  body.IsDiscoverable,
-		GuildCategoryID: body.GuildCategoryID,
+		GuildCategoryID: body.CategoryID,
 		GuildID:         guildID,
 	})
 
@@ -295,7 +295,7 @@ func (a *api) HandleGuildUpdate(c echo.Context) error {
 		Op:              "GUILD_UPDATE",
 		Version:         0,
 		RoleIDs:         []uuid.UUID{sqlDefaultRoleId},
-		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		ExcludedUserIDs: []uuid.UUID{c.(*CustomCtx).UserID},
 		Data:            &updatedGuild,
 	})
 
@@ -309,21 +309,21 @@ func (a *api) HandleGuildDelete(c echo.Context) error {
 		return NewClientError(err, http.StatusBadRequest, "Invalid guild ID")
 	}
 
-	if err := a.Queries.DeleteGuild(c.Request().Context(), guildID); err != nil {
-		return NewServerError(err, "a.Queries.DeleteGuild")
-	}
-
 	sqlDefaultRoleId, err := a.Queries.GetDefaultGuildRole(c.Request().Context(), guildID)
 
 	if err != nil {
 		return NewServerError(err, "a.Queries.GetDefaultGuildRole")
 	}
 
+	if err := a.Queries.DeleteGuild(c.Request().Context(), guildID); err != nil {
+		return NewServerError(err, "a.Queries.DeleteGuild")
+	}
+
 	a.MessageQueue.PublishForwardPayload(&message_queue.ForwardedPayload{
 		Op:              "GUILD_DELETE",
 		Version:         0,
 		RoleIDs:         []uuid.UUID{sqlDefaultRoleId},
-		ExcludedUserIDs: []uuid.UUID{c.(*APIContext).UserID},
+		ExcludedUserIDs: []uuid.UUID{c.(*CustomCtx).UserID},
 		Data: &models.DeletedGuild{
 			ID: guildID,
 		},
