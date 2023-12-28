@@ -36,6 +36,7 @@ func (a *api) CreateRouterAndMountRoutes() {
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "remote_ip=${remote_ip}, method=${method}, uri=${uri}, status=${status}, latency=${latency_human}\n",
 	}))
+	e.Use(middleware.Gzip())
 	e.Use(middleware.RequestID())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:  []string{fmt.Sprintf("https://%s", os.Getenv("HOST"))},
@@ -49,6 +50,9 @@ func (a *api) CreateRouterAndMountRoutes() {
 	// Authentication routes
 	V1.GET("/auth/github", a.HandleGithubAuthRedirect)
 	V1.GET("/auth/github/callback", a.HandleGithubAuthCallback)
+
+	V1.GET("/auth/gitlab", a.HandleGitlabAuthRedirect)
+	V1.GET("/auth/gitlab/callback", a.HandleGitlabAuthCallback)
 
 	// Routes that require an authentciated request
 	AUTHENTICATED := V1.Group("")
@@ -80,7 +84,7 @@ func (a *api) CreateRouterAndMountRoutes() {
 	CHANNEL_PERMISSION_CREATE_CHANNEL_MESSAGE := AUTHENTICATED.Group("")
 	CHANNEL_PERMISSION_CREATE_CHANNEL_MESSAGE.Use(a.RequiredChannelPermission(constants.CREATE_CHANNEL_MESSAGE))
 	CHANNEL_PERMISSION_CREATE_CHANNEL_MESSAGE.POST("/channels/:channel_id/messages", a.HandleChannelMessageCreate)
-	CHANNEL_PERMISSION_CREATE_CHANNEL_MESSAGE.DELETE("/channels/:channel_id/:message_id", a.HandleOwnerChannelMessageDelete)
+	CHANNEL_PERMISSION_CREATE_CHANNEL_MESSAGE.DELETE("/channels/:channel_id/messages/:message_id", a.HandleOwnerChannelMessageDelete)
 	CHANNEL_PERMISSION_CREATE_CHANNEL_MESSAGE.PATCH("/channels/:channel_id/messages/:message_id", a.HandleChannelMessageUpdate)
 
 	CHANNEL_PERMISSION_VIEW_GUILD_CHANNEL := AUTHENTICATED.Group("")
@@ -128,8 +132,8 @@ func (a *api) CreateRouterAndMountRoutes() {
 	GUILD_PERMISSION_MANAGE_GUILD.DELETE("/guilds/:guild_id/members/:user_id", a.HandleGuildMemberDelete)
 
 	GUILD_PERMISSION_MANAGE_GUILD.GET("/guilds/:guild_id/bans", a.HandleGuildBansReadMany)
-	GUILD_PERMISSION_MANAGE_GUILD.PUT("/guilds/:guild_id/bans/:user_id", a.HandleGuildBanCreate)
-	GUILD_PERMISSION_MANAGE_GUILD.DELETE("/guilds/:guild_id/bans/:user_id", a.HandleGuildBanDelete)
+	GUILD_PERMISSION_MANAGE_GUILD.POST("/guilds/:guild_id/bans", a.HandleGuildBanCreate)
+	GUILD_PERMISSION_MANAGE_GUILD.DELETE("/guilds/:guild_id/bans/:ban_id", a.HandleGuildBanDelete)
 
 	// Routes that require an authentciated request and have the VIEW_GUILD_MEMBERS permission
 	GUILD_PERMISSION_VIEW_MEMBERS := AUTHENTICATED.Group("")
