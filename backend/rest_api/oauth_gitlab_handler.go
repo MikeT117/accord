@@ -2,6 +2,7 @@ package rest_api
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -44,17 +45,20 @@ func (a *api) HandleGitlabAuthCallback(c echo.Context) error {
 	token, err := gitlab.Exchange(ctx, code)
 
 	if err != nil {
+		log.Println(err)
 		return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("https://%s?error=unknown+error+occurred", os.Getenv("HOST")))
 	}
 
 	profile, err := authentication.GetGitlabProfile(token)
 	if err != nil {
+		log.Println(err)
 		return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("https://%s?error=unknown+error+occurred", os.Getenv("HOST")))
 	}
 
 	tx, err := a.Pool.Begin(ctx)
 
 	if err != nil {
+		log.Println(err)
 		return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("https://%s?error=unknown+error+occurred", os.Getenv("HOST")))
 	}
 
@@ -70,6 +74,7 @@ func (a *api) HandleGitlabAuthCallback(c echo.Context) error {
 	})
 
 	if err != nil {
+		log.Println(err)
 		if database.IsPGErrorConstraint(err, "oauth_accounts_email_key") {
 			return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("https://%s?error=duplicate+account", os.Getenv("HOST")))
 		}
@@ -83,6 +88,7 @@ func (a *api) HandleGitlabAuthCallback(c echo.Context) error {
 	})
 
 	if err != nil {
+		log.Println(err)
 		return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("https://%s?error=unknown+error+occurred", os.Getenv("HOST")))
 	}
 
@@ -91,6 +97,7 @@ func (a *api) HandleGitlabAuthCallback(c echo.Context) error {
 	_, accesstoken, err := authentication.CreateAndSignToken(user.ID.String(), []byte(os.Getenv("JWT_ACCESSTOKEN_KEY")), requestId, time.Now().Add(time.Hour))
 
 	if err != nil {
+		log.Println(err)
 		return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("https://%s?error=unknown+error+occurred", os.Getenv("HOST")))
 	}
 
@@ -98,6 +105,7 @@ func (a *api) HandleGitlabAuthCallback(c echo.Context) error {
 	_, refreshtoken, err := authentication.CreateAndSignToken(user.ID.String(), []byte(os.Getenv("JWT_REFRESHTOKEN_KEY")), requestId, expiresAt)
 
 	if err != nil {
+		log.Println(err)
 		return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("https://%s?error=unknown+error+occurred", os.Getenv("HOST")))
 	}
 
@@ -111,6 +119,7 @@ func (a *api) HandleGitlabAuthCallback(c echo.Context) error {
 	})
 
 	if err != nil {
+		log.Println(err)
 		return c.Redirect(http.StatusTemporaryRedirect, fmt.Sprintf("https://%s?error=unknown+error+occurred", os.Getenv("HOST")))
 	}
 

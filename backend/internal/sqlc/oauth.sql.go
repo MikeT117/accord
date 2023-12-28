@@ -10,10 +10,16 @@ import (
 )
 
 const createOrGetOAuth = `-- name: CreateOrGetOAuth :one
-INSERT INTO oauth_accounts (email, provider, provider_token, provider_id)
-VALUES ($1, $2, $3, $4)
-ON CONFLICT ON CONSTRAINT oauth_accounts_provider_provider_id_key DO UPDATE SET provider_token = $3
-RETURNING id, email, provider, provider_token, provider_id, created_at, updated_at
+INSERT INTO
+oauth_accounts
+(email, provider, provider_token, provider_id)
+VALUES
+($1, $2, $3, $4)
+ON CONFLICT ON CONSTRAINT oauth_accounts_provider_provider_id_key DO UPDATE
+SET
+provider_token = $3
+RETURNING
+id, email, provider, provider_token, provider_id, updated_at
 `
 
 type CreateOrGetOAuthParams struct {
@@ -37,7 +43,6 @@ func (q *Queries) CreateOrGetOAuth(ctx context.Context, arg CreateOrGetOAuthPara
 		&i.Provider,
 		&i.ProviderToken,
 		&i.ProviderID,
-		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err

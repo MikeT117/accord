@@ -12,6 +12,5 @@ type OAuthAccount struct {
 	Provider      string    `json:"provider"`
 	ProviderToken string    `json:"providerToken"`
 	ProviderID    string    `json:"providerId"`
-	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`
 }
