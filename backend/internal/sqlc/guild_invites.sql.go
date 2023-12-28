@@ -13,11 +13,20 @@ import (
 )
 
 const createGuildInvite = `-- name: CreateGuildInvite :one
-INSERT INTO guild_invites (user_id, guild_id)
-SELECT gm.user_id, gm.guild_id
-FROM guild_members gm
-WHERE gm.user_id = $1 AND gm.guild_id = $2
-RETURNING id
+INSERT INTO
+guild_invites
+(user_id, guild_id)
+SELECT
+gm.user_id,
+gm.guild_id
+FROM
+guild_members gm
+WHERE
+gm.user_id = $1
+AND
+gm.guild_id = $2
+RETURNING
+id
 `
 
 type CreateGuildInviteParams struct {
@@ -35,7 +44,9 @@ func (q *Queries) CreateGuildInvite(ctx context.Context, arg CreateGuildInvitePa
 const deleteGuildInvite = `-- name: DeleteGuildInvite :execrows
 DELETE 
 FROM guild_invites
-WHERE id = $1 AND guild_id = $2
+WHERE id = $1
+AND
+guild_id = $2
 `
 
 type DeleteGuildInviteParams struct {
@@ -69,24 +80,36 @@ WITH guild_guild_invite_cte AS (
 ),
 
 icon_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
-    SELECT guild_id
-    FROM
-    guild_guild_invite_cte
-  ) AND usage_type = 0
-),
-
-banner_cte AS (
-  SELECT attachment_id, guild_id
-  FROM guild_attachments ga
-  WHERE guild_id IN (
+  SELECT
+  attachment_id,
+  guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
     SELECT
     guild_id
     FROM
     guild_guild_invite_cte
-  ) AND usage_type = 1
+  )
+  AND
+  usage_type = 0
+),
+
+banner_cte AS (
+  SELECT
+  attachment_id,
+  guild_id
+  FROM
+  guild_attachments ga
+  WHERE
+  guild_id IN (
+    SELECT
+    guild_id
+    FROM
+    guild_guild_invite_cte
+  ) AND
+  usage_type = 1
 )
 
 SELECT
@@ -133,7 +156,6 @@ SELECT
 gi.id,
 gi.flags,
 gi.used_count,
-gi.created_at,
 gi.updated_at,
 gi.user_id,
 CASE
@@ -143,11 +165,19 @@ END::text AS display_name,
 u.username,
 u.public_flags,
 ua.attachment_id
-FROM guild_invites gi
-INNER JOIN guild_members gm ON gm.user_id = gi.user_id AND gm.guild_id = gi.guild_id
-INNER JOIN users u ON u.id = gi.user_id
-LEFT JOIN user_attachments ua ON ua.user_id = gi.user_id
-WHERE gi.guild_id = $1 AND
+FROM
+guild_invites gi
+INNER JOIN
+guild_members gm ON gm.user_id = gi.user_id
+AND
+gm.guild_id = gi.guild_id
+INNER JOIN
+users u ON u.id = gi.user_id
+LEFT JOIN
+user_attachments ua ON ua.user_id = gi.user_id
+WHERE
+gi.guild_id = $1
+AND
     (CASE
         WHEN $2::uuid IS NOT NULL THEN gi.id < $2::uuid
         ELSE TRUE
@@ -157,7 +187,8 @@ WHERE gi.guild_id = $1 AND
         WHEN $3::uuid IS NOT NULL THEN gi.id > $3::uuid
         ELSE TRUE
     END)
-ORDER BY gi.id DESC
+ORDER BY
+gi.id DESC
 LIMIT $4
 `
 
@@ -172,7 +203,6 @@ type GetManyGuildInvitesByGuildIDRow struct {
 	ID           uuid.UUID
 	Flags        int16
 	UsedCount    int32
-	CreatedAt    pgtype.Timestamp
 	UpdatedAt    pgtype.Timestamp
 	UserID       uuid.UUID
 	DisplayName  string
@@ -199,7 +229,6 @@ func (q *Queries) GetManyGuildInvitesByGuildID(ctx context.Context, arg GetManyG
 			&i.ID,
 			&i.Flags,
 			&i.UsedCount,
-			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.UserID,
 			&i.DisplayName,

@@ -10,7 +10,6 @@ type GuildInvite struct {
 	ID        uuid.UUID   `json:"id"`
 	Flags     int16       `json:"flags"`
 	UsedCount int32       `json:"usedCount"`
-	CreatedAt time.Time   `json:"createdAt"`
 	UpdatedAt time.Time   `json:"updatedAt"`
 	Creator   UserLimited `json:"creator"`
 }

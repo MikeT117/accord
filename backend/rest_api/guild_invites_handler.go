@@ -78,7 +78,7 @@ func (a *api) HandleGuildInviteCreate(c echo.Context) error {
 	}
 
 	inviteID, err := a.Queries.CreateGuildInvite(c.Request().Context(), sqlc.CreateGuildInviteParams{
-		UserID:  c.(*APIContext).UserID,
+		UserID:  c.(*CustomCtx).UserID,
 		GuildID: guildID,
 	})
 
