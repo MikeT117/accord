@@ -7,6 +7,7 @@ import (
 	sqlc "github.com/MikeT117/accord/backend/internal/sqlc"
 	models "github.com/MikeT117/accord/backend/models"
 	uuid "github.com/google/uuid"
+	pgtype "github.com/jackc/pgx/v5/pgtype"
 )
 
 type ConverterImpl struct{}
@@ -18,7 +19,6 @@ func (c *ConverterImpl) ConvertGetManyDiscoverableGuildsRowToDiscoverableGuild(s
 	modelsDiscoverableGuild.Description = source.Description
 	modelsDiscoverableGuild.MemberCount = source.MemberCount
 	modelsDiscoverableGuild.GuildCategoryID = goverter.PGTypeUUIDToNullableUUID(source.GuildCategoryID)
-	modelsDiscoverableGuild.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsDiscoverableGuild.Icon = goverter.PGTypeUUIDToNullableUUID(source.Icon)
 	modelsDiscoverableGuild.Banner = goverter.PGTypeUUIDToNullableUUID(source.Banner)
 	return modelsDiscoverableGuild
@@ -42,6 +42,15 @@ func (c *ConverterImpl) ConvertGetUserByIDRowToUser(source sqlc.GetUserByIDRow) 
 	modelsUserLimited.PublicFlags = source.PublicFlags
 	return modelsUserLimited
 }
+func (c *ConverterImpl) ConvertGetUserByUsernameRowToUser(source sqlc.GetUserByUsernameRow) models.UserLimited {
+	var modelsUserLimited models.UserLimited
+	modelsUserLimited.ID = source.ID
+	modelsUserLimited.Avatar = goverter.PGTypeUUIDToNullableUUID(source.AttachmentID)
+	modelsUserLimited.DisplayName = source.DisplayName
+	modelsUserLimited.Username = source.Username
+	modelsUserLimited.PublicFlags = source.PublicFlags
+	return modelsUserLimited
+}
 func (c *ConverterImpl) ConvertSQLCChannelToGuildChannel(source sqlc.Channel) models.GuildChannel {
 	var modelsGuildChannel models.GuildChannel
 	modelsGuildChannel.ID = c.uuidUUIDToUuidUUID(source.ID)
@@ -49,9 +58,8 @@ func (c *ConverterImpl) ConvertSQLCChannelToGuildChannel(source sqlc.Channel) mo
 	modelsGuildChannel.GuildID = goverter.ConvertPGTypeUUIDToUUID(source.GuildID)
 	modelsGuildChannel.Topic = source.Topic
 	modelsGuildChannel.ChannelType = source.ChannelType
-	modelsGuildChannel.ParentID = source.ParentID
+	modelsGuildChannel.ParentID = c.pgtypeUUIDToPgtypeUUID(source.ParentID)
 	modelsGuildChannel.CreatorID = c.uuidUUIDToUuidUUID(source.CreatorID)
-	modelsGuildChannel.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsGuildChannel.UpdatedAt = goverter.PGTypeTimestampToTime(source.UpdatedAt)
 	return modelsGuildChannel
 }
@@ -64,7 +72,6 @@ func (c *ConverterImpl) ConvertSQLCChannelToPrivateChannel(source sqlc.Channel) 
 	modelsPrivateChannel.Topic = &pString2
 	modelsPrivateChannel.ChannelType = source.ChannelType
 	modelsPrivateChannel.CreatorID = c.uuidUUIDToUuidUUID(source.CreatorID)
-	modelsPrivateChannel.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsPrivateChannel.UpdatedAt = goverter.PGTypeTimestampToTime(source.UpdatedAt)
 	return modelsPrivateChannel
 }
@@ -74,7 +81,8 @@ func (c *ConverterImpl) ConvertSQLCChannelToUpdatedChannel(source sqlc.Channel) 
 	modelsUpdatedChannel.Name = source.Name
 	modelsUpdatedChannel.Topic = source.Topic
 	modelsUpdatedChannel.ChannelType = source.ChannelType
-	modelsUpdatedChannel.GuildID = source.GuildID
+	modelsUpdatedChannel.GuildID = c.pgtypeUUIDToPgtypeUUID(source.GuildID)
+	modelsUpdatedChannel.ParentID = c.pgtypeUUIDToPgtypeUUID(source.ParentID)
 	return modelsUpdatedChannel
 }
 func (c *ConverterImpl) ConvertSQLCCreateChannelMessageRowToMessage(source sqlc.CreateChannelMessageRow) models.ChannelMessage {
@@ -92,7 +100,6 @@ func (c *ConverterImpl) ConvertSQLCCreateChannelMessageRowToMessage(source sqlc.
 }
 func (c *ConverterImpl) ConvertSQLCCreateVoiceChannelStateRowToVoiceChannelState(source sqlc.CreateVoiceChannelStateRow) models.VoiceChannelState {
 	var modelsVoiceChannelState models.VoiceChannelState
-	modelsVoiceChannelState.Mute = source.Mute
 	modelsVoiceChannelState.SelfMute = source.SelfMute
 	modelsVoiceChannelState.SelfDeaf = source.SelfDeaf
 	modelsVoiceChannelState.ChannelID = c.uuidUUIDToUuidUUID(source.ChannelID)
@@ -110,7 +117,6 @@ func (c *ConverterImpl) ConvertSQLCGetGuildByIDRowToGuild(source sqlc.GetGuildBy
 	modelsGuild.GuildCategoryID = goverter.PGTypeUUIDToNullableUUID(source.GuildCategoryID)
 	modelsGuild.ChannelCount = source.ChannelCount
 	modelsGuild.MemberCount = source.MemberCount
-	modelsGuild.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsGuild.UpdatedAt = goverter.PGTypeTimestampToTime(source.UpdatedAt)
 	modelsGuild.Icon = goverter.PGTypeUUIDToNullableUUID(source.Icon)
 	modelsGuild.Banner = goverter.PGTypeUUIDToNullableUUID(source.Banner)
@@ -170,8 +176,8 @@ func (c *ConverterImpl) ConvertSQLCGetManyChannelMessagesByChannelIDRowsToManyMe
 }
 func (c *ConverterImpl) ConvertSQLCGetManyGuildBansByGuildIDRowToGuildBan(source sqlc.GetManyGuildBansByGuildIDRow) models.GuildBan {
 	var modelsGuildBan models.GuildBan
+	modelsGuildBan.ID = c.uuidUUIDToUuidUUID(source.ID)
 	modelsGuildBan.Reason = source.Reason
-	modelsGuildBan.BannedAt = goverter.PGTypeTimestampToTime(source.BannedAt)
 	modelsGuildBan.User = goverter.GetManyGuildBansByGuildIDRowToUser(source)
 	return modelsGuildBan
 }
@@ -200,7 +206,6 @@ func (c *ConverterImpl) ConvertSQLCGetManyGuildInvitesByGuildIDRowToGuildInvite(
 	modelsGuildInvite.ID = c.uuidUUIDToUuidUUID(source.ID)
 	modelsGuildInvite.Flags = source.Flags
 	modelsGuildInvite.UsedCount = source.UsedCount
-	modelsGuildInvite.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsGuildInvite.UpdatedAt = goverter.PGTypeTimestampToTime(source.UpdatedAt)
 	modelsGuildInvite.Creator = goverter.ConvertGetManyGuildInvitesByGuildIDRowToGuildInviteToCreator(source)
 	return modelsGuildInvite
@@ -254,7 +259,6 @@ func (c *ConverterImpl) ConvertSQLCGetManyUserRelationshipsByUserIDRowToUserRela
 	modelsUserRelationship.ID = c.uuidUUIDToUuidUUID(source.ID)
 	modelsUserRelationship.CreatorID = c.uuidUUIDToUuidUUID(source.CreatorID)
 	modelsUserRelationship.Status = source.Status
-	modelsUserRelationship.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsUserRelationship.UpdatedAt = goverter.PGTypeTimestampToTime(source.UpdatedAt)
 	modelsUserRelationship.User = goverter.GetManyUserRelationshipsByUserIDRowToUser(source)
 	return modelsUserRelationship
@@ -273,7 +277,6 @@ func (c *ConverterImpl) ConvertSQLCGetManyUserSessionsByIDRowToUserSession(sourc
 	var modelsUserSessionLimited models.UserSessionLimited
 	modelsUserSessionLimited.ID = c.uuidUUIDToUuidUUID(source.ID)
 	modelsUserSessionLimited.IsCurrentSession = source.IsCurrentSession
-	modelsUserSessionLimited.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsUserSessionLimited.ExpiresAt = goverter.PGTypeTimestampToTime(source.ExpiresAt)
 	return modelsUserSessionLimited
 }
@@ -312,7 +315,6 @@ func (c *ConverterImpl) ConvertSQLCGetUserProfileByIDAndGuildIDRowToUserProfileW
 	modelsUserProfileWithGuildMember.DisplayName = source.DisplayName
 	modelsUserProfileWithGuildMember.Username = source.Username
 	modelsUserProfileWithGuildMember.PublicFlags = source.PublicFlags
-	modelsUserProfileWithGuildMember.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsUserProfileWithGuildMember.Avatar = goverter.PGTypeUUIDToNullableUUID(source.AttachmentID)
 	modelsUserProfileWithGuildMember.MutualGuilds = source.MutualGuilds
 	modelsUserProfileWithGuildMember.GuildMember = c.sqlcGetUserProfileByIDAndGuildIDRowToModelsGuildMemberMinimal(source)
@@ -324,13 +326,19 @@ func (c *ConverterImpl) ConvertSQLCGetUserProfileByIDRowToUserProfile(source sql
 	modelsUserProfile.DisplayName = source.DisplayName
 	modelsUserProfile.Username = source.Username
 	modelsUserProfile.PublicFlags = source.PublicFlags
-	modelsUserProfile.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsUserProfile.Avatar = goverter.PGTypeUUIDToNullableUUID(source.AttachmentID)
 	modelsUserProfile.MutualGuilds = source.MutualGuilds
 	return modelsUserProfile
 }
-func (c *ConverterImpl) ConvertSQLCGuildCategoryToGuildCategories(source []sqlc.GuildCategory) []sqlc.GuildCategory {
-	return source
+func (c *ConverterImpl) ConvertSQLCGuildCategoryToGuildCategories(source []sqlc.GuildCategory) []models.GuildCategory {
+	var modelsGuildCategoryList []models.GuildCategory
+	if source != nil {
+		modelsGuildCategoryList = make([]models.GuildCategory, len(source))
+		for i := 0; i < len(source); i++ {
+			modelsGuildCategoryList[i] = c.sqlcGuildCategoryToModelsGuildCategory(source[i])
+		}
+	}
+	return modelsGuildCategoryList
 }
 func (c *ConverterImpl) ConvertSQLCGuildCategoryToGuildCategory(source sqlc.GuildCategory) sqlc.GuildCategory {
 	return source
@@ -350,7 +358,6 @@ func (c *ConverterImpl) ConvertSQLCGuildRoleToGuildRole(source sqlc.GuildRole) m
 	modelsGuildRole.Permissions = source.Permissions
 	modelsGuildRole.GuildID = c.uuidUUIDToUuidUUID(source.GuildID)
 	modelsGuildRole.CreatorID = c.uuidUUIDToUuidUUID(source.CreatorID)
-	modelsGuildRole.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsGuildRole.UpdatedAt = goverter.PGTypeTimestampToTime(source.UpdatedAt)
 	return modelsGuildRole
 }
@@ -374,44 +381,14 @@ func (c *ConverterImpl) ConvertSQLCGuildToGuild(source sqlc.Guild) models.Guild 
 	modelsGuild.GuildCategoryID = goverter.PGTypeUUIDToNullableUUID(source.GuildCategoryID)
 	modelsGuild.ChannelCount = source.ChannelCount
 	modelsGuild.MemberCount = source.MemberCount
-	modelsGuild.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsGuild.UpdatedAt = goverter.PGTypeTimestampToTime(source.UpdatedAt)
 	return modelsGuild
-}
-func (c *ConverterImpl) ConvertSQLCLinkRelationshipUserRowToUserLimited(source sqlc.LinkRelationshipUserRow) models.UserLimited {
-	var modelsUserLimited models.UserLimited
-	modelsUserLimited.ID = c.uuidUUIDToUuidUUID(source.ID)
-	modelsUserLimited.Avatar = goverter.PGTypeUUIDToNullableUUID(source.AttachmentID)
-	modelsUserLimited.DisplayName = source.DisplayName
-	modelsUserLimited.Username = source.Username
-	modelsUserLimited.PublicFlags = source.PublicFlags
-	return modelsUserLimited
-}
-func (c *ConverterImpl) ConvertSQLCLinkRelationshipUsersRowToUserLimited(source sqlc.LinkManyRelationshipUsersRow) models.UserLimited {
-	var modelsUserLimited models.UserLimited
-	modelsUserLimited.ID = c.uuidUUIDToUuidUUID(source.ID)
-	modelsUserLimited.Avatar = goverter.PGTypeUUIDToNullableUUID(source.AttachmentID)
-	modelsUserLimited.DisplayName = source.DisplayName
-	modelsUserLimited.Username = source.Username
-	modelsUserLimited.PublicFlags = source.PublicFlags
-	return modelsUserLimited
-}
-func (c *ConverterImpl) ConvertSQLCLinkRelationshipUsersRowToUsersLimited(source []sqlc.LinkManyRelationshipUsersRow) []models.UserLimited {
-	var modelsUserLimitedList []models.UserLimited
-	if source != nil {
-		modelsUserLimitedList = make([]models.UserLimited, len(source))
-		for i := 0; i < len(source); i++ {
-			modelsUserLimitedList[i] = c.ConvertSQLCLinkRelationshipUsersRowToUserLimited(source[i])
-		}
-	}
-	return modelsUserLimitedList
 }
 func (c *ConverterImpl) ConvertSQLCRelationshipToRelationship(source sqlc.Relationship) models.UserRelationship {
 	var modelsUserRelationship models.UserRelationship
 	modelsUserRelationship.ID = c.uuidUUIDToUuidUUID(source.ID)
 	modelsUserRelationship.CreatorID = c.uuidUUIDToUuidUUID(source.CreatorID)
 	modelsUserRelationship.Status = source.Status
-	modelsUserRelationship.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsUserRelationship.UpdatedAt = goverter.PGTypeTimestampToTime(source.UpdatedAt)
 	return modelsUserRelationship
 }
@@ -432,6 +409,15 @@ func (c *ConverterImpl) ConvertSQLCUpdateUserRowToUpdateUser(source sqlc.UpdateU
 	modelsUpdatedUser.PublicFlags = source.PublicFlags
 	return modelsUpdatedUser
 }
+func (c *ConverterImpl) ConvertSQLCVoiceChannelStateToUpdatedVoiceChannelState(source sqlc.VoiceChannelState) models.UpdatedVoiceChannelState {
+	var modelsUpdatedVoiceChannelState models.UpdatedVoiceChannelState
+	modelsUpdatedVoiceChannelState.SelfMute = source.SelfMute
+	modelsUpdatedVoiceChannelState.SelfDeaf = source.SelfDeaf
+	modelsUpdatedVoiceChannelState.ChannelID = c.uuidUUIDToUuidUUID(source.ChannelID)
+	modelsUpdatedVoiceChannelState.GuildID = c.uuidUUIDToUuidUUID(source.GuildID)
+	modelsUpdatedVoiceChannelState.UserID = c.uuidUUIDToUuidUUID(source.UserID)
+	return modelsUpdatedVoiceChannelState
+}
 func (c *ConverterImpl) ConvertSQLUpdateGuildRowToUpdatedGuild(source sqlc.UpdateGuildRow) models.UpdatedGuild {
 	var modelsUpdatedGuild models.UpdatedGuild
 	modelsUpdatedGuild.ID = c.uuidUUIDToUuidUUID(source.ID)
@@ -443,6 +429,9 @@ func (c *ConverterImpl) ConvertSQLUpdateGuildRowToUpdatedGuild(source sqlc.Updat
 	modelsUpdatedGuild.GuildCategoryID = goverter.PGTypeUUIDToNullableUUID(source.GuildCategoryID)
 	return modelsUpdatedGuild
 }
+func (c *ConverterImpl) pgtypeUUIDToPgtypeUUID(source pgtype.UUID) pgtype.UUID {
+	return source
+}
 func (c *ConverterImpl) sqlcGetManyGuildChannelsByGuildIDRowToModelsGuildChannel(source sqlc.GetManyGuildChannelsByGuildIDRow) models.GuildChannel {
 	var modelsGuildChannel models.GuildChannel
 	modelsGuildChannel.ID = c.uuidUUIDToUuidUUID(source.ID)
@@ -450,9 +439,8 @@ func (c *ConverterImpl) sqlcGetManyGuildChannelsByGuildIDRowToModelsGuildChannel
 	modelsGuildChannel.GuildID = goverter.ConvertPGTypeUUIDToUUID(source.GuildID)
 	modelsGuildChannel.Topic = source.Topic
 	modelsGuildChannel.ChannelType = source.ChannelType
-	modelsGuildChannel.ParentID = source.ParentID
+	modelsGuildChannel.ParentID = c.pgtypeUUIDToPgtypeUUID(source.ParentID)
 	modelsGuildChannel.CreatorID = c.uuidUUIDToUuidUUID(source.CreatorID)
-	modelsGuildChannel.CreatedAt = goverter.PGTypeTimestampToTime(source.CreatedAt)
 	modelsGuildChannel.UpdatedAt = goverter.PGTypeTimestampToTime(source.UpdatedAt)
 	modelsGuildChannel.Roles = source.Roles
 	return modelsGuildChannel
@@ -462,6 +450,12 @@ func (c *ConverterImpl) sqlcGetUserProfileByIDAndGuildIDRowToModelsGuildMemberMi
 	modelsGuildMemberMinimal.JoinedAt = goverter.PGTypeTimestampToTime(source.JoinedAt)
 	modelsGuildMemberMinimal.Roles = source.Roles
 	return modelsGuildMemberMinimal
+}
+func (c *ConverterImpl) sqlcGuildCategoryToModelsGuildCategory(source sqlc.GuildCategory) models.GuildCategory {
+	var modelsGuildCategory models.GuildCategory
+	modelsGuildCategory.ID = c.uuidUUIDToUuidUUID(source.ID)
+	modelsGuildCategory.Name = source.Name
+	return modelsGuildCategory
 }
 func (c *ConverterImpl) uuidUUIDToUuidUUID(source uuid.UUID) uuid.UUID {
 	return source

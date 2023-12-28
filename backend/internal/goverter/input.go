@@ -79,10 +79,13 @@ type Converter interface {
 	// goverter:map AttachmentID Avatar
 	ConvertGetUserByIDRowToUser(source sqlc.GetUserByIDRow) models.UserLimited
 
+	// goverter:map AttachmentID Avatar
+	ConvertGetUserByUsernameRowToUser(source sqlc.GetUserByUsernameRow) models.UserLimited
+
 	ConvertSQLUpdateGuildRowToUpdatedGuild(source sqlc.UpdateGuildRow) models.UpdatedGuild
 
 	ConvertSQLCGuildCategoryToGuildCategory(source sqlc.GuildCategory) sqlc.GuildCategory
-	ConvertSQLCGuildCategoryToGuildCategories(source []sqlc.GuildCategory) []sqlc.GuildCategory
+	ConvertSQLCGuildCategoryToGuildCategories(source []sqlc.GuildCategory) []models.GuildCategory
 
 	// goverter:ignore Users
 	ConvertSQLCChannelToPrivateChannel(source sqlc.Channel) models.PrivateChannel
@@ -101,13 +104,6 @@ type Converter interface {
 	ConvertSQLCGetManyUserRelationshipsByUserIDRowToUserRelationship(source sqlc.GetManyUserRelationshipsByUserIDRow) models.UserRelationship
 	ConvertSQLCGetManyUserRelationshipsByUserIDRowToUserRelationships(source []sqlc.GetManyUserRelationshipsByUserIDRow) []models.UserRelationship
 
-	// goverter:map AttachmentID Avatar
-	ConvertSQLCLinkRelationshipUsersRowToUserLimited(source sqlc.LinkManyRelationshipUsersRow) models.UserLimited
-	ConvertSQLCLinkRelationshipUsersRowToUsersLimited(source []sqlc.LinkManyRelationshipUsersRow) []models.UserLimited
-
-	// goverter:map AttachmentID Avatar
-	ConvertSQLCLinkRelationshipUserRowToUserLimited(source sqlc.LinkRelationshipUserRow) models.UserLimited
-
 	// goverter:ignore User
 	ConvertSQLCRelationshipToRelationship(source sqlc.Relationship) models.UserRelationship
 
@@ -118,4 +114,6 @@ type Converter interface {
 
 	// goverter:map . User | ConvertSQLCCreateVoiceChannelStateRowToVoiceChannelStateUser
 	ConvertSQLCCreateVoiceChannelStateRowToVoiceChannelState(source sqlc.CreateVoiceChannelStateRow) models.VoiceChannelState
+
+	ConvertSQLCVoiceChannelStateToUpdatedVoiceChannelState(source sqlc.VoiceChannelState) models.UpdatedVoiceChannelState
 }

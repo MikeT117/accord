@@ -46,7 +46,7 @@ func GetManyUserRelationshipsByUserIDRowToUser(source sqlc.GetManyUserRelationsh
 }
 
 func GetManyGuildBansByGuildIDRowToUser(source sqlc.GetManyGuildBansByGuildIDRow) models.UserLimited {
-	return CreateUserLimited(source.ID, source.DisplayName, source.Username, source.PublicFlags, source.AttachmentID)
+	return CreateUserLimited(source.UserID, source.DisplayName, source.Username, source.PublicFlags, source.AttachmentID)
 }
 
 func ConvertGetManyGuildInvitesByGuildIDRowToGuildInviteToCreator(source sqlc.GetManyGuildInvitesByGuildIDRow) models.UserLimited {
