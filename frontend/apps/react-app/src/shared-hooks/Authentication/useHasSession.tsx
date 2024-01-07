@@ -1,5 +1,3 @@
-import { useCallback } from 'react';
 import { useSessionStore } from '@/shared-stores/sessionStore';
 
-export const useHasSession = () =>
-  useSessionStore(useCallback((s) => !!(s.accesstoken && s.refreshtoken), []));
+export const useHasSession = () => useSessionStore((s) => !!(s.accesstoken && s.refreshtoken));

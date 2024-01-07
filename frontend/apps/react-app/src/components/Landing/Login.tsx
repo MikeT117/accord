@@ -2,59 +2,86 @@ import { ReactElement, useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useExtractTokensFromQueryParams } from '@/shared-hooks';
 import { FullScreenLoadingSpinner } from '@/shared-components/LoadingSpinner';
-import { GithubIcon } from '@/assets/Icons/GithubIcon';
 import { useHasSession } from '@/shared-hooks';
 import { Button } from '@/shared-components/Button';
 import { env } from '../../env';
+import { AccordLogo } from '../../shared-components/AccordLogo';
+import { GithubLogo } from '../../assets/GithubLogo';
+import { GitlabLogo } from '../../assets/GitlabLogo';
+
+const providers = [
+    {
+        name: 'Github',
+        icon: <GithubLogo className='h-7 w-7' />,
+    },
+    {
+        name: 'Gitlab',
+        icon: <GitlabLogo className='h-7 w-7' />,
+    },
+];
 
 const OAuthLoginButton = ({
-  provider,
-  url,
-  icon,
+    icon,
+    url,
+    provider,
 }: {
-  icon?: ReactElement;
-  url: string;
-  provider: 'GitHub' | 'GitLab';
+    className?: string;
+    icon?: ReactElement;
+    url: string;
+    provider: string;
 }) => (
-  <Button
-    onClick={() => {
-      window.location.href = url;
-    }}
-  >
-    {icon}
-    <span className='ml-3'>{`Sign In With ${provider}`}</span>
-  </Button>
+    <Button
+        fullWidth={true}
+        intent='secondaryAlpha'
+        className='text-grayA-12'
+        onClick={() => {
+            window.location.href = url;
+        }}
+    >
+        {icon}
+        <span className='ml-2'>{`Sign In With ${provider}`}</span>
+    </Button>
 );
 
 export const Login = () => {
-  const hasSession = useHasSession();
-  const [sessionChecked, setSessionChecked] = useState(false);
-  useExtractTokensFromQueryParams();
+    const [sessionChecked, setSessionChecked] = useState(false);
 
-  useEffect(() => {
-    if (!hasSession) {
-      setSessionChecked(true);
+    const hasSession = useHasSession();
+    const error = useExtractTokensFromQueryParams();
+
+    useEffect(() => {
+        if (!hasSession) {
+            setSessionChecked(true);
+        }
+    }, [hasSession]);
+
+    if (hasSession) {
+        return <Navigate to='/app' replace={true} />;
     }
-  }, [hasSession]);
 
-  if (hasSession) {
-    return <Navigate to='/app' replace={true} />;
-  }
+    if (!sessionChecked) {
+        return <FullScreenLoadingSpinner />;
+    }
 
-  if (!sessionChecked) {
-    return <FullScreenLoadingSpinner />;
-  }
-
-  return (
-    <div className='flex h-screen w-screen'>
-      <div className='m-auto flex flex-col'>
-        <h1 className='mb-6 text-3xl font-bold'>Accord 👋</h1>
-        <OAuthLoginButton
-          provider='GitHub'
-          icon={<GithubIcon className='h-5 w-5 fill-white' />}
-          url={`https://${env.apiUrl}/v1/auth/github`}
-        />
-      </div>
-    </div>
-  );
+    return (
+        <div className='flex h-screen w-screen bg-gray-3'>
+            <div className='m-auto flex flex-col'>
+                <div className='flex justify-evenly'>
+                    <AccordLogo className='h-10 w-10' />
+                    <h1 className='mb-6 text-3xl font-bold'>Accord</h1>
+                </div>
+                <div className='flex flex-col space-y-2'>
+                    {providers.map(({ name, icon }, idx) => (
+                        <OAuthLoginButton
+                            key={idx}
+                            provider={name}
+                            icon={icon}
+                            url={`https://${env.apiUrl}/v1/auth/${name.toLowerCase()}`}
+                        />
+                    ))}
+                    {error && <p className='text-red-9'>Error during login: {error}</p>}
+                </div>
+            </div>
+        </div>
+    );
 };
