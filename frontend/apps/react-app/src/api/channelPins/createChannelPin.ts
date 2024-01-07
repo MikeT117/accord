@@ -7,17 +7,21 @@ import { ChannelMessage } from '../../types';
 type CreateChannelPinRequestArgs = { id: string; channelId: string };
 
 const createChannelPinRequest = async ({ channelId, id }: CreateChannelPinRequestArgs) => {
-  return api.put(`/v1/channels/${channelId}/pins/${id}`);
+    return api.put(`/v1/channels/${channelId}/pins/${id}`);
 };
 
 export const useCreateChannelPinMutation = () => {
-  return useMutation({
-    mutationFn: createChannelPinRequest,
-    onSuccess: (_, { channelId, id }) => {
-      queryClient.setQueryData<InfiniteData<ChannelMessage[]>>([channelId, 'messages'], (prev) =>
-        updateInfiniteDataItem(prev, (m) => (m.id === id ? { ...m, isPinned: true } : m)),
-      );
-      queryClient.invalidateQueries({ queryKey: [channelId, 'messages', 'pinned'] });
-    },
-  });
+    return useMutation({
+        mutationFn: createChannelPinRequest,
+        onSuccess: (_, { channelId, id }) => {
+            queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
+                [channelId, 'messages'],
+                (prev) =>
+                    updateInfiniteDataItem(prev, (m) =>
+                        m.id === id ? { ...m, isPinned: true } : m,
+                    ),
+            );
+            queryClient.invalidateQueries({ queryKey: [channelId, 'pins'] });
+        },
+    });
 };

@@ -6,36 +6,37 @@ import { z } from 'zod';
 import { ChannelMessage } from '../../types';
 
 type UpdateChannelMessageRequestArgs = {
-  id: string;
-  channelId: string;
-  content: string;
+    id: string;
+    channelId: string;
+    content: string;
 };
 
 const updatedChannelMessageResponseSchema = z.object({
-  id: z.string(),
-  channelId: z.string(),
-  content: z.string(),
-  isPinned: z.boolean(),
-  updatedAt: z.coerce.date(),
+    id: z.string(),
+    channelId: z.string(),
+    content: z.string(),
+    isPinned: z.boolean(),
+    updatedAt: z.coerce.date(),
 });
 
 const updateChannelMessageRequest = async ({
-  channelId,
-  content,
-  id,
+    channelId,
+    content,
+    id,
 }: UpdateChannelMessageRequestArgs) => {
-  const resp = await api.patch(`/v1/channels/${channelId}/messages/${id}`, { content });
-  return updatedChannelMessageResponseSchema.parse(resp.data.data);
+    const resp = await api.patch(`/v1/channels/${channelId}/messages/${id}`, { content });
+    return updatedChannelMessageResponseSchema.parse(resp.data.data);
 };
 
 export const useUpdateChannelMessageMutation = () => {
-  return useMutation({
-    mutationFn: updateChannelMessageRequest,
-    onSuccess: (resp) => {
-      queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
-        [resp.channelId, 'messages'],
-        (prev) => updateInfiniteDataItem(prev, (m) => (m.id === resp.id ? { ...m, ...resp } : m)),
-      );
-    },
-  });
+    return useMutation({
+        mutationFn: updateChannelMessageRequest,
+        onSuccess: (resp) => {
+            queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
+                [resp.channelId, 'messages'],
+                (prev) =>
+                    updateInfiniteDataItem(prev, (m) => (m.id === resp.id ? { ...m, ...resp } : m)),
+            );
+        },
+    });
 };

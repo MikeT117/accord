@@ -3,24 +3,24 @@ import { api } from '@/lib/axios';
 import { queryClient } from '@/lib/queryClient/queryClient';
 
 type UnassignRoleToUserRequestArgs = {
-  guildId: string;
-  userId: string;
-  roleId: string;
+    guildId: string;
+    userId: string;
+    roleId: string;
 };
 
 const unassignRoleFromUserRequest = async ({
-  guildId,
-  userId,
-  roleId,
+    guildId,
+    userId,
+    roleId,
 }: UnassignRoleToUserRequestArgs) => {
-  return api.delete(`/v1/guilds/${guildId}/roles/${roleId}/members/${userId}`);
+    return api.delete(`/v1/guilds/${guildId}/roles/${roleId}/members/${userId}`);
 };
 
 export const useUnassignRoleFromUserMutation = () => {
-  return useMutation({
-    mutationFn: unassignRoleFromUserRequest,
-    onSuccess: (_, { guildId, roleId }) => {
-      queryClient.invalidateQueries({ queryKey: [guildId, 'roles', roleId], exact: false });
-    },
-  });
+    return useMutation({
+        mutationFn: unassignRoleFromUserRequest,
+        onSuccess: (_, { guildId, roleId }) => {
+            queryClient.invalidateQueries({ queryKey: [guildId, 'roles', roleId], exact: false });
+        },
+    });
 };

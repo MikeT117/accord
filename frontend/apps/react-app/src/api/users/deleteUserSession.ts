@@ -5,16 +5,16 @@ import { deleteInfiniteDataItem } from '../../lib/queryClient/utils/deleteInfini
 import { UserSessionLimited } from '../../types';
 
 const deleteUserSessionRequest = (id: string) => {
-  return api.delete(`/v1/users/@me/sessions/${id}`);
+    return api.delete(`/v1/users/@me/sessions/${id}`);
 };
 
 export const useDeleteUserSessionMutation = () => {
-  return useMutation({
-    mutationFn: deleteUserSessionRequest,
-    onSuccess: (_, id) => {
-      queryClient.setQueryData<InfiniteData<UserSessionLimited[]>>(['sessions'], (prev) =>
-        deleteInfiniteDataItem(prev, (m) => m.id !== id),
-      );
-    },
-  });
+    return useMutation({
+        mutationFn: deleteUserSessionRequest,
+        onSuccess: (_, id) => {
+            queryClient.setQueryData<InfiniteData<UserSessionLimited[]>>(['sessions'], (prev) =>
+                deleteInfiniteDataItem(prev, (m) => m.id !== id),
+            );
+        },
+    });
 };

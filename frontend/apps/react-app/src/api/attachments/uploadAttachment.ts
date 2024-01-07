@@ -1,43 +1,44 @@
-import { AxiosError } from 'axios';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
+import { z } from 'zod';
 
 type UploadAttachmentMutationArgs = {
-  file: File;
-  uploadURL: string;
+    file: File;
+    uploadURL: string;
 };
 
-type CloudinaryResponse = {
-  access_mode: string;
-  api_key: string;
-  asset_id: string;
-  bytes: number;
-  created_at: string;
-  etag: string;
-  folder: string;
-  format: string;
-  height: number;
-  placeholder: boolean;
-  public_id: string;
-  resource_type: string;
-  secure_url: string;
-  signature: string;
-  tags: string[];
-  type: string;
-  url: string;
-  version: number;
-  version_id: string;
-  width: number;
+const uploadAttachmentResponseSchema = z.object({
+    access_mode: z.string(),
+    api_key: z.string(),
+    asset_id: z.string(),
+    bytes: z.number(),
+    created_at: z.string(),
+    etag: z.string(),
+    folder: z.string(),
+    format: z.string(),
+    height: z.number(),
+    placeholder: z.boolean(),
+    public_id: z.string(),
+    resource_type: z.string(),
+    secure_url: z.string(),
+    signature: z.string(),
+    tags: z.array(z.string()),
+    type: z.string(),
+    url: z.string(),
+    version: z.number(),
+    version_id: z.string(),
+    width: z.number(),
+});
+
+const uploadAttachmentRequest = async (args: UploadAttachmentMutationArgs) => {
+    const formData = new FormData();
+    formData.append('file', args.file);
+    const resp = await api.post(args.uploadURL, formData);
+    return uploadAttachmentResponseSchema.parse(resp.data);
 };
 
 export const useUploadAttachmentMutation = () => {
-  return useMutation<CloudinaryResponse, AxiosError, UploadAttachmentMutationArgs>({
-    mutationFn: async (args) => {
-      const formData = new FormData();
-      formData.append('file', args.file);
-
-      const resp = await api.post<CloudinaryResponse>(args.uploadURL, formData);
-      return resp.data;
-    },
-  });
+    return useMutation({
+        mutationFn: uploadAttachmentRequest,
+    });
 };

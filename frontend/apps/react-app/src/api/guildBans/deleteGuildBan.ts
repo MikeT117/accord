@@ -3,19 +3,19 @@ import { api } from '@/lib/axios';
 import { queryClient } from '@/lib/queryClient/queryClient';
 
 type DeleteGuildBanMutationArgs = {
-  userId: string;
-  guildId: string;
+    id: string;
+    guildId: string;
 };
 
-const deleteGuildBanRequest = ({ guildId, userId }: DeleteGuildBanMutationArgs) => {
-  return api.delete(`/v1/guilds/${guildId}/bans/${userId}`);
+const deleteGuildBanRequest = ({ id, guildId }: DeleteGuildBanMutationArgs) => {
+    return api.delete(`/v1/guilds/${guildId}/bans/${id}`);
 };
 
 export const useDeleteGuildBanMutation = () => {
-  return useMutation({
-    mutationFn: deleteGuildBanRequest,
-    onSuccess: (_, args) => {
-      queryClient.invalidateQueries({ queryKey: [args.guildId, 'bans'] });
-    },
-  });
+    return useMutation({
+        mutationFn: deleteGuildBanRequest,
+        onSuccess: (_, args) => {
+            queryClient.invalidateQueries({ queryKey: [args.guildId, 'bans'] });
+        },
+    });
 };
