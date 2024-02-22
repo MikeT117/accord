@@ -1,31 +1,18 @@
-import { useCallback } from 'react';
-import { useCurrentUserId } from '@/shared-stores/currentUserStore';
 import { useVoiceStateStore } from '@/shared-stores/voiceStateStore';
 import { useGuildStore } from '../../../shared-stores/guildStore';
 
-export const useCurrentUserVoiceState = () => {
-  const userId = useCurrentUserId();
-  const voiceState = useVoiceStateStore(
-    useCallback((s) => s.voiceStates.find((vs) => vs.member.user.id === userId), [userId]),
-  );
+export const useCurrentUserVoiceState = (userId: string) => {
+    const voiceState = useVoiceStateStore((s) => s.voiceStates.find((vs) => vs.user.id === userId));
+    const guild = useGuildStore((s) => (voiceState?.guildId ? s.guilds[voiceState.guildId] : null));
+    if (!voiceState || !guild) {
+        return null;
+    }
 
-  if (!voiceState) {
-    return null;
-  }
+    const channel = guild.channels.find((c) => c.id === voiceState.channelId);
 
-  const guild = useGuildStore(
-    useCallback((s) => s.guilds[voiceState.guildId], [voiceState.guildId]),
-  );
+    if (!channel) {
+        return null;
+    }
 
-  if (!guild) {
-    return null;
-  }
-
-  const channel = guild.channels.find((c) => c.id === voiceState.channelId);
-
-  if (!channel) {
-    return null;
-  }
-
-  return { guild, voiceState, channel, userId };
+    return { guild, voiceState, channel, userId };
 };
