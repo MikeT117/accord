@@ -9,9 +9,11 @@ export const useExtractTokensFromQueryParams = () => {
     const error = params.get('error');
 
     useEffect(() => {
-        if (!error && accesstoken && refreshtoken) {
-            sessionStore.setSession({ accesstoken: `Bearer ${accesstoken}`, refreshtoken });
+        if (error || !accesstoken || !refreshtoken) {
+            return;
         }
+
+        sessionStore.setSession({ accesstoken: `Bearer ${accesstoken}`, refreshtoken });
     }, [params]);
 
     return error ? error.replace('+', ' ') : null;
