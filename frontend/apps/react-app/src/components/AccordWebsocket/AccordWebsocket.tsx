@@ -14,220 +14,216 @@ import { deleteInfiniteDataItem } from '../../lib/queryClient/utils/deleteInfini
 import { AccordWebsocketClient } from '../../lib/websocketClient/AccordWebsocketClient';
 import { IsGuildChannel, IsGuildChannelUpdate } from '../../utils/typeGuards';
 import type {
-  ChannelCreateEventPayload,
-  ChannelMessage,
-  ChannelMessageCreateEventPayload,
-  ChannelMessageDeleteEventPayload,
-  ChannelMessageUpdateEventPayload,
-  ChannelPinCreateEventPayload,
-  ChannelPinDeleteEventPayload,
-  ChannelUpdateEventPayload,
-  ClientReadyEventPayload,
-  GuildChannelDeleteEventPayload,
-  GuildRoleCreateEventPayload,
-  GuildRoleDeleteEventPayload,
-  GuildRoleUpdateEventPayload,
-  UserRelationship,
-  UserRelationshipCreateEventPayload,
-  UserRelationshipDeleteEventPayload,
-  UserRelationshipUpdateEventPayload,
+    ChannelMessage,
+    ClientReadyEventPayload,
+    Guild,
+    GuildChannel,
+    GuildRole,
+    PrivateChannel,
+    UserRelationship,
+    VoiceChannelState,
 } from '../../types';
 
 export const AccordWebsocket = ({ children }: { children: ReactNode }) => {
-  const [ready, set] = useState(false);
+    const [ready, set] = useState(false);
 
-  useEffect(() => {
-    const awc = new AccordWebsocketClient({
-      url: WEBSOCKET_ENDPOINT,
-      accesstoken: () => useSessionStore.getState().accesstoken,
-      refreshtoken: () => useSessionStore.getState().refreshtoken,
-      onError: (ev) => console.error('WS ERROR: ', ev),
-      onClose: (ev) => {
-        if (ev.reason === 'INVALID_TOKENS') {
-          sessionStore.clearSession();
-        }
-      },
-      debug: false,
-      reconnect: true,
-    });
+    useEffect(() => {
+        const awc = new AccordWebsocketClient({
+            url: WEBSOCKET_ENDPOINT,
+            identifyPayload: () => ({
+                accesstoken: useSessionStore.getState().accesstoken.split(' ')[1],
+                refreshtoken: useSessionStore.getState().refreshtoken,
+            }),
+            onError: (ev) => console.error('WS ERROR: ', ev),
+            onClose: (ev) => {
+                if (ev.reason === 'INVALID_TOKENS') {
+                    sessionStore.clearSession();
+                }
+            },
+            debug: true,
+            reconnect: true,
+        });
 
-    awc.addAccordEventListener<ClientReadyEventPayload>(
-      AccordOperation.CLIENT_READY_OP,
-      ({ guilds, privateChannels, user, voiceChannelStates }) => {
-        guildStore.initialise(guilds);
-        privateChannelStore.initialise(privateChannels);
-        currentUserStore.initialise(user);
-        voiceStateStore.initialise(voiceChannelStates);
-        set(true);
-      },
-    );
-
-    // Guild
-    awc.addAccordEventListener(AccordOperation.GUILD_CREATE_OP, ({ guild }) => {
-      guildStore.createGuild(guild);
-    });
-
-    awc.addAccordEventListener(AccordOperation.GUILD_UPDATE_OP, ({ guild }) => {
-      guildStore.updateGuild(guild);
-    });
-
-    awc.addAccordEventListener(AccordOperation.GUILD_DELETE_OP, ({ guild: { id } }) => {
-      guildStore.deleteGuild(id);
-    });
-
-    // Guild Roles
-    awc.addAccordEventListener<GuildRoleCreateEventPayload>(
-      AccordOperation.GUILD_ROLE_CREATE_OP,
-      ({ role }) => {
-        guildStore.createRole(role);
-      },
-    );
-
-    awc.addAccordEventListener<GuildRoleUpdateEventPayload>(
-      AccordOperation.GUILD_ROLE_UPDATE_OP,
-      ({ role }) => {
-        guildStore.updateRole(role);
-      },
-    );
-
-    awc.addAccordEventListener<GuildRoleDeleteEventPayload>(
-      AccordOperation.GUILD_ROLE_DELETE_OP,
-      ({ role }) => {
-        guildStore.deleteRole(role.id, role.guildId);
-      },
-    );
-
-    // Channels
-    awc.addAccordEventListener<ChannelCreateEventPayload>(
-      AccordOperation.CHANNEL_CREATE_OP,
-      ({ channel }) => {
-        if (IsGuildChannel(channel)) {
-          guildStore.createChannel(channel);
-        } else {
-          privateChannelStore.create(channel);
-        }
-      },
-    );
-
-    awc.addAccordEventListener<ChannelUpdateEventPayload>(
-      AccordOperation.CHANNEL_UPDATE_OP,
-      ({ channel }) => {
-        if (IsGuildChannelUpdate(channel)) {
-          guildStore.updateChannel(channel);
-        } else {
-          privateChannelStore.update(channel);
-        }
-      },
-    );
-
-    awc.addAccordEventListener<GuildChannelDeleteEventPayload>(
-      AccordOperation.CHANNEL_DELETE_OP,
-      ({ id, guildId }) => guildStore.deleteChannel(id, guildId),
-    );
-
-    // Channel Messages
-    awc.addAccordEventListener<ChannelMessageCreateEventPayload>(
-      AccordOperation.CHANNEL_MESSAGE_CREATE_OP,
-      ({ message }) => {
-        queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
-          [message.channelId, 'messages'],
-          (prev) => insertInfiniteDataItem(prev, message),
+        awc.addAccordEventListener<ClientReadyEventPayload>(
+            AccordOperation.CLIENT_READY_OP,
+            ({ guilds, privateChannels, user, voiceChannelStates }) => {
+                guildStore.initialise(guilds);
+                privateChannelStore.initialise(privateChannels);
+                currentUserStore.initialise(user);
+                voiceStateStore.initialise(voiceChannelStates);
+                set(true);
+            },
         );
-      },
-    );
 
-    awc.addAccordEventListener<ChannelMessageUpdateEventPayload>(
-      AccordOperation.CHANNEL_MESSAGE_UPDATE_OP,
-      ({ message }) => {
-        queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
-          [message.channelId, 'messages'],
-          (prev) =>
-            updateInfiniteDataItem(prev, (m) => (m.id === message.id ? { ...m, ...message } : m)),
+        // Guild
+        awc.addAccordEventListener<Guild>(AccordOperation.GUILD_CREATE_OP, (guild) => {
+            guildStore.createGuild(guild);
+        });
+
+        awc.addAccordEventListener<Omit<Guild, 'channels' | 'members' | 'roles'>>(
+            AccordOperation.GUILD_UPDATE_OP,
+            (guild) => {
+                guildStore.updateGuild(guild);
+            },
         );
-      },
-    );
 
-    awc.addAccordEventListener<ChannelMessageDeleteEventPayload>(
-      AccordOperation.CHANNEL_MESSAGE_DELETE_OP,
-      ({ channelId, id }) => {
-        queryClient.setQueryData<InfiniteData<ChannelMessage[]>>([channelId, 'messages'], (prev) =>
-          deleteInfiniteDataItem(prev, (m) => m.id !== id),
+        awc.addAccordEventListener<string>(AccordOperation.GUILD_DELETE_OP, (id) => {
+            guildStore.deleteGuild(id);
+        });
+
+        // Guild Roles
+        awc.addAccordEventListener<GuildRole>(AccordOperation.GUILD_ROLE_CREATE_OP, (role) => {
+            guildStore.createRole(role);
+        });
+
+        awc.addAccordEventListener<GuildRole>(AccordOperation.GUILD_ROLE_UPDATE_OP, (role) => {
+            guildStore.updateRole(role);
+        });
+
+        awc.addAccordEventListener<Pick<GuildRole, 'id' | 'guildId'>>(
+            AccordOperation.GUILD_ROLE_DELETE_OP,
+            ({ id, guildId }) => {
+                guildStore.deleteRole(id, guildId);
+            },
         );
-      },
-    );
 
-    // Channel Pins
-    awc.addAccordEventListener<ChannelPinCreateEventPayload>(
-      AccordOperation.CHANNEL_PIN_CREATE_OP,
-      ({ message }) => {
-        queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
-          [message.channelId, 'pins'],
-          (prev) => insertInfiniteDataItem(prev, message),
+        awc.addAccordEventListener<{ guildId: string; roleId: string }>(
+            AccordOperation.GUILD_ROLE_MEMBER_CREATE_OP,
+            ({ roleId, guildId }) => {
+                guildStore.addGuildRoleMember(guildId, roleId);
+            },
         );
-      },
-    );
 
-    awc.addAccordEventListener<ChannelPinDeleteEventPayload>(
-      AccordOperation.CHANNEL_PIN_DELETE_OP,
-      ({ channelId, id }) => {
-        queryClient.setQueryData<InfiniteData<ChannelMessage[]>>([channelId, 'pins'], (prev) =>
-          deleteInfiniteDataItem(prev, (m) => m.id !== id),
+        awc.addAccordEventListener<{ guildId: string; roleId: string }>(
+            AccordOperation.GUILD_ROLE_MEMBER_DELETE_OP,
+            ({ roleId, guildId }) => {
+                guildStore.delGuildRoleMember(guildId, roleId);
+            },
         );
-      },
-    );
 
-    // User Relationships
-    awc.addAccordEventListener<UserRelationshipCreateEventPayload>(
-      AccordOperation.USER_RELATIONSHIP_UPDATE_OP,
-      ({ relationship }) => {
-        queryClient.setQueryData<UserRelationship[]>(['relationships'], (prev) =>
-          prev
-            ? prev.filter((r) => (r.id !== relationship.id ? { ...r, ...relationship } : r))
-            : undefined,
+        // Channels
+        awc.addAccordEventListener<GuildChannel | PrivateChannel>(
+            AccordOperation.CHANNEL_CREATE_OP,
+            (channel) => {
+                if (IsGuildChannel(channel)) {
+                    guildStore.createChannel(channel);
+                } else {
+                    privateChannelStore.create(channel);
+                }
+            },
         );
-      },
-    );
 
-    awc.addAccordEventListener<UserRelationshipUpdateEventPayload>(
-      AccordOperation.USER_RELATIONSHIP_UPDATE_OP,
-      ({ relationship }) => {
-        queryClient.setQueryData<UserRelationship[]>(['relationships'], (prev) =>
-          prev
-            ? prev.filter((r) => (r.id !== relationship.id ? { ...r, ...relationship } : r))
-            : undefined,
+        awc.addAccordEventListener<
+            | (Pick<GuildChannel, 'id' | 'guildId'> & Partial<Omit<GuildChannel, 'id' | 'guildId'>>)
+            | (Pick<PrivateChannel, 'id'> & Partial<Omit<PrivateChannel, 'id'>>)
+        >(AccordOperation.CHANNEL_UPDATE_OP, (channel) => {
+            if (IsGuildChannelUpdate(channel)) {
+                guildStore.updateChannel(channel);
+            } else {
+                privateChannelStore.update(channel);
+            }
+        });
+
+        awc.addAccordEventListener<{ id: string; guildId: string }>(
+            AccordOperation.CHANNEL_DELETE_OP,
+            ({ id, guildId }) => guildStore.deleteChannel(id, guildId),
         );
-      },
-    );
 
-    awc.addAccordEventListener<UserRelationshipDeleteEventPayload>(
-      AccordOperation.USER_RELATIONSHIP_DELETE_OP,
-      ({ id }) => {
-        queryClient.setQueryData<UserRelationship[]>(['relationships'], (prev) =>
-          prev ? prev.filter((r) => r.id !== id) : undefined,
+        // Channel Messages
+        awc.addAccordEventListener<ChannelMessage>(
+            AccordOperation.CHANNEL_MESSAGE_CREATE_OP,
+            (message) => {
+                queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
+                    [message.channelId, 'messages'],
+                    (prev) => insertInfiniteDataItem(prev, message),
+                );
+            },
         );
-      },
-    );
 
-    // Voice Channel States
-    // awc.addAccordEventListener(
-    //   AccordOperation.VOICE_CHANNEL_STATE_CREATE,
-    //   voiceStateStore.addVoiceState,
-    // );
+        awc.addAccordEventListener<ChannelMessage>(
+            AccordOperation.CHANNEL_MESSAGE_UPDATE_OP,
+            (message) => {
+                queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
+                    [message.channelId, 'messages'],
+                    (prev) =>
+                        updateInfiniteDataItem(prev, (m) =>
+                            m.id === message.id ? { ...m, ...message } : m,
+                        ),
+                );
+            },
+        );
 
-    // awc.addAccordEventListener(
-    //   AccordOperation.VOICE_CHANNEL_STATE_UPDATE,
-    //   voiceStateStore.updateVoiceState,
-    // );
+        awc.addAccordEventListener<{ id: string; channelId: string }>(
+            AccordOperation.CHANNEL_MESSAGE_DELETE_OP,
+            ({ channelId, id }) => {
+                queryClient.setQueryData<InfiniteData<ChannelMessage[]>>(
+                    [channelId, 'messages'],
+                    (prev) => deleteInfiniteDataItem(prev, (m) => m.id !== id),
+                );
+            },
+        );
 
-    // awc.addAccordEventListener(
-    //   AccordOperation.VOICE_CHANNEL_STATE_DELETE,
-    //   ({ channelId, userAccountId }) => {
-    //     voiceStateStore.delVoiceState(channelId, userAccountId);
-    //   },
-    // );
+        // Channel Pins
+        awc.addAccordEventListener<string>(AccordOperation.CHANNEL_PINS_UPDATE_OP, (channelId) => {
+            queryClient.invalidateQueries({ queryKey: [channelId, 'pins'] });
+        });
 
-    return () => awc.close();
-  }, []);
+        // User Relationships
+        awc.addAccordEventListener<UserRelationship>(
+            AccordOperation.USER_RELATIONSHIP_CREATE_OP,
+            (relationship) => {
+                queryClient.setQueryData<UserRelationship[]>(['relationships'], (prev) =>
+                    prev ? [...prev, relationship] : undefined,
+                );
+            },
+        );
 
-  return ready ? <>{children}</> : <FullScreenLoadingSpinner />;
+        awc.addAccordEventListener<Pick<UserRelationship, 'id' | 'status'>>(
+            AccordOperation.USER_RELATIONSHIP_UPDATE_OP,
+            (relationship) => {
+                queryClient.setQueryData<UserRelationship[]>(['relationships'], (prev) =>
+                    prev
+                        ? prev.map((r) =>
+                              r.id === relationship.id ? { ...r, ...relationship } : r,
+                          )
+                        : undefined,
+                );
+            },
+        );
+
+        awc.addAccordEventListener<{ id: string }>(
+            AccordOperation.USER_RELATIONSHIP_DELETE_OP,
+            ({ id }) => {
+                queryClient.setQueryData<UserRelationship[]>(['relationships'], (prev) =>
+                    prev ? prev.filter((r) => r.id !== id) : undefined,
+                );
+            },
+        );
+
+        // Voice Channel States
+        awc.addAccordEventListener<VoiceChannelState>(
+            AccordOperation.VOICE_CHANNEL_STATE_CREATE,
+            (voiceChannelState) => {
+                voiceStateStore.create(voiceChannelState);
+            },
+        );
+
+        awc.addAccordEventListener<
+            Pick<VoiceChannelState, 'channelId' | 'guildId'> & { userId: string }
+        >(AccordOperation.VOICE_CHANNEL_STATE_DELETE, ({ channelId, userId }) => {
+            voiceStateStore.delete(channelId, userId);
+        });
+
+        awc.addAccordEventListener<
+            Pick<VoiceChannelState, 'channelId' | 'guildId' | 'mute' | 'selfMute' | 'selfDeaf'> & {
+                userId: string;
+            }
+        >(AccordOperation.VOICE_CHANNEL_STATE_UPDATE, (voiceChannelState) => {
+            voiceStateStore.update(voiceChannelState);
+        });
+
+        return () => awc.close();
+    }, []);
+
+    return ready ? <>{children}</> : <FullScreenLoadingSpinner />;
 };
