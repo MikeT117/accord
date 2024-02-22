@@ -1,30 +1,29 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 
-const IDLE = 'IDLE';
-const ERROR = 'ERROR';
-const SUCCESS = 'SUCCESS';
-
-type UseClipboardState = typeof IDLE | typeof ERROR | typeof SUCCESS;
+const FAILURE = -1;
+const IDLE = 0;
+const SUCCESS = 1;
 
 export const useClipboard = () => {
-  const [state, set] = useState<UseClipboardState>(IDLE);
-  const isError = state === ERROR;
-  const isSuccess = state === SUCCESS;
-  const isIdle = state === IDLE;
+    const [state, set] = useState(0);
 
-  const onCopy = useCallback((input: string) => {
-    if (input) {
-      set(IDLE);
-      navigator.clipboard.writeText(input).then(
-        () => {
-          set(SUCCESS);
-        },
-        () => {
-          set(ERROR);
-        },
-      );
-    }
-  }, []);
+    const onCopy = (input: string) => {
+        if (!input) {
+            return;
+        }
 
-  return { onCopy, state, isError, isSuccess, isIdle };
+        set(IDLE);
+
+        navigator.clipboard.writeText(input).then(
+            () => set(SUCCESS),
+            () => set(FAILURE),
+        );
+    };
+
+    return {
+        onCopy,
+        isError: state === FAILURE,
+        isSuccess: state === SUCCESS,
+        isIdle: state === IDLE,
+    };
 };
