@@ -1,3 +1,3 @@
 export * from './Image';
-export * from './FullscreenImagePreview';
-export * from './stores/useFullscreenImagePreviewStore';
+export * from './ImageViewer.tsx';
+export * from './stores/imageStore.ts';
