@@ -1,55 +1,43 @@
-import { useCallback } from 'react';
-import {
-  ConfirmationActionSubjects,
-  ConfirmationActionTypes,
-  useActionConfirmationStore,
-} from '../stores/useActionConfirmationStore';
-
-const warnings = (actionType: ConfirmationActionTypes, actionSubject: ConfirmationActionSubjects) =>
-  `Are you sure you want to ${actionType} this ${actionSubject}, this action cannot be undone?`;
-
-const confirmationLabel = (actionSubject: ConfirmationActionSubjects) =>
-  `Enter the ${actionSubject} name below to confirm.`;
+import { useI18nContext } from '../../../i18n/i18n-react';
+import { useActionConfirmationStore } from '../stores/useActionConfirmationStore';
 
 export const useActionConfirmation = () => {
-  const actionSubject = useActionConfirmationStore(useCallback((s) => s.actionSubject, []));
-  const actionType = useActionConfirmationStore(useCallback((s) => s.actionType, []));
-  const user = useActionConfirmationStore(useCallback((s) => s.user, []));
-  const relationship = useActionConfirmationStore(useCallback((s) => s.relationship, []));
-  const guild = useActionConfirmationStore(useCallback((s) => s.guild, []));
-  const channel = useActionConfirmationStore(useCallback((s) => s.channel, []));
-  const channelMessage = useActionConfirmationStore(useCallback((s) => s.channelMessage, []));
-  const guildRole = useActionConfirmationStore(useCallback((s) => s.guildRole, []));
-  const confirmation = useActionConfirmationStore(useCallback((s) => s.confirmation, []));
-  const action = useActionConfirmationStore(useCallback((s) => s.action, []));
+    const { LL } = useI18nContext();
 
-  if (
-    !actionSubject ||
-    !actionType ||
-    (!guild && !channel && !channelMessage && !guildRole && !user)
-  ) {
-    return null;
-  }
+    const actionSubject = useActionConfirmationStore((s) => s.actionSubject);
+    const actionType = useActionConfirmationStore((s) => s.actionType);
+    const user = useActionConfirmationStore((s) => s.user);
+    const relationship = useActionConfirmationStore((s) => s.relationship);
+    const guild = useActionConfirmationStore((s) => s.guild);
+    const channel = useActionConfirmationStore((s) => s.channel);
+    const message = useActionConfirmationStore((s) => s.message);
+    const guildRole = useActionConfirmationStore((s) => s.guildRole);
+    const confirmation = useActionConfirmationStore((s) => s.confirmation);
+    const action = useActionConfirmationStore((s) => s.action);
 
-  const isConfirmed =
-    (channelMessage || guildRole || relationship) ??
-    [user?.displayName, guild?.name, channel?.name].some((c) => c === confirmation);
+    if (!actionSubject || !actionType || (!guild && !channel && !message && !guildRole && !user)) {
+        return null;
+    }
 
-  const confirmationPlaceholder = user?.displayName ?? guild?.name ?? channel?.name;
+    const isConfirmed =
+        (message || guildRole || relationship) ??
+        [user?.displayName, guild?.name, channel?.name].some((c) => c === confirmation);
 
-  return {
-    title: `${actionType} ${actionSubject}`,
-    user,
-    relationship,
-    guild,
-    guildRole,
-    channel,
-    channelMessage,
-    confirmation,
-    confirmationPlaceholder,
-    isConfirmed,
-    confirmationLabel: confirmationLabel(actionSubject),
-    warning: warnings(actionType, actionSubject),
-    action,
-  };
+    const confirmationPlaceholder = user?.displayName ?? guild?.name ?? channel?.name;
+
+    return {
+        title: `${actionType} ${actionSubject}`,
+        user,
+        relationship,
+        guild,
+        guildRole,
+        channel,
+        message,
+        confirmation,
+        confirmationPlaceholder,
+        isConfirmed,
+        confirmationLabel: LL.Inputs.Labels.DeletionConfirmation({ subject: actionSubject }),
+        warning: LL.Hints.DeletetionWarning({ type: actionType, subject: actionSubject }),
+        action,
+    };
 };
