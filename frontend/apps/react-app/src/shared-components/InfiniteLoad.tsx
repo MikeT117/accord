@@ -1,14 +1,24 @@
 import { useInView } from 'react-intersection-observer';
 
-export const InfiniteLoad = ({ onInView }: { onInView: () => void }) => {
-  const { ref } = useInView({
-    threshold: 1,
-    onChange: (inView) => {
-      if (inView) {
-        onInView();
-      }
-    },
-  });
+export const InfiniteLoad = ({
+    enabled,
+    className,
+    onInView,
+}: {
+    enabled: boolean;
+    className?: string;
+    onInView: () => void;
+}) => {
+    const { ref } = useInView({
+        threshold: 0.01,
+        onChange: (inView) => {
+            if (!enabled || !inView) {
+                return;
+            }
 
-  return <div ref={ref} />;
+            onInView();
+        },
+    });
+
+    return <div className={className} ref={ref} />;
 };
