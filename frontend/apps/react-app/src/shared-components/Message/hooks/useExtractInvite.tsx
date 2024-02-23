@@ -1,11 +1,14 @@
-export const useExtractInvite = (content?: string | null) => {
-  const invite = content?.match(
-    RegExp(
-      /\/api\/v[0-9]\/invites\/([a-f]|[0-9]){8}-([a-f]|[0-9]){4}-([a-f]|[0-9]){4}-([a-f]|[0-9]){4}-([a-f]|[0-9]){12}$/,
-      'gm',
-    ),
-  );
-  const inviteArr = invite ? invite[0].split('/') : invite;
-  const inviteId = inviteArr ? inviteArr[inviteArr.length - 1] : inviteArr;
-  return inviteId;
+import { env } from '../../../env';
+
+export const useExtractInvite = (content: string) => {
+    const regexString = `https://${env.host}/api/v1/invites/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`;
+
+    const invite = content.match(RegExp(regexString, 'gm'));
+
+    if (!invite) {
+        return null;
+    }
+
+    const inviteStringArray = invite[0].split('/');
+    return inviteStringArray[inviteStringArray.length - 1];
 };

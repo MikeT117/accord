@@ -1,28 +1,18 @@
-import { useGenerateEmojiAndContentArrayFromContent } from './hooks/useGenerateEmojiAndContentArray';
+import React, { memo } from 'react';
+import { useParseContent } from './hooks/useParseContent';
 
-export const MessageContent = ({ content }: { content?: string | null }) => {
-  const state = useGenerateEmojiAndContentArrayFromContent(content);
-  if (state.length === 0) {
-    return null;
-  }
+export const MessageContent = memo(({ content }: { content: string }) => {
+    const contentArray = useParseContent(content);
 
-  if (state.length === 1 && state[0].emoji) {
-    return <span className='text-5xl text-gray-11'>{state[0].emoji}</span>;
-  }
+    if (contentArray.length === 1 && typeof contentArray[0] !== 'string') {
+        return React.cloneElement(contentArray[0], { className: 'inline h-12 w-12' });
+    }
 
-  return (
-    <>
-      {state.map(({ emoji, str }, i) =>
-        emoji ? (
-          <span key={i} className='text-xl text-gray-12'>
-            {emoji}
-          </span>
-        ) : (
-          <span key={i} className='text-sm text-gray-12'>
-            {str}
-          </span>
-        ),
-      )}
-    </>
-  );
-};
+    return (
+        <div className='text-sm text-gray-12'>
+            {contentArray.map((contentItem, i) =>
+                typeof contentItem === 'string' ? <span key={i}>{contentItem}</span> : contentItem,
+            )}
+        </div>
+    );
+});
