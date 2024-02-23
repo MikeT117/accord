@@ -5,9 +5,10 @@ import { FullScreenLoadingSpinner } from '@/shared-components/LoadingSpinner';
 import { useHasSession } from '@/shared-hooks';
 import { Button } from '@/shared-components/Button';
 import { env } from '../../env';
-import { AccordLogo } from '../../shared-components/AccordLogo';
+import { AccordLogo } from '../../assets/AccordLogo';
 import { GithubLogo } from '../../assets/GithubLogo';
 import { GitlabLogo } from '../../assets/GitlabLogo';
+import { useI18nContext } from '../../i18n/i18n-react';
 
 const providers = [
     {
@@ -29,21 +30,25 @@ const OAuthLoginButton = ({
     icon?: ReactElement;
     url: string;
     provider: string;
-}) => (
-    <Button
-        fullWidth={true}
-        intent='secondaryAlpha'
-        className='text-grayA-12'
-        onClick={() => {
-            window.location.href = url;
-        }}
-    >
-        {icon}
-        <span className='ml-2'>{`Sign In With ${provider}`}</span>
-    </Button>
-);
+}) => {
+    const { LL } = useI18nContext();
+    return (
+        <Button
+            fullWidth={true}
+            intent='secondaryAlpha'
+            className='text-grayA-12'
+            onClick={() => {
+                window.location.href = url;
+            }}
+        >
+            {icon}
+            <span className='ml-2'>{LL.Actions.SignInWith({ provider })}</span>
+        </Button>
+    );
+};
 
 export const Login = () => {
+    const { LL } = useI18nContext();
     const [sessionChecked, setSessionChecked] = useState(false);
 
     const hasSession = useHasSession();
@@ -79,7 +84,7 @@ export const Login = () => {
                             url={`https://${env.apiUrl}/v1/auth/${name.toLowerCase()}`}
                         />
                     ))}
-                    {error && <p className='text-red-9'>Error during login: {error}</p>}
+                    {error && <p className='text-red-9'>{LL.Errors.Login({ error })}</p>}
                 </div>
             </div>
         </div>
