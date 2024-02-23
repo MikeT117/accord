@@ -1,21 +1,21 @@
-import { useCallback } from 'react';
 import { useCreatePrivateChannelMutation } from '@/api/channels/createPrivateChannel';
 import { useCreateChannelMessageMutation } from '@/api/channelMessages/createChannelMessage';
-import { privateChannelStore } from '@/shared-stores/privateChannelStore';
+import { useCallback } from 'react';
 
 export const useSendInviteToUser = () => {
-  const { mutateAsync: createUserChannel } = useCreatePrivateChannelMutation();
-  const { mutate: createMessage, status } = useCreateChannelMessageMutation();
+    const { mutate: createPrivateChannel, variables } = useCreatePrivateChannelMutation();
+    const { mutate: createChannelMessage, status } = useCreateChannelMessageMutation();
 
-  const sendInviteToUser = useCallback(
-    async (inviteLink: string, recipientUserId: string) => {
-      const existingChannel =
-        privateChannelStore.selectByMemberIds(recipientUserId) ??
-        (await createUserChannel([recipientUserId]));
-      createMessage({ channelId: existingChannel.id, content: inviteLink });
-    },
-    [createMessage, createUserChannel],
-  );
+    const sendInviteToUser = useCallback(
+        (inviteLink: string, recipientUserId: string) => {
+            createPrivateChannel([recipientUserId], {
+                onSuccess(data) {
+                    createChannelMessage({ channelId: data.id, content: inviteLink });
+                },
+            });
+        },
+        [createPrivateChannel, createChannelMessage],
+    );
 
-  return { sendInviteToUser, status };
+    return { sendInviteToUser, status, recipientUserId: variables ? variables[0] : null };
 };

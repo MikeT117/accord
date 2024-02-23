@@ -1,8 +1,7 @@
-import { ClipboardIcon } from '@heroicons/react/24/outline';
 import { Dialog } from '@/shared-components/Dialog';
 import {
-  guildInviteCreatorStore,
-  useGuildInviteCreatorStore,
+    guildInviteCreatorStore,
+    useGuildInviteCreatorStore,
 } from './stores/useGuildInviteCreatorStore';
 import { Input } from '@/shared-components/Input';
 import { IconButton } from '@/shared-components/IconButton';
@@ -11,84 +10,114 @@ import { ListItem } from '@/shared-components/ListItem';
 import { Avatar } from '@/shared-components/Avatar';
 import { useSendInviteToUser } from './hooks/useSendInviteToFriend';
 import { useIsGuildInviteCreatorOpen } from './hooks/useIsGuildInviteCreatorOpen';
-import { DefaultTooltip } from '@/shared-components/DefaultTooltip';
-import { useInviteLinkCopy } from '@/shared-hooks/useInviteLinkCopy';
-import { useFilteredRelationships } from '../../shared-hooks/useFilteredRelationships';
-
+import { useFilteredRelationships } from '../UserDashboard/Relationships/hooks/useFilteredRelationships';
+import { useInviteLinkCopy } from '../../shared-hooks/useInviteLinkCopy';
 import { env } from '../../env';
+import { CopySimple } from '@phosphor-icons/react';
+import { useI18nContext } from '../../i18n/i18n-react';
 
 export const GuildInviteCreatorContent = () => {
-  const inviteId = useGuildInviteCreatorStore((s) => s.inviteId);
-  const { displayNameFilter, relationships, setDisplayNameFilter } = useFilteredRelationships(0);
-  const { sendInviteToUser, status } = useSendInviteToUser();
-  const onCopy = useInviteLinkCopy();
+    const { LL } = useI18nContext();
+    const inviteId = useGuildInviteCreatorStore((s) => s.inviteId);
+    const { data, filter, setFilter } = useFilteredRelationships(0);
+    const { sendInviteToUser, status, recipientUserId } = useSendInviteToUser();
+    const onCopy = useInviteLinkCopy();
 
-  if (!inviteId) {
-    return null;
-  }
+    if (!inviteId) {
+        return null;
+    }
 
-  const handleListFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDisplayNameFilter(e.currentTarget.value);
-  };
+    const handleListFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFilter(e.currentTarget.value);
+    };
 
-  const inviteLink = `https://${env.apiUrl}/v1/invites/${inviteId}`;
+    const inviteLink = `https://${env.apiUrl}/v1/invites/${inviteId}`;
 
-  return (
-    <div className='px-4 py-5'>
-      <h1 className='mb-6 text-xl font-semibold text-gray-12'>Send invite to friends</h1>
-      <Input
-        id='friend-search'
-        placeholder='Search For Friends'
-        onChange={handleListFilterChange}
-        value={displayNameFilter}
-      />
-      <div className='mb-6 mt-3 flex min-h-[200px] flex-col'>
-        <span className='mb-1.5 text-sm text-gray-11'>Friends - {relationships.length}</span>
-        <ul>
-          {relationships.map((relationship) => (
-            <ListItem key={relationship.id} intent='secondary'>
-              <Avatar src={relationship.user.avatar} fallback={relationship.user.displayName} />
-              <span className='ml-1 mr-auto select-none'>{relationship.user.displayName}</span>
-              <Button
-                onClick={() => sendInviteToUser(inviteLink, relationship.user.id)}
-                disabled={status !== 'idle'}
-              >
-                {status === 'idle' && 'Send Invite'}
-                {status === 'pending' && 'Sending...'}
-                {status === 'success' && 'Invite Sent'}
-                {status === 'error' && 'Invite Failed'}
-              </Button>
-            </ListItem>
-          ))}
-        </ul>
-      </div>
-      <label className='flex w-full flex-col space-y-1' htmlFor='invite-link'>
-        <span className='mb-1 text-sm text-gray-11'>Or send a server invite link to a friend</span>
-        <div className='flex overflow-hidden rounded'>
-          <Input
-            id='invite-link'
-            placeholder={inviteLink}
-            readOnly={true}
-            className='pr-1'
-            rightInputElement={
-              <DefaultTooltip tootipText='Copy Invite'>
-                <IconButton intent='secondary' shape='sqircle' onClick={() => onCopy(inviteLink)}>
-                  <ClipboardIcon className='h-5 w-5' />
-                </IconButton>
-              </DefaultTooltip>
-            }
-          />
+    const inviteSendStatus = (isRecipient: boolean) => {
+        if (!isRecipient) {
+            return LL.Actions.SendInvite();
+        }
+
+        switch (status) {
+            case 'idle':
+                return LL.Actions.SendInvite();
+            case 'pending':
+                return LL.Hints.InviteSending();
+            case 'success':
+                return LL.Hints.InviteSent();
+            case 'error':
+                return LL.Hints.InviteFailed();
+        }
+    };
+
+    return (
+        <div className='px-4 py-5 bg-grayA-4'>
+            <h1 className='mb-6 text-xl font-semibold text-gray-12'>
+                {LL.General.SendInviteToFriends()}
+            </h1>
+            <Input
+                id='friend-search'
+                placeholder={LL.Inputs.Placeholders.SearchFriends()}
+                onChange={handleListFilterChange}
+                value={filter}
+            />
+            <div className='mb-6 mt-3 flex min-h-[200px] flex-col'>
+                <span className='mb-1.5 text-sm text-gray-11'>
+                    {LL.General.FriendCount({ count: data?.length ?? 0 })}
+                </span>
+                <ul className='space-y-1'>
+                    {data?.map((relationship) => (
+                        <ListItem key={relationship.id} intent='secondary'>
+                            <Avatar
+                                src={relationship.user.avatar}
+                                fallback={relationship.user.displayName}
+                            />
+                            <span className='ml-1 mr-auto select-none'>
+                                {relationship.user.displayName}
+                            </span>
+                            <Button
+                                padding='s'
+                                onClick={() => sendInviteToUser(inviteLink, relationship.user.id)}
+                                disabled={
+                                    relationship.user.id === recipientUserId && status !== 'idle'
+                                }
+                            >
+                                {inviteSendStatus(relationship.user.id === recipientUserId)}
+                            </Button>
+                        </ListItem>
+                    ))}
+                </ul>
+            </div>
+            <label className='flex w-full flex-col space-y-1' htmlFor='invite-link'>
+                <span className='mb-1 text-sm text-gray-11'>{LL.General.CopyInviteLink()}</span>
+                <div className='flex overflow-hidden rounded-md'>
+                    <Input
+                        id='invite-link'
+                        placeholder={inviteLink}
+                        readOnly={true}
+                        className='pr-1'
+                        rightInputElement={
+                            <IconButton
+                                intent='secondary'
+                                shape='squircle'
+                                onClick={() => onCopy(inviteLink)}
+                                tooltipText={LL.Actions.CopyInvite()}
+                            >
+                                <CopySimple size={20} />
+                            </IconButton>
+                        }
+                    />
+                </div>
+            </label>
         </div>
-      </label>
-    </div>
-  );
+    );
 };
 
 export const GuildInviteCreator = () => {
-  const isOpen = useIsGuildInviteCreatorOpen();
-  return (
-    <Dialog isOpen={isOpen} onClose={guildInviteCreatorStore.close}>
-      <GuildInviteCreatorContent />
-    </Dialog>
-  );
+    const isOpen = useIsGuildInviteCreatorOpen();
+    return (
+        <Dialog isOpen={isOpen} onClose={guildInviteCreatorStore.close}>
+            <GuildInviteCreatorContent />
+        </Dialog>
+    );
 };
