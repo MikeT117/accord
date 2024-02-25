@@ -3,16 +3,16 @@ import { usePrivateTextChannel } from './hooks/usePrivateTextChannel';
 import { TextChannel } from './TextChannel';
 
 export const PrivateChannel = () => {
-  const privateTextChannel = usePrivateTextChannel();
+    const privateTextChannel = usePrivateTextChannel();
 
-  if (!privateTextChannel) {
-    return <ChannelNotFound />;
-  }
+    if (!privateTextChannel) {
+        return <ChannelNotFound />;
+    }
 
-  return (
-    <TextChannel
-      channel={privateTextChannel.channel}
-      permissions={privateTextChannel.permissions}
-    />
-  );
+    return (
+        <TextChannel
+            channel={privateTextChannel.channel}
+            permissions={privateTextChannel.permissions}
+        />
+    );
 };
