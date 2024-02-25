@@ -1,2 +1,2 @@
 export * from './GuildChannelCreator';
-export * from './stores/useGuildChannelCreatorStore';
+export * from './stores/guildChannelCreatorStore';
