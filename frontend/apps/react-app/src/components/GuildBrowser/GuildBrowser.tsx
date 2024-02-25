@@ -1,13 +1,26 @@
-import { GuildBrowserSearch } from './GuildBrowserSearch';
-import { GuildBrowserSidebar } from './GuildBrowserSidebar';
-import { DiscoverableGuildsList } from './DiscoverableGuildsList';
+import { GuildBrowserGuildsList } from './GuildBrowserGuildsList';
+import { MainSidebarContentFullHeightLayout } from '../../shared-components/Layouts/MainContentFullHeightLayout';
+import { GuildBrowserBanner } from '../../assets/GuildBrowserBanner';
+import { GuildBrowserSearchInput } from './GuildBrowserSearchInput';
+import { useI18nContext } from '../../i18n/i18n-react';
 
-export const GuildBrowser = () => (
-  <>
-    <GuildBrowserSidebar />
-    <div className='col-start-3 col-end-4 row-start-1 row-end-3 flex flex-col items-center overflow-y-auto bg-gray-2 p-10'>
-      <GuildBrowserSearch />
-      <DiscoverableGuildsList />
-    </div>
-  </>
-);
+export const GuildBrowser = () => {
+    const { LL } = useI18nContext();
+    return (
+        <MainSidebarContentFullHeightLayout>
+            <div className='relative mb-6 flex'>
+                <GuildBrowserBanner />
+                <div className='absolute top-[50%] left-[50%] z-50 flex w-full max-w-[50%] translate-x-[-50%] translate-y-[-50%] flex-col'>
+                    <div className='mb-3 flex flex-col items-center space-y-1'>
+                        <h1 className='text-2xl font-bold text-gray-12'>
+                            {LL.General.FindCommunity()}{' '}
+                        </h1>
+                        <span className='text-sm text-gray-12'>{LL.General.Community()}</span>
+                    </div>
+                    <GuildBrowserSearchInput />
+                </div>
+            </div>
+            <GuildBrowserGuildsList />
+        </MainSidebarContentFullHeightLayout>
+    );
+};

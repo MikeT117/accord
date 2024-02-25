@@ -1,25 +1,31 @@
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { Input } from '@/shared-components/Input';
 import { useDiscoverableGuildsSearch } from './hooks/useDiscoverableGuildsSearch';
+import { MagnifyingGlass } from '@phosphor-icons/react';
+import { useI18nContext } from '../../i18n/i18n-react';
 
 export const GuildBrowserSearchInput = () => {
-  const { filter, initiateSearch, setFilter } = useDiscoverableGuildsSearch();
+    const { LL } = useI18nContext();
+    const { filter, initiateSearch, setFilter } = useDiscoverableGuildsSearch();
 
-  const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      initiateSearch();
-    }
-  };
+    const handleKeyUp = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && filter) {
+            e.preventDefault();
+            initiateSearch();
+        }
+    };
 
-  return (
-    <Input
-      className='!bg-gray-3'
-      value={filter}
-      onKeyUp={handleKeyUp}
-      onChange={(e) => setFilter(e.currentTarget.value)}
-      placeholder='Search for servers...'
-      rightInputElement={<MagnifyingGlassIcon className='h-5 w-5 text-gray-11' />}
-    />
-  );
+    const handleFilterOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFilter(e.currentTarget.value);
+    };
+
+    return (
+        <Input
+            className='!bg-gray-3'
+            value={filter}
+            onKeyUp={handleKeyUp}
+            onChange={handleFilterOnChange}
+            placeholder={LL.Inputs.Placeholders.SearchServers()}
+            rightInputElement={<MagnifyingGlass size={20} className='text-gray-11' />}
+        />
+    );
 };
