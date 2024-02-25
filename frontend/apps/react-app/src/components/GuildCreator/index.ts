@@ -1,2 +1,2 @@
-export * from './GuildCreator';
-export * from './stores/useGuildCreatorStore';
+export * from './GuildCreatorDialog';
+export * from './stores/guildCreatorStore';
