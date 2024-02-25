@@ -1,54 +1,42 @@
-import { useParams } from 'react-router-dom';
 import { useCreateChannelMessageMutation } from '@/api/channelMessages/createChannelMessage';
 import { useCloudinary } from '@/shared-hooks';
-import { toastStore } from '@/shared-components/Toast';
-import { useMessageInput } from './useMessageInput';
-import { messageCreatorInputStore } from '../stores/useMessageCreatorInput';
+import { useMessageDrafts } from './useMessageDrafts';
+import { messageDraftsStore } from '../stores/messageDraftsStore';
 
-const { reset, update } = messageCreatorInputStore;
+const { reset, update } = messageDraftsStore;
 
-export const useMessageCreator = () => {
-  const { channelId = '' } = useParams();
-  const content = useMessageInput(channelId);
+export const useMessageCreator = (channelId: string) => {
+    const content = useMessageDrafts(channelId);
 
-  const { UploadWrapper, attachments, clearAttachments, deleteAttachment, onFileUploadClick } =
-    useCloudinary();
+    const { UploadWrapper, attachments, clearAttachments, deleteAttachment, onFileUploadClick } =
+        useCloudinary();
 
-  const { mutate } = useCreateChannelMessageMutation();
+    const { mutate } = useCreateChannelMessageMutation();
 
-  const updateContent = (val: string) => {
-    update(channelId, val);
-  };
+    const updateContent = (val: string) => {
+        update(channelId, val);
+    };
 
-  const createMessage = () => {
-    mutate(
-      { channelId, content, attachments: attachments.map((a) => a.id) },
-      {
-        onSuccess() {
-          reset(channelId);
-          clearAttachments();
-        },
-        onError(error, variables, context) {
-          console.log({ error, variables, context });
-          toastStore.addToast({
-            title: 'Could not send message',
-            description: 'Message could not be sent, please try again later.',
-            type: 'ERROR',
-            duration: Infinity,
-          });
-        },
-      },
-    );
-  };
+    const createMessage = () => {
+        mutate(
+            { channelId, content, attachments: attachments.map((a) => a.id) },
+            {
+                onSuccess() {
+                    reset(channelId);
+                    clearAttachments();
+                },
+            },
+        );
+    };
 
-  return {
-    content: content ?? '',
-    attachments,
-    UploadWrapper,
-    createMessage,
-    updateContent,
-    clearAttachments,
-    deleteAttachment,
-    onFileUploadClick,
-  };
+    return {
+        content,
+        attachments,
+        UploadWrapper,
+        createMessage,
+        updateContent,
+        clearAttachments,
+        deleteAttachment,
+        onFileUploadClick,
+    };
 };
