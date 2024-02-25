@@ -1,50 +1,53 @@
-import { useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { useChannelSettingsStore } from '../stores/useChannelSettingsStore';
 import { useGuildStore } from '@/shared-stores/guildStore';
+import { useDefaultRole } from '../../GuildSettings/hooks/useDefaultRole';
 
 export const useGuildChanneSettings = () => {
-  const { guildId = '' } = useParams();
-  const section = useChannelSettingsStore(useCallback((s) => s.section, []));
-  const channelId = useChannelSettingsStore(useCallback((s) => s.channelId ?? '', []));
-  const guild = useGuildStore(useCallback((s) => s.guilds[guildId], []));
+    const { guildId = '' } = useParams();
 
-  if (!guild) {
-    return null;
-  }
+    const section = useChannelSettingsStore((s) => s.section);
+    const channelId = useChannelSettingsStore((s) => s.channelId);
+    const channel = useGuildStore(
+        (s) => s.guilds[guildId]?.channels.find((c) => c.id === channelId),
+    );
+    const parent = useGuildStore(
+        (s) => s.guilds[guildId]?.channels.find((c) => c.id === channel?.parentId),
+    );
+    const roles = useGuildStore((s) => s.guilds[guildId]?.roles);
+    const defaultRole = useDefaultRole(roles);
 
-  const channel = guild.channels.find((c) => c.id === channelId);
+    if (!channel || !roles || !defaultRole) {
+        return null;
+    }
 
-  if (!channel) {
-    return null;
-  }
+    const isPrivate = channel.roles.findIndex((cr) => cr === defaultRole.id) === -1;
 
-  const defaultRole = guild.roles?.find((r) => r.name === '@default');
+    const assignedRoles = roles.filter(
+        (r) =>
+            !['@default', '@owner'].some((n) => n === r.name) &&
+            channel.roles.some((cr) => cr === r.id),
+    );
 
-  if (!defaultRole) {
-    return null;
-  }
+    const unassignedRoles = roles.filter(
+        (r) =>
+            !['@default', '@owner'].some((n) => n === r.name) &&
+            !channel.roles.some((cr) => cr === r.id),
+    );
 
-  const isPrivate = channel.roles.findIndex((cr) => cr === defaultRole.id) === -1;
+    let parentRolesSynced = false;
 
-  const assignedRoles = guild.roles.filter(
-    (r) =>
-      channel.roles.some((cr) => cr === r.id) && !['@default', '@owner'].some((n) => n === r.name),
-  );
+    if (parent && channel.roles.length === parent.roles.length) {
+        parentRolesSynced = channel.roles.every((cr) => parent.roles.some((pr) => pr === cr));
+    }
 
-  const unassignedRoles = guild.roles.filter(
-    (r) =>
-      !channel.roles.some((cr) => cr === r.id) && !['@default', '@owner'].some((n) => n === r.name),
-  );
-
-  console.log(guild.roles);
-
-  return {
-    channel,
-    isPrivate,
-    assignedRoles,
-    unassignedRoles,
-    defaultRole,
-    section,
-  };
+    return {
+        channel,
+        isPrivate,
+        assignedRoles,
+        unassignedRoles,
+        defaultRole,
+        section,
+        parentRolesSynced,
+    };
 };
