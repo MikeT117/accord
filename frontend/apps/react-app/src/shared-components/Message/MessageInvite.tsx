@@ -3,7 +3,7 @@ import { useGetGuildInviteQuery } from '@/api/guildInvites/getGuildInvite';
 import { Avatar } from '@/shared-components/Avatar';
 import { Button } from '@/shared-components/Button';
 import { useCreateGuildMemberMutation } from '../../api/guildMembers/createGuildMember';
-import { useIsGuildMember } from '../../components/GuildBrowser/hooks/useIsMember';
+import { useIsGuildMember } from '../../shared-hooks/useIsMember';
 import { Warning } from '@phosphor-icons/react';
 
 export const MessageInvite = ({ inviteId }: { inviteId: string }) => {
