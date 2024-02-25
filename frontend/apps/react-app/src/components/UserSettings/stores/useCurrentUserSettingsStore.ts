@@ -7,28 +7,22 @@ export const USER_GUILD_PROFILES = 'USER_GUILD_PROFILES';
 export const USER_SESSIONS = 'USER_SESSIONS';
 
 type Section =
-  | typeof USER_OVERVIEW
-  | typeof USER_GUILDS
-  | typeof USER_GUILD_PROFILES
-  | typeof USER_SESSIONS;
+    | typeof USER_OVERVIEW
+    | typeof USER_GUILDS
+    | typeof USER_GUILD_PROFILES
+    | typeof USER_SESSIONS;
+
+const defaultState = {
+    isOpen: false,
+    section: USER_OVERVIEW as Section,
+};
 
 export const useCurrentUserSettingsStore = create(
-  combine(
-    {
-      isOpen: false,
-      section: USER_OVERVIEW as Section,
-    },
-    (set) => ({
-      toggleOpen: () =>
-        set((s) => {
-          if (s.isOpen) {
-            return { isOpen: false };
-          }
-          return { isOpen: true };
-        }),
-      setSection: (section: Section) => set({ section }),
-    }),
-  ),
+    combine({ ...defaultState }, (set) => ({
+        close: () => set({ ...defaultState }),
+        open: () => set({ isOpen: true }),
+        setSection: (section: Section) => set({ section }),
+    })),
 );
 
 export const currentUserSettingsStore = useCurrentUserSettingsStore.getState();

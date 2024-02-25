@@ -1,2 +1,2 @@
-export * from './UserSettings';
+export * from './UserSettingsDialog';
 export * from './stores/useCurrentUserSettingsStore';

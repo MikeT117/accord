@@ -1,51 +1,76 @@
-import { FingerPrintIcon, TrashIcon } from '@heroicons/react/24/solid';
-import { DefaultTooltip } from '@/shared-components/DefaultTooltip';
 import { IconButton } from '@/shared-components/IconButton';
-import { ListItem } from '@/shared-components/ListItem';
 import { TimeAgo } from '@/shared-components/TimeAgo';
-import { Pip } from '../../shared-components/Pip';
-import { useCurrentUserSessions } from './hooks/useCurrentUserSessions';
+import { InfiniteLoad } from '../../shared-components/InfiniteLoad';
+import { useDeleteUserSessionMutation } from '../../api/users/deleteUserSession';
+import { useInfiniteUserSessionsQuery } from '../../api/users/getUserSessions';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '../../shared-components/Table';
+import { Trash } from '@phosphor-icons/react';
+import { getTimestampFromUUID } from '../../utils/timestampFromUUID';
+import { useI18nContext } from '../../i18n/i18n-react';
 
 export const UserSessions = () => {
-  // TODO: Sort out auto page fetching
-  const { data, deleteSession, fetchNextPage, hasNextPage } = useCurrentUserSessions();
-  return (
-    <div className='flex flex-col space-y-6 pl-8 pt-12'>
-      <h1 className='text-3xl font-semibold text-gray-12'>Sessions Manager</h1>
-      <div className='flex flex-col space-y-2'>
-        <span className='text-sm text-gray-11'>Sessions</span>
-        <ul className='space-y-1'>
-          {data?.pages.map((page) =>
-            page.map((s) => (
-              <ListItem
-                key={s.id}
-                intent='secondary'
-                className='justify-between'
-                isHoverable={false}
-                padding='lg'
-              >
-                <FingerPrintIcon className='h-5 w-5' />
-                <span>{s.id}</span>
-                <TimeAgo
-                  className='w-[90px] whitespace-nowrap align-bottom text-xs font-medium text-gray-11'
-                  date={s.createdAt}
-                />
-                <div className='flex w-[120px] items-center justify-end'>
-                  {s.isCurrentSession ? (
-                    <Pip>Current Session</Pip>
-                  ) : (
-                    <DefaultTooltip tootipText='Delete Session'>
-                      <IconButton intent='danger' onClick={() => deleteSession(s.id)}>
-                        <TrashIcon className='h-4 w-4' />
-                      </IconButton>
-                    </DefaultTooltip>
-                  )}
-                </div>
-              </ListItem>
-            )),
-          )}
-        </ul>
-      </div>
-    </div>
-  );
+    const { LL } = useI18nContext();
+
+    const { data, fetchNextPage, hasNextPage } = useInfiniteUserSessionsQuery();
+    const { mutate: deleteSession } = useDeleteUserSessionMutation();
+
+    return (
+        <div className='flex flex-col space-y-6 pl-8 pt-12'>
+            <h1 className='text-3xl font-semibold text-gray-12'>{LL.General.SessionsManager()}</h1>
+
+            <div className='flex rounded-md max-h-[85vh] overflow-auto'>
+                <Table>
+                    <TableHeader className='bg-gray-1'>
+                        <TableRow>
+                            <TableHead>{LL.Tables.Heads.ID()}</TableHead>
+                            <TableHead>{LL.Tables.Heads.Created()}</TableHead>
+                            <TableHead>{LL.Tables.Heads.Expires()}</TableHead>
+                            <TableHead>{LL.Tables.Heads.CurrentSession()}</TableHead>
+                            <TableHead>{LL.Tables.Heads.Actions()}</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody className='bg-gray-2'>
+                        {data?.pages.map((p) =>
+                            p.map((s) => (
+                                <TableRow key={s.id}>
+                                    <TableCell>
+                                        <span>{s.id}</span>
+                                    </TableCell>
+                                    <TableCell>
+                                        <TimeAgo date={getTimestampFromUUID(s.id)} />
+                                    </TableCell>
+                                    <TableCell>
+                                        <TimeAgo date={s.expiresAt} />
+                                    </TableCell>
+                                    <TableCell>
+                                        <span>{s.isCurrentSession ? 'Yes' : 'No'}</span>
+                                    </TableCell>
+                                    <TableCell>
+                                        {!s.isCurrentSession && (
+                                            <IconButton
+                                                padding='s'
+                                                intent='danger'
+                                                tooltipText={LL.Tooltips.DeleteSession()}
+                                                onClick={() => deleteSession(s.id)}
+                                            >
+                                                <Trash size={16} />
+                                            </IconButton>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            )),
+                        )}
+                    </TableBody>
+                </Table>
+                <InfiniteLoad enabled={hasNextPage} onInView={fetchNextPage} />
+            </div>
+        </div>
+    );
 };
