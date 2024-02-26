@@ -5,68 +5,69 @@ import { Input } from '@/shared-components/Input';
 import { LoadingSpinner } from '@/shared-components/LoadingSpinner';
 import { guildSettingsStore } from '../../stores/useGuildSettingsStore';
 import { useUnassignRoleFromUserMutation } from '../../../../api/userRoles/unassignRoleFromUser';
-import { useGetGuildRoleMembersQuery } from '../../../../api/guildRoles/getGuildRoleMembers';
+import { useInfiniteGuildRoleMembersQuery } from '../../../../api/guildRoles/getGuildRoleMembers';
 import { GuildRole } from '../../../../types';
+import { InfiniteLoad } from '../../../../shared-components/InfiniteLoad';
+import { useI18nContext } from '../../../../i18n/i18n-react';
 
 export const GuildRoleEditorAssignedMembers = ({
-  role,
-  isEditable,
+    role,
+    isEditable = true,
 }: {
-  role: GuildRole;
-  isEditable: boolean;
+    role: GuildRole;
+    isEditable?: boolean;
 }) => {
-  const [memberFilter, setMemberFilter] = useState('');
-  const { mutate: unassignRole } = useUnassignRoleFromUserMutation();
-  const { data, isLoading } = useGetGuildRoleMembersQuery(role.guildId, role.id);
+    const { LL } = useI18nContext();
+    const [filter, setFilter] = useState('');
+    const { mutate: unassignRole } = useUnassignRoleFromUserMutation();
+    const { data, isLoading, hasNextPage, fetchNextPage } = useInfiniteGuildRoleMembersQuery(
+        role.guildId,
+        role.id,
+        filter,
+    );
 
-  const filteredMembers = !memberFilter.trim()
-    ? data?.pages
-        .flat()
-        .filter((m) => m.user.displayName.toLowerCase().includes(memberFilter.toLowerCase()))
-    : data?.pages.flat();
-  const handleMemberFilterInputChange = (val: string) => {
-    setMemberFilter(val);
-  };
+    const handleMemberFilterInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFilter(e.currentTarget.value);
+    };
 
-  const handleUnassignRole = (userId: string) => {
-    if (isEditable) {
-      unassignRole({ guildId: role.guildId, userId, roleId: role.id });
-    }
-  };
+    const handleUnassignRole = (userId: string) => {
+        unassignRole({ guildId: role.guildId, userId, roleId: role.id });
+    };
 
-  return (
-    <>
-      <div className='mb-6 flex items-center space-x-3'>
-        <Input
-          id='member-filter'
-          placeholder='Filter Members'
-          onChange={(e) => handleMemberFilterInputChange(e.currentTarget.value)}
-          value={memberFilter}
-        />
-        <Button
-          onClick={guildSettingsStore.toggleAssignRoleMembersOpen}
-          disabled={!isEditable}
-          intent='primary'
-        >
-          Add Member
-        </Button>
-      </div>
-      <div className='mb-6 flex flex-col'>
-        <span className='mb-1.5 text-sm text-gray-11'>Members</span>
-        {isLoading && <LoadingSpinner />}
-        {filteredMembers && (
-          <ul className='space-y-2'>
-            {filteredMembers.map((member) => (
-              <GuildMemberListItem
-                key={member.user.id}
-                user={member.user}
-                onDeleteClick={() => handleUnassignRole(member.user.id)}
-                isEditable={isEditable}
-              />
-            ))}
-          </ul>
-        )}
-      </div>
-    </>
-  );
+    return (
+        <>
+            <div className='mb-6 flex items-center space-x-3'>
+                <Input
+                    id='member-filter'
+                    placeholder={LL.Inputs.Placeholders.FilterMembers()}
+                    onChange={handleMemberFilterInputChange}
+                    value={filter}
+                />
+                <Button
+                    onClick={guildSettingsStore.openRoleMemberAssignment}
+                    disabled={!isEditable}
+                    intent='primary'
+                >
+                    {LL.Actions.AddMember()}
+                </Button>
+            </div>
+            <div className='mb-6 flex flex-col'>
+                <span className='mb-1.5 text-sm text-gray-11'>{LL.General.Members()}</span>
+                {isLoading && <LoadingSpinner />}
+                <ul className='space-y-2'>
+                    {data?.map((page) =>
+                        page.map((member) => (
+                            <GuildMemberListItem
+                                key={member.user.id}
+                                user={member.user}
+                                onDeleteClick={() => handleUnassignRole(member.user.id)}
+                                isEditable={isEditable}
+                            />
+                        )),
+                    )}
+                    <InfiniteLoad enabled={hasNextPage} onInView={fetchNextPage} />
+                </ul>
+            </div>
+        </>
+    );
 };

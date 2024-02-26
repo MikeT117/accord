@@ -1,46 +1,64 @@
-import { useLayoutEffect, useState } from 'react';
+import { useState } from 'react';
 import { UnsavedSettingsPrompt } from '@/shared-components/Settings/UnsavedSettingsPrompt';
 import { Input } from '@/shared-components/Input';
 import { useUpdateRoleMutation } from '@/api/guildRoles/updateGuildRole';
 import { GuildRole } from '../../../../types';
+import { z } from 'zod';
+import { useI18nContext } from '../../../../i18n/i18n-react';
+
+const roleNameSchema = z
+    .string()
+    .min(3)
+    .max(100)
+    .refine((s) => !s.includes(' '));
 
 export const GuildRoleEditorDisplay = ({
-  role,
-  isEditable,
+    role,
+    isEditable = true,
 }: {
-  role: GuildRole;
-  isEditable: boolean;
+    role: GuildRole;
+    isEditable?: boolean;
 }) => {
-  const [roleName, set] = useState(role.name);
-  const { mutate: updateRole } = useUpdateRoleMutation();
+    const { LL } = useI18nContext();
 
-  useLayoutEffect(() => {
-    set(role.name);
-  }, [role]);
+    const [modifiedName, setModifiedName] = useState(role.name);
+    const { mutate: updateRole } = useUpdateRoleMutation();
 
-  const isValid = /[a-zA-Z-]+/g.test(roleName);
-  const changesCanBeApplied = isValid && roleName !== role.name;
-  const saveChanges = () => {
-    updateRole({ ...role, name: roleName });
-  };
+    const { success: isModifiedNameValid } = roleNameSchema.safeParse(modifiedName);
 
-  return (
-    <ul className='space-y-2'>
-      <label className='flex w-full flex-col' htmlFor='role-name'>
-        <span className='mb-2 text-sm font-semibold text-gray-11'>Role Name</span>
-        <Input
-          id='role-name'
-          placeholder={roleName}
-          value={roleName}
-          onChange={(e) => set(e.currentTarget.value)}
-          disabled={!isEditable}
-        />
-      </label>
-      <UnsavedSettingsPrompt
-        isVisible={changesCanBeApplied}
-        onDiscard={() => set(role.name)}
-        onSave={saveChanges}
-      />
-    </ul>
-  );
+    const saveChanges = () => {
+        updateRole({ ...role, name: modifiedName });
+    };
+
+    const discardChanges = () => {
+        setModifiedName(role.name);
+    };
+
+    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setModifiedName(e.currentTarget.value);
+    };
+
+    return (
+        <ul className='space-y-2'>
+            <label className='flex w-full flex-col' htmlFor='role-name'>
+                <span className='mb-2 text-sm font-semibold text-gray-11'>
+                    {LL.General.RoleName()}
+                </span>
+                <Input
+                    id='role-name'
+                    placeholder={role.name}
+                    value={modifiedName}
+                    isError={modifiedName !== role.name && !isModifiedNameValid}
+                    onChange={handleNameChange}
+                    disabled={!isEditable}
+                />
+            </label>
+            <UnsavedSettingsPrompt
+                isModified={modifiedName !== role.name}
+                isValid={isModifiedNameValid}
+                onDiscard={discardChanges}
+                onSave={saveChanges}
+            />
+        </ul>
+    );
 };
