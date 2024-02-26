@@ -1,35 +1,38 @@
 import { useParams } from 'react-router-dom';
 import { useGuildStore } from '@/shared-stores/guildStore';
-import { historyStore } from '@/shared-stores/historyStore';
-
-const { setGuildId } = historyStore;
+import { useMemo } from 'react';
+import { sortChannels } from '../utils/sortChannels';
 
 export const useChannelSidebarState = () => {
-  const { guildId = '', channelId = '' } = useParams();
-  const guild = useGuildStore((s) => s.guilds[guildId]);
+    const { guildId = '', channelId = '' } = useParams();
+    const guildName = useGuildStore((s) => s.guilds[guildId]?.name);
+    const guildCreatorId = useGuildStore((s) => s.guilds[guildId]?.creatorId);
+    const guildRoles = useGuildStore((s) => s.guilds[guildId]?.roles);
+    const guildMemberRoles = useGuildStore((s) => s.guilds[guildId]?.member.roles);
+    const channels = useGuildStore((s) => s.guilds[guildId]?.channels);
 
-  if (!guild) {
-    return null;
-  }
+    if (
+        typeof guildName === 'undefined' ||
+        typeof guildCreatorId === 'undefined' ||
+        typeof guildRoles === 'undefined' ||
+        typeof guildMemberRoles === 'undefined' ||
+        typeof channels === 'undefined'
+    ) {
+        return null;
+    }
 
-  const viewableGuildRoles = guild.roles.filter((r) => r.permissions & (1 << 0));
-  const viewableMemberRoles = guild.member.roles.filter((id) =>
-    viewableGuildRoles.some((vgr) => vgr.id === id),
-  );
+    const { parents, children, orphans } = useMemo(
+        () => sortChannels(channels, guildMemberRoles, guildRoles),
+        [channels, guildMemberRoles, guildRoles],
+    );
 
-  const channels = guild.channels.filter(
-    (c) =>
-      c.guildId === guildId &&
-      c.roles.filter((r) => viewableMemberRoles?.some((vmr) => vmr === r)).length !== 0,
-  );
-
-  setGuildId(guildId);
-
-  return {
-    guildId,
-    channelId,
-    ownerUserAccountId: guild.creatorId,
-    name: guild.name,
-    channels,
-  };
+    return {
+        guildId,
+        channelId,
+        guildName,
+        guildCreatorId,
+        children,
+        orphans,
+        parents,
+    };
 };
