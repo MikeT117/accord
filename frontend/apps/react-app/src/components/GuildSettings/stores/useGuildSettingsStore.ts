@@ -10,40 +10,29 @@ export const GUILD_MEMBERS = 'GUILD_MEMBERS';
 export const GUILD_COMMUNITY = 'GUILD_COMMUNITY';
 
 export type GuildSettingsSection =
-  | typeof GUILD_OVERVIEW
-  | typeof GUILD_INVITES
-  | typeof GUILD_BANS
-  | typeof GUILD_MEMBERS
-  | typeof GUILD_ROLES
-  | typeof GUILD_ROLE_EDITOR;
+    | typeof GUILD_OVERVIEW
+    | typeof GUILD_INVITES
+    | typeof GUILD_BANS
+    | typeof GUILD_MEMBERS
+    | typeof GUILD_ROLES
+    | typeof GUILD_ROLE_EDITOR;
+
+const defaultState = {
+    isOpen: false,
+    isRoleMemberAssignmentOpen: false,
+    section: GUILD_OVERVIEW as GuildSettingsSection,
+    roleId: null as string | null,
+};
 
 export const useGuildSettingsStore = create(
-  combine(
-    {
-      isOpen: false,
-      isAssignRoleMembersOpen: false,
-      section: GUILD_OVERVIEW as GuildSettingsSection,
-      guildRoleId: null as string | null,
-    },
-    (set) => ({
-      toggleOpen: () =>
-        set((s) => {
-          if (s.isOpen) {
-            return {
-              isOpen: false,
-              isAssignRoleMembersOpen: false,
-              section: GUILD_OVERVIEW,
-              guildRole: null,
-            };
-          }
-          return { isOpen: true };
-        }),
-      toggleAssignRoleMembersOpen: () =>
-        set((s) => ({ isAssignRoleMembersOpen: !s.isAssignRoleMembersOpen })),
-      setRole: (guildRoleId: string) => set({ guildRoleId, section: GUILD_ROLE_EDITOR }),
-      setSection: (section: GuildSettingsSection) => set({ section }),
-    }),
-  ),
+    combine({ ...defaultState }, (set) => ({
+        open: () => set({ ...defaultState, isOpen: true }),
+        close: () => set({ ...defaultState, isOpen: false }),
+        openRoleMemberAssignment: () => set({ isRoleMemberAssignmentOpen: true }),
+        closeRoleMemberAssignment: () => set({ isRoleMemberAssignmentOpen: false }),
+        setRole: (roleId: string) => set({ roleId, section: GUILD_ROLE_EDITOR }),
+        setSection: (section: GuildSettingsSection) => set({ section }),
+    })),
 );
 
 export const guildSettingsStore = useGuildSettingsStore.getState();
