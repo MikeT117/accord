@@ -1,88 +1,117 @@
-import { ChatBubbleLeftEllipsisIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { Avatar } from '@/shared-components/Avatar';
-import { DefaultTooltip } from '@/shared-components/DefaultTooltip';
 import { IconButton } from '@/shared-components/IconButton';
 import { ListItem } from '@/shared-components/ListItem';
-import { XMarkIcon } from '@heroicons/react/24/solid';
 import { UserRelationship } from '../../../types';
+import { ChatTeardropText, Check, X } from '@phosphor-icons/react';
+import { useI18nContext } from '../../../i18n/i18n-react';
 
 export const RelationshipListItem = ({
-  relationship,
-  isOutgoing,
-  onDelete,
-  onChat,
-  onAccept,
+    relationship,
+    isOutgoing,
+    onDelete,
+    onChat,
+    onAccept,
 }: {
-  relationship: UserRelationship;
-  isOutgoing?: boolean;
-  onChat?: () => void;
-  onDelete?: () => void;
-  onAccept?: () => void;
-}) => (
-  <ListItem padding='lg' intent='secondary' isHoverable={false}>
-    <div className='mr-auto flex items-center space-x-2'>
-      <Avatar size='md' src={relationship.user.avatar} />
-      <div className='flex flex-col space-y-0.5'>
-        <span className='text-sm font-semibold text-gray-12'>{relationship.user.displayName}</span>
-        {relationship.status !== 0 && (
-          <span className='text-xs font-medium text-gray-11'>{`${
-            isOutgoing ? 'Outgoing' : 'Incoming'
-          } Request`}</span>
-        )}
-      </div>
-    </div>
-    <div className='flex items-center space-x-2'>
-      {relationship.status === 0 && (
-        <>
-          <DefaultTooltip tootipText={`DM ${relationship.user.displayName}`} position='top'>
-            <IconButton onClick={onChat} intent='secondary'>
-              <ChatBubbleLeftEllipsisIcon className='h-5 w-5' />
-            </IconButton>
-          </DefaultTooltip>
-          <DefaultTooltip tootipText={`Unfriend ${relationship.user.displayName}`} position='top'>
-            <IconButton onClick={onDelete} intent='danger'>
-              <XMarkIcon className='h-5 w-5' />
-            </IconButton>
-          </DefaultTooltip>
-        </>
-      )}
-      {relationship.status === 2 && (
-        <DefaultTooltip tootipText={`Unblock ${relationship.user.displayName}`} position='top'>
-          <IconButton onClick={onDelete} intent='danger'>
-            <XMarkIcon className='h-5 w-5' />
-          </IconButton>
-        </DefaultTooltip>
-      )}
-      {relationship.status === 1 && !isOutgoing && (
-        <>
-          <DefaultTooltip
-            tootipText={`Accept ${relationship.user.displayName}'s request`}
-            position='top'
-          >
-            <IconButton onClick={onAccept} intent='success'>
-              <CheckIcon className='h-5 w-5' />
-            </IconButton>
-          </DefaultTooltip>
-          <DefaultTooltip
-            tootipText={`Decline ${relationship.user.displayName}'s request`}
-            position='top'
-          >
-            <IconButton onClick={onDelete} intent='danger'>
-              <XMarkIcon className='h-5 w-5' />
-            </IconButton>
-          </DefaultTooltip>
-        </>
-      )}
-      {relationship.status === 1 && isOutgoing && (
-        <DefaultTooltip
-          tootipText={`Cancel request to ${relationship.user.displayName}`}
-          position='top'
-        >
-          <IconButton onClick={onDelete} intent='danger'>
-            <XMarkIcon className='h-5 w-5' />
-          </IconButton>
-        </DefaultTooltip>
-      )}
-    </div>
-  </ListItem>
-);
+    relationship: UserRelationship;
+    isOutgoing?: boolean;
+    onChat?: () => void;
+    onDelete?: () => void;
+    onAccept?: () => void;
+}) => {
+    const { LL } = useI18nContext();
+
+    return (
+        <ListItem padding='lg' intent='secondary' isHoverable={false}>
+            <div className='mr-auto flex items-center space-x-2'>
+                <Avatar size='md' src={relationship.user.avatar} />
+                <div className='flex flex-col space-y-0.5'>
+                    <span className='text-sm font-semibold text-gray-12'>
+                        {relationship.user.displayName}
+                    </span>
+                    {relationship.status === 1 && (
+                        <span className='text-xs font-medium text-gray-11'>
+                            {isOutgoing
+                                ? LL.General.OutgoingRequest()
+                                : LL.General.IncomingRequest()}
+                        </span>
+                    )}
+                </div>
+            </div>
+            <div className='flex items-center space-x-2'>
+                {relationship.status === 0 && (
+                    <>
+                        <IconButton
+                            onClick={onChat}
+                            intent='secondary'
+                            tooltipText={LL.Tooltips.MessageUser({
+                                displayName: relationship.user.displayName,
+                            })}
+                            tooltipPosition='top'
+                        >
+                            <ChatTeardropText size={20} />
+                        </IconButton>
+                        <IconButton
+                            onClick={onDelete}
+                            intent='danger'
+                            tooltipText={LL.Tooltips.UnfriendUser({
+                                displayName: relationship.user.displayName,
+                            })}
+                            tooltipPosition='top'
+                        >
+                            <X size={20} />
+                        </IconButton>
+                    </>
+                )}
+                {relationship.status === 2 && (
+                    <IconButton
+                        onClick={onDelete}
+                        intent='danger'
+                        tooltipText={LL.Tooltips.UnblockUser({
+                            displayName: relationship.user.displayName,
+                        })}
+                        tooltipPosition='top'
+                    >
+                        <X size={20} />
+                    </IconButton>
+                )}
+                {relationship.status === 1 && !isOutgoing && (
+                    <>
+                        <IconButton
+                            onClick={onAccept}
+                            intent='success'
+                            tooltipText={LL.Tooltips.AcceptUserRequest({
+                                displayName: relationship.user.displayName,
+                            })}
+                            tooltipPosition='top'
+                        >
+                            <Check size={20} />
+                        </IconButton>
+
+                        <IconButton
+                            onClick={onDelete}
+                            intent='danger'
+                            tooltipText={LL.Tooltips.DeclineUserRequest({
+                                displayName: relationship.user.displayName,
+                            })}
+                            tooltipPosition='top'
+                        >
+                            <X size={20} />
+                        </IconButton>
+                    </>
+                )}
+                {relationship.status === 1 && isOutgoing && (
+                    <IconButton
+                        onClick={onDelete}
+                        intent='danger'
+                        tooltipText={LL.Tooltips.CancelUserRequest({
+                            displayName: relationship.user.displayName,
+                        })}
+                        tooltipPosition='top'
+                    >
+                        <X size={20} />
+                    </IconButton>
+                )}
+            </div>
+        </ListItem>
+    );
+};
