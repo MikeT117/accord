@@ -1,81 +1,84 @@
 import { ListItem } from '@/shared-components/ListItem';
 import { GuildChannelContextMenu } from './GuildChannelContextMenu';
 import { Avatar } from '@/shared-components/Avatar';
-import { MicrophoneIcon, SpeakerXMarkIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
 import { VoiceChannelMemberContextMenu } from './VoiceChannelMemberContextMenu';
 import { useVoiceChannelStates } from './hooks/useVoiceChannelStates';
 import { useDrag } from 'react-dnd';
 import { useAccordVoice } from '../AccordVoice';
+import { GuildChannel } from '../../types';
+import { useCurrentUserId } from '../../shared-stores/currentUserStore';
+import { MicrophoneSlash, SpeakerSimpleHigh, SpeakerSimpleSlash } from '@phosphor-icons/react';
 
 export const GuildVoiceChannelListItem = ({
-  voiceChannel,
-  onDelete,
-  onSettings,
+    channel,
+    onDelete,
+    onSettings,
 }: {
-  voiceChannel: GuildVoiceChannel;
-  onDelete: () => void;
-  onSettings: () => void;
+    channel: GuildChannel;
+    onDelete: () => void;
+    onSettings: () => void;
 }) => {
-  const { currentUserId, AccordAudio, joinVoiceChannel, pauseResumeConsumer, pauseResumeProducer } =
-    useAccordVoice();
-  const voiceChannelStates = useVoiceChannelStates(voiceChannel.id);
+    const userId = useCurrentUserId();
+    const { AccordAudio, joinVoiceChannel, mute, selfMute } = useAccordVoice(userId);
+    const voiceChannelStates = useVoiceChannelStates(channel.id);
 
-  const [_, dragRef] = useDrag(
-    () => ({
-      type: 'GUILD_CHANNEL',
-      item: voiceChannel,
-    }),
-    [],
-  );
+    const [_, dragRef] = useDrag(
+        () => ({
+            type: 'GUILD_CHANNEL',
+            item: channel,
+        }),
+        [],
+    );
 
-  const handleVoiceChannelClick = () => {
-    joinVoiceChannel(voiceChannel.guildId, voiceChannel.id);
-  };
+    const handleVoiceChannelClick = () => {
+        joinVoiceChannel(channel.id, channel.guildId);
+    };
 
-  const handleMute = (id: string) => {
-    currentUserId === id ? pauseResumeProducer() : pauseResumeConsumer(id);
-  };
+    const handleMute = (id: string) => {
+        userId === id ? selfMute() : mute(id);
+    };
 
-  return (
-    <GuildChannelContextMenu
-      id={voiceChannel.id}
-      type={voiceChannel.channelType}
-      onDelete={onDelete}
-      onSettings={onSettings}
-    >
-      <ListItem
-        ref={dragRef}
-        onClick={handleVoiceChannelClick}
-        intent='secondary'
-        baseBg={false}
-        isActionable
-      >
-        <SpeakerWaveIcon className='h-5 w-5 stroke-2' />
-        <span className='ml-1 text-sm'>{voiceChannel.name}</span>
-      </ListItem>
-      <ul className='mt-0.5 flex flex-col space-y-1 pl-8'>
-        {voiceChannelStates?.map((vcs) => (
-          <VoiceChannelMemberContextMenu
-            key={vcs.userAccountId}
-            voiceChannelState={vcs}
-            onMute={() => handleMute(vcs.userAccountId)}
-          >
-            <ListItem intent={vcs.mute || vcs.selfMute ? 'danger' : 'secondary'}>
-              <Avatar
-                size='xs'
-                src={vcs.member.user.avatar}
-                fallback={vcs.member.nickname ?? vcs.member.user.displayName}
-              />
-              <span className='ml-2 mr-auto select-none text-sm font-medium'>
-                {vcs.member.nickname ?? vcs.member.user.displayName}
-              </span>
-              {vcs.mute && <SpeakerXMarkIcon className='h-5 w-5 stroke-2 text-red-11' />}
-              {vcs.selfMute && <MicrophoneIcon className='h-5 w-5 stroke-2 text-red-11' />}
+    return (
+        <GuildChannelContextMenu
+            id={channel.id}
+            channelType={channel.channelType}
+            onDelete={onDelete}
+            onSettings={onSettings}
+        >
+            <ListItem
+                ref={dragRef}
+                onClick={handleVoiceChannelClick}
+                intent='secondary'
+                className='space-x-1.5'
+                baseBg={false}
+                isActionable
+            >
+                <SpeakerSimpleHigh size={20} />
+                <span className='ml-1 text-sm'>{channel.name}</span>
             </ListItem>
-          </VoiceChannelMemberContextMenu>
-        ))}
-        <AccordAudio />
-      </ul>
-    </GuildChannelContextMenu>
-  );
+            <ul className='mt-0.5 flex flex-col space-y-1 pl-8'>
+                {voiceChannelStates?.map((vcs) => (
+                    <VoiceChannelMemberContextMenu
+                        key={vcs.user.id}
+                        voiceChannelState={vcs}
+                        onMute={() => handleMute(vcs.user.id)}
+                    >
+                        <ListItem intent={vcs.mute || vcs.selfMute ? 'danger' : 'secondary'}>
+                            <Avatar
+                                size='xs'
+                                src={vcs.user.avatar}
+                                fallback={vcs.user.displayName}
+                            />
+                            <span className='ml-2 mr-auto select-none text-sm font-medium'>
+                                {vcs.user.displayName}
+                            </span>
+                            {vcs.mute && <SpeakerSimpleSlash size={20} className='text-red-11' />}
+                            {vcs.selfMute && <MicrophoneSlash size={20} className='text-red-11' />}
+                        </ListItem>
+                    </VoiceChannelMemberContextMenu>
+                ))}
+                <AccordAudio />
+            </ul>
+        </GuildChannelContextMenu>
+    );
 };

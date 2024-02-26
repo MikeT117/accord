@@ -1,31 +1,34 @@
 import { ReactNode } from 'react';
-
-import { SpeakerXMarkIcon, SpeakerWaveIcon } from '@heroicons/react/20/solid';
 import { ContextMenu, ContextMenuItem } from '@/shared-components/ContextMenu';
 import { VoiceChannelState } from '../../types';
+import { SpeakerSimpleHigh } from '@phosphor-icons/react';
+import { useI18nContext } from '../../i18n/i18n-react';
 
 export const VoiceChannelMemberContextMenu = ({
-  voiceChannelState,
-  children,
-  onMute,
+    voiceChannelState,
+    children,
+    onMute,
 }: {
-  onMute: () => void;
-  children: ReactNode;
-  voiceChannelState: VoiceChannelState;
+    onMute: () => void;
+    children: ReactNode;
+    voiceChannelState: VoiceChannelState;
 }) => {
-  const isMuted = voiceChannelState.mute || voiceChannelState.selfMute;
-  return (
-    <>
-      <ContextMenu tiggerElem={children} className='min-w-[190px]'>
-        <ContextMenuItem onClick={onMute} fullWidth intent={isMuted ? 'primary' : 'danger'}>
-          <span className='mr-2 text-sm'>{isMuted ? 'Unmute' : 'Mute'}</span>
-          {isMuted ? (
-            <SpeakerWaveIcon className='ml-auto h-5 w-5' />
-          ) : (
-            <SpeakerXMarkIcon className='ml-auto h-5 w-5' />
-          )}
-        </ContextMenuItem>
-      </ContextMenu>
-    </>
-  );
+    const { LL } = useI18nContext();
+    const isMuted = voiceChannelState.mute || voiceChannelState.selfMute;
+    return (
+        <>
+            <ContextMenu tiggerElem={children} className='min-w-[190px]'>
+                <ContextMenuItem onClick={onMute} fullWidth intent={isMuted ? 'primary' : 'danger'}>
+                    <span className='mr-2 text-sm'>
+                        {isMuted ? LL.Actions.Unmute() : LL.Actions.Mute()}
+                    </span>
+                    {isMuted ? (
+                        <SpeakerSimpleHigh size={20} className='ml-auto' />
+                    ) : (
+                        <SpeakerSimpleHigh size={20} className='ml-auto' />
+                    )}
+                </ContextMenuItem>
+            </ContextMenu>
+        </>
+    );
 };

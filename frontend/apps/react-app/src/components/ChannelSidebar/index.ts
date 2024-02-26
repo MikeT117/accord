@@ -1,1 +1,1 @@
-export * from "./ChannelSidebar";
+export * from './ChannelSidebar';
