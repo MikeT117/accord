@@ -2,19 +2,16 @@ package main
 
 import (
 	"context"
-	"log"
 
 	"github.com/MikeT117/accord/backend/internal/database"
 	"github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
+	"github.com/MikeT117/accord/backend/internal/utils"
 	websocket_api "github.com/MikeT117/accord/backend/websocket_api"
-	"github.com/joho/godotenv"
 )
 
 func main() {
-	if err := godotenv.Load(".env"); err != nil {
-		log.Fatal("Error loading .env file")
-	}
+	utils.LoadEnvironment()
 
 	ctx := context.Background()
 	pool := database.Create(ctx)
