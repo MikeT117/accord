@@ -11,7 +11,7 @@ export const useFilteredPrivateChannels = () => {
     const userId = useCurrentUserId();
     const channels = usePrivateChannelStore((s) => s.ids.map((i) => s.channels[i]!));
 
-    const filteredChannels = () => {
+    const filteredChannels = (() => {
         if (filter.trim().length === 0) {
             return channels;
         }
@@ -23,7 +23,7 @@ export const useFilteredPrivateChannels = () => {
                     r.displayName.toLocaleLowerCase().includes(filter.toLocaleLowerCase()),
             ),
         );
-    };
+    })();
 
     return {
         filter,
