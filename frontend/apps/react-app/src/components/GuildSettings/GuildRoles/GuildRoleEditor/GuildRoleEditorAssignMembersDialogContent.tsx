@@ -1,9 +1,8 @@
-import { ReactNode, useState } from 'react';
+import { useState } from 'react';
 import { GuildMemberListItem } from '../../GuildMemberListItem';
 import { LoadingSpinner } from '@/shared-components/LoadingSpinner';
 import { Input } from '@/shared-components/Input';
-import { guildSettingsStore, useGuildSettingsStore } from '../../stores/useGuildSettingsStore';
-import { Dialog } from '@/shared-components/Dialog';
+import { guildSettingsStore } from '../../stores/useGuildSettingsStore';
 import { Button } from '@/shared-components/Button';
 import { useInfiniteGuildRoleMembersQuery } from '../../../../api/guildRoles/getGuildRoleMembers';
 import { useAssignRoleToUserMutation } from '../../../../api/userRoles/assignRoleToUser';

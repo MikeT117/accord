@@ -34,7 +34,7 @@ export const UserDashboardFriendRequests = () => {
                         onChange={(e) => setFilter(e.currentTarget.value)}
                         value={filter}
                     />
-                    <Button onClick={useRelationshipCreatorStore.getState().toggleOpen}>
+                    <Button onClick={useRelationshipCreatorStore.getState().open}>
                         {LL.Actions.SendRequest()}
                     </Button>
                 </div>
