@@ -1,0 +1,24 @@
+FROM nginx:alpine
+
+WORKDIR /usr/share/nginx/html
+
+ENV HOST=''
+ENV CLOUDINARY_URL=''
+ENV CLOUDINARY_RES_URL=''
+ENV CLOUDINARY_API_KEY=''
+ENV API_URL=''
+ENV RTC_URL=''
+ENV WS_URL=''
+
+RUN rm -rf /usr/share/nginx/html/*
+
+COPY ./frontend/apps/react-app/dist .
+COPY --chmod=0755 /frontend/apps/react-app/*.sh /opt/
+
+RUN rm -rf /etc/nginx/nginx.conf
+
+COPY ./frontend/apps/react-app/nginx.conf /etc/nginx/nginx.conf
+RUN chown -R nginx:nginx /usr/share/nginx/html
+
+CMD [ "nginx", "-g", "daemon off;" ]
+ENTRYPOINT ["/opt/entrypoint.sh"]

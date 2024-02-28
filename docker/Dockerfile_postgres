@@ -1,0 +1,9 @@
+FROM postgres
+
+RUN apt update && apt install curl -y
+
+RUN cd "$(mktemp -d)" && curl -LO "https://github.com/fboulnois/pg_uuidv7/releases/download/v1.4.1/{pg_uuidv7.tar.gz,SHA256SUMS}" && tar xf pg_uuidv7.tar.gz && export PG_MAJOR=$(pg_config --version | sed 's/^.* \([0-9]\{1,\}\).*$/\1/') && cp "$PG_MAJOR/pg_uuidv7.so" "$(pg_config --pkglibdir)" && cp pg_uuidv7--1.4.sql pg_uuidv7.control "$(pg_config --sharedir)/extension"
+# psql -c "CREATE EXTENSION pg_uuidv7;"
+
+
+COPY ./backend/internal/sqlc/schema/schema.sql /docker-entrypoint-initdb.d/

@@ -1,0 +1,51 @@
+FROM golang:1.21 as BUILDER
+
+WORKDIR /app
+
+COPY ./backend/go.mod ./
+COPY ./backend/go.sum ./
+
+RUN go mod download && go mod verify
+
+COPY ./backend/rest_api ./rest_api
+COPY ./backend/internal ./internal
+COPY ./backend/cmd/rest_api ./cmd/rest_api
+COPY ./backend/models ./models
+
+RUN go build -v -o /app/go_accord_rest_api ./cmd/rest_api/...
+
+
+FROM golang:1.21
+
+WORKDIR /app
+
+COPY --from=BUILDER /app/go_accord_rest_api ./
+
+ENV APP_MODE=''
+
+ENV GITHUB_KEY=''
+ENV GITHUB_SECRET=''
+ENV GITHUB_REDIRECT_URL=''
+
+ENV GITLAB_APP_ID=''
+ENV GITLAB_SECRET=''
+ENV GITLAB_REDIRECT_URL=''
+
+ENV JWT_ISSUER=''
+ENV JWT_ACCESSTOKEN_KEY=''
+ENV JWT_REFRESHTOKEN_KEY=''
+
+ENV CLOUDINARY_SECRET=''
+ENV CLOUDINARY_API_KEY=''
+ENV CLOUDINARY_ENVIRONMENT=''
+
+ENV DATABASE_URL=''
+
+ENV HTTP_PORT=''
+ENV HOST=''
+
+ENV NATS_URL=''
+ENV NATS_USER=''
+ENV NATS_PASSWORD=''
+
+CMD ["/app/go_accord_rest_api"]

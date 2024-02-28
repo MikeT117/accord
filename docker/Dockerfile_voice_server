@@ -1,0 +1,45 @@
+FROM golang:1.21 as BUILDER
+
+WORKDIR /app
+
+COPY ./backend/go.mod ./
+COPY ./backend/go.sum ./
+
+RUN go mod download && go mod verify
+
+COPY ./backend/voice_server ./voice_server
+COPY ./backend/internal ./internal
+COPY ./backend/cmd/voice_server ./cmd/voice_server
+COPY ./backend/models ./models
+
+RUN go build -v -o /app/go_accord_voice_server ./cmd/voice_server/...
+
+
+FROM golang:1.21
+
+WORKDIR /app
+
+COPY --from=BUILDER /app/go_accord_voice_server ./
+
+ENV APP_MODE=''
+
+ENV GITHUB_KEY=''
+ENV GITHUB_SECRET=''
+ENV GITHUB_REDIRECT_URL=''
+
+ENV GITLAB_APP_ID=''
+ENV GITLAB_SECRET=''
+ENV GITLAB_REDIRECT_URL=''
+
+ENV JWT_ISSUER=''
+ENV JWT_ACCESSTOKEN_KEY=''
+ENV JWT_REFRESHTOKEN_KEY=''
+
+ENV WEBRTC_WS_PORT=''
+ENV HOST=''
+
+ENV NATS_URL=''
+ENV NATS_USER=''
+ENV NATS_PASSWORD=''
+
+CMD ["/app/go_accord_voice_server"]

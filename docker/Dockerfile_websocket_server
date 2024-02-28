@@ -1,0 +1,46 @@
+FROM golang:1.21 as BUILDER
+
+WORKDIR /app
+
+COPY ./backend/go.mod ./
+COPY ./backend/go.sum ./
+
+RUN go mod download && go mod verify
+
+COPY ./backend/websocket_api ./websocket_api
+COPY ./backend/internal ./internal
+COPY ./backend/cmd/websocket_api ./cmd/websocket_api
+COPY ./backend/models ./models
+
+RUN go build -v -o /app/go_accord_websocket_api ./cmd/websocket_api/...
+
+
+FROM golang:1.21
+
+WORKDIR /app
+
+COPY --from=BUILDER /app/go_accord_websocket_api ./
+
+ENV APP_MODE=''
+ENV GITHUB_KEY=''
+ENV GITHUB_SECRET=''
+ENV GITHUB_REDIRECT_URL=''
+
+ENV GITLAB_APP_ID=''
+ENV GITLAB_SECRET=''
+ENV GITLAB_REDIRECT_URL=''
+
+ENV JWT_ISSUER=''
+ENV JWT_ACCESSTOKEN_KEY=''
+ENV JWT_REFRESHTOKEN_KEY=''
+
+ENV DATABASE_URL=''
+
+ENV WEBSOCKET_PORT=''
+ENV HOST=''
+
+ENV NATS_URL=''
+ENV NATS_USER=''
+ENV NATS_PASSWORD=''
+
+CMD ["/app/go_accord_websocket_api"]
