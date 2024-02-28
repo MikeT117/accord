@@ -9,7 +9,7 @@ import (
 
 func LoadEnvironment() {
 
-	godotenv.Load(".env")
+	godotenv.Load(".env.local")
 
 	if appMode := os.Getenv("APP_MODE"); appMode != "DEVELOPMENT" && appMode != "PRODUCTION" {
 		log.Fatal("INVALID APP_MODE!")
