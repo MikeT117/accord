@@ -9,8 +9,8 @@ import (
 	"github.com/MikeT117/accord/backend/internal/database"
 	"github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
-	"github.com/MikeT117/accord/backend/internal/utils"
 	"github.com/MikeT117/accord/backend/voice_server"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -19,7 +19,7 @@ func main() {
 		log.Println(http.ListenAndServe("localhost:6060", nil))
 	}()
 
-	utils.LoadEnvironment()
+	godotenv.Load(".env.local")
 
 	ctx := context.Background()
 	pool := database.Create(ctx)

@@ -6,12 +6,12 @@ import (
 	"github.com/MikeT117/accord/backend/internal/database"
 	"github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
-	"github.com/MikeT117/accord/backend/internal/utils"
 	websocket_api "github.com/MikeT117/accord/backend/websocket_api"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	utils.LoadEnvironment()
+	godotenv.Load(".env.local")
 
 	ctx := context.Background()
 	pool := database.Create(ctx)

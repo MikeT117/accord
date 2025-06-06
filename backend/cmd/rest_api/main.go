@@ -8,12 +8,12 @@ import (
 	"github.com/MikeT117/accord/backend/internal/database"
 	message_queue "github.com/MikeT117/accord/backend/internal/message_queue"
 	"github.com/MikeT117/accord/backend/internal/sqlc"
-	"github.com/MikeT117/accord/backend/internal/utils"
 	rest_api "github.com/MikeT117/accord/backend/rest_api"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	utils.LoadEnvironment()
+	godotenv.Load(".env.local")
 
 	fmt.Println("NATS_URL: ", os.Getenv("NATS_URL"))
 
