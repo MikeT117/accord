@@ -7,7 +7,7 @@ import (
 )
 
 type GuildCategoryRepository interface {
-	Get(context context.Context, ID string) ([]*entities.GuildCategory, error)
-	Create(context context.Context, ValidatedGuildCategory *entities.ValidatedGuildCategory) (*entities.GuildCategory, error)
-	Delete(context context.Context, ID string) error
+	Get(ctx context.Context, ID string) ([]*entities.GuildCategory, error)
+	Create(ctx context.Context, GuildCategory *entities.GuildCategory) error
+	Delete(ctx context.Context, ID string) error
 }

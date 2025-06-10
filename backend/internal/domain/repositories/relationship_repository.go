@@ -7,9 +7,9 @@ import (
 )
 
 type RelationshipRepository interface {
-	GetByID(context context.Context, ID string) (*entities.Relationship, error)
-	GetByUserID(context context.Context, userID string) ([]*entities.Relationship, error)
-	Create(context context.Context, validatedRelationship *entities.ValidatedRelationship) (*entities.Relationship, error)
-	Update(context context.Context, validatedRelationship *entities.ValidatedRelationship) (*entities.Relationship, error)
-	Delete(context context.Context, ID string) error
+	GetByID(ctx context.Context, ID string) (*entities.Relationship, error)
+	GetByUserID(ctx context.Context, userID string) ([]*entities.Relationship, error)
+	Create(ctx context.Context, validatedRelationship *entities.Relationship) error
+	Update(ctx context.Context, validatedRelationship *entities.Relationship) error
+	Delete(ctx context.Context, ID string) error
 }

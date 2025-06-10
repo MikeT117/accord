@@ -94,9 +94,9 @@ CREATE TABLE IF NOT EXISTS "guild_member" (
 CREATE TABLE IF NOT EXISTS "guild_ban" (
     "user_id" UUID NOT NULL REFERENCES "user" ("id"),
     "guild_id" UUID NOT NULL REFERENCES "guild" ("id") ON DELETE CASCADE,
+    "reason" VARCHAR(512) NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL,
-    "reason" VARCHAR(512) NOT NULL,
     UNIQUE ("user_id", "guild_id")
 );
 
@@ -114,6 +114,7 @@ CREATE TABLE IF NOT EXISTS "guild_invite" (
     "used_count" int NOT NULL DEFAULT 0,
     "guild_id" uuid NOT NULL REFERENCES "guild" (id) ON DELETE CASCADE,
     "created_at" TIMESTAMPTZ NOT NULL,
+    "updated_at" TIMESTAMPTZ NOT NULL,
     "expires_at" TIMESTAMPTZ NOT NULL
 );
 
@@ -156,22 +157,23 @@ CREATE TABLE IF NOT EXISTS "attachment" (
     "id" UUID NOT NULL PRIMARY KEY,
     "resource_type" VARCHAR(128) NOT NULL,
     "signature" TEXT NOT NULL,
-    "unix_timestamp" BIGINT NOT NULL,
     "owner_id" UUID NOT NULL REFERENCES "user" ("id"),
     "height" INT,
     "width" INT,
     "filesize" INT NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL,
-    "updated_at" TIMESTAMPTZ NOT NULL
+    "updated_at" TIMESTAMPTZ NOT NULL,
+    "status" INT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "voice_state" (
+    "id" UUID NOT NULL PRIMARY KEY,
     "self_mute" boolean NOT NULL,
     "self_deaf" boolean NOT NULL,
     "channel_id" uuid NOT NULL REFERENCES "channel" ("id"),
     "user_id" uuid NOT NULL REFERENCES "user" ("id"),
     "guild_id" uuid REFERENCES "guild" ("id"),
-    PRIMARY KEY ("channel_id", "user_id")
+    UNIQUE ("channel_id", "user_id")
 );
 
 -- Join Tables Begin --

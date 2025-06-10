@@ -9,15 +9,15 @@ import (
 )
 
 type SessionRepository struct {
-	db DBTX
+	db DBGetter
 }
 
-func CreateSessionRepository(db DBTX) repositories.SessionRepository {
+func CreateSessionRepository(db DBGetter) repositories.SessionRepository {
 	return &SessionRepository{db: db}
 }
 
-func (r *SessionRepository) GetByID(context context.Context, ID string, userID string) (*entities.Session, error) {
-	row := r.db.QueryRow(context, `
+func (r *SessionRepository) GetByID(ctx context.Context, ID string, userID string) (*entities.Session, error) {
+	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
 			user_id,
@@ -53,8 +53,8 @@ func (r *SessionRepository) GetByID(context context.Context, ID string, userID s
 	return session, nil
 }
 
-func (r *SessionRepository) GetByUserID(context context.Context, userID string) ([]*entities.Session, error) {
-	rows, err := r.db.Query(context, `
+func (r *SessionRepository) GetByUserID(ctx context.Context, userID string) ([]*entities.Session, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
 			user_id,
@@ -99,8 +99,8 @@ func (r *SessionRepository) GetByUserID(context context.Context, userID string) 
 	return sessions, nil
 }
 
-func (r *SessionRepository) GetByToken(context context.Context, token string, userID string) (*entities.Session, error) {
-	row := r.db.QueryRow(context, `
+func (r *SessionRepository) GetByToken(ctx context.Context, token string, userID string) (*entities.Session, error) {
+	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
 			user_id,
@@ -136,8 +136,8 @@ func (r *SessionRepository) GetByToken(context context.Context, token string, us
 	return session, nil
 }
 
-func (r *SessionRepository) Create(context context.Context, validatedSession *entities.ValidatedSession) (*entities.Session, error) {
-	row := r.db.QueryRow(context, `
+func (r *SessionRepository) Create(ctx context.Context, session *entities.Session) error {
+	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
 			session (
 				id,
@@ -149,47 +149,23 @@ func (r *SessionRepository) Create(context context.Context, validatedSession *en
 				created_at,
 				updated_at
 			)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING
-			id,
-			user_id,
-			token,
-			expires_at,
-			ip_address,
-			user_agent,
-			created_at,
-			updated_at;
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 	`,
-		validatedSession.ID,
-		validatedSession.UserID,
-		validatedSession.Token,
-		validatedSession.ExpiresAt,
-		validatedSession.IPAddress,
-		validatedSession.UserAgent,
-		validatedSession.CreatedAt,
-		validatedSession.UpdatedAt,
+		session.ID,
+		session.UserID,
+		session.Token,
+		session.ExpiresAt,
+		session.IPAddress,
+		session.UserAgent,
+		session.CreatedAt,
+		session.UpdatedAt,
 	)
 
-	session := &entities.Session{}
-
-	if err := row.Scan(
-		&session.ID,
-		&session.UserID,
-		&session.Token,
-		&session.ExpiresAt,
-		&session.IPAddress,
-		&session.UserAgent,
-		&session.CreatedAt,
-		&session.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
-
-	return session, nil
+	return err
 }
 
-func (r *SessionRepository) Update(context context.Context, validatedSession *entities.ValidatedSession) (*entities.Session, error) {
-	row := r.db.QueryRow(context, `
+func (r *SessionRepository) Update(ctx context.Context, session *entities.Session) error {
+	_, err := r.db(ctx).Exec(ctx, `
 		UPDATE
 			session
 		SET
@@ -201,47 +177,23 @@ func (r *SessionRepository) Update(context context.Context, validatedSession *en
 			created_at = $7,
 			updated_at = $8
 		WHERE
-			id = $1
-		RETURNING
-			id,
-			user_id,
-			token,
-			expires_at,
-			ip_address,
-			user_agent,
-			created_at,
-			updated_at;
+			id = $1;
 	`,
-		validatedSession.ID,
-		validatedSession.UserID,
-		validatedSession.Token,
-		validatedSession.ExpiresAt,
-		validatedSession.IPAddress,
-		validatedSession.UserAgent,
-		validatedSession.CreatedAt,
-		validatedSession.UpdatedAt,
+		session.ID,
+		session.UserID,
+		session.Token,
+		session.ExpiresAt,
+		session.IPAddress,
+		session.UserAgent,
+		session.CreatedAt,
+		session.UpdatedAt,
 	)
 
-	session := &entities.Session{}
-
-	if err := row.Scan(
-		&session.ID,
-		&session.UserID,
-		&session.Token,
-		&session.ExpiresAt,
-		&session.IPAddress,
-		&session.UserAgent,
-		&session.CreatedAt,
-		&session.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
-
-	return session, nil
+	return err
 }
 
-func (r *SessionRepository) DeleteByID(context context.Context, ID string, userID string) error {
-	result, err := r.db.Exec(context, `
+func (r *SessionRepository) DeleteByID(ctx context.Context, ID string, userID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			session
 		WHERE
@@ -261,8 +213,8 @@ func (r *SessionRepository) DeleteByID(context context.Context, ID string, userI
 	return nil
 }
 
-func (r *SessionRepository) DeleteByToken(context context.Context, token string, userID string) error {
-	result, err := r.db.Exec(context, `
+func (r *SessionRepository) DeleteByToken(ctx context.Context, token string, userID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			session
 		WHERE

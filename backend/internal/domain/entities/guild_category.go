@@ -32,10 +32,23 @@ func NewGuildCategory(name string) (*GuildCategory, error) {
 
 	timestamp := time.Now().UTC().Unix()
 
-	return &GuildCategory{
+	guildCatgeory := &GuildCategory{
 		ID:        ID.String(),
 		Name:      name,
 		CreatedAt: timestamp,
 		UpdatedAt: timestamp,
-	}, nil
+	}
+
+	if err := guildCatgeory.validate(); err != nil {
+		return nil, err
+	}
+
+	return guildCatgeory, nil
+}
+
+func (g *GuildCategory) Updatename(name string) error {
+	g.Name = name
+	g.UpdatedAt = time.Now().UTC().Unix()
+
+	return g.validate()
 }

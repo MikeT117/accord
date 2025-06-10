@@ -30,11 +30,24 @@ func (u *GuildBan) validate() error {
 func NewGuildBan(guildID string, userID string, reason string) (*GuildBan, error) {
 	timestamp := time.Now().UTC().Unix()
 
-	return &GuildBan{
+	guildBan := &GuildBan{
 		UserID:    userID,
 		GuildID:   guildID,
 		Reason:    reason,
 		CreatedAt: timestamp,
 		UpdatedAt: timestamp,
-	}, nil
+	}
+
+	if err := guildBan.validate(); err != nil {
+		return nil, err
+	}
+
+	return guildBan, nil
+}
+
+func (g *GuildBan) Updatereason(reason string) error {
+	g.Reason = reason
+	g.UpdatedAt = time.Now().UTC().Unix()
+
+	return g.validate()
 }

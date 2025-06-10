@@ -6,6 +6,10 @@ import (
 )
 
 func NewUserResultFromUser(user *entities.User) *common.UserResult {
+	if user == nil {
+		return nil
+	}
+
 	return &common.UserResult{
 		ID:          user.ID,
 		Username:    user.Username,

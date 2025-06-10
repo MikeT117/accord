@@ -12,17 +12,21 @@ import (
 )
 
 type GuildRoleService struct {
-	repositories *db.MasterRepository
+	transactor            *db.Transactor
+	guildRoleRepository   *db.GuildRoleRepository
+	guildMemberRepository *db.GuildMemberRepository
 }
 
-func CreateGuildRoleService(repositories *db.MasterRepository) interfaces.GuildRoleService {
+func CreateGuildRoleService(transactor *db.Transactor, guildRoleRepository *db.GuildRoleRepository, guildMemberRepository *db.GuildMemberRepository) interfaces.GuildRoleService {
 	return &GuildRoleService{
-		repositories: repositories,
+		transactor:            transactor,
+		guildRoleRepository:   guildRoleRepository,
+		guildMemberRepository: guildMemberRepository,
 	}
 }
 
 func (s *GuildRoleService) GetByID(ctx context.Context, ID string) (*query.GuildRoleQueryResult, error) {
-	role, err := s.repositories.GuildRoleRepository.GetByID(ctx, ID)
+	role, err := s.guildRoleRepository.GetByID(ctx, ID)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +37,7 @@ func (s *GuildRoleService) GetByID(ctx context.Context, ID string) (*query.Guild
 }
 
 func (s *GuildRoleService) GetByGuildID(ctx context.Context, guildID string) (*query.GuildRoleQueryListResult, error) {
-	role, _, err := s.repositories.GuildRoleRepository.GetByGuildID(ctx, guildID)
+	role, _, err := s.guildRoleRepository.GetByGuildID(ctx, guildID)
 	if err != nil {
 		return nil, err
 	}
@@ -43,66 +47,43 @@ func (s *GuildRoleService) GetByGuildID(ctx context.Context, guildID string) (*q
 	}, nil
 }
 
-func (s *GuildRoleService) Create(ctx context.Context, createCommand *command.CreateGuildRoleCommand) (*command.CreateGuildRoleCommandResult, error) {
-	guildRoleEntity, err := entities.NewGuildRole(createCommand.GuildID, createCommand.Name)
+func (s *GuildRoleService) Create(ctx context.Context, cmd *command.CreateGuildRoleCommand) error {
+	guildRoleEntity, err := entities.NewGuildRole(cmd.GuildID, cmd.Name)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	validatedGuildRoleEntity, err := entities.NewValidatedGuildRole(guildRoleEntity)
-	if err != nil {
-		return nil, err
-	}
-
-	guildRole, err := s.repositories.GuildRoleRepository.Create(ctx, validatedGuildRoleEntity)
-	if err != nil {
-		return nil, err
-	}
-
-	return &command.CreateGuildRoleCommandResult{
-		Result: mapper.NewGuildRoleResultFromGuildRole(guildRole),
-	}, nil
+	return s.guildRoleRepository.Create(ctx, guildRoleEntity)
 }
 
-func (s *GuildRoleService) Update(ctx context.Context, updateCommand *command.UpdateGuildRoleCommand) (*command.UpdateGuildRoleCommandResult, error) {
-	guildRole, err := s.repositories.GuildRoleRepository.GetByID(ctx, updateCommand.ID)
+func (s *GuildRoleService) Update(ctx context.Context, cmd *command.UpdateGuildRoleCommand) error {
+	guildRole, err := s.guildRoleRepository.GetByID(ctx, cmd.ID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	updatedGuildRoleEntity := entities.UpdatedGuildRole(guildRole.ID, updateCommand.Name, guildRole.GuildID, updateCommand.Permissions, guildRole.CreatedAt)
+	guildRole.UpdateName(cmd.Name)
+	guildRole.UpdatedPermissions(cmd.Permissions)
 
-	validatedGuildRoleEntity, err := entities.NewValidatedGuildRole(updatedGuildRoleEntity)
-	if err != nil {
-		return nil, err
-	}
-
-	updatedGuildRole, err := s.repositories.GuildRoleRepository.Update(ctx, validatedGuildRoleEntity)
-	if err != nil {
-		return nil, err
-	}
-
-	return &command.UpdateGuildRoleCommandResult{
-		Result: mapper.NewGuildRoleResultFromGuildRole(updatedGuildRole),
-	}, nil
+	return s.guildRoleRepository.Update(ctx, guildRole)
 }
 
 func (s *GuildRoleService) Delete(ctx context.Context, ID string) error {
-	return s.repositories.GuildRoleRepository.Delete(ctx, ID)
+	return s.guildRoleRepository.Delete(ctx, ID)
 }
 
 func (s *GuildRoleService) CreateUserAssoc(ctx context.Context, roleID string, userID string) error {
-	return s.repositories.GuildRoleUserRepository.CreateAssoc(ctx, roleID, userID)
+	return s.guildRoleRepository.AssociateUser(ctx, roleID, userID)
 }
 
 func (s *GuildRoleService) DeleteUserAssoc(ctx context.Context, roleID string, userID string) error {
-	return s.repositories.GuildRoleUserRepository.DeleteAssoc(ctx, roleID, userID)
+	return s.guildRoleRepository.DisassociateUser(ctx, roleID, userID)
 }
 
 func (s *GuildRoleService) CreateChannelAssoc(ctx context.Context, roleID string, channelID string) error {
-	return s.repositories.GuildRoleChannelRepository.CreateAssoc(ctx, roleID, channelID)
+	return s.guildRoleRepository.AssociateChannel(ctx, roleID, channelID)
 }
 
 func (s *GuildRoleService) DeleteChannelAssoc(ctx context.Context, roleID string, channelID string) error {
-	return s.repositories.GuildRoleChannelRepository.DeleteAssoc(ctx, roleID, channelID)
+	return s.guildRoleRepository.DisassociateChannel(ctx, roleID, channelID)
 }

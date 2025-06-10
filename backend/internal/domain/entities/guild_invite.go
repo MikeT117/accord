@@ -13,6 +13,7 @@ type GuildInvite struct {
 	UsedCount int64
 	GuildID   string
 	CreatedAt int64
+	UpdatedAt int64
 	ExpiresAt int64
 }
 
@@ -30,18 +31,32 @@ func (u *GuildInvite) validate() error {
 }
 
 func NewGuildInvite(guildID string, expiresAt int64) (*GuildInvite, error) {
-	id, err := uuid.NewV7()
-
+	ID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
 	}
+
 	timestamp := time.Now().UTC().Unix()
 
-	return &GuildInvite{
-		ID:        id.String(),
+	guildInvite := &GuildInvite{
+		ID:        ID.String(),
 		UsedCount: 0,
 		GuildID:   guildID,
 		CreatedAt: timestamp,
+		UpdatedAt: timestamp,
 		ExpiresAt: expiresAt,
-	}, nil
+	}
+
+	if err := guildInvite.validate(); err != nil {
+		return nil, err
+	}
+
+	return guildInvite, nil
+}
+
+func (g *GuildInvite) IncrementusedCount() error {
+	g.UsedCount = g.UsedCount + 1
+	g.UpdatedAt = time.Now().UTC().Unix()
+
+	return g.validate()
 }

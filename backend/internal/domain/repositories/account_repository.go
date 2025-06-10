@@ -7,11 +7,11 @@ import (
 )
 
 type AccountRepository interface {
-	GetByID(context context.Context, ID string) (*entities.Account, error)
-	GetByUserID(context context.Context, ID string) (*entities.Account, error)
-	GetByAccountID(context context.Context, ID string) (*entities.Account, error)
-	GetByProviderID(context context.Context, ID string) (*entities.Account, error)
-	Create(context context.Context, validatedAccount *entities.ValidatedAccount) (*entities.Account, error)
-	Update(context context.Context, validatedAccount *entities.ValidatedAccount) (*entities.Account, error)
-	Delete(context context.Context, ID string) error
+	GetByID(ctx context.Context, ID string) (*entities.Account, error)
+	GetByUserID(ctx context.Context, ID string) (*entities.Account, error)
+	GetByAccountID(ctx context.Context, ID string) (*entities.Account, error)
+	GetByProviderID(ctx context.Context, ID string) (*entities.Account, error)
+	Create(ctx context.Context, validatedAccount *entities.Account) error
+	Update(ctx context.Context, validatedAccount *entities.Account) error
+	Delete(ctx context.Context, ID string) error
 }

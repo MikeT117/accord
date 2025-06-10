@@ -9,15 +9,15 @@ import (
 )
 
 type GuildInviteRepository struct {
-	db DBTX
+	db DBGetter
 }
 
-func CreateGuildInviteRepository(db DBTX) repositories.GuildInviteRepository {
+func CreateGuildInviteRepository(db DBGetter) repositories.GuildInviteRepository {
 	return &GuildInviteRepository{db: db}
 }
 
-func (r *GuildInviteRepository) GetByID(context context.Context, ID string) (*entities.GuildInvite, error) {
-	row := r.db.QueryRow(context, `
+func (r *GuildInviteRepository) GetByID(ctx context.Context, ID string) (*entities.GuildInvite, error) {
+	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
 			used_count,
@@ -44,8 +44,8 @@ func (r *GuildInviteRepository) GetByID(context context.Context, ID string) (*en
 	return guildInvite, nil
 }
 
-func (r *GuildInviteRepository) GetByGuildID(context context.Context, guildID string) ([]*entities.GuildInvite, error) {
-	rows, err := r.db.Query(context, `
+func (r *GuildInviteRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildInvite, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
 			used_count,
@@ -84,8 +84,8 @@ func (r *GuildInviteRepository) GetByGuildID(context context.Context, guildID st
 	return guildInvites, nil
 }
 
-func (r *GuildInviteRepository) Create(context context.Context, validatedGuildInvite *entities.ValidatedGuildInvite) (*entities.GuildInvite, error) {
-	row := r.db.QueryRow(context, `
+func (r *GuildInviteRepository) Create(ctx context.Context, guildInvite *entities.GuildInvite) error {
+	_, err := r.db(ctx).Exec(ctx, `
 			INSERT INTO
 				guild_invite(
 					id,
@@ -94,37 +94,20 @@ func (r *GuildInviteRepository) Create(context context.Context, validatedGuildIn
 					created_at,
 					expires_at
 				)
-			VALUES ($1, $2, $3, $4, $5)
-			RETURNING
-				id,
-				used_count,
-				guild_id,
-				created_at,
-				expires_at;
+			VALUES ($1, $2, $3, $4, $5);
 		`,
-		validatedGuildInvite.ID,
-		validatedGuildInvite.UsedCount,
-		validatedGuildInvite.GuildID,
-		validatedGuildInvite.CreatedAt,
-		validatedGuildInvite.ExpiresAt,
+		guildInvite.ID,
+		guildInvite.UsedCount,
+		guildInvite.GuildID,
+		guildInvite.CreatedAt,
+		guildInvite.ExpiresAt,
 	)
 
-	guildInvite := &entities.GuildInvite{}
-	if err := row.Scan(
-		&guildInvite.ID,
-		&guildInvite.UsedCount,
-		&guildInvite.GuildID,
-		&guildInvite.CreatedAt,
-		&guildInvite.ExpiresAt,
-	); err != nil {
-		return nil, err
-	}
-
-	return guildInvite, nil
+	return err
 }
 
-func (r *GuildInviteRepository) Delete(context context.Context, ID string) error {
-	result, err := r.db.Exec(context, `
+func (r *GuildInviteRepository) Delete(ctx context.Context, ID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				guild_invite
 			WHERE

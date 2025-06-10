@@ -6,19 +6,17 @@ import (
 )
 
 type AuthorisationService struct {
-	repositories *db.MasterRepository
+	guildRole *db.GuildRoleRepository
 }
 
-func CreateAuthorisationService(repositories *db.MasterRepository) interfaces.AuthorisationService {
+func CreateAuthorisationService(guildRole *db.GuildRoleRepository) interfaces.AuthorisationService {
 	return &AuthorisationService{
-		repositories: repositories,
+		guildRole: guildRole,
 	}
 }
 
 func (s *AuthorisationService) HasGuildPermission(guildID string, userID string, permission int) {
-
 }
 
 func (s *AuthorisationService) HasChannelPermission(channel string, userID string, permission int) {
-
 }

@@ -28,7 +28,7 @@ func (u *GuildMember) validate() error {
 func NewGuildMember(userID string, guildID string, avatarID *string, bannerID *string) (*GuildMember, error) {
 	timestamp := time.Now().UTC().Unix()
 
-	return &GuildMember{
+	guildMember := &GuildMember{
 		UserID:    userID,
 		GuildID:   guildID,
 		Nickname:  nil,
@@ -36,19 +36,32 @@ func NewGuildMember(userID string, guildID string, avatarID *string, bannerID *s
 		UpdatedAt: timestamp,
 		AvatarID:  avatarID,
 		BannerID:  bannerID,
-	}, nil
+	}
+
+	if err := guildMember.validate(); err != nil {
+		return nil, err
+	}
+
+	return guildMember, nil
 }
 
-func UpdateGuildMember(userID string, guildID string, avatarID *string, bannerID *string, createdAt int64) (*GuildMember, error) {
-	timestamp := time.Now().UTC().Unix()
+func (g *GuildMember) UpdateNickname(nickname *string) error {
+	g.Nickname = nickname
+	g.UpdatedAt = time.Now().UTC().Unix()
 
-	return &GuildMember{
-		UserID:    userID,
-		GuildID:   guildID,
-		Nickname:  nil,
-		AvatarID:  avatarID,
-		BannerID:  bannerID,
-		CreatedAt: createdAt,
-		UpdatedAt: timestamp,
-	}, nil
+	return g.validate()
+}
+
+func (g *GuildMember) UpdateAvatarID(avatarID *string) error {
+	g.AvatarID = avatarID
+	g.UpdatedAt = time.Now().UTC().Unix()
+
+	return g.validate()
+}
+
+func (g *GuildMember) UpdateBannerID(bannerID *string) error {
+	g.BannerID = bannerID
+	g.UpdatedAt = time.Now().UTC().Unix()
+
+	return g.validate()
 }

@@ -69,8 +69,8 @@ func NewAccount(
 	userID string,
 	accountID string,
 	providerID string,
-	accessToken *string,
-	refreshToken *string,
+	accesstoken *string,
+	refreshtoken *string,
 	accesstokenExpiresAt *int64,
 	refreshtokenExpiresAt *int64,
 	scope *string,
@@ -78,7 +78,6 @@ func NewAccount(
 	password *string,
 ) (*Account, error) {
 	id, err := uuid.NewV7()
-
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +88,8 @@ func NewAccount(
 		ID:                    id.String(),
 		UserID:                userID,
 		ProviderID:            providerID,
-		Accesstoken:           accessToken,
-		Refreshtoken:          refreshToken,
+		Accesstoken:           accesstoken,
+		Refreshtoken:          refreshtoken,
 		AccesstokenExpiresAt:  accesstokenExpiresAt,
 		RefreshtokenExpiresAt: refreshtokenExpiresAt,
 		Scope:                 scope,
@@ -100,7 +99,14 @@ func NewAccount(
 		AccountID:             userID,
 		Password:              password,
 	}
-	account.hashPassword()
+
+	if err := account.hashPassword(); err != nil {
+		return nil, err
+	}
+
+	if err := account.validate(); err != nil {
+		return nil, err
+	}
 
 	return account, nil
 }

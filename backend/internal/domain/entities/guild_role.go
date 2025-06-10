@@ -8,6 +8,18 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	GUILD_OWNER = iota
+	GUILD_ADMIN
+	MANAGE_GUILD
+	MANAGE_GUILD_CHANNELS
+	MANAGE_CHANNEL_MESSAGES
+	VIEW_GUILD_CHANNEL
+	CREATE_CHANNEL_MESSAGE
+	CREATE_CHANNEL_PIN
+	VIEW_GUILD_MEMBERS
+)
+
 type GuildRole struct {
 	ID          string
 	GuildID     string
@@ -31,7 +43,7 @@ func (a *GuildRole) validate() error {
 }
 
 func NewGuildRole(guildID string, name string) (*GuildRole, error) {
-	id, err := uuid.NewV7()
+	ID, err := uuid.NewV7()
 
 	if err != nil {
 		return nil, err
@@ -39,18 +51,24 @@ func NewGuildRole(guildID string, name string) (*GuildRole, error) {
 
 	timestamp := time.Now().UTC().Unix()
 
-	return &GuildRole{
-		ID:          id.String(),
+	guildRole := &GuildRole{
+		ID:          ID.String(),
 		GuildID:     guildID,
 		Name:        name,
 		Permissions: 0,
 		CreatedAt:   timestamp,
 		UpdatedAt:   timestamp,
-	}, nil
+	}
+
+	if err := guildRole.validate(); err != nil {
+		return nil, err
+	}
+
+	return guildRole, nil
 }
 
 func NewOwnerGuildRole(guildID string) (*GuildRole, error) {
-	id, err := uuid.NewV7()
+	ID, err := uuid.NewV7()
 
 	if err != nil {
 		return nil, err
@@ -59,7 +77,7 @@ func NewOwnerGuildRole(guildID string) (*GuildRole, error) {
 	timestamp := time.Now().UTC().Unix()
 
 	return &GuildRole{
-		ID:          id.String(),
+		ID:          ID.String(),
 		GuildID:     guildID,
 		Name:        "@Owner",
 		Permissions: 2147483647,
@@ -69,7 +87,7 @@ func NewOwnerGuildRole(guildID string) (*GuildRole, error) {
 }
 
 func NewDefaultGuildRole(guildID string) (*GuildRole, error) {
-	id, err := uuid.NewV7()
+	ID, err := uuid.NewV7()
 
 	if err != nil {
 		return nil, err
@@ -78,7 +96,7 @@ func NewDefaultGuildRole(guildID string) (*GuildRole, error) {
 	timestamp := time.Now().UTC().Unix()
 
 	return &GuildRole{
-		ID:          id.String(),
+		ID:          ID.String(),
 		GuildID:     guildID,
 		Name:        "@default",
 		Permissions: 1,
@@ -87,16 +105,16 @@ func NewDefaultGuildRole(guildID string) (*GuildRole, error) {
 	}, nil
 }
 
-func UpdatedGuildRole(ID string, name string, guildID string, permissions int32, createdAt int64) *GuildRole {
+func (g *GuildRole) UpdatedPermissions(permissions int32) error {
+	g.Permissions = permissions
+	g.UpdatedAt = time.Now().UTC().Unix()
 
-	timestamp := time.Now().UTC().Unix()
+	return g.validate()
+}
 
-	return &GuildRole{
-		ID:          ID,
-		GuildID:     guildID,
-		Name:        name,
-		Permissions: permissions,
-		CreatedAt:   createdAt,
-		UpdatedAt:   timestamp,
-	}
+func (g *GuildRole) UpdateName(name string) error {
+	g.Name = name
+	g.UpdatedAt = time.Now().UTC().Unix()
+
+	return g.validate()
 }

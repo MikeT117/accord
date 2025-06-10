@@ -9,15 +9,15 @@ import (
 )
 
 type GuildMemberRepository struct {
-	db DBTX
+	db DBGetter
 }
 
-func CreateGuildMemberRepository(db DBTX) repositories.GuildMemberRepository {
+func CreateGuildMemberRepository(db DBGetter) repositories.GuildMemberRepository {
 	return &GuildMemberRepository{db: db}
 }
 
-func (r *GuildMemberRepository) GetByID(context context.Context, ID string, guildID string) (*entities.GuildMember, error) {
-	row := r.db.QueryRow(context, `
+func (r *GuildMemberRepository) GetByID(ctx context.Context, ID string, guildID string) (*entities.GuildMember, error) {
+	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			user_id,
 			guild_id,
@@ -52,9 +52,52 @@ func (r *GuildMemberRepository) GetByID(context context.Context, ID string, guil
 	return guildMember, nil
 }
 
+func (r *GuildMemberRepository) GetByIDs(ctx context.Context, IDs []string, guildID string) (map[string]*entities.GuildMember, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			user_id,
+			guild_id,
+			nickname,
+			avatar_id,
+			banner_id,
+			created_at,
+			updated_at
+		FROM
+			guild_member
+		WHERE
+			user_id = ANY($1)
+		AND
+			guild_id = $2;
+	`, IDs, guildID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	guildMembersMap := make(map[string]*entities.GuildMember)
+	for rows.Next() {
+		guildMember := &entities.GuildMember{}
+		if err := rows.Scan(
+			&guildMember.UserID,
+			&guildMember.GuildID,
+			&guildMember.Nickname,
+			&guildMember.AvatarID,
+			&guildMember.BannerID,
+			&guildMember.CreatedAt,
+			&guildMember.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		guildMembersMap[guildMember.UserID] = guildMember
+	}
+
+	return guildMembersMap, nil
+}
+
 // TODO: add pagination
-func (r *GuildMemberRepository) GetByGuildID(context context.Context, guildID string) ([]*entities.GuildMember, []string, error) {
-	rows, err := r.db.Query(context, `
+func (r *GuildMemberRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildMember, []string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			user_id,
 			guild_id,
@@ -99,8 +142,8 @@ func (r *GuildMemberRepository) GetByGuildID(context context.Context, guildID st
 	return guildMembers, guildMemberIDs, nil
 }
 
-func (r *GuildMemberRepository) GetByUserID(context context.Context, userID string) (map[string]*entities.GuildMember, []string, error) {
-	rows, err := r.db.Query(context, `
+func (r *GuildMemberRepository) GetByUserID(ctx context.Context, userID string) (map[string]*entities.GuildMember, []string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			user_id,
 			guild_id,
@@ -144,8 +187,8 @@ func (r *GuildMemberRepository) GetByUserID(context context.Context, userID stri
 	return guildMembers, guildIDs, nil
 }
 
-func (r *GuildMemberRepository) GetGuildIDsByUserID(context context.Context, userID string) ([]string, error) {
-	rows, err := r.db.Query(context, `
+func (r *GuildMemberRepository) GetGuildIDsByUserID(ctx context.Context, userID string) ([]string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			guild_id,
 		FROM
@@ -176,8 +219,8 @@ func (r *GuildMemberRepository) GetGuildIDsByUserID(context context.Context, use
 	return guildIDs, nil
 }
 
-func (r *GuildMemberRepository) Create(context context.Context, validatedGuildMember *entities.ValidatedGuildMember) (*entities.GuildMember, error) {
-	row := r.db.QueryRow(context, `
+func (r *GuildMemberRepository) Create(ctx context.Context, guildMember *entities.GuildMember) error {
+	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
 			guild_member (
 				user_id,
@@ -188,42 +231,22 @@ func (r *GuildMemberRepository) Create(context context.Context, validatedGuildMe
 				created_at,
 				updated_at
 			)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING
-			user_id,
-			guild_id,
-			nickname,
-			avatar_id,
-			banner_id,
-			created_at,
-			updated_at;
+		VALUES ($1, $2, $3, $4, $5, $6, $7);
 	`,
-		validatedGuildMember.UserID,
-		validatedGuildMember.GuildID,
-		validatedGuildMember.Nickname,
-		validatedGuildMember.AvatarID,
-		validatedGuildMember.BannerID,
-		validatedGuildMember.CreatedAt,
-		validatedGuildMember.UpdatedAt,
+		guildMember.UserID,
+		guildMember.GuildID,
+		guildMember.Nickname,
+		guildMember.AvatarID,
+		guildMember.BannerID,
+		guildMember.CreatedAt,
+		guildMember.UpdatedAt,
 	)
 
-	guildMember := &entities.GuildMember{}
-	if err := row.Scan(
-		&guildMember.UserID,
-		&guildMember.GuildID,
-		&guildMember.Nickname,
-		&guildMember.AvatarID,
-		&guildMember.BannerID,
-		&guildMember.CreatedAt,
-		&guildMember.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
+	return err
 
-	return guildMember, nil
 }
-func (r *GuildMemberRepository) Update(context context.Context, validatedGuildMember *entities.ValidatedGuildMember) (*entities.GuildMember, error) {
-	row := r.db.QueryRow(context, `
+func (r *GuildMemberRepository) Update(ctx context.Context, guildMember *entities.GuildMember) error {
+	_, err := r.db(ctx).Exec(ctx, `
 		UPDATE
 			guild_member
 		SET
@@ -237,42 +260,22 @@ func (r *GuildMemberRepository) Update(context context.Context, validatedGuildMe
 		WHERE
 			user_id = $1
 		AND
-			guild_id = $2
-		RETURNING
-			user_id,
-			guild_id,
-			nickname,
-			avatar_id,
-			banner_id,
-			created_at,
-			updated_at;
+			guild_id = $2;
 	`,
-		validatedGuildMember.UserID,
-		validatedGuildMember.GuildID,
-		validatedGuildMember.Nickname,
-		validatedGuildMember.AvatarID,
-		validatedGuildMember.BannerID,
-		validatedGuildMember.CreatedAt,
-		validatedGuildMember.UpdatedAt,
+		guildMember.UserID,
+		guildMember.GuildID,
+		guildMember.Nickname,
+		guildMember.AvatarID,
+		guildMember.BannerID,
+		guildMember.CreatedAt,
+		guildMember.UpdatedAt,
 	)
 
-	guildMember := &entities.GuildMember{}
-	if err := row.Scan(
-		&guildMember.UserID,
-		&guildMember.GuildID,
-		&guildMember.Nickname,
-		&guildMember.AvatarID,
-		&guildMember.BannerID,
-		&guildMember.CreatedAt,
-		&guildMember.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
-
-	return guildMember, nil
+	return err
 }
-func (r *GuildMemberRepository) Delete(context context.Context, ID string) error {
-	result, err := r.db.Exec(context, `
+
+func (r *GuildMemberRepository) Delete(ctx context.Context, ID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				guild_member
 			WHERE

@@ -34,6 +34,10 @@ func (u *User) validate() error {
 	if u.Email == "" {
 		return errors.New("email must not be empty")
 	}
+	if u.RelationshipCount < 0 {
+		return errors.New("relationshipCount must not be negative")
+
+	}
 	return nil
 }
 
@@ -45,7 +49,7 @@ func NewUser(username string, email string, avatarID *string, bannerID *string) 
 
 	timestamp := time.Now().UTC().Unix()
 
-	return &User{
+	user := &User{
 		ID:                ID.String(),
 		Username:          username,
 		DisplayName:       username,
@@ -57,5 +61,61 @@ func NewUser(username string, email string, avatarID *string, bannerID *string) 
 		BannerID:          bannerID,
 		CreatedAt:         timestamp,
 		UpdatedAt:         timestamp,
-	}, nil
+	}
+
+	if err := user.validate(); err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (u *User) Updateusername(username string) error {
+	u.Username = username
+	u.UpdatedAt = time.Now().UTC().Unix()
+
+	return u.validate()
+}
+func (u *User) UpdatedisplayName(displayName string) error {
+	u.DisplayName = displayName
+	u.UpdatedAt = time.Now().UTC().Unix()
+
+	return u.validate()
+}
+func (u *User) Updateemail(email string) error {
+	u.Email = email
+	u.UpdatedAt = time.Now().UTC().Unix()
+
+	return u.validate()
+}
+func (u *User) UpdatepublicFlags(publicFlags int8) error {
+	u.PublicFlags = publicFlags
+	u.UpdatedAt = time.Now().UTC().Unix()
+
+	return u.validate()
+}
+func (u *User) IncrementrelationshipCount() error {
+	u.RelationshipCount = u.RelationshipCount + 1
+	u.UpdatedAt = time.Now().UTC().Unix()
+
+	return u.validate()
+}
+func (u *User) DecrementrelationshipCount() error {
+
+	u.RelationshipCount = u.RelationshipCount - 1
+	u.UpdatedAt = time.Now().UTC().Unix()
+
+	return u.validate()
+}
+func (u *User) UpdateavatarID(avatarID *string) error {
+	u.AvatarID = avatarID
+	u.UpdatedAt = time.Now().UTC().Unix()
+
+	return u.validate()
+}
+func (u *User) UpdatebannerID(bannerID *string) error {
+	u.BannerID = bannerID
+	u.UpdatedAt = time.Now().UTC().Unix()
+
+	return u.validate()
 }

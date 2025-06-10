@@ -63,10 +63,6 @@ func (u *Channel) validate() error {
 	return nil
 }
 
-func (u *Channel) IsGuildChannel() bool {
-	return u.ChannelType < DMChannel
-}
-
 func NewChannel(channelType int8, guildID string, creatorID string, name string, topic *string) (*Channel, error) {
 	id, err := uuid.NewV7()
 	if err != nil {
@@ -75,7 +71,7 @@ func NewChannel(channelType int8, guildID string, creatorID string, name string,
 
 	timestamp := time.Now().UTC().Unix()
 
-	return &Channel{
+	channel := &Channel{
 		ID:          id.String(),
 		CreatorID:   &creatorID,
 		GuildID:     &guildID,
@@ -85,30 +81,36 @@ func NewChannel(channelType int8, guildID string, creatorID string, name string,
 		ChannelType: channelType,
 		CreatedAt:   timestamp,
 		UpdatedAt:   timestamp,
-	}, nil
+	}
+
+	if err := channel.validate(); err != nil {
+		return nil, err
+	}
+
+	return channel, nil
 }
 
-func UpdateGuildChannel(
-	ID string,
-	creatorID *string,
-	guildID *string,
-	parentID *string,
-	name *string,
-	topic *string,
-	channelType int8,
-	createdAt int64,
-) (*Channel, error) {
-	timestamp := time.Now().UTC().Unix()
+func (u *Channel) IsGuildChannel() bool {
+	return u.ChannelType < DMChannel
+}
 
-	return &Channel{
-		ID:          ID,
-		CreatorID:   creatorID,
-		GuildID:     guildID,
-		ParentID:    parentID,
-		Name:        name,
-		Topic:       topic,
-		ChannelType: channelType,
-		CreatedAt:   createdAt,
-		UpdatedAt:   timestamp,
-	}, nil
+func (c *Channel) UpdateParentID(parentID *string) error {
+	c.ParentID = parentID
+	c.UpdatedAt = time.Now().UTC().Unix()
+
+	return c.validate()
+}
+
+func (c *Channel) UpdateName(name *string) error {
+	c.Name = name
+	c.UpdatedAt = time.Now().UTC().Unix()
+
+	return c.validate()
+}
+
+func (c *Channel) UpdateTopic(topic *string) error {
+	c.Topic = topic
+	c.UpdatedAt = time.Now().UTC().Unix()
+
+	return c.validate()
 }

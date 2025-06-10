@@ -7,8 +7,8 @@ import (
 )
 
 type GuildInviteRepository interface {
-	GetByID(context context.Context, ID string) (*entities.GuildInvite, error)
-	GetByGuildID(context context.Context, guildID string) ([]*entities.GuildInvite, error)
-	Create(context context.Context, validatedGuildInvite *entities.ValidatedGuildInvite) (*entities.GuildInvite, error)
-	Delete(context context.Context, ID string) error
+	GetByID(ctx context.Context, ID string) (*entities.GuildInvite, error)
+	GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildInvite, error)
+	Create(ctx context.Context, validatedGuildInvite *entities.GuildInvite) error
+	Delete(ctx context.Context, ID string) error
 }

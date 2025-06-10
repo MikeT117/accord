@@ -7,11 +7,12 @@ import (
 )
 
 type GuildMemberRepository interface {
-	GetByID(context context.Context, ID string, guildID string) (*entities.GuildMember, error)
-	GetByGuildID(context context.Context, guildID string) ([]*entities.GuildMember, []string, error)
-	GetByUserID(context context.Context, userID string) (map[string]*entities.GuildMember, []string, error)
-	GetGuildIDsByUserID(context context.Context, userID string) ([]string, error)
-	Create(context context.Context, validatedGuildMember *entities.ValidatedGuildMember) (*entities.GuildMember, error)
-	Update(context context.Context, validatedGuildMember *entities.ValidatedGuildMember) (*entities.GuildMember, error)
-	Delete(context context.Context, ID string) error
+	GetByID(ctx context.Context, ID string, guildID string) (*entities.GuildMember, error)
+	GetByIDs(ctx context.Context, IDs []string, guildID string) (map[string]*entities.GuildMember, error)
+	GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildMember, []string, error)
+	GetByUserID(ctx context.Context, userID string) (map[string]*entities.GuildMember, []string, error)
+	GetGuildIDsByUserID(ctx context.Context, userID string) ([]string, error)
+	Create(ctx context.Context, validatedGuildMember *entities.GuildMember) error
+	Update(ctx context.Context, validatedGuildMember *entities.GuildMember) error
+	Delete(ctx context.Context, ID string) error
 }

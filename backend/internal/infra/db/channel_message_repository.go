@@ -9,17 +9,17 @@ import (
 )
 
 type ChannelMessageRepository struct {
-	db DBTX
+	db DBGetter
 }
 
-func CreateChannelMessageRepository(db DBTX) repositories.ChannelMessageRepository {
+func CreateChannelMessageRepository(db DBGetter) repositories.ChannelMessageRepository {
 	return &ChannelMessageRepository{
 		db: db,
 	}
 }
 
-func (r *ChannelMessageRepository) GetByID(context context.Context, ID string) (*entities.ChannelMessage, error) {
-	messageRow := r.db.QueryRow(context, `
+func (r *ChannelMessageRepository) GetByID(ctx context.Context, ID string) (*entities.ChannelMessage, error) {
+	messageRow := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
 			content,
@@ -53,8 +53,8 @@ func (r *ChannelMessageRepository) GetByID(context context.Context, ID string) (
 
 	return channelMessage, nil
 }
-func (r *ChannelMessageRepository) GetByAuthorID(context context.Context, authorID string, before int64, limit int) ([]*entities.ChannelMessage, error) {
-	rows, err := r.db.Query(context, `
+func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID string, before int64, limit int) ([]*entities.ChannelMessage, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
 			content,
@@ -100,8 +100,8 @@ func (r *ChannelMessageRepository) GetByAuthorID(context context.Context, author
 
 	return channelMessages, nil
 }
-func (r *ChannelMessageRepository) GetByChannelID(context context.Context, channelID string, before int64, limit int) ([]*entities.ChannelMessage, error) {
-	rows, err := r.db.Query(context, `
+func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID string, before int64, limit int) ([]*entities.ChannelMessage, []string, []string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
 			content,
@@ -119,12 +119,14 @@ func (r *ChannelMessageRepository) GetByChannelID(context context.Context, chann
 	`, channelID)
 
 	if err != nil {
-		return nil, err
+		return nil, []string{}, []string{}, err
 	}
 
 	defer rows.Close()
 
 	channelMessages := []*entities.ChannelMessage{}
+	channelMessageIDs := []string{}
+	authorIDs := []string{}
 
 	for rows.Next() {
 		channelMessage := &entities.ChannelMessage{}
@@ -139,16 +141,18 @@ func (r *ChannelMessageRepository) GetByChannelID(context context.Context, chann
 			&channelMessage.CreatedAt,
 			&channelMessage.UpdatedAt,
 		); err != nil {
-			return nil, err
+			return nil, []string{}, []string{}, err
 		}
 
 		channelMessages = append(channelMessages, channelMessage)
+		channelMessageIDs = append(channelMessageIDs, channelMessage.ID)
+		authorIDs = append(authorIDs, channelMessage.AuthorID)
 	}
 
-	return channelMessages, nil
+	return channelMessages, channelMessageIDs, authorIDs, nil
 }
-func (r *ChannelMessageRepository) Create(context context.Context, validatedChannelMessage *entities.ValidatedChannelMessage) (*entities.ChannelMessage, error) {
-	row := r.db.QueryRow(context, `
+func (r *ChannelMessageRepository) Create(ctx context.Context, channelMessage *entities.ChannelMessage) error {
+	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
 			channel_message(
 				id,
@@ -161,48 +165,23 @@ func (r *ChannelMessageRepository) Create(context context.Context, validatedChan
 				created_at,
 				updated_at
 			)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING
-			id,
-			content,
-			pinned,
-			flag,
-			author_id,
-			channel_id,
-			guild_id,
-			created_at,
-			updated_at;
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
 	`,
-		validatedChannelMessage.ID,
-		validatedChannelMessage.Content,
-		validatedChannelMessage.Pinned,
-		validatedChannelMessage.Flag,
-		validatedChannelMessage.AuthorID,
-		validatedChannelMessage.ChannelID,
-		validatedChannelMessage.GuildID,
-		validatedChannelMessage.CreatedAt,
-		validatedChannelMessage.UpdatedAt,
+		channelMessage.ID,
+		channelMessage.Content,
+		channelMessage.Pinned,
+		channelMessage.Flag,
+		channelMessage.AuthorID,
+		channelMessage.ChannelID,
+		channelMessage.GuildID,
+		channelMessage.CreatedAt,
+		channelMessage.UpdatedAt,
 	)
 
-	channelMessage := &entities.ChannelMessage{}
-	if err := row.Scan(
-		&channelMessage.ID,
-		&channelMessage.Content,
-		&channelMessage.Pinned,
-		&channelMessage.Flag,
-		&channelMessage.AuthorID,
-		&channelMessage.ChannelID,
-		&channelMessage.GuildID,
-		&channelMessage.CreatedAt,
-		&channelMessage.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
-
-	return channelMessage, nil
+	return err
 }
-func (r *ChannelMessageRepository) Update(context context.Context, validatedChannelMessage *entities.ValidatedChannelMessage) (*entities.ChannelMessage, error) {
-	row := r.db.QueryRow(context, `
+func (r *ChannelMessageRepository) Update(ctx context.Context, channelMessage *entities.ChannelMessage) error {
+	_, err := r.db(ctx).Exec(ctx, `
 		UPDATE
 			channel_message
 		SET
@@ -215,53 +194,69 @@ func (r *ChannelMessageRepository) Update(context context.Context, validatedChan
 			created_at = $8,
 			updated_at = $9,
 		WHERE
-			id = $1
-		RETURNING
-			id,
-			content,
-			pinned,
-			flag,
-			author_id,
-			channel_id,
-			guild_id,
-			created_at,
-			updated_at;
+			id = $1;
 	`,
-		validatedChannelMessage.ID,
-		validatedChannelMessage.Content,
-		validatedChannelMessage.Pinned,
-		validatedChannelMessage.Flag,
-		validatedChannelMessage.AuthorID,
-		validatedChannelMessage.ChannelID,
-		validatedChannelMessage.GuildID,
-		validatedChannelMessage.CreatedAt,
-		validatedChannelMessage.UpdatedAt,
+		channelMessage.ID,
+		channelMessage.Content,
+		channelMessage.Pinned,
+		channelMessage.Flag,
+		channelMessage.AuthorID,
+		channelMessage.ChannelID,
+		channelMessage.GuildID,
+		channelMessage.CreatedAt,
+		channelMessage.UpdatedAt,
 	)
 
-	channelMessage := &entities.ChannelMessage{}
-	if err := row.Scan(
-		&channelMessage.ID,
-		&channelMessage.Content,
-		&channelMessage.Pinned,
-		&channelMessage.Flag,
-		&channelMessage.AuthorID,
-		&channelMessage.ChannelID,
-		&channelMessage.GuildID,
-		&channelMessage.CreatedAt,
-		&channelMessage.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
-
-	return channelMessage, nil
+	return err
 }
-func (r *ChannelMessageRepository) Delete(context context.Context, ID string) error {
-	result, err := r.db.Exec(context, `
+func (r *ChannelMessageRepository) Delete(ctx context.Context, ID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			channel_message
 		WHERE
 			id = $1;
 	`, ID)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() != 1 {
+		return errors.New("rows affected is zero")
+	}
+
+	return nil
+}
+
+func (r *ChannelMessageRepository) AssociateAttachment(ctx context.Context, channelMessageID string, attachmentID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
+		INSERT INTO
+			channel_message_attachment(
+				channel_message_id,
+				attachment_id
+			)
+		VALUES ($1, $2);
+	`)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() != 1 {
+		return errors.New("rows affected is zero")
+	}
+
+	return nil
+}
+func (r *ChannelMessageRepository) DisassociateAttachment(ctx context.Context, channelMessageID string, attachmentID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
+		DELETE FROM
+			channel_message_attachment
+		WHERE
+			attachment_id = $1
+		AND
+			channel_message_id = $2;
+	`)
 
 	if err != nil {
 		return err

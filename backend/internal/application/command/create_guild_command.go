@@ -1,7 +1,5 @@
 package command
 
-import "github.com/MikeT117/accord/backend/internal/application/common"
-
 type CreateGuildCommand struct {
 	CreatorID    string
 	Name         string
@@ -9,8 +7,4 @@ type CreateGuildCommand struct {
 	Discoverable bool
 	IconID       *string
 	BannerID     *string
-}
-
-type CreateGuildCommandResult struct {
-	Result *common.GuildResult
 }

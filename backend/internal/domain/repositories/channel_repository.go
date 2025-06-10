@@ -7,11 +7,17 @@ import (
 )
 
 type ChannelRepository interface {
-	GetByID(context context.Context, ID string) (*entities.Channel, error)
-	GetByGuildID(context context.Context, guildID string) ([]*entities.Channel, []string, error)
-	GetByGuildIDs(context context.Context, guildIDs []string) (map[string][]*entities.Channel, []string, error)
-	GetByUserID(context context.Context, userID string) ([]*entities.Channel, []string, error)
-	Create(context context.Context, validatedChannel *entities.ValidatedChannel) (*entities.Channel, error)
-	Update(context context.Context, validatedChannel *entities.ValidatedChannel) (*entities.Channel, error)
-	Delete(context context.Context, ID string) error
+	GetByID(ctx context.Context, ID string) (*entities.Channel, error)
+	GetByGuildID(ctx context.Context, guildID string) ([]*entities.Channel, []string, error)
+	GetByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.Channel, []string, error)
+	GetByUserID(ctx context.Context, userID string) ([]*entities.Channel, []string, error)
+
+	Create(ctx context.Context, validatedChannel *entities.Channel) error
+	Update(ctx context.Context, validatedChannel *entities.Channel) error
+	Delete(ctx context.Context, ID string) error
+
+	GetUsersByChannelID(ctx context.Context, channelID string) ([]*entities.User, error)
+	GetUsersByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]*entities.User, error)
+	AssociateUser(ctx context.Context, channelID string, userID string) error
+	DisassociateUser(ctx context.Context, channelID string, userID string) error
 }

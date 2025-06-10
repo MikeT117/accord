@@ -7,6 +7,12 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	PENDING = iota
+	FRIENDS
+	BLOCKED
+)
+
 type Relationship struct {
 	ID          string
 	CreatorID   string
@@ -26,13 +32,13 @@ func (u *Relationship) validate() error {
 	if u.RecipientID == "" {
 		return errors.New("recipient id must not be empty")
 	}
-	if u.Status != 0 {
-		return errors.New("status for new relationships must be '0'")
+	if u.Status != PENDING && u.Status != FRIENDS && u.Status != BLOCKED {
+		return errors.New("invalid relationship status")
 	}
 	return nil
 }
 
-func NewRelationship(creatorID string, recipientID string) (*Relationship, error) {
+func NewRelationship(creatorID string, status int8, recipientID string) (*Relationship, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -40,12 +46,25 @@ func NewRelationship(creatorID string, recipientID string) (*Relationship, error
 
 	timestamp := time.Now().UTC().Unix()
 
-	return &Relationship{
+	relationship := &Relationship{
 		ID:          ID.String(),
 		CreatorID:   creatorID,
 		RecipientID: recipientID,
-		Status:      0,
+		Status:      status,
 		CreatedAt:   timestamp,
 		UpdatedAt:   timestamp,
-	}, nil
+	}
+
+	if err := relationship.validate(); err != nil {
+		return nil, err
+	}
+
+	return relationship, nil
+}
+
+func (r *Relationship) Updatestatus(status int8) error {
+	r.UpdatedAt = time.Now().UTC().Unix()
+	r.Status = status
+
+	return r.validate()
 }

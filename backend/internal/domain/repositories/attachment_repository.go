@@ -7,7 +7,10 @@ import (
 )
 
 type AttachmentRepository interface {
-	GetByIDs(context context.Context, IDs []string) (map[string]*entities.Attachment, error)
-	GetByID(context context.Context, ID string) (*entities.Attachment, error)
-	Create(context context.Context, validatedAttachment *entities.ValidatedAttachment) (*entities.Attachment, error)
+	GetByIDs(ctx context.Context, IDs []string) (map[string]*entities.Attachment, error)
+	GetByID(ctx context.Context, ID string) (*entities.Attachment, error)
+	GetByAssociatedChannelMessageID(ctx context.Context, ID string) ([]*entities.Attachment, error)
+	Create(ctx context.Context, validatedAttachment *entities.Attachment) error
+	Update(ctx context.Context, attachment *entities.Attachment) error
+	Delete(ctx context.Context, ID string) error
 }

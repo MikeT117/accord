@@ -7,10 +7,10 @@ import (
 )
 
 type VoiceStateRepository interface {
-	GetByUserID(context context.Context, userID string) (*entities.VoiceState, error)
-	GetByChannelID(context context.Context, channelID string) ([]*entities.VoiceState, error)
-	GetByGuildID(context context.Context, guildID string) ([]*entities.VoiceState, error)
-	Create(context context.Context, validatedVoiceState *entities.ValidatedVoiceState) (*entities.VoiceState, error)
-	Update(context context.Context, validatedVoiceState *entities.ValidatedVoiceState) (*entities.VoiceState, error)
-	Delete(context context.Context, userID string, channelID string) error
+	GetByUserID(ctx context.Context, userID string) (*entities.VoiceState, error)
+	GetByChannelID(ctx context.Context, channelID string) ([]*entities.VoiceState, error)
+	GetByGuildID(ctx context.Context, guildID string) ([]*entities.VoiceState, error)
+	Create(ctx context.Context, validatedVoiceState *entities.VoiceState) error
+	Update(ctx context.Context, validatedVoiceState *entities.VoiceState) error
+	Delete(ctx context.Context, userID string, channelID string) error
 }

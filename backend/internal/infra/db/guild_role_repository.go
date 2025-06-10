@@ -9,17 +9,17 @@ import (
 )
 
 type GuildRoleRepository struct {
-	db DBTX
+	db DBGetter
 }
 
-func CreateGuildRoleRepository(db DBTX) repositories.GuildRoleRepository {
+func CreateGuildRoleRepository(db DBGetter) repositories.GuildRoleRepository {
 	return &GuildRoleRepository{
 		db: db,
 	}
 }
 
-func (r *GuildRoleRepository) GetByID(context context.Context, ID string) (*entities.GuildRole, error) {
-	row := r.db.QueryRow(context, `
+func (r *GuildRoleRepository) GetByID(ctx context.Context, ID string) (*entities.GuildRole, error) {
+	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
 			guild_id,
@@ -47,8 +47,8 @@ func (r *GuildRoleRepository) GetByID(context context.Context, ID string) (*enti
 
 	return role, nil
 }
-func (r *GuildRoleRepository) GetByGuildID(context context.Context, guildID string) ([]*entities.GuildRole, []string, error) {
-	rows, err := r.db.Query(context, `
+func (r *GuildRoleRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildRole, []string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
 			guild_id,
@@ -88,8 +88,8 @@ func (r *GuildRoleRepository) GetByGuildID(context context.Context, guildID stri
 	return roles, roleIDs, nil
 }
 
-func (r *GuildRoleRepository) GetByNameAndGuildID(context context.Context, name string, guildID string) (*entities.GuildRole, error) {
-	row := r.db.QueryRow(context, `
+func (r *GuildRoleRepository) GetByNameAndGuildID(ctx context.Context, name string, guildID string) (*entities.GuildRole, error) {
+	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
 			guild_id,
@@ -120,8 +120,8 @@ func (r *GuildRoleRepository) GetByNameAndGuildID(context context.Context, name 
 	return role, nil
 }
 
-func (r *GuildRoleRepository) GetByGuildIDs(context context.Context, guildIDs []string) (map[string][]*entities.GuildRole, []string, error) {
-	rows, err := r.db.Query(context, `
+func (r *GuildRoleRepository) GetByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.GuildRole, []string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
 			guild_id,
@@ -163,8 +163,8 @@ func (r *GuildRoleRepository) GetByGuildIDs(context context.Context, guildIDs []
 	return rolesMap, roleIDs, err
 }
 
-func (r *GuildRoleRepository) Create(context context.Context, validatedGuildRole *entities.ValidatedGuildRole) (*entities.GuildRole, error) {
-	row := r.db.QueryRow(context, `
+func (r *GuildRoleRepository) Create(ctx context.Context, guildRole *entities.GuildRole) error {
+	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
 			guild_role (
 				id,
@@ -174,39 +174,21 @@ func (r *GuildRoleRepository) Create(context context.Context, validatedGuildRole
 				created_at,
 				updated_at
 			)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING
-			id,
-			guild_id,
-			name,
-			permissions,
-			created_at,
-			updated_at;
+		VALUES ($1, $2, $3, $4, $5, $6);
 	`,
-		validatedGuildRole.ID,
-		validatedGuildRole.GuildID,
-		validatedGuildRole.Name,
-		validatedGuildRole.Permissions,
-		validatedGuildRole.CreatedAt,
-		validatedGuildRole.UpdatedAt,
+		guildRole.ID,
+		guildRole.GuildID,
+		guildRole.Name,
+		guildRole.Permissions,
+		guildRole.CreatedAt,
+		guildRole.UpdatedAt,
 	)
 
-	guildRole := &entities.GuildRole{}
-	if err := row.Scan(
-		&guildRole.ID,
-		&guildRole.GuildID,
-		&guildRole.Name,
-		&guildRole.Permissions,
-		&guildRole.CreatedAt,
-		&guildRole.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
+	return err
 
-	return guildRole, nil
 }
-func (r *GuildRoleRepository) Update(context context.Context, validatedGuildRole *entities.ValidatedGuildRole) (*entities.GuildRole, error) {
-	row := r.db.QueryRow(context, `
+func (r *GuildRoleRepository) Update(ctx context.Context, guildRole *entities.GuildRole) error {
+	_, err := r.db(ctx).Exec(ctx, `
 		UPDATE
 			guild_role
 		SET
@@ -217,40 +199,22 @@ func (r *GuildRoleRepository) Update(context context.Context, validatedGuildRole
 			updated_at = $6,
 			
 		WHERE
-			id = $1
-		RETURNING
-			id,
-			guild_id,
-			name,
-			permissions,
-			created_at,
-			updated_at;
+			id = $1;
 	`,
-		validatedGuildRole.ID,
-		validatedGuildRole.GuildID,
-		validatedGuildRole.Name,
-		validatedGuildRole.Permissions,
-		validatedGuildRole.CreatedAt,
-		validatedGuildRole.UpdatedAt,
+		guildRole.ID,
+		guildRole.GuildID,
+		guildRole.Name,
+		guildRole.Permissions,
+		guildRole.CreatedAt,
+		guildRole.UpdatedAt,
 	)
 
-	guildRole := &entities.GuildRole{}
-	if err := row.Scan(
-		&guildRole.ID,
-		&guildRole.GuildID,
-		&guildRole.Name,
-		&guildRole.Permissions,
-		&guildRole.CreatedAt,
-		&guildRole.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
+	return err
 
-	return guildRole, nil
 }
 
-func (r *GuildRoleRepository) Delete(context context.Context, ID string) error {
-	result, err := r.db.Exec(context, `
+func (r *GuildRoleRepository) Delete(ctx context.Context, ID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				guild_role
 			WHERE
@@ -269,8 +233,8 @@ func (r *GuildRoleRepository) Delete(context context.Context, ID string) error {
 	return nil
 }
 
-func (r *GuildRoleRepository) GetPermissionByUserIDAndGuildID(context context.Context, userID string, guildID string) (int32, error) {
-	row := r.db.QueryRow(context, `
+func (r *GuildRoleRepository) GetPermissionByUserIDAndGuildID(ctx context.Context, userID string, guildID string) (int32, error) {
+	row := r.db(ctx).QueryRow(ctx, `
 		Select
 			COALESCE(
 				bit_or(gr.permissions), -1)::int as permissions
@@ -293,8 +257,8 @@ func (r *GuildRoleRepository) GetPermissionByUserIDAndGuildID(context context.Co
 	return permissions, nil
 }
 
-func (r *GuildRoleRepository) GetPermissionByUserIDAndChannelID(context context.Context, userID string, channelID string) (int32, error) {
-	row := r.db.QueryRow(context, `
+func (r *GuildRoleRepository) GetPermissionByUserIDAndChannelID(ctx context.Context, userID string, channelID string) (int32, error) {
+	row := r.db(ctx).QueryRow(ctx, `
 		Select
 			COALESCE(
 				bit_or(gr.permissions), -1)::int as permissions
@@ -317,4 +281,227 @@ func (r *GuildRoleRepository) GetPermissionByUserIDAndChannelID(context context.
 	}
 
 	return permissions, nil
+}
+
+func (r *GuildRoleRepository) AssociateUser(ctx context.Context, roleID string, userID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
+			INSERT INTO
+				guild_role_user (
+					role_id,
+					user_id
+				)
+			VALUES ($1, $2);
+		`, roleID, userID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() != 1 {
+		return errors.New("rows affected is zero")
+	}
+
+	return nil
+}
+
+func (r *GuildRoleRepository) DisassociateUser(ctx context.Context, roleID string, userID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
+			DELETE FROM
+				guild_role_user
+			WHERE
+				role_id = $1
+			AND
+				user_id = $2;
+		`, roleID, userID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() != 1 {
+		return errors.New("rows affected is zero")
+	}
+
+	return nil
+}
+
+func (r *GuildRoleRepository) GetRoleIDsByUserIDs(ctx context.Context, userIDs []string) (map[string][]string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			role_id,
+			user_id
+		FROM
+			guild_role_user
+		WHERE
+			user_id = ANY ($1);
+	`, userIDs)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	roleUsersMap := make(map[string][]string)
+	for rows.Next() {
+		var roleID string
+		var userID string
+		if err := rows.Scan(
+			&roleID,
+			&userID,
+		); err != nil {
+			return nil, err
+		}
+
+		roleUsersMap[userID] = append(roleUsersMap[userID], roleID)
+	}
+
+	return roleUsersMap, err
+}
+
+func (r *GuildRoleRepository) GetRoleIDsByUserIDAndGuildID(ctx context.Context, userID string, guildID string) ([]string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			gru.role_id,
+		FROM
+			guild_role_user gru
+		INNER JOIN
+			guild_role gr
+		WHERE
+			user_id = $1
+		AND 
+			gr.guild_id = $2;
+	`, userID, guildID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	roleIDs := []string{}
+	for rows.Next() {
+		var roleID string
+		if err := rows.Scan(
+			&roleID,
+		); err != nil {
+			return nil, err
+		}
+
+		roleIDs = append(roleIDs, roleID)
+	}
+
+	return roleIDs, err
+}
+
+func (r *GuildRoleRepository) AssociateChannel(ctx context.Context, roleID string, channelID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
+			INSERT INTO
+				guild_role_channel (
+					role_id,
+					channel_id
+				)
+			VALUES ($1, $2);
+		`, roleID, channelID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() != 1 {
+		return errors.New("rows affected is zero")
+	}
+
+	return nil
+}
+
+func (r *GuildRoleRepository) DisassociateChannel(ctx context.Context, roleID string, channelID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
+			DELETE FROM
+				guild_role_channel
+			WHERE
+				role_id = $1
+			AND
+				channel_id = $2;
+		`, roleID, channelID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() != 1 {
+		return errors.New("rows affected is zero")
+	}
+
+	return nil
+}
+
+func (r *GuildRoleRepository) GetRoleIDsByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			role_id,
+			channel_id
+		FROM
+			guild_role_channel
+		WHERE
+			channel_id = ANY ($1);
+	`, channelIDs)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	roleChannelsMap := make(map[string][]string)
+	for rows.Next() {
+		var channelID string
+		var roleID string
+		if err := rows.Scan(
+			&roleID,
+			&channelID,
+		); err != nil {
+			return nil, err
+		}
+
+		roleChannelsMap[channelID] = append(roleChannelsMap[channelID], roleID)
+	}
+
+	return roleChannelsMap, err
+}
+
+func (r *GuildRoleRepository) GetRoleIDsByChannelID(ctx context.Context, channelID string) ([]string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			role_id,
+		FROM
+			guild_role_channel
+		WHERE
+			channel_id = $1;
+	`, channelID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	roleIDs := []string{}
+	for rows.Next() {
+		var roleID string
+		if err := rows.Scan(
+			&roleID,
+		); err != nil {
+			return nil, err
+		}
+
+		roleIDs = append(roleIDs, roleID)
+
+	}
+
+	return roleIDs, err
 }

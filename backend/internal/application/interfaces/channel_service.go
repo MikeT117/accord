@@ -8,10 +8,10 @@ import (
 )
 
 type ChannelService interface {
-	GetByID(context context.Context, ID string) (*query.ChannelQueryResult, error)
-	GetByGuildID(context context.Context, guildID string) (*query.ChannelQueryListResult, error)
-	GetByUserID(context context.Context, userID string) (*query.ChannelQueryListResult, error)
-	Create(context context.Context, createCommand *command.CreateChannelCommand) (*command.CreateChannelCommandResult, error)
-	Update(context context.Context, createCommand *command.UpdateChannelCommand) (*command.CreateChannelCommandResult, error)
-	Delete(context context.Context, ID string) error
+	GetByID(ctx context.Context, ID string) (*query.ChannelQueryResult, error)
+	GetByGuildID(ctx context.Context, guildID string) (*query.ChannelQueryListResult, error)
+	GetByUserID(ctx context.Context, userID string) (*query.ChannelQueryListResult, error)
+	Create(ctx context.Context, createCommand *command.CreateChannelCommand) error
+	Update(ctx context.Context, createCommand *command.UpdateChannelCommand) error
+	Delete(ctx context.Context, ID string) error
 }

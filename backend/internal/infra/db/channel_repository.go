@@ -9,15 +9,15 @@ import (
 )
 
 type ChannelRepository struct {
-	db DBTX
+	db DBGetter
 }
 
-func CreateChannelRepository(db DBTX) repositories.ChannelRepository {
+func CreateChannelRepository(db DBGetter) repositories.ChannelRepository {
 	return &ChannelRepository{db: db}
 }
 
-func (r *ChannelRepository) GetByID(context context.Context, ID string) (*entities.Channel, error) {
-	row := r.db.QueryRow(context, `
+func (r *ChannelRepository) GetByID(ctx context.Context, ID string) (*entities.Channel, error) {
+	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
 			creator_id,
@@ -52,8 +52,8 @@ func (r *ChannelRepository) GetByID(context context.Context, ID string) (*entiti
 	return channel, nil
 }
 
-func (r *ChannelRepository) GetByGuildID(context context.Context, guildID string) ([]*entities.Channel, []string, error) {
-	rows, err := r.db.Query(context, `
+func (r *ChannelRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.Channel, []string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
 			creator_id,
@@ -101,8 +101,8 @@ func (r *ChannelRepository) GetByGuildID(context context.Context, guildID string
 	return channels, channelIDs, nil
 }
 
-func (r *ChannelRepository) GetByGuildIDs(context context.Context, guildIDs []string) (map[string][]*entities.Channel, []string, error) {
-	rows, err := r.db.Query(context, `
+func (r *ChannelRepository) GetByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.Channel, []string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
 			creator_id,
@@ -150,8 +150,8 @@ func (r *ChannelRepository) GetByGuildIDs(context context.Context, guildIDs []st
 	return channelsMap, channelIDs, err
 }
 
-func (r *ChannelRepository) GetByUserID(context context.Context, userID string) ([]*entities.Channel, []string, error) {
-	rows, err := r.db.Query(context, `
+func (r *ChannelRepository) GetByUserID(ctx context.Context, userID string) ([]*entities.Channel, []string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			c.id,
 			c.creator_id,
@@ -201,9 +201,9 @@ func (r *ChannelRepository) GetByUserID(context context.Context, userID string) 
 	return channels, channelIDs, nil
 }
 
-func (r *ChannelRepository) Create(context context.Context, validatedChannel *entities.ValidatedChannel) (*entities.Channel, error) {
+func (r *ChannelRepository) Create(ctx context.Context, channel *entities.Channel) error {
 
-	row := r.db.QueryRow(context, `
+	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
 			channel(
 				id,
@@ -216,31 +216,8 @@ func (r *ChannelRepository) Create(context context.Context, validatedChannel *en
 				created_at,
 				updated_at
 			)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING
-			id,
-			creator_id,
-			guild_id,
-			parent_id,
-			name,
-			topic,
-			channel_type,
-			created_at,
-			updated_at;
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
 	`,
-		&validatedChannel.ID,
-		&validatedChannel.CreatorID,
-		&validatedChannel.GuildID,
-		&validatedChannel.ParentID,
-		&validatedChannel.Name,
-		&validatedChannel.Topic,
-		&validatedChannel.ChannelType,
-		&validatedChannel.CreatedAt,
-		&validatedChannel.UpdatedAt,
-	)
-
-	channel := &entities.Channel{}
-	if err := row.Scan(
 		&channel.ID,
 		&channel.CreatorID,
 		&channel.GuildID,
@@ -250,16 +227,14 @@ func (r *ChannelRepository) Create(context context.Context, validatedChannel *en
 		&channel.ChannelType,
 		&channel.CreatedAt,
 		&channel.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
+	)
 
-	return channel, nil
+	return err
 }
 
-func (r *ChannelRepository) Update(context context.Context, validatedChannel *entities.ValidatedChannel) (*entities.Channel, error) {
+func (r *ChannelRepository) Update(ctx context.Context, channel *entities.Channel) error {
 
-	row := r.db.QueryRow(context, `
+	_, err := r.db(ctx).Exec(ctx, `
 		UPDATE
 			channel
 		SET
@@ -272,31 +247,8 @@ func (r *ChannelRepository) Update(context context.Context, validatedChannel *en
 			created_at = $8,
 			updated_at = $9
 		WHERE
-			id = $1
-		RETURNING
-			id,
-			creator_id,
-			guild_id,
-			parent_id,
-			name,
-			topic,
-			channel_type,
-			created_at,
-			updated_at;
+			id = $1;
 	`,
-		&validatedChannel.ID,
-		&validatedChannel.CreatorID,
-		&validatedChannel.GuildID,
-		&validatedChannel.ParentID,
-		&validatedChannel.Name,
-		&validatedChannel.Topic,
-		&validatedChannel.ChannelType,
-		&validatedChannel.CreatedAt,
-		&validatedChannel.UpdatedAt,
-	)
-
-	channel := &entities.Channel{}
-	if err := row.Scan(
 		&channel.ID,
 		&channel.CreatorID,
 		&channel.GuildID,
@@ -306,20 +258,171 @@ func (r *ChannelRepository) Update(context context.Context, validatedChannel *en
 		&channel.ChannelType,
 		&channel.CreatedAt,
 		&channel.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
+	)
 
-	return channel, nil
+	return err
+
 }
 
-func (r *ChannelRepository) Delete(context context.Context, ID string) error {
-	result, err := r.db.Exec(context, `
+func (r *ChannelRepository) Delete(ctx context.Context, ID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			channel
 		WHERE
 			id = $1;
 	`, ID)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() != 1 {
+		return errors.New("rows affected is zero")
+	}
+
+	return nil
+}
+
+func (r *ChannelRepository) GetUsersByChannelID(ctx context.Context, channelID string) ([]*entities.User, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			u.id,
+			u.username,
+			u.display_name,
+			u.email,
+			u.email_verified,
+			u.public_flags,
+			u.relationship_count,
+			u.avatar_id,
+			u.banner_id,
+			u.created_at,
+			u.updated_at
+		FROM
+			user u
+		INNER JOIN
+			channel_user cu ON u.id = cu.user_id
+		WHERE
+			cu.channel_id = $1;
+	`, channelID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	users := []*entities.User{}
+
+	for rows.Next() {
+		user := &entities.User{}
+		if err := rows.Scan(
+			&user.ID,
+			&user.Username,
+			&user.DisplayName,
+			&user.Email,
+			&user.EmailVerified,
+			&user.PublicFlags,
+			&user.RelationshipCount,
+			&user.AvatarID,
+			&user.BannerID,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
+func (r *ChannelRepository) GetUsersByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]*entities.User, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			cu.channel_id,
+			u.id,
+			u.username,
+			u.display_name,
+			u.email,
+			u.email_verified,
+			u.public_flags,
+			u.relationship_count,
+			u.avatar_id,
+			u.banner_id,
+			u.created_at,
+			u.updated_at
+		FROM
+			user u
+		INNER JOIN
+			channel_user cu ON u.id = cu.user_id
+		WHERE
+			cu.channel_id = ANY($1);
+	`, channelIDs)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	users := make(map[string][]*entities.User)
+	for rows.Next() {
+		user := &entities.User{}
+		var channelID string
+		if err := rows.Scan(
+			&channelID,
+			&user.ID,
+			&user.Username,
+			&user.DisplayName,
+			&user.Email,
+			&user.EmailVerified,
+			&user.PublicFlags,
+			&user.RelationshipCount,
+			&user.AvatarID,
+			&user.BannerID,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		users[channelID] = append(users[channelID], user)
+	}
+
+	return users, nil
+
+}
+
+func (r *ChannelRepository) AssociateUser(ctx context.Context, channelID string, userID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
+		INSERT INTO
+			channel_user (
+				user_id,
+				channel_id
+			)
+		VALUES ($1, $2);
+	`)
+
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() != 1 {
+		return errors.New("rows affected is zero")
+	}
+
+	return nil
+}
+
+func (r *ChannelRepository) DisassociateUser(ctx context.Context, channelID string, userID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
+		DELETE FROM
+			channel_user
+		WHERE
+			channel_id = $1
+		AND
+			user_ud = $2;
+	`)
 
 	if err != nil {
 		return err

@@ -31,15 +31,15 @@ func (u *Session) validate() error {
 	return nil
 }
 
-func NewSession(userID string, token string, expiresAt int64, ipAddress string, userAgent string) *Session {
+func NewSession(userID string, token string, expiresAt int64, ipAddress string, userAgent string) (*Session, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	timestamp := time.Now().UTC().Unix()
 
-	return &Session{
+	session := &Session{
 		ID:        ID.String(),
 		UserID:    userID,
 		Token:     token,
@@ -49,4 +49,10 @@ func NewSession(userID string, token string, expiresAt int64, ipAddress string, 
 		UpdatedAt: timestamp,
 		ExpiresAt: expiresAt,
 	}
+
+	if err := session.validate(); err != nil {
+		return nil, err
+	}
+
+	return session, nil
 }

@@ -7,8 +7,9 @@ import (
 )
 
 type UserRepository interface {
-	GetByID(context context.Context, ID string) (*entities.User, error)
-	GetByEmail(context context.Context, email string) (*entities.User, error)
-	Create(context context.Context, validatedUser *entities.ValidatedUser) (*entities.User, error)
-	Update(context context.Context, validatedUser *entities.ValidatedUser) (*entities.User, error)
+	GetByID(ctx context.Context, ID string) (*entities.User, error)
+	GetByIDs(ctx context.Context, IDs []string) (map[string]*entities.User, error)
+	GetByEmail(ctx context.Context, email string) (*entities.User, error)
+	Create(ctx context.Context, validatedUser *entities.User) error
+	Update(ctx context.Context, validatedUser *entities.User) error
 }

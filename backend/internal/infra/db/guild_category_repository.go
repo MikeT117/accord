@@ -9,15 +9,15 @@ import (
 )
 
 type GuildCategoryRepository struct {
-	db DBTX
+	db DBGetter
 }
 
-func CreateGuildCategoryRepository(db DBTX) repositories.GuildCategoryRepository {
+func CreateGuildCategoryRepository(db DBGetter) repositories.GuildCategoryRepository {
 	return &GuildCategoryRepository{db: db}
 }
 
-func (r *GuildCategoryRepository) Get(context context.Context, ID string) ([]*entities.GuildCategory, error) {
-	rows, err := r.db.Query(context, `
+func (r *GuildCategoryRepository) Get(ctx context.Context, ID string) ([]*entities.GuildCategory, error) {
+	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
 			name,
@@ -53,8 +53,8 @@ func (r *GuildCategoryRepository) Get(context context.Context, ID string) ([]*en
 	return guildCategories, nil
 }
 
-func (r *GuildCategoryRepository) Create(context context.Context, ValidatedGuildCategory *entities.ValidatedGuildCategory) (*entities.GuildCategory, error) {
-	row := r.db.QueryRow(context, `
+func (r *GuildCategoryRepository) Create(ctx context.Context, guildCategory *entities.GuildCategory) error {
+	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
 			guild_category (
 				id,
@@ -62,34 +62,19 @@ func (r *GuildCategoryRepository) Create(context context.Context, ValidatedGuild
 				created_at,
 				updated_at
 			)
-		VALUES ($1, $2, $3, $4)
-		RETURNING
-			id,
-			name,
-			created_at,
-			updated_at;
+		VALUES ($1, $2, $3, $4);
 	`,
-		ValidatedGuildCategory.ID,
-		ValidatedGuildCategory.Name,
-		ValidatedGuildCategory.CreatedAt,
-		ValidatedGuildCategory.UpdatedAt,
+		guildCategory.ID,
+		guildCategory.Name,
+		guildCategory.CreatedAt,
+		guildCategory.UpdatedAt,
 	)
 
-	guildCategory := &entities.GuildCategory{}
-	if err := row.Scan(
-		&guildCategory.ID,
-		&guildCategory.Name,
-		&guildCategory.CreatedAt,
-		&guildCategory.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
-
-	return guildCategory, nil
+	return err
 }
 
-func (r *GuildCategoryRepository) Delete(context context.Context, ID string) error {
-	result, err := r.db.Exec(context, `
+func (r *GuildCategoryRepository) Delete(ctx context.Context, ID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				guild_category
 			WHERE

@@ -12,23 +12,26 @@ import (
 )
 
 type ChannelService struct {
-	repositories *db.MasterRepository
+	transactor          *db.Transactor
+	channelRepository   *db.ChannelRepository
+	guildRoleRepository *db.GuildRoleRepository
 }
 
-func CreateChannelService(repositories *db.MasterRepository) interfaces.ChannelService {
+func CreateChannelService(channelRepository *db.ChannelRepository, guildRoleRepository *db.GuildRoleRepository) interfaces.ChannelService {
 	return &ChannelService{
-		repositories: repositories,
+		channelRepository:   channelRepository,
+		guildRoleRepository: guildRoleRepository,
 	}
 }
 
 func (s *ChannelService) GetByID(ctx context.Context, ID string) (*query.ChannelQueryResult, error) {
-	channel, err := s.repositories.ChannelRepository.GetByID(ctx, ID)
+	channel, err := s.channelRepository.GetByID(ctx, ID)
 	if err != nil {
 		return nil, err
 	}
 
 	if channel.IsGuildChannel() {
-		users, err := s.repositories.ChannelUserRepository.GetByChannelID(ctx, channel.ID)
+		users, err := s.channelRepository.GetUsersByChannelID(ctx, channel.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -37,7 +40,10 @@ func (s *ChannelService) GetByID(ctx context.Context, ID string) (*query.Channel
 		}, nil
 	}
 
-	roleIDs, err := s.repositories.GuildRoleChannelRepository.GetRoleIDsByChannelID(ctx, channel.ID)
+	roleIDs, err := s.guildRoleRepository.GetRoleIDsByChannelID(ctx, channel.ID)
+	if err != nil {
+		return nil, err
+	}
 
 	return &query.ChannelQueryResult{
 		Result: mapper.NewGuildChannelResultFromChannel(channel, roleIDs),
@@ -45,12 +51,15 @@ func (s *ChannelService) GetByID(ctx context.Context, ID string) (*query.Channel
 }
 
 func (s *ChannelService) GetByGuildID(ctx context.Context, guildID string) (*query.ChannelQueryListResult, error) {
-	channels, channelIDs, err := s.repositories.ChannelRepository.GetByGuildID(ctx, guildID)
+	channels, channelIDs, err := s.channelRepository.GetByGuildID(ctx, guildID)
 	if err != nil {
 		return nil, err
 	}
 
-	roleIDs, err := s.repositories.GuildRoleChannelRepository.GetRoleIDsByChannelIDs(ctx, channelIDs)
+	roleIDs, err := s.guildRoleRepository.GetRoleIDsByChannelIDs(ctx, channelIDs)
+	if err != nil {
+		return nil, err
+	}
 
 	return &query.ChannelQueryListResult{
 		Result: mapper.NewGuildChannelListResultFromChannel(channels, roleIDs),
@@ -58,12 +67,12 @@ func (s *ChannelService) GetByGuildID(ctx context.Context, guildID string) (*que
 }
 
 func (s *ChannelService) GetByUserID(ctx context.Context, userID string) (*query.ChannelQueryListResult, error) {
-	channels, channelIDs, err := s.repositories.ChannelRepository.GetByUserID(ctx, userID)
+	channels, channelIDs, err := s.channelRepository.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	users, err := s.repositories.ChannelUserRepository.GetByChannelIDs(ctx, channelIDs)
+	users, err := s.channelRepository.GetUsersByChannelIDs(ctx, channelIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -73,22 +82,53 @@ func (s *ChannelService) GetByUserID(ctx context.Context, userID string) (*query
 	}, nil
 }
 
-func (s *ChannelService) Create(ctx context.Context, createCommand *command.CreateChannelCommand) (*command.CreateChannelCommandResult, error) {
-	channelEntity, err := entities.NewChannel(createCommand.ChannelType, *createCommand.GuildID, *createCommand.CreatorID, *createCommand.Name, createCommand.Topic)
-	if err != nil {
-		return nil, err
-	}
+func (s *ChannelService) Create(ctx context.Context, cmd *command.CreateChannelCommand) error {
+	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+		channel, err := entities.NewChannel(cmd.ChannelType, *cmd.GuildID, *cmd.CreatorID, *cmd.Name, cmd.Topic)
+		if err != nil {
+			return err
+		}
 
-	validatedChannelEntity, err := entities.NewValidatedChannel(channelEntity)
-	if err != nil {
-		return nil, err
-	}
+		if err := s.channelRepository.Create(ctx, channel); err != nil {
+			return err
+		}
 
+		if channel.IsGuildChannel() {
+			for _, roleID := range *cmd.Roles {
+				if err := s.guildRoleRepository.AssociateChannel(ctx, roleID, channel.ID); err != nil {
+					return err
+				}
+			}
+		} else {
+			for _, userID := range *cmd.Users {
+				if err := s.channelRepository.AssociateUser(ctx, userID, channel.ID); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	})
 }
-func (s *ChannelService) Update(ctx context.Context, createCommand *command.UpdateChannelCommand) (*command.CreateChannelCommandResult, error) {
+func (s *ChannelService) Update(ctx context.Context, cmd *command.UpdateChannelCommand) error {
+	channel, err := s.channelRepository.GetByID(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
 
+	if err := channel.UpdateName(cmd.Name); err != nil {
+		return err
+	}
+	if err := channel.UpdateParentID(cmd.ParentID); err != nil {
+		return err
+	}
+	if err := channel.UpdateTopic(cmd.Topic); err != nil {
+		return err
+	}
+
+	return s.channelRepository.Update(ctx, channel)
 }
 
 func (s *ChannelService) Delete(ctx context.Context, ID string) error {
-	return s.repositories.ChannelRepository.Delete(ctx, ID)
+	return s.channelRepository.Delete(ctx, ID)
 }
