@@ -3,6 +3,6 @@ package command
 type UpdateChannelCommand struct {
 	ID       string
 	ParentID *string
-	Name     *string
+	Name     string
 	Topic    *string
 }

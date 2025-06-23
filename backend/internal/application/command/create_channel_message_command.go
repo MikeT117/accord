@@ -2,10 +2,7 @@ package command
 
 type CreateChannelMessageCommand struct {
 	Content       string
-	AuthorID      *string
-	ChannelID     *string
-	GuildID       *string
+	AuthorID      string
+	ChannelID     string
 	AttachmentIDs []string
 }
-
-// TODO: VALIDATE THE ATTACHMENT ID BELONGS TO THE USER

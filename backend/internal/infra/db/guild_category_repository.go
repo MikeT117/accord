@@ -6,6 +6,7 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/jackc/pgx/v5"
 )
 
 type GuildCategoryRepository struct {
@@ -16,7 +17,37 @@ func CreateGuildCategoryRepository(db DBGetter) repositories.GuildCategoryReposi
 	return &GuildCategoryRepository{db: db}
 }
 
-func (r *GuildCategoryRepository) Get(ctx context.Context, ID string) ([]*entities.GuildCategory, error) {
+func (r *GuildCategoryRepository) GetByID(ctx context.Context, ID string) (*entities.GuildCategory, error) {
+	row := r.db(ctx).QueryRow(ctx, `
+		SELECT
+			id,
+			name,
+			created_at,
+			updated_at
+		FROM
+			guild_category
+		WHERE
+			id = $1;
+	`)
+
+	guildCategory := &entities.GuildCategory{}
+
+	if err := row.Scan(
+		&guildCategory.ID,
+		&guildCategory.Name,
+		&guildCategory.CreatedAt,
+		&guildCategory.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select guild category by id failed", err)
+	}
+
+	return guildCategory, nil
+}
+
+func (r *GuildCategoryRepository) GetAll(ctx context.Context) ([]*entities.GuildCategory, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -28,7 +59,7 @@ func (r *GuildCategoryRepository) Get(ctx context.Context, ID string) ([]*entiti
 	`)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select all guild categories failed", err)
 	}
 
 	defer rows.Close()
@@ -44,7 +75,7 @@ func (r *GuildCategoryRepository) Get(ctx context.Context, ID string) ([]*entiti
 			&guildCategory.CreatedAt,
 			&guildCategory.UpdatedAt,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select all guild categories failed", err)
 		}
 
 		guildCategories = append(guildCategories, &guildCategory)
@@ -70,23 +101,27 @@ func (r *GuildCategoryRepository) Create(ctx context.Context, guildCategory *ent
 		guildCategory.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("create guild category failed", err)
+	}
+
+	return nil
 }
 
 func (r *GuildCategoryRepository) Delete(ctx context.Context, ID string) error {
 	result, err := r.db(ctx).Exec(ctx, `
-			DELETE FROM
-				guild_category
-			WHERE
-				id = $1
-		`, ID)
+		DELETE FROM
+			guild_category
+		WHERE
+			id = $1
+	`, ID)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete guild category failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("zero rows affected")
+		return ErrNotFound
 	}
 
 	return nil

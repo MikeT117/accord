@@ -2,9 +2,11 @@ package db
 
 import (
 	"context"
+	"errors"
 
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/jackc/pgx/v5"
 )
 
 type AttachmentRepository struct {
@@ -20,7 +22,6 @@ func (r *AttachmentRepository) GetByID(ctx context.Context, ID string) (*entitie
 		SELECT
 			id,
 			resource_type,
-			signature,
 			owner_id,
 			height,
 			width,
@@ -38,7 +39,6 @@ func (r *AttachmentRepository) GetByID(ctx context.Context, ID string) (*entitie
 	if err := row.Scan(
 		&attachment.ID,
 		&attachment.ResourceType,
-		&attachment.Signature,
 		&attachment.OwnerID,
 		&attachment.Height,
 		&attachment.Width,
@@ -47,18 +47,20 @@ func (r *AttachmentRepository) GetByID(ctx context.Context, ID string) (*entitie
 		&attachment.UpdatedAt,
 		&attachment.Status,
 	); err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select attachment by id failed", err)
 	}
 
 	return attachment, nil
 }
 
-func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []string) (map[string]*entities.Attachment, error) {
+func (r *AttachmentRepository) GetMapByIDs(ctx context.Context, IDs []string) (map[string]*entities.Attachment, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
 			resource_type,
-			signature,
 			owner_id,
 			height,
 			width,
@@ -73,7 +75,7 @@ func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []string) (map[
 	`, IDs)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select attachment by ids failed", err)
 	}
 
 	defer rows.Close()
@@ -84,7 +86,6 @@ func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []string) (map[
 		if err := rows.Scan(
 			&attachment.ID,
 			&attachment.ResourceType,
-			&attachment.Signature,
 			&attachment.OwnerID,
 			&attachment.Height,
 			&attachment.Width,
@@ -93,7 +94,7 @@ func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []string) (map[
 			&attachment.UpdatedAt,
 			&attachment.Status,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select attachment by ids failed", err)
 		}
 
 		attachmentsMap[attachment.ID] = attachment
@@ -102,12 +103,58 @@ func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []string) (map[
 	return attachmentsMap, nil
 }
 
+func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []string) ([]*entities.Attachment, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			id,
+			resource_type,
+			owner_id,
+			height,
+			width,
+			filesize,
+			created_at,
+			updated_at,
+			status
+		FROM
+			entry_attachment
+		WHERE
+			id = ANY($1);
+	`, IDs)
+
+	if err != nil {
+		return nil, wrapUnknownErr("select attachment by ids failed", err)
+	}
+
+	defer rows.Close()
+
+	attachments := []*entities.Attachment{}
+	for rows.Next() {
+		attachment := &entities.Attachment{}
+		if err := rows.Scan(
+			&attachment.ID,
+			&attachment.ResourceType,
+			&attachment.OwnerID,
+			&attachment.Height,
+			&attachment.Width,
+			&attachment.Filesize,
+			&attachment.CreatedAt,
+			&attachment.UpdatedAt,
+			&attachment.Status,
+		); err != nil {
+			return nil, wrapUnknownErr("map over select attachment by ids failed", err)
+		}
+
+		attachments = append(attachments, attachment)
+	}
+
+	return attachments, nil
+}
+
 func (r *AttachmentRepository) GetByAssociatedChannelMessageID(ctx context.Context, ID string) ([]*entities.Attachment, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			ea.id,
 			ea.resource_type,
-			ea.signature,
 			ea.owner_id,
 			ea.height,
 			ea.width,
@@ -124,7 +171,7 @@ func (r *AttachmentRepository) GetByAssociatedChannelMessageID(ctx context.Conte
 	`, ID)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select attachments by associated channel message ID failed", err)
 	}
 
 	defer rows.Close()
@@ -135,7 +182,6 @@ func (r *AttachmentRepository) GetByAssociatedChannelMessageID(ctx context.Conte
 		if err := rows.Scan(
 			&attachment.ID,
 			&attachment.ResourceType,
-			&attachment.Signature,
 			&attachment.OwnerID,
 			&attachment.Height,
 			&attachment.Width,
@@ -144,7 +190,7 @@ func (r *AttachmentRepository) GetByAssociatedChannelMessageID(ctx context.Conte
 			&attachment.UpdatedAt,
 			&attachment.Status,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select attachments by associated channel message ID failed", err)
 		}
 
 		attachments = append(attachments, attachment)
@@ -153,30 +199,29 @@ func (r *AttachmentRepository) GetByAssociatedChannelMessageID(ctx context.Conte
 	return attachments, nil
 }
 
-func (r *AttachmentRepository) GetByAssociatedChannelMessageIDs(ctx context.Context, IDs []string) (map[string][]*entities.Attachment, error) {
+func (r *AttachmentRepository) GetMapByAssociatedChannelMessageIDs(ctx context.Context, IDs []string) (map[string][]*entities.Attachment, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			cma.channel_message_id,
-			ea.id,
-			ea.resource_type,
-			ea.signature,
-			ea.owner_id,
-			ea.height,
-			ea.width,
-			ea.filesize,
-			ea.created_at,
-			ea.updated_at,
-			ea.status
+			a.id,
+			a.resource_type,
+			a.owner_id,
+			a.height,
+			a.width,
+			a.filesize,
+			a.created_at,
+			a.updated_at,
+			a.status
 		FROM
-			entry_attachment ea
+			attachment a
 		INNER JOIN
-			channel_message_attachment cma ON cma.attachment_id = ea.id
+			channel_message_attachment cma ON cma.attachment_id = a.id
 		WHERE
 			cma.channel_message_id = any($1);
 	`, IDs)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select attachments by associated channel message IDs failed", err)
 	}
 
 	defer rows.Close()
@@ -189,7 +234,6 @@ func (r *AttachmentRepository) GetByAssociatedChannelMessageIDs(ctx context.Cont
 			&channelMessageID,
 			&attachment.ID,
 			&attachment.ResourceType,
-			&attachment.Signature,
 			&attachment.OwnerID,
 			&attachment.Height,
 			&attachment.Width,
@@ -198,7 +242,7 @@ func (r *AttachmentRepository) GetByAssociatedChannelMessageIDs(ctx context.Cont
 			&attachment.UpdatedAt,
 			&attachment.Status,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select attachments by associated channel message IDs failed", err)
 		}
 
 		attachmentsMap[channelMessageID] = append(attachmentsMap[channelMessageID], attachment)
@@ -213,7 +257,6 @@ func (r *AttachmentRepository) Create(ctx context.Context, attachment *entities.
 			entry_attachment (
 				id,
 				resource_type,
-				signature,
 				owner_id,
 				height,
 				width,
@@ -222,11 +265,10 @@ func (r *AttachmentRepository) Create(ctx context.Context, attachment *entities.
 				updated_at,
 				status,
 			)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
 	`,
 		attachment.ID,
 		attachment.ResourceType,
-		attachment.Signature,
 		attachment.OwnerID,
 		attachment.Height,
 		attachment.Width,
@@ -236,29 +278,26 @@ func (r *AttachmentRepository) Create(ctx context.Context, attachment *entities.
 		attachment.Status,
 	)
 
-	return err
+	return wrapUnknownErr("insert attachment failed", err)
 }
 
 func (r *AttachmentRepository) Update(ctx context.Context, attachment *entities.Attachment) error {
-	_, err := r.db(ctx).Exec(ctx, `
+	result, err := r.db(ctx).Exec(ctx, `
 		UPDATE
 			entry_attachment
 		SET
-			id = $1,
-			resource_type = $1,
-			signature = $1,
-			owner_id = $1,
-			height = $1,
-			width = $1,
-			filesize = $1,
-			created_at = $1,
-			updated_at = $1
+			resource_type = $2,
+			owner_id = $3,
+			height = $4,
+			width = $5,
+			filesize = $6,
+			created_at = $7,
+			updated_at = $8
 		WHERE
 			id = $1;
 	`,
 		attachment.ID,
 		attachment.ResourceType,
-		attachment.Signature,
 		attachment.OwnerID,
 		attachment.Height,
 		attachment.Width,
@@ -268,16 +307,32 @@ func (r *AttachmentRepository) Update(ctx context.Context, attachment *entities.
 		attachment.Status,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("update attachment failed", err)
+	}
+
+	if result.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
 }
 
 func (r *AttachmentRepository) Delete(ctx context.Context, ID string) error {
-	_, err := r.db(ctx).Exec(ctx, `
+	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			entry_attachment
 		WHERE
 			id = $1;
 	`, ID)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("delete attachment failed", err)
+	}
+
+	if result.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
 }

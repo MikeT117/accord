@@ -7,8 +7,7 @@ import (
 )
 
 type GuildBanRepository interface {
-	GetByUserIDAndGuildID(ctx context.Context, userID string, guildID string) (*entities.GuildBan, error)
 	GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildBan, []string, error)
 	Create(ctx context.Context, guildBan *entities.GuildBan) error
-	Delete(ctx context.Context, userID string, guildID string) error
+	Delete(ctx context.Context, ID string) error
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/jackc/pgx/v5"
 )
 
 type SessionRepository struct {
@@ -47,7 +48,10 @@ func (r *SessionRepository) GetByID(ctx context.Context, ID string, userID strin
 		&session.CreatedAt,
 		&session.UpdatedAt,
 	); err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select session by id failed", err)
 	}
 
 	return session, nil
@@ -71,7 +75,7 @@ func (r *SessionRepository) GetByUserID(ctx context.Context, userID string) ([]*
 	`, userID)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select sessions by user id failed", err)
 	}
 	defer rows.Close()
 
@@ -90,7 +94,7 @@ func (r *SessionRepository) GetByUserID(ctx context.Context, userID string) ([]*
 			&session.CreatedAt,
 			&session.UpdatedAt,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select sessions by user id failed", err)
 		}
 
 		sessions = append(sessions, session)
@@ -99,7 +103,7 @@ func (r *SessionRepository) GetByUserID(ctx context.Context, userID string) ([]*
 	return sessions, nil
 }
 
-func (r *SessionRepository) GetByToken(ctx context.Context, token string, userID string) (*entities.Session, error) {
+func (r *SessionRepository) GetByToken(ctx context.Context, token string) (*entities.Session, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -113,10 +117,8 @@ func (r *SessionRepository) GetByToken(ctx context.Context, token string, userID
 		FROM
 			session
 		WHERE
-			token = $1
-		AND
-			user_id = $2;
-	`, token, userID)
+			token = $1;
+	`, token)
 
 	session := &entities.Session{}
 
@@ -130,7 +132,10 @@ func (r *SessionRepository) GetByToken(ctx context.Context, token string, userID
 		&session.CreatedAt,
 		&session.UpdatedAt,
 	); err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select session by token failed", err)
 	}
 
 	return session, nil
@@ -161,11 +166,15 @@ func (r *SessionRepository) Create(ctx context.Context, session *entities.Sessio
 		session.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("insert session failed", err)
+	}
+
+	return nil
 }
 
 func (r *SessionRepository) Update(ctx context.Context, session *entities.Session) error {
-	_, err := r.db(ctx).Exec(ctx, `
+	result, err := r.db(ctx).Exec(ctx, `
 		UPDATE
 			session
 		SET
@@ -189,7 +198,15 @@ func (r *SessionRepository) Update(ctx context.Context, session *entities.Sessio
 		session.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("update session failed", err)
+	}
+
+	if result.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
 }
 
 func (r *SessionRepository) DeleteByID(ctx context.Context, ID string, userID string) error {
@@ -203,11 +220,11 @@ func (r *SessionRepository) DeleteByID(ctx context.Context, ID string, userID st
 	`, ID, userID)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete session by id failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("session not found")
+		return ErrNotFound
 	}
 
 	return nil
@@ -224,11 +241,11 @@ func (r *SessionRepository) DeleteByToken(ctx context.Context, token string, use
 	`, token, userID)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete session by token failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("session not found")
+		return ErrNotFound
 	}
 
 	return nil

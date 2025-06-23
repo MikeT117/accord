@@ -124,7 +124,7 @@ func (t *Transactor) WithinTransaction(ctx context.Context, txFunc func(context.
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
+		return err
 	}
 
 	return nil

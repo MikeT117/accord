@@ -3,9 +3,11 @@ package db
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/jackc/pgx/v5"
 )
 
 type GuildMemberRepository struct {
@@ -35,7 +37,7 @@ func (r *GuildMemberRepository) GetByID(ctx context.Context, ID string, guildID 
 	`, ID, guildID)
 
 	guildMember := &entities.GuildMember{}
-	err := row.Scan(
+	if err := row.Scan(
 		&guildMember.UserID,
 		&guildMember.GuildID,
 		&guildMember.Nickname,
@@ -43,16 +45,17 @@ func (r *GuildMemberRepository) GetByID(ctx context.Context, ID string, guildID 
 		&guildMember.BannerID,
 		&guildMember.CreatedAt,
 		&guildMember.UpdatedAt,
-	)
-
-	if err != nil {
-		return nil, err
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select guild member by id failed", err)
 	}
 
 	return guildMember, nil
 }
 
-func (r *GuildMemberRepository) GetByIDs(ctx context.Context, IDs []string, guildID string) (map[string]*entities.GuildMember, error) {
+func (r *GuildMemberRepository) GetMapByIDs(ctx context.Context, IDs []string, guildID string) (map[string]*entities.GuildMember, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			user_id,
@@ -71,7 +74,7 @@ func (r *GuildMemberRepository) GetByIDs(ctx context.Context, IDs []string, guil
 	`, IDs, guildID)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select guild members by ids failed", err)
 	}
 
 	guildMembersMap := make(map[string]*entities.GuildMember)
@@ -86,7 +89,7 @@ func (r *GuildMemberRepository) GetByIDs(ctx context.Context, IDs []string, guil
 			&guildMember.CreatedAt,
 			&guildMember.UpdatedAt,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select guild members by ids failed", err)
 		}
 
 		guildMembersMap[guildMember.UserID] = guildMember
@@ -95,8 +98,7 @@ func (r *GuildMemberRepository) GetByIDs(ctx context.Context, IDs []string, guil
 	return guildMembersMap, nil
 }
 
-// TODO: add pagination
-func (r *GuildMemberRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildMember, []string, error) {
+func (r *GuildMemberRepository) GetByGuildID(ctx context.Context, guildID string, before time.Time, limit int) ([]*entities.GuildMember, []string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			user_id,
@@ -109,11 +111,15 @@ func (r *GuildMemberRepository) GetByGuildID(ctx context.Context, guildID string
 		FROM
 			guild_member
 		WHERE
-			guild_id = $1;
-	`, guildID)
+			guild_id = $1
+		AND
+			created_at < $2
+		LIMIT
+			$3;
+	`, guildID, before, limit)
 
 	if err != nil {
-		return nil, []string{}, err
+		return nil, []string{}, wrapUnknownErr("select guild members by guild id failed", err)
 	}
 
 	defer rows.Close()
@@ -132,7 +138,7 @@ func (r *GuildMemberRepository) GetByGuildID(ctx context.Context, guildID string
 			&guildMember.CreatedAt,
 			&guildMember.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, err
+			return nil, []string{}, wrapUnknownErr("map over select guild members by guild id failed", err)
 		}
 
 		guildMembers = append(guildMembers, guildMember)
@@ -142,7 +148,7 @@ func (r *GuildMemberRepository) GetByGuildID(ctx context.Context, guildID string
 	return guildMembers, guildMemberIDs, nil
 }
 
-func (r *GuildMemberRepository) GetByUserID(ctx context.Context, userID string) (map[string]*entities.GuildMember, []string, error) {
+func (r *GuildMemberRepository) GetMapByUserID(ctx context.Context, userID string) (map[string]*entities.GuildMember, []string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			user_id,
@@ -159,7 +165,7 @@ func (r *GuildMemberRepository) GetByUserID(ctx context.Context, userID string) 
 	`, userID)
 
 	if err != nil {
-		return nil, []string{}, err
+		return nil, []string{}, wrapUnknownErr("select guild members by user id failed", err)
 	}
 
 	defer rows.Close()
@@ -177,7 +183,7 @@ func (r *GuildMemberRepository) GetByUserID(ctx context.Context, userID string) 
 			&guildMember.CreatedAt,
 			&guildMember.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, err
+			return nil, []string{}, wrapUnknownErr("map over select guild members by user id failed", err)
 		}
 
 		guildIDs = append(guildIDs, guildMember.GuildID)
@@ -190,7 +196,7 @@ func (r *GuildMemberRepository) GetByUserID(ctx context.Context, userID string) 
 func (r *GuildMemberRepository) GetGuildIDsByUserID(ctx context.Context, userID string) ([]string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
-			guild_id,
+			guild_id
 		FROM
 			guild_member
 		WHERE
@@ -198,7 +204,7 @@ func (r *GuildMemberRepository) GetGuildIDsByUserID(ctx context.Context, userID 
 	`, userID)
 
 	if err != nil {
-		return []string{}, err
+		return []string{}, wrapUnknownErr("select guild IDs by user id failed", err)
 	}
 
 	defer rows.Close()
@@ -209,7 +215,7 @@ func (r *GuildMemberRepository) GetGuildIDsByUserID(ctx context.Context, userID 
 		if err := rows.Scan(
 			&guildID,
 		); err != nil {
-			return []string{}, err
+			return []string{}, wrapUnknownErr("map over select guild IDs by user id failed", err)
 		}
 
 		guildIDs = append(guildIDs, guildID)
@@ -242,11 +248,15 @@ func (r *GuildMemberRepository) Create(ctx context.Context, guildMember *entitie
 		guildMember.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("insert guild member failed", err)
+	}
+
+	return nil
 
 }
 func (r *GuildMemberRepository) Update(ctx context.Context, guildMember *entities.GuildMember) error {
-	_, err := r.db(ctx).Exec(ctx, `
+	result, err := r.db(ctx).Exec(ctx, `
 		UPDATE
 			guild_member
 		SET
@@ -271,7 +281,15 @@ func (r *GuildMemberRepository) Update(ctx context.Context, guildMember *entitie
 		guildMember.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("update guild member failed", err)
+	}
+
+	if result.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
 }
 
 func (r *GuildMemberRepository) Delete(ctx context.Context, ID string) error {
@@ -283,11 +301,11 @@ func (r *GuildMemberRepository) Delete(ctx context.Context, ID string) error {
 		`, ID)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete guild member failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("zero rows affected")
+		return ErrNotFound
 	}
 
 	return nil

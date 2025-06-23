@@ -8,8 +8,9 @@ import (
 
 type GuildRoleRepository interface {
 	GetByID(ctx context.Context, ID string) (*entities.GuildRole, error)
+	GetByIDs(ctx context.Context, roleIDs []string, guildID string) ([]*entities.GuildRole, error)
 	GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildRole, []string, error)
-	GetByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.GuildRole, []string, error)
+	GetMapByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.GuildRole, []string, error)
 	GetByNameAndGuildID(ctx context.Context, name string, guildID string) (*entities.GuildRole, error)
 
 	Create(ctx context.Context, validatedGuild *entities.GuildRole) error
@@ -18,11 +19,14 @@ type GuildRoleRepository interface {
 
 	AssociateUser(ctx context.Context, roleID string, userID string) error
 	DisassociateUser(ctx context.Context, roleID string, userID string) error
-	GetRoleIDsByUserIDs(ctx context.Context, userIDs []string) (map[string][]string, error)
+	GetMapRoleIDsByUserIDs(ctx context.Context, userIDs []string) (map[string][]string, error)
 	GetRoleIDsByUserIDAndGuildID(ctx context.Context, userID string, guildID string) ([]string, error)
 
 	AssociateChannel(ctx context.Context, roleID string, userID string) error
 	DisassociateChannel(ctx context.Context, roleID string, userID string) error
-	GetRoleIDsByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]string, error)
+	GetMapRoleIDsByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]string, error)
 	GetRoleIDsByChannelID(ctx context.Context, channelID string) ([]string, error)
+
+	GetChannelPermissions(ctx context.Context, channelID string, userID string) (int32, error)
+	GetGuildPermissions(ctx context.Context, guildID string, userID string) (int32, error)
 }

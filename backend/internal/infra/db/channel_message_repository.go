@@ -3,9 +3,11 @@ package db
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/jackc/pgx/v5"
 )
 
 type ChannelMessageRepository struct {
@@ -27,7 +29,6 @@ func (r *ChannelMessageRepository) GetByID(ctx context.Context, ID string) (*ent
 			flag,
 			author_id,
 			channel_id,
-			guild_id,
 			created_at,
 			updated_at
 		FROM
@@ -44,16 +45,18 @@ func (r *ChannelMessageRepository) GetByID(ctx context.Context, ID string) (*ent
 		&channelMessage.Flag,
 		&channelMessage.AuthorID,
 		&channelMessage.ChannelID,
-		&channelMessage.GuildID,
 		&channelMessage.CreatedAt,
 		&channelMessage.UpdatedAt,
 	); err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select channel message by id failed", err)
 	}
 
 	return channelMessage, nil
 }
-func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID string, before int64, limit int) ([]*entities.ChannelMessage, error) {
+func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID string, before time.Time, limit int) ([]*entities.ChannelMessage, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -62,7 +65,6 @@ func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID s
 			flag,
 			author_id,
 			channel_id,
-			guild_id,
 			created_at,
 			updated_at
 		FROM
@@ -72,7 +74,7 @@ func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID s
 	`, authorID)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select channel messages by author id failed", err)
 	}
 
 	defer rows.Close()
@@ -88,11 +90,10 @@ func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID s
 			&channelMessage.Flag,
 			&channelMessage.AuthorID,
 			&channelMessage.ChannelID,
-			&channelMessage.GuildID,
 			&channelMessage.CreatedAt,
 			&channelMessage.UpdatedAt,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select channel messages by author id failed", err)
 		}
 
 		channelMessages = append(channelMessages, channelMessage)
@@ -100,26 +101,57 @@ func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID s
 
 	return channelMessages, nil
 }
-func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID string, before int64, limit int) ([]*entities.ChannelMessage, []string, []string, error) {
-	rows, err := r.db(ctx).Query(ctx, `
-		SELECT
-			id,
-			content,
-			pinned,
-			flag,
-			author_id,
-			channel_id,
-			guild_id,
-			created_at,
-			updated_at
-		FROM
-			channel_message
-		WHERE
-			channel_id = $1;
-	`, channelID)
+func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID string, pinned bool, before time.Time, limit int) ([]*entities.ChannelMessage, []string, []string, error) {
 
+	query := ``
+
+	if pinned {
+		query = `
+			SELECT
+				id,
+				content,
+				pinned,
+				flag,
+				author_id,
+				channel_id,
+				created_at,
+				updated_at
+			FROM
+				channel_message
+			WHERE
+				channel_id = $1
+			AND
+				pinned
+			AND
+				created_at < $2
+			LIMIT
+				$3;
+	`
+	} else {
+		query = `
+			SELECT
+				id,
+				content,
+				pinned,
+				flag,
+				author_id,
+				channel_id,
+				created_at,
+				updated_at
+			FROM
+				channel_message
+			WHERE
+				channel_id = $1
+			AND
+				created_at < $2
+			LIMIT
+				$3;
+	`
+	}
+
+	rows, err := r.db(ctx).Query(ctx, query, channelID, before, limit)
 	if err != nil {
-		return nil, []string{}, []string{}, err
+		return nil, []string{}, []string{}, wrapUnknownErr("select channel messages by channel id failed", err)
 	}
 
 	defer rows.Close()
@@ -137,11 +169,10 @@ func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID
 			&channelMessage.Flag,
 			&channelMessage.AuthorID,
 			&channelMessage.ChannelID,
-			&channelMessage.GuildID,
 			&channelMessage.CreatedAt,
 			&channelMessage.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, []string{}, err
+			return nil, []string{}, []string{}, wrapUnknownErr("map over select channel messages by channel id failed", err)
 		}
 
 		channelMessages = append(channelMessages, channelMessage)
@@ -151,6 +182,7 @@ func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID
 
 	return channelMessages, channelMessageIDs, authorIDs, nil
 }
+
 func (r *ChannelMessageRepository) Create(ctx context.Context, channelMessage *entities.ChannelMessage) error {
 	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
@@ -161,11 +193,10 @@ func (r *ChannelMessageRepository) Create(ctx context.Context, channelMessage *e
 				flag,
 				author_id,
 				channel_id,
-				guild_id,
 				created_at,
 				updated_at
 			)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 	`,
 		channelMessage.ID,
 		channelMessage.Content,
@@ -173,15 +204,18 @@ func (r *ChannelMessageRepository) Create(ctx context.Context, channelMessage *e
 		channelMessage.Flag,
 		channelMessage.AuthorID,
 		channelMessage.ChannelID,
-		channelMessage.GuildID,
 		channelMessage.CreatedAt,
 		channelMessage.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("insert channel message failed", err)
+	}
+
+	return nil
 }
 func (r *ChannelMessageRepository) Update(ctx context.Context, channelMessage *entities.ChannelMessage) error {
-	_, err := r.db(ctx).Exec(ctx, `
+	result, err := r.db(ctx).Exec(ctx, `
 		UPDATE
 			channel_message
 		SET
@@ -190,9 +224,8 @@ func (r *ChannelMessageRepository) Update(ctx context.Context, channelMessage *e
 			flag = $4,
 			author_id = $5,
 			channel_id = $6,
-			guild_id = $7,
-			created_at = $8,
-			updated_at = $9,
+			created_at = $7,
+			updated_at = $8,
 		WHERE
 			id = $1;
 	`,
@@ -202,12 +235,19 @@ func (r *ChannelMessageRepository) Update(ctx context.Context, channelMessage *e
 		channelMessage.Flag,
 		channelMessage.AuthorID,
 		channelMessage.ChannelID,
-		channelMessage.GuildID,
 		channelMessage.CreatedAt,
 		channelMessage.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("update channel message failed", err)
+	}
+
+	if result.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
 }
 func (r *ChannelMessageRepository) Delete(ctx context.Context, ID string) error {
 	result, err := r.db(ctx).Exec(ctx, `
@@ -218,11 +258,11 @@ func (r *ChannelMessageRepository) Delete(ctx context.Context, ID string) error 
 	`, ID)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete channel message failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("rows affected is zero")
+		return ErrNotFound
 	}
 
 	return nil
@@ -239,11 +279,11 @@ func (r *ChannelMessageRepository) AssociateAttachment(ctx context.Context, chan
 	`)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("insert channel message attachment association failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("rows affected is zero")
+		return ErrNotFound
 	}
 
 	return nil
@@ -259,11 +299,11 @@ func (r *ChannelMessageRepository) DisassociateAttachment(ctx context.Context, c
 	`)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete channel message attachment association failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("rows affected is zero")
+		return ErrNotFound
 	}
 
 	return nil

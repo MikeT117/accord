@@ -6,6 +6,7 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/jackc/pgx/v5"
 )
 
 type ChannelRepository struct {
@@ -46,7 +47,10 @@ func (r *ChannelRepository) GetByID(ctx context.Context, ID string) (*entities.C
 		&channel.CreatedAt,
 		&channel.UpdatedAt,
 	); err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select channel by id failed", err)
 	}
 
 	return channel, nil
@@ -71,7 +75,7 @@ func (r *ChannelRepository) GetByGuildID(ctx context.Context, guildID string) ([
 	`, guildID)
 
 	if err != nil {
-		return nil, []string{}, err
+		return nil, []string{}, wrapUnknownErr("select channels by guild id failed", err)
 
 	}
 
@@ -91,7 +95,7 @@ func (r *ChannelRepository) GetByGuildID(ctx context.Context, guildID string) ([
 			&channel.CreatedAt,
 			&channel.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, err
+			return nil, []string{}, wrapUnknownErr("map over select channels by guild id failed", err)
 		}
 
 		channels = append(channels, channel)
@@ -101,7 +105,7 @@ func (r *ChannelRepository) GetByGuildID(ctx context.Context, guildID string) ([
 	return channels, channelIDs, nil
 }
 
-func (r *ChannelRepository) GetByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.Channel, []string, error) {
+func (r *ChannelRepository) GetMapByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.Channel, []string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -120,7 +124,7 @@ func (r *ChannelRepository) GetByGuildIDs(ctx context.Context, guildIDs []string
 	`, guildIDs)
 
 	if err != nil {
-		return nil, []string{}, err
+		return nil, []string{}, wrapUnknownErr("select channels by guild ids failed", err)
 	}
 
 	defer rows.Close()
@@ -140,7 +144,7 @@ func (r *ChannelRepository) GetByGuildIDs(ctx context.Context, guildIDs []string
 			&channel.CreatedAt,
 			&channel.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, err
+			return nil, []string{}, wrapUnknownErr("map over select channels by guild ids failed", err)
 		}
 
 		channelIDs = append(channelIDs, channel.ID)
@@ -171,7 +175,7 @@ func (r *ChannelRepository) GetByUserID(ctx context.Context, userID string) ([]*
 	`, userID)
 
 	if err != nil {
-		return nil, []string{}, err
+		return nil, []string{}, wrapUnknownErr("select channels by user id failed", err)
 
 	}
 
@@ -191,7 +195,7 @@ func (r *ChannelRepository) GetByUserID(ctx context.Context, userID string) ([]*
 			&channel.CreatedAt,
 			&channel.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, err
+			return nil, []string{}, wrapUnknownErr("map over select channels by user id failed", err)
 		}
 
 		channels = append(channels, channel)
@@ -229,12 +233,16 @@ func (r *ChannelRepository) Create(ctx context.Context, channel *entities.Channe
 		&channel.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("insert channel failed", err)
+	}
+
+	return nil
 }
 
 func (r *ChannelRepository) Update(ctx context.Context, channel *entities.Channel) error {
 
-	_, err := r.db(ctx).Exec(ctx, `
+	result, err := r.db(ctx).Exec(ctx, `
 		UPDATE
 			channel
 		SET
@@ -260,7 +268,15 @@ func (r *ChannelRepository) Update(ctx context.Context, channel *entities.Channe
 		&channel.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("update channel failed", err)
+	}
+
+	if result.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
 
 }
 
@@ -273,14 +289,61 @@ func (r *ChannelRepository) Delete(ctx context.Context, ID string) error {
 	`, ID)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete channel failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("rows affected is zero")
+		return ErrNotFound
 	}
 
 	return nil
+}
+
+func (r *ChannelRepository) GetUserChannelPermission(ctx context.Context, channelID string, userID string) (*entities.User, error) {
+	row := r.db(ctx).QueryRow(ctx, `
+		SELECT
+			u.id,
+			u.username,
+			u.display_name,
+			u.email,
+			u.email_verified,
+			u.public_flags,
+			u.relationship_count,
+			u.avatar_id,
+			u.banner_id,
+			u.created_at,
+			u.updated_at
+		FROM
+			user u
+		INNER JOIN
+			channel_user cu ON u.id = cu.user_id
+		WHERE
+			cu.channel_id = $1
+		AND
+			cu.user_id = $2;
+	`, channelID, userID)
+
+	user := &entities.User{}
+	if err := row.Scan(
+		&user.ID,
+		&user.Username,
+		&user.DisplayName,
+		&user.Email,
+		&user.EmailVerified,
+		&user.PublicFlags,
+		&user.RelationshipCount,
+		&user.AvatarID,
+		&user.BannerID,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select channel permission by user id failed", err)
+	}
+
+	return user, nil
 }
 
 func (r *ChannelRepository) GetUsersByChannelID(ctx context.Context, channelID string) ([]*entities.User, error) {
@@ -306,7 +369,7 @@ func (r *ChannelRepository) GetUsersByChannelID(ctx context.Context, channelID s
 	`, channelID)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select users by channel id failed", err)
 	}
 
 	defer rows.Close()
@@ -328,7 +391,7 @@ func (r *ChannelRepository) GetUsersByChannelID(ctx context.Context, channelID s
 			&user.CreatedAt,
 			&user.UpdatedAt,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select users by channel id failed", err)
 		}
 
 		users = append(users, user)
@@ -337,7 +400,7 @@ func (r *ChannelRepository) GetUsersByChannelID(ctx context.Context, channelID s
 	return users, nil
 }
 
-func (r *ChannelRepository) GetUsersByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]*entities.User, error) {
+func (r *ChannelRepository) GetMapUsersByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]*entities.User, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			cu.channel_id,
@@ -361,7 +424,7 @@ func (r *ChannelRepository) GetUsersByChannelIDs(ctx context.Context, channelIDs
 	`, channelIDs)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select users by channel ids failed", err)
 	}
 
 	defer rows.Close()
@@ -384,7 +447,7 @@ func (r *ChannelRepository) GetUsersByChannelIDs(ctx context.Context, channelIDs
 			&user.CreatedAt,
 			&user.UpdatedAt,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select users by channel ids failed", err)
 		}
 		users[channelID] = append(users[channelID], user)
 	}
@@ -404,11 +467,11 @@ func (r *ChannelRepository) AssociateUser(ctx context.Context, channelID string,
 	`)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("insert channel user association failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("rows affected is zero")
+		return ErrNotFound
 	}
 
 	return nil
@@ -425,11 +488,11 @@ func (r *ChannelRepository) DisassociateUser(ctx context.Context, channelID stri
 	`)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete channel user association failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("rows affected is zero")
+		return ErrNotFound
 	}
 
 	return nil

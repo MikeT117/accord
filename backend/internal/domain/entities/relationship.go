@@ -1,15 +1,15 @@
 package entities
 
 import (
-	"errors"
 	"time"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/google/uuid"
 )
 
 const (
 	PENDING = iota
-	FRIENDS
+	FRIEND
 	BLOCKED
 )
 
@@ -18,24 +18,43 @@ type Relationship struct {
 	CreatorID   string
 	RecipientID string
 	Status      int8
-	CreatedAt   int64
-	UpdatedAt   int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
-func (u *Relationship) validate() error {
+func (u *Relationship) validate(isNew bool) error {
 	if u.ID == "" {
-		return errors.New("id must not be empty")
+		return domain.NewDomainValidationError("id must not be empty")
 	}
 	if u.CreatorID == "" {
-		return errors.New("creator id must not be empty")
+		return domain.NewDomainValidationError("creator id must not be empty")
 	}
 	if u.RecipientID == "" {
-		return errors.New("recipient id must not be empty")
+		return domain.NewDomainValidationError("recipient id must not be empty")
 	}
-	if u.Status != PENDING && u.Status != FRIENDS && u.Status != BLOCKED {
-		return errors.New("invalid relationship status")
+	if u.Status != PENDING && u.Status != FRIEND && u.Status != BLOCKED {
+		return domain.NewDomainValidationError("invalid relationship status")
 	}
+	if isNew && u.Status != PENDING && u.Status != BLOCKED {
+		return domain.NewDomainValidationError("invalid relationship status")
+	}
+	if !isNew && u.Status != FRIEND && u.Status != BLOCKED {
+		return domain.NewDomainValidationError("invalid relationship status")
+	}
+
 	return nil
+}
+
+func (r *Relationship) IsBlocked() bool {
+	return r.Status == BLOCKED
+}
+
+func (r *Relationship) IsPending() bool {
+	return r.Status == PENDING
+}
+
+func (r *Relationship) IsFriend() bool {
+	return r.Status == FRIEND
 }
 
 func NewRelationship(creatorID string, status int8, recipientID string) (*Relationship, error) {
@@ -44,7 +63,7 @@ func NewRelationship(creatorID string, status int8, recipientID string) (*Relati
 		return nil, err
 	}
 
-	timestamp := time.Now().UTC().Unix()
+	timestamp := time.Now().UTC()
 
 	relationship := &Relationship{
 		ID:          ID.String(),
@@ -55,7 +74,7 @@ func NewRelationship(creatorID string, status int8, recipientID string) (*Relati
 		UpdatedAt:   timestamp,
 	}
 
-	if err := relationship.validate(); err != nil {
+	if err := relationship.validate(true); err != nil {
 		return nil, err
 	}
 
@@ -63,8 +82,7 @@ func NewRelationship(creatorID string, status int8, recipientID string) (*Relati
 }
 
 func (r *Relationship) Updatestatus(status int8) error {
-	r.UpdatedAt = time.Now().UTC().Unix()
+	r.UpdatedAt = time.Now().UTC()
 	r.Status = status
-
-	return r.validate()
+	return r.validate(false)
 }

@@ -2,26 +2,59 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"os"
 
-	"github.com/MikeT117/accord/backend/internal/database"
-	message_queue "github.com/MikeT117/accord/backend/internal/message_queue"
-	"github.com/MikeT117/accord/backend/internal/sqlc"
-	rest_api "github.com/MikeT117/accord/backend/rest_api"
-	"github.com/joho/godotenv"
+	"github.com/MikeT117/accord/backend/internal/application/services"
+	"github.com/MikeT117/accord/backend/internal/config"
+	"github.com/MikeT117/accord/backend/internal/infra/db"
+	"github.com/MikeT117/accord/backend/internal/infra/oauth"
+
+	rest "github.com/MikeT117/accord/backend/internal/interface/api/REST"
 )
 
 func main() {
-	godotenv.Load(".env.local")
-
-	fmt.Println("NATS_URL: ", os.Getenv("NATS_URL"))
-
+	config := config.LoadConfig()
 	ctx := context.Background()
-	pool := database.Create(ctx)
-	queries := sqlc.New(pool)
-	nats := message_queue.CreateNATSConnection()
-	defer nats.Conn.Drain()
+	pool := db.CreatePool(ctx, config.DatabaseURL)
 
-	rest_api.CreateRestAPI(queries, pool, nats)
+	// Transaction Handler
+	transactor, dbGetter := db.NewTransactorFromPool(pool)
+
+	// Repositories
+	attachmentRepository := db.CreateAttachmentRepository(dbGetter)
+	accountRepository := db.CreateAccountRepository(dbGetter)
+	channelMessageRepository := db.CreateChannelMessageRepository(dbGetter)
+	channelRepository := db.CreateChannelRepository(dbGetter)
+	guildBanRepository := db.CreateGuildBanRepository(dbGetter)
+	guildCategoryRepository := db.CreateGuildCategoryRepository(dbGetter)
+	guildInviteRepository := db.CreateGuildInviteRepository(dbGetter)
+	guildMemberRepository := db.CreateGuildMemberRepository(dbGetter)
+	guildRepository := db.CreateGuildRepository(dbGetter)
+	guildRoleRepository := db.CreateGuildRoleRepository(dbGetter)
+	relationshipRepository := db.CreateRelationshipRepository(dbGetter)
+	sessionRepository := db.CreateSessionRepository(dbGetter)
+	userRepository := db.CreateUserRepository(dbGetter)
+	voiceStateRepository := db.CreateVoiceStateRepository(dbGetter)
+
+	// OAuth
+	githubOAth := oauth.NewGithubOAuthConfig(config.GithubKey, config.GithubSecret, config.GithubRedirectURL, config.OAuthNonceSecret)
+
+	// Services
+	authorisationService := services.CreateAuthorisationService(guildRoleRepository, channelRepository, guildMemberRepository, relationshipRepository)
+	authenticationService := services.CreateAuthenticationService(transactor, githubOAth, userRepository, accountRepository)
+	attachmentService := services.CreateAttachmentService(transactor, attachmentRepository)
+	accountService := services.CreateUserAccountService(transactor, accountRepository, userRepository)
+	channelMessageService := services.CreateChannelMessageService(transactor, authorisationService, channelMessageRepository, channelRepository, userRepository, guildMemberRepository, guildRoleRepository, attachmentRepository)
+	channelService := services.CreateChannelService(transactor, authorisationService, channelRepository, guildRoleRepository, userRepository)
+	guildBanService := services.CreateGuildBanService(transactor, authorisationService, guildMemberRepository, guildBanRepository)
+	guildCategoryService := services.CreateGuildCategoryService(transactor, authorisationService, guildCategoryRepository)
+	guildInviteService := services.CreateGuildInviteService(transactor, authorisationService, guildInviteRepository, guildRepository)
+	guildMemberService := services.CreateGuildMemberService(transactor, authorisationService, guildMemberRepository, guildRoleRepository, guildRepository, guildInviteRepository)
+	guildService := services.CreateGuildService(transactor, authorisationService, guildRepository, guildMemberRepository, guildRoleRepository, channelRepository)
+	guildRoleService := services.CreateGuildRoleService(transactor, authorisationService, guildRoleRepository, guildMemberRepository)
+	relationshipService := services.CreateRelationshipService(transactor, authorisationService, relationshipRepository, userRepository)
+	sessionService := services.CreateSessionService(transactor, sessionRepository, userRepository)
+	voiceStateService := services.CreateVoiceStateService(transactor, authorisationService, voiceStateRepository, userRepository)
+
+	// Rest API
+	rest.CreateControllers(config, authenticationService, attachmentService, authorisationService, channelMessageService, channelService, guildBanService, guildCategoryService, guildInviteService, guildMemberService, guildRoleService, guildService, relationshipService, sessionService, accountService, voiceStateService)
 }

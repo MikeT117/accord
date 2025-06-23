@@ -1,9 +1,11 @@
 package command
 
+import "time"
+
 type CreateSessionCommand struct {
 	UserID    string
 	Token     string
 	IPAddress string
 	UserAgent string
-	ExpiresAt int64
+	ExpiresAt time.Time
 }

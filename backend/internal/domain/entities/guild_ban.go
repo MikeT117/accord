@@ -1,36 +1,44 @@
 package entities
 
 import (
-	"errors"
 	"strings"
 	"time"
+
+	"github.com/MikeT117/accord/backend/internal/domain"
+	"github.com/google/uuid"
 )
 
 type GuildBan struct {
+	ID        string
 	UserID    string
 	GuildID   string
 	Reason    string
-	CreatedAt int64
-	UpdatedAt int64
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (u *GuildBan) validate() error {
 	if strings.Trim(u.UserID, " ") == "" {
-		return errors.New("user id must not be empty")
+		return domain.NewDomainValidationError("user id must not be empty")
 	}
 	if strings.Trim(u.GuildID, " ") == "" {
-		return errors.New("guild id must not be empty")
+		return domain.NewDomainValidationError("guild id must not be empty")
 	}
 	if strings.Trim(u.Reason, " ") == "" {
-		return errors.New("reason must not be empty")
+		return domain.NewDomainValidationError("reason must not be empty")
 	}
 	return nil
 }
 
 func NewGuildBan(guildID string, userID string, reason string) (*GuildBan, error) {
-	timestamp := time.Now().UTC().Unix()
+	ID, err := uuid.NewV7()
+	if err != nil {
+		return nil, err
+	}
 
+	timestamp := time.Now().UTC()
 	guildBan := &GuildBan{
+		ID:        ID.String(),
 		UserID:    userID,
 		GuildID:   guildID,
 		Reason:    reason,
@@ -47,7 +55,6 @@ func NewGuildBan(guildID string, userID string, reason string) (*GuildBan, error
 
 func (g *GuildBan) Updatereason(reason string) error {
 	g.Reason = reason
-	g.UpdatedAt = time.Now().UTC().Unix()
-
+	g.UpdatedAt = time.Now().UTC()
 	return g.validate()
 }

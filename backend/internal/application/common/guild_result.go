@@ -1,5 +1,7 @@
 package common
 
+import "time"
+
 type GuildResult struct {
 	ID              string
 	CreatorID       string
@@ -9,11 +11,10 @@ type GuildResult struct {
 	Discoverable    bool
 	ChannelCount    int64
 	MemberCount     int64
-	CreatedAt       int64
-	UpdatedAt       int64
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 	IconID          *string
 	BannerID        *string
-	GuildMember     *GuildMemberResult
 	Roles           []*GuildRoleResult
 	Channels        []*ChannelResult
 }

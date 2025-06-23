@@ -6,6 +6,7 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/jackc/pgx/v5"
 )
 
 type VoiceStateRepository struct {
@@ -14,6 +15,37 @@ type VoiceStateRepository struct {
 
 func CreateVoiceStateRepository(db DBGetter) repositories.VoiceStateRepository {
 	return &VoiceStateRepository{db: db}
+}
+
+func (r *VoiceStateRepository) GetByID(ctx context.Context, ID string) (*entities.VoiceState, error) {
+	row := r.db(ctx).QueryRow(ctx, `
+		SELECT
+			self_mute,
+			self_deaf,
+			channel_id,
+			user_id,
+			guild_id,
+		FROM
+			voice_state
+		WHERE
+			id = $1;
+	`, ID)
+
+	voiceState := &entities.VoiceState{}
+	if err := row.Scan(
+		&voiceState.SelfMute,
+		&voiceState.SelfDeaf,
+		&voiceState.ChannelID,
+		&voiceState.UserID,
+		&voiceState.GuildID,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select voice state by id failed", err)
+	}
+
+	return voiceState, nil
 }
 
 func (r *VoiceStateRepository) GetByUserID(ctx context.Context, userID string) (*entities.VoiceState, error) {
@@ -38,7 +70,10 @@ func (r *VoiceStateRepository) GetByUserID(ctx context.Context, userID string) (
 		&voiceState.UserID,
 		&voiceState.GuildID,
 	); err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select voice state by user id failed", err)
 	}
 
 	return voiceState, nil
@@ -59,7 +94,7 @@ func (r *VoiceStateRepository) GetByChannelID(ctx context.Context, channelID str
 	`, channelID)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select voice state by channel id failed", err)
 	}
 
 	defer rows.Close()
@@ -75,7 +110,7 @@ func (r *VoiceStateRepository) GetByChannelID(ctx context.Context, channelID str
 			&voiceState.UserID,
 			&voiceState.GuildID,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select voice state by channel id failed", err)
 		}
 
 		voiceStates = append(voiceStates, voiceState)
@@ -84,7 +119,7 @@ func (r *VoiceStateRepository) GetByChannelID(ctx context.Context, channelID str
 	return voiceStates, nil
 }
 
-func (r *VoiceStateRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.VoiceState, error) {
+func (r *VoiceStateRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.VoiceState, []string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			self_mute,
@@ -99,13 +134,13 @@ func (r *VoiceStateRepository) GetByGuildID(ctx context.Context, guildID string)
 	`, guildID)
 
 	if err != nil {
-		return nil, err
+		return nil, []string{}, wrapUnknownErr("select voice state by guild id failed", err)
 	}
 
 	defer rows.Close()
 
 	voiceStates := []*entities.VoiceState{}
-
+	userIDs := []string{}
 	for rows.Next() {
 		voiceState := &entities.VoiceState{}
 		if err := rows.Scan(
@@ -115,13 +150,14 @@ func (r *VoiceStateRepository) GetByGuildID(ctx context.Context, guildID string)
 			&voiceState.UserID,
 			&voiceState.GuildID,
 		); err != nil {
-			return nil, err
+			return nil, []string{}, wrapUnknownErr("map over select voice state by guild id failed", err)
 		}
 
 		voiceStates = append(voiceStates, voiceState)
+		userIDs = append(userIDs, voiceState.UserID)
 	}
 
-	return voiceStates, nil
+	return voiceStates, userIDs, nil
 }
 func (r *VoiceStateRepository) Create(ctx context.Context, voiceState *entities.VoiceState) error {
 	_, err := r.db(ctx).Exec(ctx, `
@@ -142,11 +178,15 @@ func (r *VoiceStateRepository) Create(ctx context.Context, voiceState *entities.
 		voiceState.GuildID,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("insert voice state failed", err)
+	}
+
+	return nil
 
 }
 func (r *VoiceStateRepository) Update(ctx context.Context, voiceState *entities.VoiceState) error {
-	_, err := r.db(ctx).Exec(ctx, `
+	result, err := r.db(ctx).Exec(ctx, `
 		UPDATE
 			guild_member
 		SET
@@ -167,24 +207,30 @@ func (r *VoiceStateRepository) Update(ctx context.Context, voiceState *entities.
 		voiceState.GuildID,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("update voice state failed", err)
+	}
+
+	if result.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
 }
-func (r *VoiceStateRepository) Delete(ctx context.Context, userID string, channelID string) error {
+func (r *VoiceStateRepository) Delete(ctx context.Context, ID string) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				voice_state
 			WHERE
-				user_id = $1
-			AND
-				channel_id = $2;
-		`, userID, channelID)
+				id = $1;
+		`, ID)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete account failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("zero rows affected")
+		return ErrNotFound
 	}
 
 	return nil

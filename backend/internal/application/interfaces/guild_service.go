@@ -8,9 +8,8 @@ import (
 )
 
 type GuildService interface {
-	GetByID(ctx context.Context, ID string) (*query.GuildQueryResult, error)
 	GetByUserID(ctx context.Context, userID string) (*query.GuildQueryListResult, error)
-	Create(ctx context.Context, createCommand *command.CreateGuildCommand) error
-	Update(ctx context.Context, updateCommand *command.UpdateGuildCommand) error
+	Create(ctx context.Context, cmd *command.CreateGuildCommand) error
+	Update(ctx context.Context, cmd *command.UpdateGuildCommand, requestorID string) error
 	Delete(ctx context.Context, ID string, userID string) error
 }

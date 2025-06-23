@@ -1,0 +1,63 @@
+package cloudinary
+
+import (
+	"crypto/sha1"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"net/http"
+)
+
+type CloudinaryUpload struct {
+	CloudinaryEnvironment string
+	CloudinaryAPIKey      string
+	CloudinarySecret      string
+}
+
+func NewCloudinaryUpload(environment string, APIKey string, secret string) *CloudinaryUpload {
+	return &CloudinaryUpload{
+		CloudinaryEnvironment: environment,
+		CloudinaryAPIKey:      APIKey,
+		CloudinarySecret:      secret,
+	}
+}
+
+func (c *CloudinaryUpload) DeleteAttachment(ID string, signature string, unixTimestamp int64) error {
+	response, err := http.Post(
+		fmt.Sprintf(
+			"https://api.cloudinary.com/v1_1/%s/image/destroy?api_key=%s&signature=%s&timestamp=%d&public_id=%s",
+			c.CloudinaryEnvironment,
+			c.CloudinaryAPIKey,
+			signature,
+			unixTimestamp,
+			ID,
+		),
+		"application/json",
+		nil,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if response.StatusCode != 200 {
+		return errors.New("reponse status is not 200")
+	}
+
+	return nil
+}
+
+func (c *CloudinaryUpload) SignAttachment(ID string, unixTimestamp int64) string {
+	hash := sha1.New()
+	hash.Write(
+		[]byte(
+			fmt.Sprintf("public_id=%s&timestamp=%d%s",
+				ID,
+				unixTimestamp,
+				c.CloudinarySecret,
+			),
+		),
+	)
+
+	return hex.EncodeToString(hash.Sum(nil))
+}

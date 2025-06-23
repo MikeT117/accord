@@ -1,23 +1,11 @@
 package entities
 
 import (
-	"errors"
 	"strings"
 	"time"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/google/uuid"
-)
-
-const (
-	GUILD_OWNER = iota
-	GUILD_ADMIN
-	MANAGE_GUILD
-	MANAGE_GUILD_CHANNELS
-	MANAGE_CHANNEL_MESSAGES
-	VIEW_GUILD_CHANNEL
-	CREATE_CHANNEL_MESSAGE
-	CREATE_CHANNEL_PIN
-	VIEW_GUILD_MEMBERS
 )
 
 type GuildRole struct {
@@ -25,19 +13,19 @@ type GuildRole struct {
 	GuildID     string
 	Name        string
 	Permissions int32
-	CreatedAt   int64
-	UpdatedAt   int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 func (a *GuildRole) validate() error {
 	if strings.Trim(a.ID, " ") == "" {
-		return errors.New("id must not be empty")
+		return domain.NewDomainValidationError("id must not be empty")
 	}
 	if strings.Trim(a.GuildID, " ") == "" {
-		return errors.New("guild id id must not be empty")
+		return domain.NewDomainValidationError("guild id id must not be empty")
 	}
 	if strings.Trim(a.Name, " ") == "" {
-		return errors.New("name must not be empty")
+		return domain.NewDomainValidationError("name must not be empty")
 	}
 	return nil
 }
@@ -49,8 +37,7 @@ func NewGuildRole(guildID string, name string) (*GuildRole, error) {
 		return nil, err
 	}
 
-	timestamp := time.Now().UTC().Unix()
-
+	timestamp := time.Now().UTC()
 	guildRole := &GuildRole{
 		ID:          ID.String(),
 		GuildID:     guildID,
@@ -74,12 +61,11 @@ func NewOwnerGuildRole(guildID string) (*GuildRole, error) {
 		return nil, err
 	}
 
-	timestamp := time.Now().UTC().Unix()
-
+	timestamp := time.Now().UTC()
 	return &GuildRole{
 		ID:          ID.String(),
 		GuildID:     guildID,
-		Name:        "@Owner",
+		Name:        "@owner",
 		Permissions: 2147483647,
 		CreatedAt:   timestamp,
 		UpdatedAt:   timestamp,
@@ -93,8 +79,7 @@ func NewDefaultGuildRole(guildID string) (*GuildRole, error) {
 		return nil, err
 	}
 
-	timestamp := time.Now().UTC().Unix()
-
+	timestamp := time.Now().UTC()
 	return &GuildRole{
 		ID:          ID.String(),
 		GuildID:     guildID,
@@ -107,14 +92,12 @@ func NewDefaultGuildRole(guildID string) (*GuildRole, error) {
 
 func (g *GuildRole) UpdatedPermissions(permissions int32) error {
 	g.Permissions = permissions
-	g.UpdatedAt = time.Now().UTC().Unix()
-
+	g.UpdatedAt = time.Now().UTC()
 	return g.validate()
 }
 
 func (g *GuildRole) UpdateName(name string) error {
 	g.Name = name
-	g.UpdatedAt = time.Now().UTC().Unix()
-
+	g.UpdatedAt = time.Now().UTC()
 	return g.validate()
 }

@@ -15,37 +15,10 @@ func CreateGuildBanRepository(db DBGetter) repositories.GuildBanRepository {
 	return &GuildBanRepository{db: db}
 }
 
-func (r *GuildBanRepository) GetByUserIDAndGuildID(ctx context.Context, userID string, guildID string) (*entities.GuildBan, error) {
-	row := r.db(ctx).QueryRow(ctx, `
-		SELECT
-			user_id,
-			guild_id,
-			reason,
-			created_at,
-			updated_at
-		WHERE
-			user_id = $1
-		AND
-			guild_id = $2;
-	`, userID, guildID)
-
-	guildBan := &entities.GuildBan{}
-	if err := row.Scan(
-		&guildBan.UserID,
-		&guildBan.GuildID,
-		&guildBan.Reason,
-		&guildBan.CreatedAt,
-		&guildBan.UpdatedAt,
-	); err != nil {
-		return nil, err
-	}
-
-	return guildBan, nil
-}
-
 func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildBan, []string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
+		id,
 			user_id,
 			guild_id,
 			reason,
@@ -56,7 +29,7 @@ func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID string) (
 	`, guildID)
 
 	if err != nil {
-		return nil, []string{}, err
+		return nil, []string{}, wrapUnknownErr("select guild bans by guild id failed", err)
 	}
 
 	defer rows.Close()
@@ -69,13 +42,14 @@ func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID string) (
 		var userID string
 
 		if err := rows.Scan(
+			&guildBan.ID,
 			&guildBan.UserID,
 			&guildBan.GuildID,
 			&guildBan.Reason,
 			&guildBan.CreatedAt,
 			&guildBan.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, err
+			return nil, []string{}, wrapUnknownErr("map over select guild bans by guild id failed", err)
 		}
 
 		guildBans = append(guildBans, guildBan)
@@ -88,29 +62,38 @@ func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID string) (
 func (r *GuildBanRepository) Create(ctx context.Context, guildBan *entities.GuildBan) error {
 	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
-			guild_bans(user_id, guild_id, reason, created_at, updated_at)
+			guild_bans(
+				id,
+				user_id,
+				guild_id,
+				reason,
+				created_at,
+				updated_at
+			)
 		VALUES ($1, $2, $3, $4, $5);
-	`, guildBan.UserID, guildBan.GuildID, guildBan.Reason, guildBan.CreatedAt, guildBan.UpdatedAt)
+	`, guildBan.ID, guildBan.UserID, guildBan.GuildID, guildBan.Reason, guildBan.CreatedAt, guildBan.UpdatedAt)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("insert guild ban failed", err)
 	}
 
 	return nil
 }
 
-func (r *GuildBanRepository) Delete(ctx context.Context, userID string, guildID string) error {
-	_, err := r.db(ctx).Exec(ctx, `
+func (r *GuildBanRepository) Delete(ctx context.Context, ID string) error {
+	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			guild_bans
 		WHERE
-			user_id = $1
-		AND
-			guild_id = $2;
-	`, userID, guildID)
+			id = $1;
+	`, ID)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete guild ban failed", err)
+	}
+
+	if result.RowsAffected() != 1 {
+		return ErrNotFound
 	}
 
 	return nil

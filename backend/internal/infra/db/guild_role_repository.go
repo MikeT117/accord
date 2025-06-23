@@ -6,6 +6,7 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/jackc/pgx/v5"
 )
 
 type GuildRoleRepository struct {
@@ -42,7 +43,10 @@ func (r *GuildRoleRepository) GetByID(ctx context.Context, ID string) (*entities
 		&role.CreatedAt,
 		&role.UpdatedAt,
 	); err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select guild role by id failed", err)
 	}
 
 	return role, nil
@@ -63,7 +67,7 @@ func (r *GuildRoleRepository) GetByGuildID(ctx context.Context, guildID string) 
 	`, guildID)
 
 	if err != nil {
-		return nil, []string{}, err
+		return nil, []string{}, wrapUnknownErr("select guild roles by guild id failed", err)
 	}
 	defer rows.Close()
 
@@ -79,13 +83,54 @@ func (r *GuildRoleRepository) GetByGuildID(ctx context.Context, guildID string) 
 			&role.CreatedAt,
 			&role.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, err
+			return nil, []string{}, wrapUnknownErr("map over select guild roles by guild id failed", err)
 		}
 		roleIDs = append(roleIDs, role.ID)
 		roles = append(roles, role)
 	}
 
 	return roles, roleIDs, nil
+}
+
+func (r *GuildRoleRepository) GetByIDs(ctx context.Context, roleIDs []string, guildID string) ([]*entities.GuildRole, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			id,
+			guild_id,
+			name,
+			permissions,
+			created_at,
+			updated_at
+		FROM
+			guild_role
+		WHERE
+			id = ANY($1)
+		AND 
+			guild_id = $2;
+	`, roleIDs, guildID)
+
+	if err != nil {
+		return nil, wrapUnknownErr("select guild roles by ids failed", err)
+	}
+	defer rows.Close()
+
+	roles := []*entities.GuildRole{}
+	for rows.Next() {
+		role := &entities.GuildRole{}
+		if err := rows.Scan(
+			&role.ID,
+			&role.GuildID,
+			&role.Name,
+			&role.Permissions,
+			&role.CreatedAt,
+			&role.UpdatedAt,
+		); err != nil {
+			return nil, wrapUnknownErr("map over select guild roles by ids failed failed", err)
+		}
+		roles = append(roles, role)
+	}
+
+	return roles, nil
 }
 
 func (r *GuildRoleRepository) GetByNameAndGuildID(ctx context.Context, name string, guildID string) (*entities.GuildRole, error) {
@@ -114,13 +159,16 @@ func (r *GuildRoleRepository) GetByNameAndGuildID(ctx context.Context, name stri
 		&role.CreatedAt,
 		&role.UpdatedAt,
 	); err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select guild role by name and guild id failed", err)
 	}
 
 	return role, nil
 }
 
-func (r *GuildRoleRepository) GetByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.GuildRole, []string, error) {
+func (r *GuildRoleRepository) GetMapByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.GuildRole, []string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -136,7 +184,7 @@ func (r *GuildRoleRepository) GetByGuildIDs(ctx context.Context, guildIDs []stri
 	`, guildIDs)
 
 	if err != nil {
-		return nil, []string{}, err
+		return nil, []string{}, wrapUnknownErr("select guild roles by guild ids failed", err)
 	}
 
 	defer rows.Close()
@@ -153,7 +201,7 @@ func (r *GuildRoleRepository) GetByGuildIDs(ctx context.Context, guildIDs []stri
 			&role.CreatedAt,
 			&role.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, err
+			return nil, []string{}, wrapUnknownErr("map over select guild roles by guild ids failed", err)
 		}
 
 		roleIDs = append(roleIDs, role.ID)
@@ -184,11 +232,15 @@ func (r *GuildRoleRepository) Create(ctx context.Context, guildRole *entities.Gu
 		guildRole.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("insert guild role failed", err)
+	}
+
+	return nil
 
 }
 func (r *GuildRoleRepository) Update(ctx context.Context, guildRole *entities.GuildRole) error {
-	_, err := r.db(ctx).Exec(ctx, `
+	result, err := r.db(ctx).Exec(ctx, `
 		UPDATE
 			guild_role
 		SET
@@ -209,7 +261,15 @@ func (r *GuildRoleRepository) Update(ctx context.Context, guildRole *entities.Gu
 		guildRole.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("update guild role failed", err)
+	}
+
+	if result.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
 
 }
 
@@ -223,11 +283,11 @@ func (r *GuildRoleRepository) Delete(ctx context.Context, ID string) error {
 	)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete guild role failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("rows affected is zero")
+		return ErrNotFound
 	}
 
 	return nil
@@ -236,22 +296,24 @@ func (r *GuildRoleRepository) Delete(ctx context.Context, ID string) error {
 func (r *GuildRoleRepository) GetPermissionByUserIDAndGuildID(ctx context.Context, userID string, guildID string) (int32, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		Select
-			COALESCE(
-				bit_or(gr.permissions), -1)::int as permissions
-			FROM
-				guild_role gr
-			INNER JOIN
-				guild_role_user gru ON gru.role_id = gr.id
-			WHERE
-				gru.user_id = $1;
-			AND
-				gr.guild_id = $2
+			bit_or(gr.permissions) as permissions
+		FROM
+			guild_role gr
+		INNER JOIN
+			guild_role_user gru ON gru.role_id = gr.id
+		WHERE
+			gru.user_id = $1
+		AND
+			gr.guild_id = $2;
 	`, userID, guildID)
 
 	var permissions int32
 
 	if err := row.Scan(&permissions); err != nil {
-		return -1, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return -1, ErrNotFound
+		}
+		return -1, wrapUnknownErr("select guild permissions by user id failed", err)
 	}
 
 	return permissions, nil
@@ -260,24 +322,26 @@ func (r *GuildRoleRepository) GetPermissionByUserIDAndGuildID(ctx context.Contex
 func (r *GuildRoleRepository) GetPermissionByUserIDAndChannelID(ctx context.Context, userID string, channelID string) (int32, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		Select
-			COALESCE(
-				bit_or(gr.permissions), -1)::int as permissions
-			FROM
-				guild_role gr
-			INNER JOIN
-				guild_role_user gru ON gru.role_id = gr.id
-			INNER JOIN
-				guild_role_channel grc ON grc.role_id = gr.id
-			WHERE
-				gru.user_id = $1;
-			AND
-				grc.channel_id = $2
+			bit_or(gr.permissions) as permissions
+		FROM
+			guild_role gr
+		INNER JOIN
+			guild_role_user gru ON gru.role_id = gr.id
+		INNER JOIN
+			guild_role_channel grc ON grc.role_id = gr.id
+		WHERE
+			gru.user_id = $1
+		AND
+			grc.channel_id = $2;
 	`, userID, channelID)
 
 	var permissions int32
 
 	if err := row.Scan(&permissions); err != nil {
-		return -1, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return -1, ErrNotFound
+		}
+		return -1, wrapUnknownErr("select channel permissions by user id failed", err)
 	}
 
 	return permissions, nil
@@ -290,16 +354,18 @@ func (r *GuildRoleRepository) AssociateUser(ctx context.Context, roleID string, 
 					role_id,
 					user_id
 				)
-			VALUES ($1, $2);
+			VALUES ($1, $2)
+			ON CONFLICT (role_id, user_id)
+			DO UPDATE SET role_id = $1, user_id = $2;
 		`, roleID, userID,
 	)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("insert guild role user association failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("rows affected is zero")
+		return ErrNotFound
 	}
 
 	return nil
@@ -317,17 +383,17 @@ func (r *GuildRoleRepository) DisassociateUser(ctx context.Context, roleID strin
 	)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete guild role user association failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("rows affected is zero")
+		return ErrNotFound
 	}
 
 	return nil
 }
 
-func (r *GuildRoleRepository) GetRoleIDsByUserIDs(ctx context.Context, userIDs []string) (map[string][]string, error) {
+func (r *GuildRoleRepository) GetMapRoleIDsByUserIDs(ctx context.Context, userIDs []string) (map[string][]string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			role_id,
@@ -339,7 +405,7 @@ func (r *GuildRoleRepository) GetRoleIDsByUserIDs(ctx context.Context, userIDs [
 	`, userIDs)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select role ids by user ids failed", err)
 	}
 
 	defer rows.Close()
@@ -352,7 +418,7 @@ func (r *GuildRoleRepository) GetRoleIDsByUserIDs(ctx context.Context, userIDs [
 			&roleID,
 			&userID,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select role ids by user ids failed", err)
 		}
 
 		roleUsersMap[userID] = append(roleUsersMap[userID], roleID)
@@ -376,7 +442,7 @@ func (r *GuildRoleRepository) GetRoleIDsByUserIDAndGuildID(ctx context.Context, 
 	`, userID, guildID)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select role ids by user id and guild id failed", err)
 	}
 
 	defer rows.Close()
@@ -387,7 +453,7 @@ func (r *GuildRoleRepository) GetRoleIDsByUserIDAndGuildID(ctx context.Context, 
 		if err := rows.Scan(
 			&roleID,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select role ids by user id and guild id failed", err)
 		}
 
 		roleIDs = append(roleIDs, roleID)
@@ -403,16 +469,18 @@ func (r *GuildRoleRepository) AssociateChannel(ctx context.Context, roleID strin
 					role_id,
 					channel_id
 				)
-			VALUES ($1, $2);
+			VALUES ($1, $2)
+			ON CONFLICT (role_id, channel_id)
+			DO UPDATE SET role_id = $1, channel_id = $2;
 		`, roleID, channelID,
 	)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("insert role channel association failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("rows affected is zero")
+		return ErrNotFound
 	}
 
 	return nil
@@ -430,17 +498,17 @@ func (r *GuildRoleRepository) DisassociateChannel(ctx context.Context, roleID st
 	)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete role channel association failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("rows affected is zero")
+		return ErrNotFound
 	}
 
 	return nil
 }
 
-func (r *GuildRoleRepository) GetRoleIDsByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]string, error) {
+func (r *GuildRoleRepository) GetMapRoleIDsByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			role_id,
@@ -452,7 +520,7 @@ func (r *GuildRoleRepository) GetRoleIDsByChannelIDs(ctx context.Context, channe
 	`, channelIDs)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select role ids by channel ids failed", err)
 	}
 
 	defer rows.Close()
@@ -465,7 +533,7 @@ func (r *GuildRoleRepository) GetRoleIDsByChannelIDs(ctx context.Context, channe
 			&roleID,
 			&channelID,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select role ids by channel ids failed", err)
 		}
 
 		roleChannelsMap[channelID] = append(roleChannelsMap[channelID], roleID)
@@ -485,7 +553,7 @@ func (r *GuildRoleRepository) GetRoleIDsByChannelID(ctx context.Context, channel
 	`, channelID)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select role ids by channel id failed", err)
 	}
 
 	defer rows.Close()
@@ -496,7 +564,7 @@ func (r *GuildRoleRepository) GetRoleIDsByChannelID(ctx context.Context, channel
 		if err := rows.Scan(
 			&roleID,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select role ids by channel id failed", err)
 		}
 
 		roleIDs = append(roleIDs, roleID)
@@ -504,4 +572,56 @@ func (r *GuildRoleRepository) GetRoleIDsByChannelID(ctx context.Context, channel
 	}
 
 	return roleIDs, err
+}
+
+func (r *GuildRoleRepository) GetChannelPermissions(ctx context.Context, channelID string, userID string) (int32, error) {
+	row := r.db(ctx).QueryRow(ctx, `
+		SELECT
+			bit_or(gr.permissions)
+		FROM
+			guild_role gr
+		INNER JOIN
+			guild_role_user gru ON gru.role_id = gr.id
+		INNER JOIN
+			guild_role_channel grc ON grc.role_id = gr.id
+		WHERE
+			gru.user_id = $1
+		AND
+			grc.channel_id = $2;
+	`, userID, channelID)
+
+	var permissions int32
+	if err := row.Scan(&permissions); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return -1, ErrNotFound
+		}
+		return -1, wrapUnknownErr("select user channel permissions failed", err)
+	}
+
+	return permissions, nil
+}
+
+func (r *GuildRoleRepository) GetGuildPermissions(ctx context.Context, guildID string, userID string) (int32, error) {
+	row := r.db(ctx).QueryRow(ctx, `
+		SELECT
+			bit_or(gr.permissions)
+		FROM
+			guild_role gr
+		INNER JOIN
+			guild_role_user gru ON gru.role_id = gr.id
+		WHERE
+			gr.guild_id = $1
+		AND
+			gru.user_id = $2;
+	`, guildID, userID)
+
+	var permissions int32
+	if err := row.Scan(&permissions); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return -1, ErrNotFound
+		}
+		return -1, wrapUnknownErr("select user guild permissions failed", err)
+	}
+
+	return permissions, nil
 }

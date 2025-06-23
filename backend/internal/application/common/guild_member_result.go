@@ -1,11 +1,13 @@
 package common
 
+import "time"
+
 type GuildMemberResult struct {
 	UserID    string
 	GuildID   string
 	Nickname  *string
-	CreatedAt int64
-	UpdatedAt int64
+	CreatedAt time.Time
+	UpdatedAt time.Time
 	AvatarID  *string
 	BannerID  *string
 	Roles     []string

@@ -1,25 +1,25 @@
 package entities
 
 import (
-	"errors"
 	"time"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/google/uuid"
 )
 
 type GuildCategory struct {
 	ID        string
 	Name      string
-	CreatedAt int64
-	UpdatedAt int64
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (u *GuildCategory) validate() error {
 	if u.ID == "" {
-		return errors.New("id must not be empty")
+		return domain.NewDomainValidationError("id must not be empty")
 	}
 	if u.Name == "" {
-		return errors.New("name must not be empty")
+		return domain.NewDomainValidationError("name must not be empty")
 	}
 	return nil
 }
@@ -30,8 +30,7 @@ func NewGuildCategory(name string) (*GuildCategory, error) {
 		return nil, err
 	}
 
-	timestamp := time.Now().UTC().Unix()
-
+	timestamp := time.Now().UTC()
 	guildCatgeory := &GuildCategory{
 		ID:        ID.String(),
 		Name:      name,
@@ -48,7 +47,6 @@ func NewGuildCategory(name string) (*GuildCategory, error) {
 
 func (g *GuildCategory) Updatename(name string) error {
 	g.Name = name
-	g.UpdatedAt = time.Now().UTC().Unix()
-
+	g.UpdatedAt = time.Now().UTC()
 	return g.validate()
 }

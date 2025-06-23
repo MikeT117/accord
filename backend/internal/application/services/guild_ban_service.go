@@ -7,35 +7,34 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/application/mapper"
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/MikeT117/accord/backend/internal/constants"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
+	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
 )
 
 type GuildBanService struct {
 	transactor            *db.Transactor
-	guildMemberRepository *db.GuildMemberRepository
-	guildBanRepository    *db.GuildBanRepository
+	authorisationService  interfaces.AuthorisationService
+	guildMemberRepository repositories.GuildMemberRepository
+	guildBanRepository    repositories.GuildBanRepository
 }
 
-func CreateGuildBanService(transactor *db.Transactor, guildMemberRepository *db.GuildMemberRepository, guildBanRepository *db.GuildBanRepository) interfaces.GuildBanService {
+func CreateGuildBanService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, guildMemberRepository repositories.GuildMemberRepository, guildBanRepository repositories.GuildBanRepository) interfaces.GuildBanService {
 	return &GuildBanService{
 		transactor:            transactor,
+		authorisationService:  authorisationService,
 		guildMemberRepository: guildMemberRepository,
 		guildBanRepository:    guildBanRepository,
 	}
 }
 
-func (s *GuildBanService) GetByUserIDAndGuildID(ctx context.Context, userID string, guildID string) (*query.GuildBanQueryResult, error) {
-	guildBan, err := s.guildBanRepository.GetByUserIDAndGuildID(ctx, userID, guildID)
+func (s *GuildBanService) GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.GuildBanQueryListResult, error) {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return nil, err
 	}
 
-	return &query.GuildBanQueryResult{
-		Result: mapper.NewGuildBanResultFromGuildBan(guildBan),
-	}, nil
-}
-func (s *GuildBanService) GetByGuildID(ctx context.Context, guildID string) (*query.GuildBanQueryListResult, error) {
 	guildBans, _, err := s.guildBanRepository.GetByGuildID(ctx, guildID)
 	if err != nil {
 		return nil, err
@@ -45,14 +44,34 @@ func (s *GuildBanService) GetByGuildID(ctx context.Context, guildID string) (*qu
 		Result: mapper.NewGuildBanListResultFromGuildBan(guildBans),
 	}, nil
 }
-func (s *GuildBanService) Create(ctx context.Context, cmd *command.CreateGuildBanCommand) error {
+
+func (s *GuildBanService) Create(ctx context.Context, cmd *command.CreateGuildBanCommand, requestorID string) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+	if err != nil {
+		return err
+	}
+
 	guildBan, err := entities.NewGuildBan(cmd.GuildID, cmd.UserID, cmd.Reason)
 	if err != nil {
 		return err
 	}
 
-	return s.guildBanRepository.Create(ctx, guildBan)
+	if err := s.guildBanRepository.Create(ctx, guildBan); err != nil {
+		return err
+	}
+
+	return nil
 }
-func (s *GuildBanService) Delete(ctx context.Context, userID string, guildID string) error {
-	return s.guildBanRepository.Delete(ctx, userID, guildID)
+
+func (s *GuildBanService) Delete(ctx context.Context, ID string, guildID string, requestorID string) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+	if err != nil {
+		return err
+	}
+
+	if err := s.guildBanRepository.Delete(ctx, ID); err != nil {
+		return err
+	}
+
+	return nil
 }

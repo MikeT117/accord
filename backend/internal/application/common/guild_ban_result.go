@@ -1,9 +1,11 @@
 package common
 
+import "time"
+
 type GuildBanResult struct {
 	UserID    string
 	GuildID   string
 	Reason    string
-	CreatedAt int64
-	UpdatedAt int64
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

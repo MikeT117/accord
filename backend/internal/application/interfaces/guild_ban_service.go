@@ -8,8 +8,7 @@ import (
 )
 
 type GuildBanService interface {
-	GetByUserIDAndGuildID(ctx context.Context, userID string, guildID string) (*query.GuildBanQueryResult, error)
-	GetByGuildID(ctx context.Context, guildID string) (*query.GuildBanQueryListResult, error)
-	Create(ctx context.Context, createCommand *command.CreateGuildBanCommand) error
-	Delete(ctx context.Context, userID string, guildID string) error
+	GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.GuildBanQueryListResult, error)
+	Create(ctx context.Context, cmd *command.CreateGuildBanCommand, requestorID string) error
+	Delete(ctx context.Context, ID string, guildID string, requestorID string) error
 }

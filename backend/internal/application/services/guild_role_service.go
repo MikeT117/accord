@@ -7,36 +7,34 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/application/mapper"
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/MikeT117/accord/backend/internal/constants"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
+	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
 )
 
 type GuildRoleService struct {
 	transactor            *db.Transactor
-	guildRoleRepository   *db.GuildRoleRepository
-	guildMemberRepository *db.GuildMemberRepository
+	authorisationService  interfaces.AuthorisationService
+	guildRoleRepository   repositories.GuildRoleRepository
+	guildMemberRepository repositories.GuildMemberRepository
 }
 
-func CreateGuildRoleService(transactor *db.Transactor, guildRoleRepository *db.GuildRoleRepository, guildMemberRepository *db.GuildMemberRepository) interfaces.GuildRoleService {
+func CreateGuildRoleService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, guildRoleRepository repositories.GuildRoleRepository, guildMemberRepository repositories.GuildMemberRepository) interfaces.GuildRoleService {
 	return &GuildRoleService{
 		transactor:            transactor,
+		authorisationService:  authorisationService,
 		guildRoleRepository:   guildRoleRepository,
 		guildMemberRepository: guildMemberRepository,
 	}
 }
 
-func (s *GuildRoleService) GetByID(ctx context.Context, ID string) (*query.GuildRoleQueryResult, error) {
-	role, err := s.guildRoleRepository.GetByID(ctx, ID)
+func (s *GuildRoleService) GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.GuildRoleQueryListResult, error) {
+	err := s.authorisationService.VerifyGuildMember(ctx, guildID, requestorID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &query.GuildRoleQueryResult{
-		Result: mapper.NewGuildRoleResultFromGuildRole(role),
-	}, nil
-}
-
-func (s *GuildRoleService) GetByGuildID(ctx context.Context, guildID string) (*query.GuildRoleQueryListResult, error) {
 	role, _, err := s.guildRoleRepository.GetByGuildID(ctx, guildID)
 	if err != nil {
 		return nil, err
@@ -47,43 +45,110 @@ func (s *GuildRoleService) GetByGuildID(ctx context.Context, guildID string) (*q
 	}, nil
 }
 
-func (s *GuildRoleService) Create(ctx context.Context, cmd *command.CreateGuildRoleCommand) error {
+func (s *GuildRoleService) Create(ctx context.Context, cmd *command.CreateGuildRoleCommand, requestorID string) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+	if err != nil {
+		return err
+	}
+
 	guildRoleEntity, err := entities.NewGuildRole(cmd.GuildID, cmd.Name)
 	if err != nil {
 		return err
 	}
 
-	return s.guildRoleRepository.Create(ctx, guildRoleEntity)
+	if err := s.guildRoleRepository.Create(ctx, guildRoleEntity); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *GuildRoleService) Update(ctx context.Context, cmd *command.UpdateGuildRoleCommand) error {
+func (s *GuildRoleService) Update(ctx context.Context, cmd *command.UpdateGuildRoleCommand, requestorID string) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+	if err != nil {
+		return err
+	}
+
 	guildRole, err := s.guildRoleRepository.GetByID(ctx, cmd.ID)
 	if err != nil {
 		return err
 	}
 
-	guildRole.UpdateName(cmd.Name)
-	guildRole.UpdatedPermissions(cmd.Permissions)
+	if err := guildRole.UpdateName(cmd.Name); err != nil {
+		return err
+	}
+	if err := guildRole.UpdatedPermissions(cmd.Permissions); err != nil {
+		return err
+	}
 
-	return s.guildRoleRepository.Update(ctx, guildRole)
+	if err := s.guildRoleRepository.Update(ctx, guildRole); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *GuildRoleService) Delete(ctx context.Context, ID string) error {
-	return s.guildRoleRepository.Delete(ctx, ID)
+func (s *GuildRoleService) Delete(ctx context.Context, ID string, requestorID string) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, ID, requestorID, constants.GUILD_OWNER_PERMISSION)
+	if err != nil {
+		return err
+	}
+
+	if err := s.guildRoleRepository.Delete(ctx, ID); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *GuildRoleService) CreateUserAssoc(ctx context.Context, roleID string, userID string) error {
-	return s.guildRoleRepository.AssociateUser(ctx, roleID, userID)
+func (s *GuildRoleService) CreateUserAssoc(ctx context.Context, roleID string, userID string, guildID string, requestorID string) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+	if err != nil {
+		return err
+	}
+
+	if err := s.guildRoleRepository.AssociateUser(ctx, roleID, userID); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *GuildRoleService) DeleteUserAssoc(ctx context.Context, roleID string, userID string) error {
-	return s.guildRoleRepository.DisassociateUser(ctx, roleID, userID)
+func (s *GuildRoleService) DeleteUserAssoc(ctx context.Context, roleID string, userID string, guildID string, requestorID string) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+	if err != nil {
+		return err
+	}
+
+	if err := s.guildRoleRepository.DisassociateUser(ctx, roleID, userID); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *GuildRoleService) CreateChannelAssoc(ctx context.Context, roleID string, channelID string) error {
-	return s.guildRoleRepository.AssociateChannel(ctx, roleID, channelID)
+func (s *GuildRoleService) CreateChannelAssoc(ctx context.Context, roleID string, channelID string, guildID string, requestorID string) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+	if err != nil {
+		return err
+	}
+
+	if err := s.guildRoleRepository.AssociateChannel(ctx, roleID, channelID); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *GuildRoleService) DeleteChannelAssoc(ctx context.Context, roleID string, channelID string) error {
-	return s.guildRoleRepository.DisassociateChannel(ctx, roleID, channelID)
+func (s *GuildRoleService) DeleteChannelAssoc(ctx context.Context, roleID string, channelID string, guildID string, requestorID string) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+	if err != nil {
+		return err
+	}
+
+	if err := s.guildRoleRepository.DisassociateChannel(ctx, roleID, channelID); err != nil {
+		return err
+	}
+
+	return nil
 }

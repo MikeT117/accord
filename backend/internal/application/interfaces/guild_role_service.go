@@ -8,13 +8,12 @@ import (
 )
 
 type GuildRoleService interface {
-	GetByID(ctx context.Context, ID string) (*query.GuildRoleQueryResult, error)
-	GetByGuildID(ctx context.Context, guildID string) (*query.GuildRoleQueryListResult, error)
-	Create(ctx context.Context, createCommand *command.CreateGuildRoleCommand) error
-	Update(ctx context.Context, updateCommand *command.UpdateGuildRoleCommand) error
-	Delete(ctx context.Context, ID string) error
-	CreateUserAssoc(ctx context.Context, roleID string, userID string) error
-	DeleteUserAssoc(ctx context.Context, roleID string, userID string) error
-	CreateChannelAssoc(ctx context.Context, roleID string, channelID string) error
-	DeleteChannelAssoc(ctx context.Context, roleID string, channelID string) error
+	GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.GuildRoleQueryListResult, error)
+	Create(ctx context.Context, cmd *command.CreateGuildRoleCommand, requestorID string) error
+	Update(ctx context.Context, cmd *command.UpdateGuildRoleCommand, requestorID string) error
+	Delete(ctx context.Context, ID string, requestorID string) error
+	CreateUserAssoc(ctx context.Context, roleID string, userID string, guildID string, requestorID string) error
+	DeleteUserAssoc(ctx context.Context, roleID string, userID string, guildID string, requestorID string) error
+	CreateChannelAssoc(ctx context.Context, roleID string, channelID string, guildID string, requestorID string) error
+	DeleteChannelAssoc(ctx context.Context, roleID string, channelID string, guildID string, requestorID string) error
 }

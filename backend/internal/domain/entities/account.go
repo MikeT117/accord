@@ -1,44 +1,42 @@
 package entities
 
 import (
-	"errors"
 	"time"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	PROVIDER_OAUTH       = "GITHUB"
+	PROVIDER_CREDENTIALS = "CREDENTIALS"
+)
+
 type Account struct {
 	ID                    string
-	UserID                string
-	AccountID             string
-	ProviderID            string
+	Provider              string
+	ProviderID            *string
 	Accesstoken           *string
 	Refreshtoken          *string
-	AccesstokenExpiresAt  *int64
-	RefreshtokenExpiresAt *int64
+	AccesstokenExpiresAt  *time.Time
+	RefreshtokenExpiresAt *time.Time
 	Scope                 *string
 	IDToken               *string
 	Password              *string
-	CreatedAt             int64
-	UpdatedAt             int64
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 }
 
 func (a *Account) validate() error {
 	if a.ID == "" {
-		return errors.New("id must not be empty")
+		return domain.NewDomainValidationError("id must not be empty")
 	}
-	if a.UserID == "" {
-		return errors.New("title must not be empty")
+	if a.Provider != PROVIDER_CREDENTIALS && a.Provider != PROVIDER_OAUTH {
+		return domain.NewDomainValidationError("invalid provider")
 	}
-	if a.AccountID == "" {
-		return errors.New("asset id must not be empty")
-	}
-	if a.ProviderID == "" {
-		return errors.New("invalid provider")
-	}
-	if a.Password == nil || *a.Password == "" {
-		return errors.New("password must not be empty")
+	if a.Provider == PROVIDER_CREDENTIALS && (a.Password == nil || *a.Password == "") {
+		return domain.NewDomainValidationError("password must not be empty for this provider")
 	}
 
 	return nil
@@ -46,7 +44,7 @@ func (a *Account) validate() error {
 
 func (a *Account) ValidatePassword(plaintextPassword string) error {
 	if err := bcrypt.CompareHashAndPassword([]byte(*a.Password), []byte(plaintextPassword)); err != nil {
-		return errors.New("invalid credentials")
+		return domain.ErrInvalidCredentials
 	}
 
 	return nil
@@ -65,38 +63,60 @@ func (a *Account) hashPassword() error {
 	return nil
 }
 
-func NewAccount(
-	userID string,
-	accountID string,
-	providerID string,
-	accesstoken *string,
-	refreshtoken *string,
-	accesstokenExpiresAt *int64,
-	refreshtokenExpiresAt *int64,
-	scope *string,
-	idToken *string,
-	password *string,
-) (*Account, error) {
+func (a *Account) IsOAuthProvider() bool {
+	return a.Provider == PROVIDER_OAUTH
+}
+
+func NewOAuthAccount(providerID string, accesstoken *string, refreshtoken *string, accesstokenExpiresAt *time.Time, refreshtokenExpiresAt *time.Time, scope *string, IDToken *string) (*Account, error) {
 	id, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
 	}
 
-	timestamp := time.Now().UTC().Unix()
+	timestamp := time.Now().UTC()
 
 	account := &Account{
 		ID:                    id.String(),
-		UserID:                userID,
-		ProviderID:            providerID,
+		Provider:              PROVIDER_OAUTH,
+		ProviderID:            &providerID,
 		Accesstoken:           accesstoken,
 		Refreshtoken:          refreshtoken,
 		AccesstokenExpiresAt:  accesstokenExpiresAt,
 		RefreshtokenExpiresAt: refreshtokenExpiresAt,
 		Scope:                 scope,
-		IDToken:               idToken,
+		IDToken:               IDToken,
 		CreatedAt:             timestamp,
 		UpdatedAt:             timestamp,
-		AccountID:             userID,
+		Password:              nil,
+	}
+
+	if err := account.validate(); err != nil {
+		return nil, err
+	}
+
+	return account, nil
+}
+
+func NewCredentialsAccount(password *string) (*Account, error) {
+	id, err := uuid.NewV7()
+	if err != nil {
+		return nil, err
+	}
+
+	timestamp := time.Now().UTC()
+
+	account := &Account{
+		ID:                    id.String(),
+		Provider:              PROVIDER_CREDENTIALS,
+		ProviderID:            nil,
+		Accesstoken:           nil,
+		Refreshtoken:          nil,
+		AccesstokenExpiresAt:  nil,
+		RefreshtokenExpiresAt: nil,
+		Scope:                 nil,
+		IDToken:               nil,
+		CreatedAt:             timestamp,
+		UpdatedAt:             timestamp,
 		Password:              password,
 	}
 

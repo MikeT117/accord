@@ -1,12 +1,14 @@
 package common
 
+import "time"
+
 type SessionResult struct {
 	ID        string
 	UserID    string
 	Token     string
-	ExpiresAt int64
+	ExpiresAt time.Time
 	IPAddress string
 	UserAgent string
-	CreatedAt int64
-	UpdatedAt int64
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

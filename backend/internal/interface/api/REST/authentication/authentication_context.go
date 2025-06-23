@@ -6,5 +6,17 @@ import (
 
 type AuthenticationContext struct {
 	echo.Context
-	UserID string
+	RequestorID string
+	SessionID   string
+}
+
+type RequestorIDKey struct{}
+
+func GetRequestorDetails(ctx echo.Context) (string, string) {
+	authenticationCtx, ok := ctx.(*AuthenticationContext)
+	if !ok {
+		panic("GetRequestorDetails called outside an authenticated context")
+	}
+
+	return authenticationCtx.RequestorID, authenticationCtx.SessionID
 }

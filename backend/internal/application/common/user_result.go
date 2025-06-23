@@ -2,6 +2,7 @@ package common
 
 type UserResult struct {
 	ID          string
+	AccountID   string
 	Username    string
 	DisplayName string
 	Email       string

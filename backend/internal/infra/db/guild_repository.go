@@ -6,6 +6,7 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/jackc/pgx/v5"
 )
 
 type GuildRepository struct {
@@ -52,7 +53,10 @@ func (r *GuildRepository) GetByID(ctx context.Context, ID string) (*entities.Gui
 		&guild.CreatedAt,
 		&guild.UpdatedAt,
 	); err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, wrapUnknownErr("select guild by id failed", err)
 	}
 
 	return guild, nil
@@ -79,7 +83,7 @@ func (r *GuildRepository) GetByGuildIDs(ctx context.Context, guildIDs []string) 
 	`, guildIDs)
 
 	if err != nil {
-		return nil, err
+		return nil, wrapUnknownErr("select guilds by guild idsfailed", err)
 	}
 	defer rows.Close()
 
@@ -100,13 +104,14 @@ func (r *GuildRepository) GetByGuildIDs(ctx context.Context, guildIDs []string) 
 			&guild.CreatedAt,
 			&guild.UpdatedAt,
 		); err != nil {
-			return nil, err
+			return nil, wrapUnknownErr("map over select guilds by guild idsfailed", err)
 		}
 		guilds = append(guilds, guild)
 	}
 
 	return guilds, nil
 }
+
 func (r *GuildRepository) Create(ctx context.Context, guild *entities.Guild) error {
 	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
@@ -140,11 +145,15 @@ func (r *GuildRepository) Create(ctx context.Context, guild *entities.Guild) err
 		guild.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("insert guild failed", err)
+	}
+
+	return nil
 
 }
 func (r *GuildRepository) Update(ctx context.Context, guild *entities.Guild) error {
-	_, err := r.db(ctx).Exec(ctx, `
+	result, err := r.db(ctx).Exec(ctx, `
 	UPDATE
 		account 
 	SET
@@ -176,7 +185,15 @@ func (r *GuildRepository) Update(ctx context.Context, guild *entities.Guild) err
 		guild.UpdatedAt,
 	)
 
-	return err
+	if err != nil {
+		return wrapUnknownErr("update guild failed", err)
+	}
+
+	if result.RowsAffected() != 1 {
+		return ErrNotFound
+	}
+
+	return nil
 }
 
 func (r *GuildRepository) Delete(ctx context.Context, ID string) error {
@@ -188,11 +205,11 @@ func (r *GuildRepository) Delete(ctx context.Context, ID string) error {
 		`, ID)
 
 	if err != nil {
-		return err
+		return wrapUnknownErr("delete guild failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return errors.New("zero rows affected")
+		return ErrNotFound
 	}
 
 	return nil

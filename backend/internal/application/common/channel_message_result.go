@@ -1,5 +1,7 @@
 package common
 
+import "time"
+
 type ChannelMessageResult struct {
 	ID          string
 	Content     string
@@ -8,8 +10,8 @@ type ChannelMessageResult struct {
 	AuthorID    string
 	ChannelID   string
 	GuildID     *string
-	CreatedAt   int64
-	UpdatedAt   int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 	User        *UserResult
 	GuildMember *GuildMemberResult
 	Attachments []*AttachmentResult

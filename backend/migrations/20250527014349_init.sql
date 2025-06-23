@@ -2,35 +2,34 @@
 -- +goose StatementBegin
 SELECT "up SQL query";
 
+CREATE TABLE IF NOT EXISTS "account" (
+    "id" UUID PRIMARY KEY NOT NULL,
+    "provider_id" TEXT,
+    "access_token" TEXT,
+    "refresh_token" TEXT,
+    "access_token_expires_at" TIMESTAMPTZ,
+    "refresh_token_expires_at" TIMESTAMPTZ,
+    "scope" TEXT,
+    "id_token" TEXT,
+    "password" TEXT,
+    "created_at" TIMESTAMPTZ NOT NULL,
+    "updated_at" TIMESTAMPTZ NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS "user" (
     "id" UUID PRIMARY KEY NOT NULL,
+    "account_id" UUID NOT NULL REFERENCES "account" ("id"),
     "username" VARCHAR(32) NOT NULL,
     "display_name" VARCHAR(32) NOT NULL,
     "email" TEXT NOT NULL,
-    "email_verified" BOOLEAN NOT NULL DEFAULT False,
-    "public_flags" INT NOT NULL DEFAULT 0,
-    "relationship_count" INT NOT NULL DEFAULT 0,
-    "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "updated_at" TIMESTAMPTZ NOT NULL,
-    "avatar_id" UUID REFERENCES "attachment" ("id"),
-    "banner_id" UUID REFERENCES "attachment" ("id"),
-    UNIQUE ("username")
-);
-
-CREATE TABLE IF NOT EXISTS "account" (
-    "id" UUID PRIMARY KEY NOT NULL,
-    "user_id" UUID NOT NULL REFERENCES "user" ("id") ON DELETE CASCADE,
-    "account_id" UUID DEFAULT null,
-    "provider_id" UUID DEFAULT null,
-    "access_token" TEXT DEFAULT null,
-    "refresh_token" TEXT DEFAULT null,
-    "access_token_expires_at" TIMESTAMPTZ,
-    "refresh_token_expires_at" TIMESTAMPTZ,
-    "scope" TEXT DEFAULT null,
-    "id_token" TEXT DEFAULT null,
-    "password" TEXT DEFAULT null,
+    "email_verified" BOOLEAN NOT NULL,
+    "public_flags" INT NOT NULL,
+    "relationship_count" INT NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL,
-    "updated_at" TIMESTAMPTZ NOT NULL
+    "updated_at" TIMESTAMPTZ NOT NULL,
+    "avatar_id" UUID,
+    "banner_id" UUID,
+    UNIQUE ("username")
 );
 
 CREATE TABLE IF NOT EXISTS "session" (
@@ -38,8 +37,8 @@ CREATE TABLE IF NOT EXISTS "session" (
     "user_id" UUID NOT NULL REFERENCES "user" ("id"),
     "token" TEXT NOT NULL,
     "expires_at" TIMESTAMPTZ NOT NULL,
-    "ip_address" TEXT DEFAULT null,
-    "user_agent" TEXT DEFAULT null,
+    "ip_address" TEXT,
+    "user_agent" TEXT,
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL
 );
@@ -75,23 +74,25 @@ CREATE TABLE IF NOT EXISTS "guild" (
     "discoverable" BOOLEAN NOT NULL,
     "channel_count" INT NOT NULL,
     "member_count" INT NOT NULL,
-    "icon_id" UUID REFERENCES "attachment" ("id"),
-    "banner_id" UUID REFERENCES "attachment" ("id") "created_at" TIMESTAMPTZ NOT NULL,
-    "updated_at" TIMESTAMPTZ NOT NULL,
+    "icon_id" UUID,
+    "banner_id" UUID,
+    "created_at" TIMESTAMPTZ NOT NULL,
+    "updated_at" TIMESTAMPTZ NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "guild_member" (
     "user_id" UUID NOT NULL REFERENCES "user" ("id"),
     "guild_id" UUID NOT NULL REFERENCES "guild" ("id") ON DELETE CASCADE,
     "nickname" VARCHAR(32),
-    "avatar_id" UUID REFERENCES "attachment" ("id"),
-    "banner_id" UUID REFERENCES "attachment" ("id"),
+    "avatar_id" UUID,
+    "banner_id" UUID,
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL,
     PRIMARY KEY ("guild_id", "user_id")
 );
 
 CREATE TABLE IF NOT EXISTS "guild_ban" (
+    "id" UUID NOT NULL PRIMARY KEY,
     "user_id" UUID NOT NULL REFERENCES "user" ("id"),
     "guild_id" UUID NOT NULL REFERENCES "guild" ("id") ON DELETE CASCADE,
     "reason" VARCHAR(512) NOT NULL,
@@ -104,14 +105,14 @@ CREATE TABLE IF NOT EXISTS "guild_role" (
     "id" UUID PRIMARY KEY,
     "guild_id" UUID NOT NULL REFERENCES "guild" ("id") ON DELETE CASCADE,
     "name" VARCHAR(100) NOT NULL,
-    "permissions" INT NOT NULL DEFAULT 0,
+    "permissions" INT NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS "guild_invite" (
     "id" UUID PRIMARY KEY,
-    "used_count" int NOT NULL DEFAULT 0,
+    "used_count" int NOT NULL,
     "guild_id" uuid NOT NULL REFERENCES "guild" (id) ON DELETE CASCADE,
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL,
@@ -130,8 +131,8 @@ CREATE TABLE IF NOT EXISTS "channel" (
     "creator_id" UUID REFERENCES "user" ("id"),
     "guild_id" UUID REFERENCES "guild" ("id") ON DELETE CASCADE,
     "parent_id" UUID REFERENCES "channel" ("id") ON DELETE SET NULL,
-    "name" varchar(100) NOT NULL,
-    "topic" varchar(512) NOT NULL,
+    "name" varchar(100),
+    "topic" varchar(512),
     "channel_type" INT NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL
@@ -148,7 +149,6 @@ CREATE TABLE IF NOT EXISTS "channel_message" (
     "flag" INT NOT NULL,
     "author_id" uuid NOT NULL REFERENCES "user" ("id"),
     "channel_id" uuid NOT NULL REFERENCES "channel" ("id") ON DELETE CASCADE,
-    "guild_id" uuid REFERENCES "guild" ("id") ON DELETE CASCADE,
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL
 );
@@ -156,7 +156,6 @@ CREATE TABLE IF NOT EXISTS "channel_message" (
 CREATE TABLE IF NOT EXISTS "attachment" (
     "id" UUID NOT NULL PRIMARY KEY,
     "resource_type" VARCHAR(128) NOT NULL,
-    "signature" TEXT NOT NULL,
     "owner_id" UUID NOT NULL REFERENCES "user" ("id"),
     "height" INT,
     "width" INT,
@@ -181,7 +180,10 @@ CREATE TABLE IF NOT EXISTS "voice_state" (
 CREATE TABLE IF NOT EXISTS "channel_message_attachment" (
     "channel_message_id" uuid NOT NULL REFERENCES "channel_message" ("id") ON DELETE CASCADE,
     "attachment_id" uuid NOT NULL REFERENCES "attachment" ("id") ON DELETE CASCADE,
-    PRIMARY KEY ("message_id", "attachment_id")
+    PRIMARY KEY (
+        "channel_message_id",
+        "attachment_id"
+    )
 );
 
 CREATE TABLE IF NOT EXISTS "guild_role_user" (

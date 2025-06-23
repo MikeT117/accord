@@ -1,9 +1,9 @@
 package entities
 
 import (
-	"errors"
 	"strings"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/google/uuid"
 )
 
@@ -18,16 +18,16 @@ type VoiceState struct {
 
 func (a *VoiceState) validate() error {
 	if strings.Trim(a.ID, " ") == "" {
-		return errors.New("id must not be empty")
+		return domain.NewDomainValidationError("id must not be empty")
 	}
 	if strings.Trim(a.ChannelID, " ") == "" {
-		return errors.New("channel id must not be empty")
+		return domain.NewDomainValidationError("channel id must not be empty")
 	}
 	if strings.Trim(a.UserID, " ") == "" {
-		return errors.New("user id id must not be empty")
+		return domain.NewDomainValidationError("user id id must not be empty")
 	}
 	if a.GuildID != nil && strings.Trim(*a.GuildID, " ") == "" {
-		return errors.New("guild id must not be empty")
+		return domain.NewDomainValidationError("guild id must not be empty")
 	}
 	return nil
 }
@@ -54,11 +54,15 @@ func NewVoiceState(userID string, channelID string, guildID *string) (*VoiceStat
 	return voiceState, nil
 }
 
-func (v *VoiceState) UpdateselfMute(selfMute bool) error {
+func (v *VoiceState) IsOwner(userID string) bool {
+	return v.UserID == userID
+}
+
+func (v *VoiceState) UpdateSelfMute(selfMute bool) error {
 	v.SelfMute = selfMute
 	return v.validate()
 }
-func (v *VoiceState) UpdateselfDeaf(selfDeaf bool) error {
+func (v *VoiceState) UpdateSelfDeaf(selfDeaf bool) error {
 	v.SelfDeaf = selfDeaf
 	return v.validate()
 }
