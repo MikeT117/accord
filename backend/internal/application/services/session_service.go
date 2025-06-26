@@ -59,7 +59,7 @@ func (s *SessionService) GetByToken(ctx context.Context, token string) (*query.S
 	}, nil
 }
 
-func (s *SessionService) CreateSession(ctx context.Context, cmd *command.CreateSessionCommand) error {
+func (s *SessionService) Create(ctx context.Context, cmd *command.CreateSessionCommand) error {
 	session, err := entities.NewSession(cmd.UserID, cmd.Token, cmd.ExpiresAt, cmd.IPAddress, cmd.UserAgent)
 	if err != nil {
 		return err
@@ -72,16 +72,8 @@ func (s *SessionService) CreateSession(ctx context.Context, cmd *command.CreateS
 	return nil
 }
 
-func (s *SessionService) DeleteSessionByID(ctx context.Context, ID string, userID string) error {
-	if err := s.sessionRepository.DeleteByID(ctx, ID, userID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *SessionService) DeleteSessionByToken(ctx context.Context, token string, userID string) error {
-	if err := s.sessionRepository.DeleteByToken(ctx, token, userID); err != nil {
+func (s *SessionService) Delete(ctx context.Context, cmd *command.DeleteSessionCommand) error {
+	if err := s.sessionRepository.DeleteByID(ctx, cmd.ID, cmd.RequestorID); err != nil {
 		return err
 	}
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/jackc/pgx/v5"
@@ -48,7 +49,7 @@ func (r *ChannelRepository) GetByID(ctx context.Context, ID string) (*entities.C
 		&channel.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select channel by id failed", err)
 	}
@@ -273,7 +274,7 @@ func (r *ChannelRepository) Update(ctx context.Context, channel *entities.Channe
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -293,7 +294,7 @@ func (r *ChannelRepository) Delete(ctx context.Context, ID string) error {
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -338,7 +339,7 @@ func (r *ChannelRepository) GetUserChannelPermission(ctx context.Context, channe
 		&user.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select channel permission by user id failed", err)
 	}
@@ -471,7 +472,7 @@ func (r *ChannelRepository) AssociateUser(ctx context.Context, channelID string,
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -492,7 +493,7 @@ func (r *ChannelRepository) DisassociateUser(ctx context.Context, channelID stri
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil

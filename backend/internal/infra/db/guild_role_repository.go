@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/jackc/pgx/v5"
@@ -44,7 +45,7 @@ func (r *GuildRoleRepository) GetByID(ctx context.Context, ID string) (*entities
 		&role.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select guild role by id failed", err)
 	}
@@ -160,7 +161,7 @@ func (r *GuildRoleRepository) GetByNameAndGuildID(ctx context.Context, name stri
 		&role.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select guild role by name and guild id failed", err)
 	}
@@ -266,7 +267,7 @@ func (r *GuildRoleRepository) Update(ctx context.Context, guildRole *entities.Gu
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -287,7 +288,7 @@ func (r *GuildRoleRepository) Delete(ctx context.Context, ID string) error {
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -311,7 +312,7 @@ func (r *GuildRoleRepository) GetPermissionByUserIDAndGuildID(ctx context.Contex
 
 	if err := row.Scan(&permissions); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return -1, ErrNotFound
+			return -1, domain.ErrEntityNotFound
 		}
 		return -1, wrapUnknownErr("select guild permissions by user id failed", err)
 	}
@@ -339,7 +340,7 @@ func (r *GuildRoleRepository) GetPermissionByUserIDAndChannelID(ctx context.Cont
 
 	if err := row.Scan(&permissions); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return -1, ErrNotFound
+			return -1, domain.ErrEntityNotFound
 		}
 		return -1, wrapUnknownErr("select channel permissions by user id failed", err)
 	}
@@ -365,7 +366,7 @@ func (r *GuildRoleRepository) AssociateUser(ctx context.Context, roleID string, 
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -387,7 +388,7 @@ func (r *GuildRoleRepository) DisassociateUser(ctx context.Context, roleID strin
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -480,7 +481,7 @@ func (r *GuildRoleRepository) AssociateChannel(ctx context.Context, roleID strin
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -502,7 +503,7 @@ func (r *GuildRoleRepository) DisassociateChannel(ctx context.Context, roleID st
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -577,7 +578,7 @@ func (r *GuildRoleRepository) GetRoleIDsByChannelID(ctx context.Context, channel
 func (r *GuildRoleRepository) GetChannelPermissions(ctx context.Context, channelID string, userID string) (int32, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
-			bit_or(gr.permissions)
+			COALESCE(bit_or(gr.permissions), -1)::int
 		FROM
 			guild_role gr
 		INNER JOIN
@@ -593,7 +594,7 @@ func (r *GuildRoleRepository) GetChannelPermissions(ctx context.Context, channel
 	var permissions int32
 	if err := row.Scan(&permissions); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return -1, ErrNotFound
+			return -1, domain.ErrEntityNotFound
 		}
 		return -1, wrapUnknownErr("select user channel permissions failed", err)
 	}
@@ -604,7 +605,7 @@ func (r *GuildRoleRepository) GetChannelPermissions(ctx context.Context, channel
 func (r *GuildRoleRepository) GetGuildPermissions(ctx context.Context, guildID string, userID string) (int32, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
-			bit_or(gr.permissions)
+			COALESCE(bit_or(gr.permissions), -1)::int
 		FROM
 			guild_role gr
 		INNER JOIN
@@ -618,7 +619,7 @@ func (r *GuildRoleRepository) GetGuildPermissions(ctx context.Context, guildID s
 	var permissions int32
 	if err := row.Scan(&permissions); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return -1, ErrNotFound
+			return -1, domain.ErrEntityNotFound
 		}
 		return -1, wrapUnknownErr("select user guild permissions failed", err)
 	}

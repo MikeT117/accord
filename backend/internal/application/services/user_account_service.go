@@ -40,14 +40,10 @@ func (s *UserAccountService) GetByID(ctx context.Context, ID string) (*query.Use
 	}, nil
 }
 
-func (s *UserAccountService) UpdateUserAccount(ctx context.Context, cmd *command.UpdateUserCommand, requestorID string) error {
+func (s *UserAccountService) UpdateUserAccount(ctx context.Context, cmd *command.UpdateUserCommand) error {
 	user, err := s.userRepository.GetByID(ctx, cmd.ID)
 	if err != nil {
 		return err
-	}
-
-	if user.ID != requestorID {
-		return ErrNotAuthorised
 	}
 
 	if err := user.UpdateDisplayName(cmd.DisplayName); err != nil {

@@ -8,4 +8,5 @@ type UpdateGuildCommand struct {
 	Discoverable    bool
 	IconID          string
 	BannerID        string
+	RequestorID     string
 }

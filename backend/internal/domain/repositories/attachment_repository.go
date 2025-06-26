@@ -14,5 +14,5 @@ type AttachmentRepository interface {
 	GetMapByAssociatedChannelMessageIDs(ctx context.Context, IDs []string) (map[string][]*entities.Attachment, error)
 	Create(ctx context.Context, validatedAttachment *entities.Attachment) error
 	Update(ctx context.Context, attachment *entities.Attachment) error
-	Delete(ctx context.Context, ID string) error
+	Delete(ctx context.Context, ID string, userID string) error
 }

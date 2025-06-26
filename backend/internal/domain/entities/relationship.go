@@ -57,6 +57,10 @@ func (r *Relationship) IsFriend() bool {
 	return r.Status == FRIEND
 }
 
+func (r *Relationship) IsCreator(creatorID string) bool {
+	return r.CreatorID == creatorID
+}
+
 func NewRelationship(creatorID string, status int8, recipientID string) (*Relationship, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {

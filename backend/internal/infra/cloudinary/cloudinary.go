@@ -9,16 +9,16 @@ import (
 )
 
 type CloudinaryUpload struct {
-	CloudinaryEnvironment string
-	CloudinaryAPIKey      string
-	CloudinarySecret      string
+	cloudinaryEnvironment string
+	cloudinaryAPIKey      string
+	cloudinarySecret      string
 }
 
 func NewCloudinaryUpload(environment string, APIKey string, secret string) *CloudinaryUpload {
 	return &CloudinaryUpload{
-		CloudinaryEnvironment: environment,
-		CloudinaryAPIKey:      APIKey,
-		CloudinarySecret:      secret,
+		cloudinaryEnvironment: environment,
+		cloudinaryAPIKey:      APIKey,
+		cloudinarySecret:      secret,
 	}
 }
 
@@ -26,8 +26,8 @@ func (c *CloudinaryUpload) DeleteAttachment(ID string, signature string, unixTim
 	response, err := http.Post(
 		fmt.Sprintf(
 			"https://api.cloudinary.com/v1_1/%s/image/destroy?api_key=%s&signature=%s&timestamp=%d&public_id=%s",
-			c.CloudinaryEnvironment,
-			c.CloudinaryAPIKey,
+			c.cloudinaryEnvironment,
+			c.cloudinaryAPIKey,
 			signature,
 			unixTimestamp,
 			ID,
@@ -54,7 +54,7 @@ func (c *CloudinaryUpload) SignAttachment(ID string, unixTimestamp int64) string
 			fmt.Sprintf("public_id=%s&timestamp=%d%s",
 				ID,
 				unixTimestamp,
-				c.CloudinarySecret,
+				c.cloudinarySecret,
 			),
 		),
 	)

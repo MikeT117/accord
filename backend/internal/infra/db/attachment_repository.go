@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/jackc/pgx/v5"
@@ -48,7 +49,7 @@ func (r *AttachmentRepository) GetByID(ctx context.Context, ID string) (*entitie
 		&attachment.Status,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select attachment by id failed", err)
 	}
@@ -312,26 +313,28 @@ func (r *AttachmentRepository) Update(ctx context.Context, attachment *entities.
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
 }
 
-func (r *AttachmentRepository) Delete(ctx context.Context, ID string) error {
+func (r *AttachmentRepository) Delete(ctx context.Context, ID string, userID string) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			entry_attachment
 		WHERE
-			id = $1;
-	`, ID)
+			id = $1
+		AND
+			owner_id = $2;
+	`, ID, userID)
 
 	if err != nil {
 		return wrapUnknownErr("delete attachment failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil

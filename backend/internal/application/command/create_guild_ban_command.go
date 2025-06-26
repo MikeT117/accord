@@ -1,7 +1,8 @@
 package command
 
 type CreateGuildBanCommand struct {
-	UserID  string
-	GuildID string
-	Reason  string
+	UserID      string
+	GuildID     string
+	Reason      string
+	RequestorID string
 }

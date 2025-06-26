@@ -45,8 +45,8 @@ func (s *GuildBanService) GetByGuildID(ctx context.Context, guildID string, requ
 	}, nil
 }
 
-func (s *GuildBanService) Create(ctx context.Context, cmd *command.CreateGuildBanCommand, requestorID string) error {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+func (s *GuildBanService) Create(ctx context.Context, cmd *command.CreateGuildBanCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return err
 	}
@@ -63,13 +63,13 @@ func (s *GuildBanService) Create(ctx context.Context, cmd *command.CreateGuildBa
 	return nil
 }
 
-func (s *GuildBanService) Delete(ctx context.Context, ID string, guildID string, requestorID string) error {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+func (s *GuildBanService) Delete(ctx context.Context, cmd *command.DeleteGuildBanCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return err
 	}
 
-	if err := s.guildBanRepository.Delete(ctx, ID); err != nil {
+	if err := s.guildBanRepository.Delete(ctx, cmd.UserID, cmd.GuildID); err != nil {
 		return err
 	}
 

@@ -5,11 +5,9 @@ import (
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/domain"
-	"github.com/google/uuid"
 )
 
 type GuildBan struct {
-	ID        string
 	UserID    string
 	GuildID   string
 	Reason    string
@@ -31,14 +29,8 @@ func (u *GuildBan) validate() error {
 }
 
 func NewGuildBan(guildID string, userID string, reason string) (*GuildBan, error) {
-	ID, err := uuid.NewV7()
-	if err != nil {
-		return nil, err
-	}
-
 	timestamp := time.Now().UTC()
 	guildBan := &GuildBan{
-		ID:        ID.String(),
 		UserID:    userID,
 		GuildID:   guildID,
 		Reason:    reason,
@@ -53,7 +45,7 @@ func NewGuildBan(guildID string, userID string, reason string) (*GuildBan, error
 	return guildBan, nil
 }
 
-func (g *GuildBan) Updatereason(reason string) error {
+func (g *GuildBan) UpdateReason(reason string) error {
 	g.Reason = reason
 	g.UpdatedAt = time.Now().UTC()
 	return g.validate()

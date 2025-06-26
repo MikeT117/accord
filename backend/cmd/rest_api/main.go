@@ -5,10 +5,10 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/application/services"
 	"github.com/MikeT117/accord/backend/internal/config"
+	"github.com/MikeT117/accord/backend/internal/infra/cloudinary"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
 	"github.com/MikeT117/accord/backend/internal/infra/oauth"
-
-	rest "github.com/MikeT117/accord/backend/internal/interface/api/REST"
+	"github.com/MikeT117/accord/backend/internal/interface/api/rest"
 )
 
 func main() {
@@ -36,19 +36,22 @@ func main() {
 	voiceStateRepository := db.CreateVoiceStateRepository(dbGetter)
 
 	// OAuth
-	githubOAth := oauth.NewGithubOAuthConfig(config.GithubKey, config.GithubSecret, config.GithubRedirectURL, config.OAuthNonceSecret)
+	githubOAuth := oauth.NewGithubOAuthConfig(config.GithubKey, config.GithubSecret, config.GithubRedirectURL, config.OAuthNonceSecret)
+
+	// Cloudinary
+	cloudinaryUpload := cloudinary.NewCloudinaryUpload(config.CloudinaryEnv, config.CloudinaryAPIKey, config.CloudinarySecret)
 
 	// Services
 	authorisationService := services.CreateAuthorisationService(guildRoleRepository, channelRepository, guildMemberRepository, relationshipRepository)
-	authenticationService := services.CreateAuthenticationService(transactor, githubOAth, userRepository, accountRepository)
-	attachmentService := services.CreateAttachmentService(transactor, attachmentRepository)
+	authenticationService := services.CreateAuthenticationService(transactor, githubOAuth, userRepository, accountRepository)
+	attachmentService := services.CreateAttachmentService(transactor, cloudinaryUpload, attachmentRepository)
 	accountService := services.CreateUserAccountService(transactor, accountRepository, userRepository)
 	channelMessageService := services.CreateChannelMessageService(transactor, authorisationService, channelMessageRepository, channelRepository, userRepository, guildMemberRepository, guildRoleRepository, attachmentRepository)
 	channelService := services.CreateChannelService(transactor, authorisationService, channelRepository, guildRoleRepository, userRepository)
 	guildBanService := services.CreateGuildBanService(transactor, authorisationService, guildMemberRepository, guildBanRepository)
 	guildCategoryService := services.CreateGuildCategoryService(transactor, authorisationService, guildCategoryRepository)
 	guildInviteService := services.CreateGuildInviteService(transactor, authorisationService, guildInviteRepository, guildRepository)
-	guildMemberService := services.CreateGuildMemberService(transactor, authorisationService, guildMemberRepository, guildRoleRepository, guildRepository, guildInviteRepository)
+	guildMemberService := services.CreateGuildMemberService(transactor, authorisationService, userRepository, guildMemberRepository, guildRoleRepository, guildRepository, guildInviteRepository)
 	guildService := services.CreateGuildService(transactor, authorisationService, guildRepository, guildMemberRepository, guildRoleRepository, channelRepository)
 	guildRoleService := services.CreateGuildRoleService(transactor, authorisationService, guildRoleRepository, guildMemberRepository)
 	relationshipService := services.CreateRelationshipService(transactor, authorisationService, relationshipRepository, userRepository)
@@ -56,5 +59,5 @@ func main() {
 	voiceStateService := services.CreateVoiceStateService(transactor, authorisationService, voiceStateRepository, userRepository)
 
 	// Rest API
-	rest.CreateControllers(config, authenticationService, attachmentService, authorisationService, channelMessageService, channelService, guildBanService, guildCategoryService, guildInviteService, guildMemberService, guildRoleService, guildService, relationshipService, sessionService, accountService, voiceStateService)
+	rest.CreateRouter(config, authenticationService, attachmentService, authorisationService, channelMessageService, channelService, guildBanService, guildCategoryService, guildInviteService, guildMemberService, guildRoleService, guildService, relationshipService, sessionService, accountService, voiceStateService)
 }

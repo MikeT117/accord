@@ -12,7 +12,6 @@ type ChannelMessageResult struct {
 	GuildID     *string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
-	User        *UserResult
-	GuildMember *GuildMemberResult
+	Author      *ChannelMessageAuthorResult
 	Attachments []*AttachmentResult
 }

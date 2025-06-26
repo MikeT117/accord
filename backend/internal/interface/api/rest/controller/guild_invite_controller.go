@@ -1,0 +1,113 @@
+package controller
+
+import (
+	"net/http"
+
+	"github.com/MikeT117/accord/backend/internal/application/interfaces"
+	"github.com/MikeT117/accord/backend/internal/interface/api/authentication"
+	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/mapper"
+	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/request"
+	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/response"
+
+	"github.com/labstack/echo/v4"
+)
+
+type GuildInviteController struct {
+	guildInviteService interfaces.GuildInviteService
+}
+
+func NewGuildInviteController(
+	baseGroup *echo.Group,
+	guildInviteService interfaces.GuildInviteService,
+) *GuildInviteController {
+	controller := &GuildInviteController{
+		guildInviteService: guildInviteService,
+	}
+
+	baseGroup.GET("/invites/:inviteID", controller.getInvite)
+
+	subGroup := baseGroup.Group("/guilds/:guildID/invites")
+	subGroup.GET("", controller.getInvites)
+	subGroup.POST("", controller.createInvite)
+	subGroup.DELETE("/:guildID", controller.deleteInvite)
+
+	return controller
+}
+
+func (c *GuildInviteController) getInvite(ctx echo.Context) error {
+	var payload request.QueryGuildInviteRequest
+	if err := ctx.Bind(&payload); err != nil {
+		return response.ErrorResponse(ctx, http.StatusBadRequest, nil)
+	}
+
+	requestorID, _ := authentication.GetRequestorDetails(ctx)
+	qry, err := payload.ToGuildInviteQuery(requestorID)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	channelMessages, err := c.guildInviteService.GetByID(ctx.Request().Context(), qry)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildInviteResponse(channelMessages.Result))
+}
+
+func (c *GuildInviteController) getInvites(ctx echo.Context) error {
+	var payload request.QueryGuildInvitesRequest
+	if err := ctx.Bind(&payload); err != nil {
+		return response.ErrorResponse(ctx, http.StatusBadRequest, nil)
+	}
+
+	requestorID, _ := authentication.GetRequestorDetails(ctx)
+	qry, err := payload.ToGuildInvitesQuery(requestorID)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	channelMessages, err := c.guildInviteService.GetByGuildID(ctx.Request().Context(), qry)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildInvitesResponse(channelMessages.Result))
+}
+
+func (c *GuildInviteController) createInvite(ctx echo.Context) error {
+	var payload request.CreateGuildInviteRequest
+	if err := ctx.Bind(&payload); err != nil {
+		return response.ErrorResponse(ctx, http.StatusBadRequest, nil)
+	}
+
+	requestorID, _ := authentication.GetRequestorDetails(ctx)
+	cmd, err := payload.ToCreateGuildInviteCommand(requestorID)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	if err := c.guildInviteService.Create(ctx.Request().Context(), cmd); err != nil {
+		return handleError(ctx, err)
+	}
+
+	return response.NoContentResponse(ctx)
+}
+
+func (c *GuildInviteController) deleteInvite(ctx echo.Context) error {
+	var payload request.DeleteGuildInviteRequest
+	if err := ctx.Bind(&payload); err != nil {
+		return response.ErrorResponse(ctx, http.StatusBadRequest, nil)
+	}
+
+	requestorID, _ := authentication.GetRequestorDetails(ctx)
+	cmd, err := payload.ToDeleteGuildInviteCommand(requestorID)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	if err := c.guildInviteService.Delete(ctx.Request().Context(), cmd); err != nil {
+		return handleError(ctx, err)
+	}
+
+	return response.NoContentResponse(ctx)
+}

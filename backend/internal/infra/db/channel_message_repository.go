@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/jackc/pgx/v5"
@@ -49,7 +50,7 @@ func (r *ChannelMessageRepository) GetByID(ctx context.Context, ID string) (*ent
 		&channelMessage.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select channel message by id failed", err)
 	}
@@ -244,7 +245,7 @@ func (r *ChannelMessageRepository) Update(ctx context.Context, channelMessage *e
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -262,7 +263,7 @@ func (r *ChannelMessageRepository) Delete(ctx context.Context, ID string) error 
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -283,7 +284,7 @@ func (r *ChannelMessageRepository) AssociateAttachment(ctx context.Context, chan
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -303,7 +304,7 @@ func (r *ChannelMessageRepository) DisassociateAttachment(ctx context.Context, c
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil

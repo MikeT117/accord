@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/jackc/pgx/v5"
@@ -44,7 +45,7 @@ func (r *RelationshipRepository) GetByID(ctx context.Context, ID string) (*entit
 		&relationship.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select relationship by id failed", err)
 	}
@@ -206,26 +207,28 @@ func (r *RelationshipRepository) Update(ctx context.Context, relationship *entit
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return err
 }
 
-func (r *RelationshipRepository) Delete(ctx context.Context, ID string) error {
+func (r *RelationshipRepository) Delete(ctx context.Context, ID string, creatorID string) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				user_relationship
 			WHERE
-				id = $1;
-		`, ID)
+				id = $1
+			AND
+				creator_id = $2;
+		`, ID, creatorID)
 
 	if err != nil {
 		return wrapUnknownErr("delete relationship failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return err

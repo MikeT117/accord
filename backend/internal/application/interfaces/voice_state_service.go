@@ -9,7 +9,7 @@ import (
 
 type VoiceStateService interface {
 	GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.VoiceStateQueryListResult, error)
-	Create(ctx context.Context, cmd *command.CreateVoiceStateCommand, requestorID string) error
-	Update(ctx context.Context, cmd *command.UpdateVoiceStateCommand, guildID string, requestorID string) error
-	Delete(ctx context.Context, ID string, requestorID string) error
+	Create(ctx context.Context, cmd *command.CreateVoiceStateCommand) error
+	Update(ctx context.Context, cmd *command.UpdateVoiceStateCommand) error
+	Delete(ctx context.Context, cmd *command.DeleteVoiceStateCommand) error
 }

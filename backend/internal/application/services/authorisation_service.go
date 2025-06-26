@@ -24,15 +24,20 @@ func CreateAuthorisationService(guildRoleRepository repositories.GuildRoleReposi
 	}
 }
 
-func (s *AuthorisationService) VerifyFriendRelationships(ctx context.Context, userID string, userIDs []string) error {
-	relationships, err := s.RelationshipRepository.GetByUserIDAndUserIDs(ctx, userID, userIDs)
+func (s *AuthorisationService) VerifyRelationships(ctx context.Context, requestorID string, userIDs []string, isBlocked bool, isFriend bool, isPending bool) error {
+	relationships, err := s.RelationshipRepository.GetByUserIDAndUserIDs(ctx, requestorID, userIDs)
 
 	if len(relationships) != len(userIDs) {
 		return ErrNotAuthorised
 	}
 
 	for _, relationship := range relationships {
-		if !relationship.IsFriend() {
+		switch {
+		case !isBlocked && relationship.IsBlocked():
+			return ErrNotAuthorised
+		case isPending && !relationship.IsPending():
+			return ErrNotAuthorised
+		case isFriend && !relationship.IsFriend():
 			return ErrNotAuthorised
 		}
 	}
@@ -44,15 +49,20 @@ func (s *AuthorisationService) VerifyFriendRelationships(ctx context.Context, us
 	return nil
 }
 
-func (s *AuthorisationService) VerifyNotBlockedRelationships(ctx context.Context, userID string, userIDs []string) error {
-	relationships, err := s.RelationshipRepository.GetByUserIDAndUserIDs(ctx, userID, userIDs)
+func (s *AuthorisationService) VerifyRelationship(ctx context.Context, requestorID string, userID string, isBlocked bool, isFriend bool, isPending bool) error {
+	relationships, err := s.RelationshipRepository.GetByUserIDAndUserIDs(ctx, requestorID, []string{userID})
 
-	if len(relationships) != len(userIDs) {
+	if len(relationships) != 1 {
 		return ErrNotAuthorised
 	}
 
 	for _, relationship := range relationships {
-		if relationship.IsBlocked() {
+		switch {
+		case !isBlocked && relationship.IsBlocked():
+			return ErrNotAuthorised
+		case isPending && !relationship.IsPending():
+			return ErrNotAuthorised
+		case isFriend && !relationship.IsFriend():
 			return ErrNotAuthorised
 		}
 	}
@@ -64,8 +74,8 @@ func (s *AuthorisationService) VerifyNotBlockedRelationships(ctx context.Context
 	return nil
 }
 
-func (s *AuthorisationService) VerifyGuildMember(ctx context.Context, guildID, userID string) error {
-	_, err := s.guildMemberRepository.GetByID(ctx, userID, guildID)
+func (s *AuthorisationService) VerifyGuildMember(ctx context.Context, guildID, requestorID string) error {
+	_, err := s.guildMemberRepository.GetByID(ctx, requestorID, guildID)
 
 	if err != nil {
 		if domain.IsDomainNotFoundErr(err) {
@@ -78,8 +88,8 @@ func (s *AuthorisationService) VerifyGuildMember(ctx context.Context, guildID, u
 	return nil
 }
 
-func (s *AuthorisationService) VerifyChannelMember(ctx context.Context, channelID, userID string) error {
-	_, err := s.channelRepository.GetUserChannelPermission(ctx, channelID, userID)
+func (s *AuthorisationService) VerifyChannelMember(ctx context.Context, channelID, requestorID string) error {
+	_, err := s.channelRepository.GetUserChannelPermission(ctx, channelID, requestorID)
 	if err != nil {
 		if domain.IsDomainNotFoundErr(err) {
 			return ErrNotAuthorised
@@ -91,8 +101,8 @@ func (s *AuthorisationService) VerifyChannelMember(ctx context.Context, channelI
 	return nil
 }
 
-func (s *AuthorisationService) VerifyUserGuildPermission(ctx context.Context, guildID string, userID string, permissionOffset int) error {
-	permissions, err := s.guildRoleRepository.GetGuildPermissions(ctx, guildID, userID)
+func (s *AuthorisationService) VerifyUserGuildPermission(ctx context.Context, guildID string, requestorID string, permissionOffset int) error {
+	permissions, err := s.guildRoleRepository.GetGuildPermissions(ctx, guildID, requestorID)
 
 	if err != nil {
 		if domain.IsDomainNotFoundErr(err) {
@@ -101,24 +111,25 @@ func (s *AuthorisationService) VerifyUserGuildPermission(ctx context.Context, gu
 		return err
 	}
 
-	if permissions&(1<<permissionOffset) == 0 {
+	if permissions == -1 || permissions&(1<<permissionOffset) == 0 {
 		return ErrNotAuthorised
 	}
 
 	return nil
 }
 
-func (s *AuthorisationService) VerifyUserChannelPermission(ctx context.Context, channelID string, userID string, permissionOffset int) error {
-	permissions, err := s.guildRoleRepository.GetChannelPermissions(ctx, channelID, userID)
+func (s *AuthorisationService) VerifyUserChannelPermission(ctx context.Context, channelID string, requestorID string, permissionOffset int) error {
+	permissions, err := s.guildRoleRepository.GetChannelPermissions(ctx, channelID, requestorID)
+
 	if err == nil {
-		if permissions&(1<<permissionOffset) == 0 {
+		if permissions == -1 || permissions&(1<<permissionOffset) == 0 {
 			return ErrNotAuthorised
 		}
 		return nil
 	}
 
 	if domain.IsDomainNotFoundErr(err) {
-		if _, err := s.channelRepository.GetUserChannelPermission(ctx, channelID, userID); err != nil {
+		if _, err := s.channelRepository.GetUserChannelPermission(ctx, channelID, requestorID); err != nil {
 			if domain.IsDomainNotFoundErr(err) {
 				return ErrNotAuthorised
 			}

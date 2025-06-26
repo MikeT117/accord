@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/jackc/pgx/v5"
@@ -56,7 +57,7 @@ func (r *UserRepository) GetByID(ctx context.Context, ID string) (*entities.User
 		&user.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select user by id failed", err)
 	}
@@ -102,7 +103,7 @@ func (r *UserRepository) GetByAccountID(ctx context.Context, accountID string) (
 		&user.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select user by account id failed", err)
 	}
@@ -251,7 +252,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*entitie
 		&user.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select user by email failed", err)
 	}
@@ -331,7 +332,7 @@ func (r *UserRepository) Update(ctx context.Context, user *entities.User) error 
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil

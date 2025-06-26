@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/jackc/pgx/v5"
@@ -18,7 +19,7 @@ func CreateGuildMemberRepository(db DBGetter) repositories.GuildMemberRepository
 	return &GuildMemberRepository{db: db}
 }
 
-func (r *GuildMemberRepository) GetByID(ctx context.Context, ID string, guildID string) (*entities.GuildMember, error) {
+func (r *GuildMemberRepository) GetByID(ctx context.Context, userID string, guildID string) (*entities.GuildMember, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			user_id,
@@ -34,7 +35,7 @@ func (r *GuildMemberRepository) GetByID(ctx context.Context, ID string, guildID 
 			user_id = $1
 		AND
 			guild_id = $2;
-	`, ID, guildID)
+	`, userID, guildID)
 
 	guildMember := &entities.GuildMember{}
 	if err := row.Scan(
@@ -47,7 +48,7 @@ func (r *GuildMemberRepository) GetByID(ctx context.Context, ID string, guildID 
 		&guildMember.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select guild member by id failed", err)
 	}
@@ -286,26 +287,28 @@ func (r *GuildMemberRepository) Update(ctx context.Context, guildMember *entitie
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
 }
 
-func (r *GuildMemberRepository) Delete(ctx context.Context, ID string) error {
+func (r *GuildMemberRepository) Delete(ctx context.Context, userID string, guildID string) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				guild_member
 			WHERE
-				id = $1
-		`, ID)
+				user_id = $1
+			AND 
+				guild_id = $2
+		`, userID, guildID)
 
 	if err != nil {
 		return wrapUnknownErr("delete guild member failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil

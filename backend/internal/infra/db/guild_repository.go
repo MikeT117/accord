@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/jackc/pgx/v5"
@@ -54,7 +55,7 @@ func (r *GuildRepository) GetByID(ctx context.Context, ID string) (*entities.Gui
 		&guild.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select guild by id failed", err)
 	}
@@ -190,7 +191,7 @@ func (r *GuildRepository) Update(ctx context.Context, guild *entities.Guild) err
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -209,7 +210,7 @@ func (r *GuildRepository) Delete(ctx context.Context, ID string) error {
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil

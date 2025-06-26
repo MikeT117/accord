@@ -6,8 +6,7 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("entity not found")
-	ErrUnknown  = errors.New("unknown error")
+	ErrUnknown = errors.New("unknown error")
 )
 
 func wrapUnknownErr(msg string, err error) error {

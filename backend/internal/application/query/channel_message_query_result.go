@@ -1,6 +1,23 @@
 package query
 
-import "github.com/MikeT117/accord/backend/internal/application/common"
+import (
+	"time"
+
+	"github.com/MikeT117/accord/backend/internal/application/common"
+)
+
+type ChannelMessagesQuery struct {
+	ChannelID   string
+	Pinned      bool
+	Before      time.Time
+	RequestorID string
+}
+
+type ChannelMessageQuery struct {
+	ID          string
+	ChannelID   string
+	RequestorID string
+}
 
 type ChannelMessageQueryResult struct {
 	Result *common.ChannelMessageResult

@@ -5,4 +5,5 @@ type CreateChannelMessageCommand struct {
 	AuthorID      string
 	ChannelID     string
 	AttachmentIDs []string
+	RequestorID   string
 }

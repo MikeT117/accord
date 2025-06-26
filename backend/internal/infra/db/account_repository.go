@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/jackc/pgx/v5"
@@ -52,7 +53,7 @@ func (r *AccountRepository) GetByID(ctx context.Context, ID string) (*entities.A
 		&account.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select account by id failed", err)
 	}
@@ -94,7 +95,7 @@ func (r *AccountRepository) GetByUserID(ctx context.Context, userID string) (*en
 		&account.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select account by user id failed", err)
 	}
@@ -137,7 +138,7 @@ func (r *AccountRepository) GetByProviderID(ctx context.Context, ID string) (*en
 		&account.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select account by provider id failed", err)
 	}
@@ -217,7 +218,7 @@ func (r *AccountRepository) Update(ctx context.Context, validatedAccount *entiti
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -237,7 +238,7 @@ func (r *AccountRepository) Delete(ctx context.Context, ID string) error {
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil

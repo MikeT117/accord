@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 )
@@ -18,7 +19,6 @@ func CreateGuildBanRepository(db DBGetter) repositories.GuildBanRepository {
 func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildBan, []string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
-		id,
 			user_id,
 			guild_id,
 			reason,
@@ -42,7 +42,6 @@ func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID string) (
 		var userID string
 
 		if err := rows.Scan(
-			&guildBan.ID,
 			&guildBan.UserID,
 			&guildBan.GuildID,
 			&guildBan.Reason,
@@ -63,7 +62,6 @@ func (r *GuildBanRepository) Create(ctx context.Context, guildBan *entities.Guil
 	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
 			guild_bans(
-				id,
 				user_id,
 				guild_id,
 				reason,
@@ -71,7 +69,7 @@ func (r *GuildBanRepository) Create(ctx context.Context, guildBan *entities.Guil
 				updated_at
 			)
 		VALUES ($1, $2, $3, $4, $5);
-	`, guildBan.ID, guildBan.UserID, guildBan.GuildID, guildBan.Reason, guildBan.CreatedAt, guildBan.UpdatedAt)
+	`, guildBan.UserID, guildBan.GuildID, guildBan.Reason, guildBan.CreatedAt, guildBan.UpdatedAt)
 
 	if err != nil {
 		return wrapUnknownErr("insert guild ban failed", err)
@@ -80,20 +78,22 @@ func (r *GuildBanRepository) Create(ctx context.Context, guildBan *entities.Guil
 	return nil
 }
 
-func (r *GuildBanRepository) Delete(ctx context.Context, ID string) error {
+func (r *GuildBanRepository) Delete(ctx context.Context, userID string, guildID string) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			guild_bans
 		WHERE
-			id = $1;
-	`, ID)
+			user_id = $1
+		AND
+			guild_id = $2;
+	`, userID, guildID)
 
 	if err != nil {
 		return wrapUnknownErr("delete guild ban failed", err)
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil

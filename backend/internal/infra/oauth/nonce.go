@@ -43,7 +43,7 @@ func (o *OAuth) ValidateNonce(nonce string) error {
 		return ErrInvalidNonce
 	}
 
-	if time.Since(time.Unix(nonceTimestampInt, 0)) < 30*time.Second {
+	if time.Since(time.Unix(nonceTimestampInt, 0)) > 15*time.Second {
 		return ErrInvalidNonce
 	}
 

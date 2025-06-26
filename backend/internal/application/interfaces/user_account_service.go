@@ -9,5 +9,5 @@ import (
 
 type UserAccountService interface {
 	GetByID(ctx context.Context, ID string) (*query.UserQueryResult, error)
-	UpdateUserAccount(ctx context.Context, cmd *command.UpdateUserCommand, requestorID string) error
+	UpdateUserAccount(ctx context.Context, cmd *command.UpdateUserCommand) error
 }

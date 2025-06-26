@@ -13,5 +13,4 @@ type SessionRepository interface {
 	Create(ctx context.Context, validatedSession *entities.Session) error
 	Update(ctx context.Context, validatedSession *entities.Session) error
 	DeleteByID(ctx context.Context, ID string, userID string) error
-	DeleteByToken(ctx context.Context, token string, userID string) error
 }

@@ -16,16 +16,18 @@ import (
 type GuildMemberService struct {
 	transactor            *db.Transactor
 	authorisationService  interfaces.AuthorisationService
+	userRepository        repositories.UserRepository
 	guildRepository       repositories.GuildRepository
 	guildMemberRepository repositories.GuildMemberRepository
 	guildRoleRepository   repositories.GuildRoleRepository
 	guildInviteRepository repositories.GuildInviteRepository
 }
 
-func CreateGuildMemberService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, guildMemberRepository repositories.GuildMemberRepository, guildRoleRepository repositories.GuildRoleRepository, guildRepository repositories.GuildRepository, guildInviteRepository repositories.GuildInviteRepository) interfaces.GuildMemberService {
+func CreateGuildMemberService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, userRepository repositories.UserRepository, guildMemberRepository repositories.GuildMemberRepository, guildRoleRepository repositories.GuildRoleRepository, guildRepository repositories.GuildRepository, guildInviteRepository repositories.GuildInviteRepository) interfaces.GuildMemberService {
 	return &GuildMemberService{
 		transactor:            transactor,
 		authorisationService:  authorisationService,
+		userRepository:        userRepository,
 		guildRepository:       guildRepository,
 		guildMemberRepository: guildMemberRepository,
 		guildRoleRepository:   guildRoleRepository,
@@ -33,13 +35,18 @@ func CreateGuildMemberService(transactor *db.Transactor, authorisationService in
 	}
 }
 
-func (s *GuildMemberService) GetByID(ctx context.Context, ID string, guildID string, requestorID string) (*query.GuildMemberQueryResult, error) {
-	err := s.authorisationService.VerifyGuildMember(ctx, guildID, requestorID)
+func (s *GuildMemberService) GetByID(ctx context.Context, qry *query.GuildMemberQuery) (*query.GuildMemberQueryResult, error) {
+	err := s.authorisationService.VerifyGuildMember(ctx, qry.GuildID, qry.RequestorID)
 	if err != nil {
 		return nil, err
 	}
 
-	guildMember, err := s.guildMemberRepository.GetByID(ctx, ID, guildID)
+	guildMember, err := s.guildMemberRepository.GetByID(ctx, qry.UserID, qry.GuildID)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := s.userRepository.GetByID(ctx, guildMember.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -50,28 +57,33 @@ func (s *GuildMemberService) GetByID(ctx context.Context, ID string, guildID str
 	}
 
 	return &query.GuildMemberQueryResult{
-		Result: mapper.NewGuildMemberResultFromGuildMember(guildMember, guildMemberRoles),
+		Result: mapper.NewGuildMemberUserResultFromGuildMember(guildMember, guildMemberRoles, user),
 	}, nil
 }
 
-func (s *GuildMemberService) GetByGuildID(ctx context.Context, guildID string, before time.Time, requestorID string) (*query.GuildMemberQueryListResult, error) {
-	err := s.authorisationService.VerifyGuildMember(ctx, guildID, requestorID)
+func (s *GuildMemberService) GetByGuildID(ctx context.Context, qry *query.GuildMembersQuery) (*query.GuildMemberQueryListResult, error) {
+	err := s.authorisationService.VerifyGuildMember(ctx, qry.GuildID, qry.RequestorID)
 	if err != nil {
 		return nil, err
 	}
 
-	guildMembers, guildMemberIDs, err := s.guildMemberRepository.GetByGuildID(ctx, guildID, before, 50)
+	guildMembers, guildMemberIDs, err := s.guildMemberRepository.GetByGuildID(ctx, qry.GuildID, qry.Before, 50)
 	if err != nil {
 		return nil, err
 	}
 
-	guildMembersRoles, err := s.guildRoleRepository.GetMapRoleIDsByUserIDs(ctx, guildMemberIDs)
+	usersMap, err := s.userRepository.GetMapByIDs(ctx, guildMemberIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	guildMembersRolesMap, err := s.guildRoleRepository.GetMapRoleIDsByUserIDs(ctx, guildMemberIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	return &query.GuildMemberQueryListResult{
-		Result: mapper.NewGuildMemberListResultFromGuildMember(guildMembers, guildMembersRoles),
+		Result: mapper.NewGuildMemberUserListResultFromGuildMember(guildMembers, guildMembersRolesMap, usersMap),
 	}, nil
 }
 
@@ -123,13 +135,13 @@ func (s *GuildMemberService) Create(ctx context.Context, cmd *command.CreateGuil
 
 }
 
-func (s *GuildMemberService) Update(ctx context.Context, cmd *command.UpdateGuildMemberCommand, requestorID string) error {
+func (s *GuildMemberService) Update(ctx context.Context, cmd *command.UpdateGuildMemberCommand) error {
 	guildMember, err := s.guildMemberRepository.GetByID(ctx, cmd.UserID, cmd.GuildID)
 	if err != nil {
 		return err
 	}
 
-	if !guildMember.IsOwner(requestorID) {
+	if !guildMember.IsOwner(cmd.RequestorID) {
 		return ErrNotAuthorised
 	}
 
@@ -152,20 +164,20 @@ func (s *GuildMemberService) Update(ctx context.Context, cmd *command.UpdateGuil
 	return nil
 }
 
-func (s *GuildMemberService) Delete(ctx context.Context, ID string, guildID string, requestorID string) error {
-	guildMember, err := s.guildMemberRepository.GetByID(ctx, ID, guildID)
+func (s *GuildMemberService) Delete(ctx context.Context, cmd *command.DeleteGuildMemberCommand) error {
+	guildMember, err := s.guildMemberRepository.GetByID(ctx, cmd.UserID, cmd.GuildID)
 	if err != nil {
 		return err
 	}
 
-	if !guildMember.IsOwner(requestorID) {
-		err := s.authorisationService.VerifyGuildMember(ctx, guildID, requestorID)
+	if !guildMember.IsOwner(cmd.RequestorID) {
+		err := s.authorisationService.VerifyGuildMember(ctx, cmd.GuildID, cmd.RequestorID)
 		if err != nil {
 			return err
 		}
 	}
 
-	if err := s.guildMemberRepository.Delete(ctx, ID); err != nil {
+	if err := s.guildMemberRepository.Delete(ctx, cmd.UserID, cmd.GuildID); err != nil {
 		return err
 	}
 

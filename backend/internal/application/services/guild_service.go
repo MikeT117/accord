@@ -137,8 +137,8 @@ func (s *GuildService) Create(ctx context.Context, cmd *command.CreateGuildComma
 	})
 }
 
-func (s *GuildService) Update(ctx context.Context, cmd *command.UpdateGuildCommand, requestorID string) error {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.ID, requestorID, constants.GUILD_OWNER_PERMISSION)
+func (s *GuildService) Update(ctx context.Context, cmd *command.UpdateGuildCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.ID, cmd.RequestorID, constants.GUILD_OWNER_PERMISSION)
 	if err != nil {
 		return err
 	}
@@ -174,20 +174,20 @@ func (s *GuildService) Update(ctx context.Context, cmd *command.UpdateGuildComma
 	return nil
 }
 
-func (s *GuildService) Delete(ctx context.Context, ID string, requestorID string) error {
-	guild, err := s.guildRepository.GetByID(ctx, ID)
+func (s *GuildService) Delete(ctx context.Context, cmd *command.DeleteGuildCommand) error {
+	guild, err := s.guildRepository.GetByID(ctx, cmd.ID)
 	if err != nil {
 		return err
 	}
 
-	if !guild.IsOwner(requestorID) {
-		err := s.authorisationService.VerifyUserGuildPermission(ctx, ID, requestorID, constants.GUILD_OWNER_PERMISSION)
+	if !guild.IsOwner(cmd.RequestorID) {
+		err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.ID, cmd.RequestorID, constants.GUILD_OWNER_PERMISSION)
 		if err != nil {
 			return err
 		}
 	}
 
-	if err := s.guildRepository.Delete(ctx, ID); err != nil {
+	if err := s.guildRepository.Delete(ctx, cmd.ID); err != nil {
 		return err
 	}
 

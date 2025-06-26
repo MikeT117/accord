@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"time"
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
 	"github.com/MikeT117/accord/backend/internal/application/common"
@@ -40,13 +39,13 @@ func CreateChannelMessageService(transactor *db.Transactor, authorisationService
 	}
 }
 
-func (s *ChannelMessageService) GetByID(ctx context.Context, ID string, channelID string, requestorID string) (*query.ChannelMessageQueryResult, error) {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, channelID, requestorID, constants.VIEW_GUILD_CHANNEL_PERMISSION)
+func (s *ChannelMessageService) GetByID(ctx context.Context, qry *query.ChannelMessageQuery) (*query.ChannelMessageQueryResult, error) {
+	err := s.authorisationService.VerifyUserChannelPermission(ctx, qry.ChannelID, qry.RequestorID, constants.VIEW_GUILD_CHANNEL_PERMISSION)
 	if err != nil {
 		return nil, err
 	}
 
-	channelMessage, err := s.channelMessageRepository.GetByID(ctx, ID)
+	channelMessage, err := s.channelMessageRepository.GetByID(ctx, qry.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +60,7 @@ func (s *ChannelMessageService) GetByID(ctx context.Context, ID string, channelI
 		return nil, err
 	}
 
-	channel, err := s.channelRepository.GetByID(ctx, channelID)
+	channel, err := s.channelRepository.GetByID(ctx, qry.ChannelID)
 	if err != nil {
 		return nil, err
 	}
@@ -79,13 +78,13 @@ func (s *ChannelMessageService) GetByID(ctx context.Context, ID string, channelI
 	}, nil
 }
 
-func (s *ChannelMessageService) GetByChannelID(ctx context.Context, channelID string, pinned bool, before time.Time, requestorID string) (*query.ChannelMessageQueryListResult, error) {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, channelID, requestorID, constants.VIEW_GUILD_CHANNEL_PERMISSION)
+func (s *ChannelMessageService) GetByChannelID(ctx context.Context, qry *query.ChannelMessagesQuery) (*query.ChannelMessageQueryListResult, error) {
+	err := s.authorisationService.VerifyUserChannelPermission(ctx, qry.ChannelID, qry.RequestorID, constants.VIEW_GUILD_CHANNEL_PERMISSION)
 	if err != nil {
 		return nil, err
 	}
 
-	channelMessage, channelMessageIDs, authorIDs, err := s.channelMessageRepository.GetByChannelID(ctx, channelID, pinned, before, 50)
+	channelMessage, channelMessageIDs, authorIDs, err := s.channelMessageRepository.GetByChannelID(ctx, qry.ChannelID, qry.Pinned, qry.Before, 50)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +105,7 @@ func (s *ChannelMessageService) GetByChannelID(ctx context.Context, channelID st
 		return nil, err
 	}
 
-	channel, err := s.channelRepository.GetByID(ctx, channelID)
+	channel, err := s.channelRepository.GetByID(ctx, qry.ChannelID)
 	if err != nil {
 		return nil, err
 	}
@@ -128,8 +127,8 @@ func (s *ChannelMessageService) GetByChannelID(ctx context.Context, channelID st
 
 }
 
-func (s *ChannelMessageService) Create(ctx context.Context, cmd *command.CreateChannelMessageCommand, requestorID string) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, requestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
+func (s *ChannelMessageService) Create(ctx context.Context, cmd *command.CreateChannelMessageCommand) error {
+	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
 	if err != nil {
 		return err
 	}
@@ -141,7 +140,7 @@ func (s *ChannelMessageService) Create(ctx context.Context, cmd *command.CreateC
 		}
 
 		for _, attachment := range attachments {
-			if attachment.OwnerID != requestorID {
+			if attachment.OwnerID != cmd.RequestorID {
 				return ErrNotAuthorised
 			}
 		}
@@ -166,8 +165,8 @@ func (s *ChannelMessageService) Create(ctx context.Context, cmd *command.CreateC
 		return nil
 	})
 }
-func (s *ChannelMessageService) Update(ctx context.Context, cmd *command.UpdateChannelMessageCommand, requestorID string) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, requestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
+func (s *ChannelMessageService) Update(ctx context.Context, cmd *command.UpdateChannelMessageCommand) error {
+	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
 	if err != nil {
 		return err
 	}
@@ -177,7 +176,7 @@ func (s *ChannelMessageService) Update(ctx context.Context, cmd *command.UpdateC
 		return err
 	}
 
-	if !channelMessage.IsAuthor(cmd.AuthorID) {
+	if !channelMessage.IsAuthor(cmd.RequestorID) {
 		return ErrNotAuthorised
 	}
 
@@ -192,8 +191,8 @@ func (s *ChannelMessageService) Update(ctx context.Context, cmd *command.UpdateC
 	return nil
 }
 
-func (s *ChannelMessageService) Delete(ctx context.Context, cmd *command.DeleteChannelMessageCommand, requestorID string) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, requestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
+func (s *ChannelMessageService) Delete(ctx context.Context, cmd *command.DeleteChannelMessageCommand) error {
+	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
 	if err != nil {
 		return err
 	}
@@ -203,7 +202,7 @@ func (s *ChannelMessageService) Delete(ctx context.Context, cmd *command.DeleteC
 		return err
 	}
 
-	if !channelMessage.IsAuthor(requestorID) {
+	if !channelMessage.IsAuthor(cmd.RequestorID) {
 		return ErrNotAuthorised
 	}
 

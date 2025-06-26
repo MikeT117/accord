@@ -1,7 +1,9 @@
 package command
 
 type UpdateVoiceStateCommand struct {
-	ID       string
-	SelfDeaf bool
-	SelfMute bool
+	ID          string
+	GuildID     string
+	RequestorID string
+	SelfDeaf    bool
+	SelfMute    bool
 }

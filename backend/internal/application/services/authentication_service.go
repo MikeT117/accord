@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/command"
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/application/mapper"
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
@@ -59,7 +60,7 @@ func (s *AuthenticationService) GetOrCreateGithubAccountUser(
 		}, nil
 	}
 
-	if !errors.Is(err, db.ErrNotFound) {
+	if !errors.Is(err, domain.ErrEntityNotFound) {
 		return nil, err
 	}
 

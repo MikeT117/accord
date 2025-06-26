@@ -28,6 +28,14 @@ func CreateRelationshipService(transactor *db.Transactor, authorisationService i
 	}
 }
 
+type RelationshipQuery struct {
+	ID     string
+	UserID string
+}
+type RelationshipsQuery struct {
+	UserID string
+}
+
 func (s *RelationshipService) GetByID(ctx context.Context, ID string, userID string) (*query.RelationshipQueryResult, error) {
 	relationship, err := s.relationshipRepository.GetByID(ctx, ID)
 	if err != nil {
@@ -84,13 +92,17 @@ func (s *RelationshipService) Create(ctx context.Context, cmd *command.CreateRel
 	return nil
 }
 
-func (s *RelationshipService) Update(ctx context.Context, ID string, status int8) error {
-	relationship, err := s.relationshipRepository.GetByID(ctx, ID)
+func (s *RelationshipService) Update(ctx context.Context, cmd *command.UpdateRelationshipCommand) error {
+	relationship, err := s.relationshipRepository.GetByID(ctx, cmd.ID)
 	if err != nil {
 		return err
 	}
 
-	if err := relationship.Updatestatus(status); err != nil {
+	if relationship.IsPending() && relationship.IsCreator(cmd.RequestorID) {
+		return ErrNotAuthorised
+	}
+
+	if err := relationship.Updatestatus(cmd.Status); err != nil {
 		return err
 	}
 
@@ -101,10 +113,6 @@ func (s *RelationshipService) Update(ctx context.Context, ID string, status int8
 	return nil
 }
 
-func (s *RelationshipService) Delete(ctx context.Context, ID string) error {
-	if err := s.relationshipRepository.Delete(ctx, ID); err != nil {
-		return err
-	}
-
-	return nil
+func (s *RelationshipService) Delete(ctx context.Context, cmd *command.DeleteRelationshipCommand) error {
+	return s.relationshipRepository.Delete(ctx, cmd.ID, cmd.RequestorID)
 }

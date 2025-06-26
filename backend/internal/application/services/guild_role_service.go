@@ -45,8 +45,8 @@ func (s *GuildRoleService) GetByGuildID(ctx context.Context, guildID string, req
 	}, nil
 }
 
-func (s *GuildRoleService) Create(ctx context.Context, cmd *command.CreateGuildRoleCommand, requestorID string) error {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+func (s *GuildRoleService) Create(ctx context.Context, cmd *command.CreateGuildRoleCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return err
 	}
@@ -63,8 +63,8 @@ func (s *GuildRoleService) Create(ctx context.Context, cmd *command.CreateGuildR
 	return nil
 }
 
-func (s *GuildRoleService) Update(ctx context.Context, cmd *command.UpdateGuildRoleCommand, requestorID string) error {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+func (s *GuildRoleService) Update(ctx context.Context, cmd *command.UpdateGuildRoleCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return err
 	}
@@ -88,65 +88,65 @@ func (s *GuildRoleService) Update(ctx context.Context, cmd *command.UpdateGuildR
 	return nil
 }
 
-func (s *GuildRoleService) Delete(ctx context.Context, ID string, requestorID string) error {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, ID, requestorID, constants.GUILD_OWNER_PERMISSION)
+func (s *GuildRoleService) Delete(ctx context.Context, cmd *command.DeleteGuildRoleCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.GUILD_OWNER_PERMISSION)
 	if err != nil {
 		return err
 	}
 
-	if err := s.guildRoleRepository.Delete(ctx, ID); err != nil {
+	if err := s.guildRoleRepository.Delete(ctx, cmd.ID); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *GuildRoleService) CreateUserAssoc(ctx context.Context, roleID string, userID string, guildID string, requestorID string) error {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+func (s *GuildRoleService) CreateUserAssoc(ctx context.Context, cmd *command.CreateGuildRoleUserAssociationCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return err
 	}
 
-	if err := s.guildRoleRepository.AssociateUser(ctx, roleID, userID); err != nil {
+	if err := s.guildRoleRepository.AssociateUser(ctx, cmd.RoleID, cmd.UserID); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *GuildRoleService) DeleteUserAssoc(ctx context.Context, roleID string, userID string, guildID string, requestorID string) error {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+func (s *GuildRoleService) DeleteUserAssoc(ctx context.Context, cmd *command.DeleteGuildRoleUserAssociationCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return err
 	}
 
-	if err := s.guildRoleRepository.DisassociateUser(ctx, roleID, userID); err != nil {
+	if err := s.guildRoleRepository.DisassociateUser(ctx, cmd.RoleID, cmd.UserID); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *GuildRoleService) CreateChannelAssoc(ctx context.Context, roleID string, channelID string, guildID string, requestorID string) error {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+func (s *GuildRoleService) CreateChannelAssoc(ctx context.Context, cmd *command.CreateGuildRoleChannelAssociationCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return err
 	}
 
-	if err := s.guildRoleRepository.AssociateChannel(ctx, roleID, channelID); err != nil {
+	if err := s.guildRoleRepository.AssociateChannel(ctx, cmd.RoleID, cmd.ChannelID); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *GuildRoleService) DeleteChannelAssoc(ctx context.Context, roleID string, channelID string, guildID string, requestorID string) error {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+func (s *GuildRoleService) DeleteChannelAssoc(ctx context.Context, cmd *command.DeleteGuildRoleChannelAssociationCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return err
 	}
 
-	if err := s.guildRoleRepository.DisassociateChannel(ctx, roleID, channelID); err != nil {
+	if err := s.guildRoleRepository.DisassociateChannel(ctx, cmd.RoleID, cmd.ChannelID); err != nil {
 		return err
 	}
 

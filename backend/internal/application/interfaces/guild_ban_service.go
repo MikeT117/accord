@@ -9,6 +9,6 @@ import (
 
 type GuildBanService interface {
 	GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.GuildBanQueryListResult, error)
-	Create(ctx context.Context, cmd *command.CreateGuildBanCommand, requestorID string) error
-	Delete(ctx context.Context, ID string, guildID string, requestorID string) error
+	Create(ctx context.Context, cmd *command.CreateGuildBanCommand) error
+	Delete(ctx context.Context, cmd *command.DeleteGuildBanCommand) error
 }

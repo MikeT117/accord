@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/jackc/pgx/v5"
@@ -49,7 +50,7 @@ func (r *SessionRepository) GetByID(ctx context.Context, ID string, userID strin
 		&session.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select session by id failed", err)
 	}
@@ -133,7 +134,7 @@ func (r *SessionRepository) GetByToken(ctx context.Context, token string) (*enti
 		&session.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select session by token failed", err)
 	}
@@ -203,7 +204,7 @@ func (r *SessionRepository) Update(ctx context.Context, session *entities.Sessio
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -224,28 +225,7 @@ func (r *SessionRepository) DeleteByID(ctx context.Context, ID string, userID st
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
-	}
-
-	return nil
-}
-
-func (r *SessionRepository) DeleteByToken(ctx context.Context, token string, userID string) error {
-	result, err := r.db(ctx).Exec(ctx, `
-		DELETE FROM
-			session
-		WHERE
-			token = $1
-		AND
-			user_id = $2;
-	`, token, userID)
-
-	if err != nil {
-		return wrapUnknownErr("delete session by token failed", err)
-	}
-
-	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil

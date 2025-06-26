@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/jackc/pgx/v5"
@@ -40,7 +41,7 @@ func (r *VoiceStateRepository) GetByID(ctx context.Context, ID string) (*entitie
 		&voiceState.GuildID,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select voice state by id failed", err)
 	}
@@ -71,7 +72,7 @@ func (r *VoiceStateRepository) GetByUserID(ctx context.Context, userID string) (
 		&voiceState.GuildID,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrNotFound
+			return nil, domain.ErrEntityNotFound
 		}
 		return nil, wrapUnknownErr("select voice state by user id failed", err)
 	}
@@ -212,7 +213,7 @@ func (r *VoiceStateRepository) Update(ctx context.Context, voiceState *entities.
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil
@@ -230,7 +231,7 @@ func (r *VoiceStateRepository) Delete(ctx context.Context, ID string) error {
 	}
 
 	if result.RowsAffected() != 1 {
-		return ErrNotFound
+		return domain.ErrEntityNotFound
 	}
 
 	return nil

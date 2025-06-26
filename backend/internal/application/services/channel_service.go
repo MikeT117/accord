@@ -8,6 +8,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/mapper"
 	"github.com/MikeT117/accord/backend/internal/application/query"
 	"github.com/MikeT117/accord/backend/internal/constants"
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
@@ -69,6 +70,90 @@ func (s *ChannelService) GetByUserID(ctx context.Context, userID string) (*query
 	}, nil
 }
 
+func (s *ChannelService) Create(ctx context.Context, cmd *command.CreateChannelCommand) error {
+	channel, err := entities.NewChannel(cmd.ChannelType, cmd.GuildID, cmd.CreatorID, *cmd.Name, cmd.Topic)
+	if err != nil {
+		return err
+	}
+
+	if channel.IsGuildChannel() {
+		return s.createGuildChannel(ctx, channel, cmd.RoleIDs, cmd.CreatorID)
+	}
+
+	return s.createUserChannel(ctx, channel, cmd.UserIDs, cmd.CreatorID)
+}
+
+func (s *ChannelService) Update(ctx context.Context, cmd *command.UpdateChannelCommand) error {
+	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ID, cmd.RequestorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
+	if err != nil {
+		return err
+	}
+
+	channel, err := s.channelRepository.GetByID(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+
+	if err := channel.UpdateName(cmd.Name); err != nil {
+		return err
+	}
+	if err := channel.UpdateParentID(cmd.ParentID); err != nil {
+		return err
+	}
+	if err := channel.UpdateTopic(cmd.Topic); err != nil {
+		return err
+	}
+
+	if err := s.channelRepository.Update(ctx, channel); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *ChannelService) Delete(ctx context.Context, cmd *command.DeleteChannelCommand) error {
+	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ID, cmd.RequestorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
+	if err != nil {
+		return err
+	}
+
+	if err := s.channelRepository.Delete(ctx, cmd.ID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *ChannelService) CreateUserAssoc(ctx context.Context, cmd *command.CreateUserChannelAssociationCommand) error {
+	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, 0)
+	if err != nil {
+		return err
+	}
+
+	if err := s.authorisationService.VerifyRelationships(ctx, cmd.RequestorID, []string{cmd.UserID}, false, true, false); err != nil {
+		return err
+	}
+
+	if err := s.channelRepository.AssociateUser(ctx, cmd.ChannelID, cmd.UserID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *ChannelService) DeleteUserAssoc(ctx context.Context, cmd *command.DeleteUserChannelAssociationCommand) error {
+	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, 0)
+	if err != nil {
+		return err
+	}
+
+	if err := s.channelRepository.DisassociateUser(ctx, cmd.ChannelID, cmd.UserID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entities.Channel, roleIDs *[]string, requestorID string) error {
 	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 		err := s.authorisationService.VerifyUserGuildPermission(ctx, *channel.GuildID, requestorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
@@ -85,7 +170,7 @@ func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entiti
 			}
 
 			if len(roles) != len(*roleIDs) {
-				return db.ErrNotFound
+				return domain.ErrEntityNotFound
 			}
 
 			rolesToAssign = append(rolesToAssign, roles...)
@@ -114,7 +199,7 @@ func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entiti
 
 func (s *ChannelService) createUserChannel(ctx context.Context, channel *entities.Channel, userIDs *[]string, requestorID string) error {
 	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
-		if err := s.authorisationService.VerifyFriendRelationships(ctx, requestorID, *userIDs); err != nil {
+		if err := s.authorisationService.VerifyRelationships(ctx, requestorID, *userIDs, false, true, false); err != nil {
 			return err
 		}
 
@@ -124,7 +209,7 @@ func (s *ChannelService) createUserChannel(ctx context.Context, channel *entitie
 		}
 
 		if len(users) != len(*userIDs) {
-			return db.ErrNotFound
+			return domain.ErrEntityNotFound
 		}
 
 		if err := s.channelRepository.Create(ctx, channel); err != nil {
@@ -139,88 +224,4 @@ func (s *ChannelService) createUserChannel(ctx context.Context, channel *entitie
 
 		return nil
 	})
-}
-
-func (s *ChannelService) Create(ctx context.Context, cmd *command.CreateChannelCommand, requestorID string) error {
-	channel, err := entities.NewChannel(cmd.ChannelType, cmd.GuildID, cmd.CreatorID, *cmd.Name, cmd.Topic)
-	if err != nil {
-		return err
-	}
-
-	if channel.IsGuildChannel() {
-		return s.createGuildChannel(ctx, channel, cmd.RoleIDs, requestorID)
-	}
-
-	return s.createUserChannel(ctx, channel, cmd.UserIDs, requestorID)
-}
-
-func (s *ChannelService) Update(ctx context.Context, cmd *command.UpdateChannelCommand, requestorID string) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ID, requestorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
-	if err != nil {
-		return err
-	}
-
-	channel, err := s.channelRepository.GetByID(ctx, cmd.ID)
-	if err != nil {
-		return err
-	}
-
-	if err := channel.UpdateName(cmd.Name); err != nil {
-		return err
-	}
-	if err := channel.UpdateParentID(cmd.ParentID); err != nil {
-		return err
-	}
-	if err := channel.UpdateTopic(cmd.Topic); err != nil {
-		return err
-	}
-
-	if err := s.channelRepository.Update(ctx, channel); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *ChannelService) Delete(ctx context.Context, ID string, requestorID string) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, ID, requestorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
-	if err != nil {
-		return err
-	}
-
-	if err := s.channelRepository.Delete(ctx, ID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *ChannelService) AssociateUser(ctx context.Context, channelID, userID string, requestorID string) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, channelID, requestorID, 0)
-	if err != nil {
-		return err
-	}
-
-	if err := s.authorisationService.VerifyFriendRelationships(ctx, requestorID, []string{userID}); err != nil {
-		return err
-	}
-
-	if err := s.channelRepository.AssociateUser(ctx, channelID, userID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s *ChannelService) DisassociateUser(ctx context.Context, channelID, userID string, requestorID string) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, channelID, requestorID, 0)
-	if err != nil {
-		return err
-	}
-
-	if err := s.channelRepository.DisassociateUser(ctx, channelID, userID); err != nil {
-		return err
-	}
-
-	return nil
 }

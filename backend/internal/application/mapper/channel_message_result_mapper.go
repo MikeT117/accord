@@ -16,8 +16,7 @@ func NewChannelMessageResultFromChannelMessage(channelMessage *entities.ChannelM
 		ChannelID:   channelMessage.ChannelID,
 		CreatedAt:   channelMessage.CreatedAt,
 		UpdatedAt:   channelMessage.UpdatedAt,
-		User:        NewUserResultFromUser(user),
-		GuildMember: NewGuildMemberWithoutRolesResultFromGuildMember(guildMember),
+		Author:      NewChannelMessageAuthorResultFromUserGuildMember(user, guildMember),
 		Attachments: NewAttachmentListResultFromAttachments(attachments),
 	}
 }

@@ -29,8 +29,8 @@ func CreateGuildInviteService(transactor *db.Transactor, authorisationService in
 	}
 }
 
-func (s *GuildInviteService) GetByID(ctx context.Context, ID string) (*query.GuildInviteQueryResult, error) {
-	guildInvite, err := s.guildInviteRepository.GetByID(ctx, ID)
+func (s *GuildInviteService) GetByID(ctx context.Context, qry *query.GuildInviteQuery) (*query.GuildInviteQueryResult, error) {
+	guildInvite, err := s.guildInviteRepository.GetByID(ctx, qry.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -45,18 +45,18 @@ func (s *GuildInviteService) GetByID(ctx context.Context, ID string) (*query.Gui
 	}, nil
 }
 
-func (s *GuildInviteService) GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.GuildInviteQueryListResult, error) {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+func (s *GuildInviteService) GetByGuildID(ctx context.Context, qry *query.GuildInvitesQuery) (*query.GuildInviteQueryListResult, error) {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, qry.GuildID, qry.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return nil, err
 	}
 
-	guildInvites, err := s.guildInviteRepository.GetByGuildID(ctx, guildID)
+	guildInvites, err := s.guildInviteRepository.GetByGuildID(ctx, qry.GuildID)
 	if err != nil {
 		return nil, err
 	}
 
-	guild, err := s.guildRepository.GetByID(ctx, guildID)
+	guild, err := s.guildRepository.GetByID(ctx, qry.GuildID)
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +66,8 @@ func (s *GuildInviteService) GetByGuildID(ctx context.Context, guildID string, r
 	}, nil
 }
 
-func (s *GuildInviteService) Create(ctx context.Context, cmd *command.CreateGuildInviteCommand, requestorID string) error {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+func (s *GuildInviteService) Create(ctx context.Context, cmd *command.CreateGuildInviteCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return err
 	}
@@ -83,13 +83,13 @@ func (s *GuildInviteService) Create(ctx context.Context, cmd *command.CreateGuil
 
 	return nil
 }
-func (s *GuildInviteService) Delete(ctx context.Context, ID string, guildID string, requestorID string) error {
-	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+func (s *GuildInviteService) Delete(ctx context.Context, cmd *command.DeleteGuildInviteCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return err
 	}
 
-	if err := s.guildInviteRepository.Delete(ctx, ID); err != nil {
+	if err := s.guildInviteRepository.Delete(ctx, cmd.ID); err != nil {
 		return err
 	}
 

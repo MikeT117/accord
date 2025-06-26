@@ -8,8 +8,8 @@ import (
 )
 
 type GuildInviteService interface {
-	GetByID(ctx context.Context, ID string) (*query.GuildInviteQueryResult, error)
-	GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.GuildInviteQueryListResult, error)
-	Create(ctx context.Context, cmd *command.CreateGuildInviteCommand, requestorID string) error
-	Delete(ctx context.Context, ID string, guildID string, requestorID string) error
+	GetByID(ctx context.Context, qry *query.GuildInviteQuery) (*query.GuildInviteQueryResult, error)
+	GetByGuildID(ctx context.Context, qry *query.GuildInvitesQuery) (*query.GuildInviteQueryListResult, error)
+	Create(ctx context.Context, cmd *command.CreateGuildInviteCommand) error
+	Delete(ctx context.Context, cmd *command.DeleteGuildInviteCommand) error
 }

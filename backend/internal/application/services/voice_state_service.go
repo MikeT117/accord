@@ -50,8 +50,8 @@ func (s *VoiceStateService) GetByGuildID(ctx context.Context, guildID string, re
 	}, nil
 
 }
-func (s *VoiceStateService) Create(ctx context.Context, cmd *command.CreateVoiceStateCommand, requestorID string) error {
-	err := s.authorisationService.VerifyGuildMember(ctx, *cmd.GuildID, requestorID)
+func (s *VoiceStateService) Create(ctx context.Context, cmd *command.CreateVoiceStateCommand) error {
+	err := s.authorisationService.VerifyGuildMember(ctx, *cmd.GuildID, cmd.UserID)
 	if err != nil {
 		return err
 	}
@@ -67,8 +67,8 @@ func (s *VoiceStateService) Create(ctx context.Context, cmd *command.CreateVoice
 
 	return nil
 }
-func (s *VoiceStateService) Update(ctx context.Context, cmd *command.UpdateVoiceStateCommand, guildID string, requestorID string) error {
-	err := s.authorisationService.VerifyGuildMember(ctx, guildID, requestorID)
+func (s *VoiceStateService) Update(ctx context.Context, cmd *command.UpdateVoiceStateCommand) error {
+	err := s.authorisationService.VerifyGuildMember(ctx, cmd.GuildID, cmd.RequestorID)
 	if err != nil {
 		return err
 	}
@@ -90,20 +90,20 @@ func (s *VoiceStateService) Update(ctx context.Context, cmd *command.UpdateVoice
 
 	return nil
 }
-func (s *VoiceStateService) Delete(ctx context.Context, ID string, requestorID string) error {
-	voiceState, err := s.voiceStateRepository.GetByID(ctx, ID)
+func (s *VoiceStateService) Delete(ctx context.Context, cmd *command.DeleteVoiceStateCommand) error {
+	voiceState, err := s.voiceStateRepository.GetByID(ctx, cmd.ID)
 	if err != nil {
 		return err
 	}
 
-	if !voiceState.IsOwner(requestorID) {
-		err := s.authorisationService.VerifyUserChannelPermission(ctx, voiceState.ChannelID, requestorID, constants.MANAGE_GUILD_PERMISSION)
+	if !voiceState.IsOwner(cmd.RequestorID) {
+		err := s.authorisationService.VerifyUserChannelPermission(ctx, voiceState.ChannelID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 		if err != nil {
 			return err
 		}
 	}
 
-	if err := s.voiceStateRepository.Delete(ctx, ID); err != nil {
+	if err := s.voiceStateRepository.Delete(ctx, cmd.ID); err != nil {
 		return err
 	}
 

@@ -7,7 +7,7 @@ import (
 )
 
 type AttachmentService interface {
-	Create(ctx context.Context, cmd *command.CreateAttachmentCommand) error
+	Create(ctx context.Context, cmd *command.CreateAttachmentCommand) (*command.CreateAttachmentCommandResult, error)
 	Update(ctx context.Context, cmd *command.UpdateAttachmentCommand) error
-	Delete(ctx context.Context, ID string) error
+	Delete(ctx context.Context, cmd *command.DeleteAttachmentCommand) error
 }

@@ -12,5 +12,5 @@ type RelationshipRepository interface {
 	GetByUserIDAndUserIDs(ctx context.Context, userID string, userIDs []string) ([]*entities.Relationship, error)
 	Create(ctx context.Context, validatedRelationship *entities.Relationship) error
 	Update(ctx context.Context, validatedRelationship *entities.Relationship) error
-	Delete(ctx context.Context, ID string) error
+	Delete(ctx context.Context, ID string, creatorID string) error
 }
