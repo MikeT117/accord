@@ -1,0 +1,19 @@
+edition = "2023";
+
+package pb;
+option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
+
+import "google/protobuf/timestamp.proto";
+
+import "user.proto";
+
+message Relationship {
+    int32 ver = 1;
+    string id = 2;
+    string creator_id = 3;
+    string recipient_id = 4;
+    int32 status = 5;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+    User user = 8;
+}

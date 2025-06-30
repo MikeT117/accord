@@ -1,0 +1,16 @@
+edition = "2023";
+
+package pb;
+option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
+
+/*
+Events such as creating messages (in guild channels), guild channels, roles, etc. The role_ids defines which clients recieve the event, 
+each client connection has their assigned roles.
+*/
+
+message RoleEvent {
+    int32 ver = 1;
+    int32 op = 2;
+    bytes data = 3;
+    repeated string role_ids = 4;
+}

@@ -1,0 +1,16 @@
+edition = "2023";
+
+package pb;
+option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
+
+/*
+Events such as adding/removing roles to/from an active client connection, e.g. a role being assigned/unassigned,
+these are not sent to users, instead they are used by the provider to update the roles for the clients defined in the user_ids. 
+*/
+
+message ProviderEvent {
+    int32 ver = 1;
+    int32 op = 2;
+    repeated string role_ids = 3;
+    repeated string user_ids = 4;
+}

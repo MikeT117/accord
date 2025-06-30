@@ -1,0 +1,27 @@
+edition = "2023";
+
+package pb;
+option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
+
+import "google/protobuf/timestamp.proto";
+
+import "channel.proto";
+import "guild_role.proto";
+
+message Guild {
+    int32 ver = 1;
+    string id = 2;
+    string creator_id = 3;
+    string guild_category_id = 4;
+    string name = 5;
+    string description = 6;
+    bool discoverable = 7;
+    int32 channel_count = 8;
+    int32 member_count = 9;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp updated_at = 11;
+    string icon = 12;
+    string banner = 13;
+    repeated GuildRole roles = 14;
+    repeated Channel channels = 15;
+}
