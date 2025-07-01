@@ -401,6 +401,37 @@ func (r *ChannelRepository) GetUsersByChannelID(ctx context.Context, channelID s
 	return users, nil
 }
 
+func (r *ChannelRepository) GetUserIDsByChannelID(ctx context.Context, channelID string) ([]string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			user_id
+		FROM
+			channel_user
+		WHERE
+			channel_id = $1;
+	`, channelID)
+
+	if err != nil {
+		return nil, wrapUnknownErr("select user ids by channel id failed", err)
+	}
+
+	defer rows.Close()
+
+	userIDs := []string{}
+	for rows.Next() {
+		var userID string
+		if err := rows.Scan(
+			&userID,
+		); err != nil {
+			return nil, wrapUnknownErr("map over select user ids by channel id failed", err)
+		}
+
+		userIDs = append(userIDs, userID)
+	}
+
+	return userIDs, err
+}
+
 func (r *ChannelRepository) GetMapUsersByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]*entities.User, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
