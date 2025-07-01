@@ -546,7 +546,7 @@ func (r *GuildRoleRepository) GetMapRoleIDsByChannelIDs(ctx context.Context, cha
 func (r *GuildRoleRepository) GetRoleIDsByChannelID(ctx context.Context, channelID string) ([]string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
-			role_id,
+			role_id
 		FROM
 			guild_role_channel
 		WHERE
