@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -43,7 +42,7 @@ type Config struct {
 	WSURL  string
 }
 
-func LoadConfig() *Config {
+func MustLoadConfig() *Config {
 	godotenv.Load(".env.local")
 
 	HTTPPort, err := strconv.Atoi(mustGetEnv("HTTP_PORT", true))
@@ -101,10 +100,10 @@ func mustGetEnv(key string, required bool) string {
 	val := os.Getenv(key)
 	if val == "" {
 		if required {
-			panic(fmt.Sprintf("missing required environment variable : %s\n", key))
+			log.Fatalf("missing required environment variable : %s\n", key)
 		}
 
-		fmt.Printf("missing non-required environment variable (%s), this may reduce functionality.\n", key)
+		log.Printf("missing non-required environment variable (%s), this may reduce functionality.\n", key)
 	}
 
 	return val
