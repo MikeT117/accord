@@ -70,7 +70,7 @@ func (r *AttachmentRepository) GetMapByIDs(ctx context.Context, IDs []string) (m
 			updated_at,
 			status
 		FROM
-			entry_attachment
+			attachment
 		WHERE
 			id = ANY($1);
 	`, IDs)
@@ -117,7 +117,7 @@ func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []string) ([]*e
 			updated_at,
 			status
 		FROM
-			entry_attachment
+			attachment
 		WHERE
 			id = ANY($1);
 	`, IDs)
@@ -154,19 +154,19 @@ func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []string) ([]*e
 func (r *AttachmentRepository) GetByAssociatedChannelMessageID(ctx context.Context, ID string) ([]*entities.Attachment, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
-			ea.id,
-			ea.resource_type,
-			ea.owner_id,
-			ea.height,
-			ea.width,
-			ea.filesize,
-			ea.created_at,
-			ea.updated_at,
-			ea.status
+			a.id,
+			a.resource_type,
+			a.owner_id,
+			a.height,
+			a.width,
+			a.filesize,
+			a.created_at,
+			a.updated_at,
+			a.status
 		FROM
-			entry_attachment ea
+			attachment a
 		INNER JOIN
-			channel_message_attachment cma ON cma.attachment_id = ea.id
+			channel_message_attachment cma ON cma.attachment_id = a.id
 		WHERE
 			cma.channel_message_id = $1;
 	`, ID)
@@ -255,7 +255,7 @@ func (r *AttachmentRepository) GetMapByAssociatedChannelMessageIDs(ctx context.C
 func (r *AttachmentRepository) Create(ctx context.Context, attachment *entities.Attachment) error {
 	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
-			entry_attachment (
+			attachment (
 				id,
 				resource_type,
 				owner_id,
@@ -285,7 +285,7 @@ func (r *AttachmentRepository) Create(ctx context.Context, attachment *entities.
 func (r *AttachmentRepository) Update(ctx context.Context, attachment *entities.Attachment) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		UPDATE
-			entry_attachment
+			attachment
 		SET
 			resource_type = $2,
 			owner_id = $3,
@@ -322,7 +322,7 @@ func (r *AttachmentRepository) Update(ctx context.Context, attachment *entities.
 func (r *AttachmentRepository) Delete(ctx context.Context, ID string, userID string) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
-			entry_attachment
+			attachment
 		WHERE
 			id = $1
 		AND
