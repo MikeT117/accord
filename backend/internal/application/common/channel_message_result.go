@@ -9,7 +9,6 @@ type ChannelMessageResult struct {
 	Flag        int8
 	AuthorID    string
 	ChannelID   string
-	GuildID     *string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Author      *ChannelMessageAuthorResult
