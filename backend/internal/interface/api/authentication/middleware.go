@@ -9,7 +9,6 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/config"
-	"github.com/MikeT117/accord/backend/internal/constants"
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/response"
 	"github.com/labstack/echo/v4"
@@ -37,10 +36,7 @@ func CreateAuthenticationMiddleware(config *config.Config, sessionService interf
 			session, err := sessionService.GetByToken(c.Request().Context(), refreshtoken)
 			if err != nil {
 				if errors.Is(err, domain.ErrEntityNotFound) {
-					return c.String(
-						http.StatusUnauthorized,
-						constants.DetailUnauthorized,
-					)
+					return response.ErrorResponse(c, http.StatusUnauthorized, nil)
 				}
 
 				return response.ErrorResponse(c, http.StatusInternalServerError, nil)
