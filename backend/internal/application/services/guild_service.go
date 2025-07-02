@@ -65,21 +65,14 @@ func (s *GuildService) GetByUserID(ctx context.Context, userID string) (*query.G
 		return nil, err
 	}
 
-	guildsLen := len(guilds)
-	guildsResult := &query.GuildQueryListResult{
-		Result: make([]*common.GuildResult, guildsLen),
-	}
-
-	for i := 0; i < guildsLen; i++ {
-		guildsResult.Result[i] = mapper.NewGuildResultFromGuild(
-			guilds[i],
-			guildChannelsMap[guilds[i].ID],
+	return &query.GuildQueryListResult{
+		Result: mapper.NewGuildListResultFromGuild(
+			guilds,
+			guildChannelsMap,
 			guildChannelRolesMap,
-			rolesMap[guilds[i].ID],
-		)
-	}
-
-	return guildsResult, nil
+			rolesMap,
+		),
+	}, nil
 }
 
 func (s *GuildService) Create(ctx context.Context, cmd *command.CreateGuildCommand) error {
