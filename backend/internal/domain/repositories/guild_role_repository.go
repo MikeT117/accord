@@ -13,6 +13,8 @@ type GuildRoleRepository interface {
 	GetMapByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.GuildRole, []string, error)
 	GetByNameAndGuildID(ctx context.Context, name string, guildID string) (*entities.GuildRole, error)
 
+	GetDefaultGuildRoleIDByGuildID(ctx context.Context, guildID string) (string, error)
+
 	Create(ctx context.Context, validatedGuild *entities.GuildRole) error
 	Update(ctx context.Context, validatedGuild *entities.GuildRole) error
 	Delete(ctx context.Context, ID string) error

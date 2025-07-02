@@ -3,6 +3,8 @@ package mapper
 import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
+	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func NewRelationshipResultFromRelationship(relationship *entities.Relationship, user *entities.User) *common.RelationshipResult {
@@ -29,4 +31,61 @@ func NewRelationshipListResultFromRelationship(relationships []*entities.Relatio
 	}
 
 	return relationshipsResult
+}
+
+func NewRelationshipProtoResultFromRelationship(relationship *entities.Relationship, user *entities.User) *pb.Relationship {
+	var ver int32 = 0
+	status := int32(relationship.Status)
+	return &pb.Relationship{
+		Ver:         &ver,
+		Id:          &relationship.ID,
+		CreatorId:   &relationship.CreatorID,
+		RecipientId: &relationship.RecipientID,
+		Status:      &status,
+		CreatedAt:   timestamppb.New(relationship.CreatedAt),
+		UpdatedAt:   timestamppb.New(relationship.UpdatedAt),
+		User:        NewUserProtoResultFromUser(user),
+	}
+}
+
+func NewRelationshipCreatedProtoEvent(relationship *entities.Relationship, user *entities.User) *pb.EventPayload {
+	var ver int32 = 0
+	return &pb.EventPayload{
+		Ver: &ver,
+		Op:  pb.OpCode_RELATIONSHIP_CREATE_EVENT.Enum(),
+		Payload: &pb.EventPayload_RelationshipCreated{
+			RelationshipCreated: NewRelationshipProtoResultFromRelationship(relationship, user),
+		},
+	}
+}
+
+func NewRelationshipUpdatedProtoEvent(relationship *entities.Relationship) *pb.EventPayload {
+	var ver int32 = 0
+	status := int32(relationship.Status)
+	return &pb.EventPayload{
+		Ver: &ver,
+		Op:  pb.OpCode_RELATIONSHIP_UPDATE_EVENT.Enum(),
+		Payload: &pb.EventPayload_RelationshipUpdated{
+			RelationshipUpdated: &pb.RelationshipUpdated{
+				Ver:       &ver,
+				Id:        &relationship.ID,
+				Status:    &status,
+				UpdatedAt: timestamppb.New(relationship.UpdatedAt),
+			},
+		},
+	}
+}
+
+func NewRelationshipDeletedProtoEvent(ID string) *pb.EventPayload {
+	var ver int32 = 0
+	return &pb.EventPayload{
+		Ver: &ver,
+		Op:  pb.OpCode_RELATIONSHIP_DELETE_EVENT.Enum(),
+		Payload: &pb.EventPayload_RelationshipDeleted{
+			RelationshipDeleted: &pb.RelationshipDeleted{
+				Ver: &ver,
+				Id:  &ID,
+			},
+		},
+	}
 }

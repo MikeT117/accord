@@ -18,6 +18,7 @@ type ChannelRepository interface {
 
 	GetUserChannelPermission(ctx context.Context, channelID string, userID string) (*entities.User, error)
 	GetUsersByChannelID(ctx context.Context, channelID string) ([]*entities.User, error)
+	GetUserIDsByChannelID(ctx context.Context, channelID string) ([]string, error)
 	GetMapUsersByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]*entities.User, error)
 	AssociateUser(ctx context.Context, channelID string, userID string) error
 	DisassociateUser(ctx context.Context, channelID string, userID string) error

@@ -159,6 +159,33 @@ func (r *RelationshipRepository) GetByUserIDAndUserIDs(ctx context.Context, user
 	return relationships, nil
 }
 
+func (r *RelationshipRepository) GetUserIDsByID(ctx context.Context, ID string) ([]string, error) {
+	row := r.db(ctx).QueryRow(ctx, `
+		SELECT
+			id,
+			creator_id,
+			recipient_id,
+		FROM
+			user_relationship
+		WHERE
+			id = $1;
+	`, ID)
+
+	var CreatorID string
+	var RecipientID string
+	if err := row.Scan(
+		&CreatorID,
+		&RecipientID,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrEntityNotFound
+		}
+		return nil, wrapUnknownErr("select relationship users by id failed", err)
+	}
+
+	return []string{CreatorID, RecipientID}, nil
+}
+
 func (r *RelationshipRepository) Create(ctx context.Context, relationship *entities.Relationship) error {
 	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO

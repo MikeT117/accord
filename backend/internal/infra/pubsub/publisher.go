@@ -63,11 +63,10 @@ func (ep *EventPublisher) PublishProviderEvent(op int32, userIDs []string, roleI
 	return ep.conn.Publish("ACCORD.EVENTS.PROVIDER", event)
 }
 
-func (ep *EventPublisher) PublishUserEvent(op int32, userIDs []string, data []byte) error {
+func (ep *EventPublisher) PublishUserEvent(userIDs []string, data *pb.EventPayload) error {
 	var ver int32 = 0
 	event, err := proto.Marshal(&pb.UserEvent{
 		Ver:     &ver,
-		Op:      &op,
 		UserIds: userIDs,
 		Data:    data,
 	})
@@ -79,11 +78,10 @@ func (ep *EventPublisher) PublishUserEvent(op int32, userIDs []string, data []by
 	return ep.conn.Publish("ACCORD.EVENTS.USER", event)
 }
 
-func (ep *EventPublisher) PublishRoleEvent(op int32, roleIDs []string, data []byte) error {
+func (ep *EventPublisher) PublishRoleEvent(roleIDs []string, data *pb.EventPayload) error {
 	var ver int32 = 0
 	event, err := proto.Marshal(&pb.RoleEvent{
 		Ver:     &ver,
-		Op:      &op,
 		RoleIds: roleIDs,
 		Data:    data,
 	})

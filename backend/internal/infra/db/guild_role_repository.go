@@ -52,6 +52,7 @@ func (r *GuildRoleRepository) GetByID(ctx context.Context, ID string) (*entities
 
 	return role, nil
 }
+
 func (r *GuildRoleRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildRole, []string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
@@ -91,6 +92,31 @@ func (r *GuildRoleRepository) GetByGuildID(ctx context.Context, guildID string) 
 	}
 
 	return roles, roleIDs, nil
+}
+
+func (r *GuildRoleRepository) GetDefaultGuildRoleIDByGuildID(ctx context.Context, guildID string) (string, error) {
+	row := r.db(ctx).QueryRow(ctx, `
+		SELECT
+			id
+		FROM
+			guild_role
+		WHERE
+			guild_id = $1
+		AND
+			name = '@default';
+	`, guildID)
+
+	var roleID string
+	if err := row.Scan(
+		&roleID,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", domain.ErrEntityNotFound
+		}
+		return "", wrapUnknownErr("select default guild role ID by guild id failed", err)
+	}
+
+	return roleID, nil
 }
 
 func (r *GuildRoleRepository) GetByIDs(ctx context.Context, roleIDs []string, guildID string) ([]*entities.GuildRole, error) {

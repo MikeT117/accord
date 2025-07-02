@@ -3,6 +3,8 @@ package mapper
 import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
+	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func NewChannelMessageResultFromChannelMessage(channelMessage *entities.ChannelMessage, user *entities.User, guildMember *entities.GuildMember, attachments []*entities.Attachment) *common.ChannelMessageResult {
@@ -35,4 +37,69 @@ func NewChannelMessageListResultFromChannelMessage(channelMessages []*entities.C
 	}
 
 	return channelMessageResult
+}
+
+func NewChannelMessageProtoResultFromChannelMessage(channelMessage *entities.ChannelMessage, user *entities.User, guildMember *entities.GuildMember, attachments []*entities.Attachment) *pb.ChannelMessage {
+	var ver int32 = 0
+	var flag int32 = int32(channelMessage.Flag)
+	return &pb.ChannelMessage{
+		Ver:         &ver,
+		Id:          &channelMessage.ID,
+		Content:     &channelMessage.Content,
+		Pinned:      &channelMessage.Pinned,
+		Flag:        &flag,
+		AuthorId:    &channelMessage.AuthorID,
+		ChannelId:   &channelMessage.ChannelID,
+		CreatedAt:   timestamppb.New(channelMessage.CreatedAt),
+		UpdatedAt:   timestamppb.New(channelMessage.UpdatedAt),
+		Author:      NewChannelMessageAuthorProtoResultFromUserGuildMember(user, guildMember),
+		Attachments: NewAttachmentListProtoResultFromAttachments(attachments),
+	}
+}
+
+func NewChannelMessageCreatedProtoEvent(channelMessage *entities.ChannelMessage, user *entities.User, guildMember *entities.GuildMember, attachments []*entities.Attachment) *pb.EventPayload {
+	var ver int32 = 0
+	return &pb.EventPayload{
+		Ver: &ver,
+		Op:  pb.OpCode_CHANNEL_MESSAGE_CREATE_EVENT.Enum(),
+		Payload: &pb.EventPayload_ChannelMessageCreated{
+			ChannelMessageCreated: NewChannelMessageProtoResultFromChannelMessage(channelMessage, user, guildMember, attachments),
+		},
+	}
+}
+
+func NewChannelMessageUpdatedProtoEvent(channelMessage *entities.ChannelMessage, attachments []*entities.Attachment) *pb.EventPayload {
+	var ver int32 = 0
+	var flag int32 = int32(channelMessage.Flag)
+	return &pb.EventPayload{
+		Ver: &ver,
+		Op:  pb.OpCode_CHANNEL_MESSAGE_UPDATE_EVENT.Enum(),
+		Payload: &pb.EventPayload_ChannelMessageUpdated{
+			ChannelMessageUpdated: &pb.ChannelMessageUpdated{
+				Ver:         &ver,
+				Id:          &channelMessage.ID,
+				Content:     &channelMessage.Content,
+				Pinned:      &channelMessage.Pinned,
+				Flag:        &flag,
+				ChannelId:   &channelMessage.ChannelID,
+				UpdatedAt:   timestamppb.New(channelMessage.UpdatedAt),
+				Attachments: NewAttachmentListProtoResultFromAttachments(attachments),
+			},
+		},
+	}
+}
+
+func NewChannelMessageDeletedProtoEvent(ID string, channelID string) *pb.EventPayload {
+	var ver int32 = 0
+	return &pb.EventPayload{
+		Ver: &ver,
+		Op:  pb.OpCode_CHANNEL_MESSAGE_UPDATE_EVENT.Enum(),
+		Payload: &pb.EventPayload_ChannelMessageDeleted{
+			ChannelMessageDeleted: &pb.ChannelMessageDeleted{
+				Ver:       &ver,
+				Id:        &ID,
+				ChannelId: &channelID,
+			},
+		},
+	}
 }
