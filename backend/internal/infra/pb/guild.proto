@@ -25,3 +25,4 @@ message Guild {
     repeated GuildRole roles = 14;
     repeated Channel channels = 15;
 }
+

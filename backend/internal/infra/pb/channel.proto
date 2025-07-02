@@ -20,5 +20,4 @@ message Channel {
     google.protobuf.Timestamp updated_at = 10;
     repeated User users = 11;
     repeated string role_ids = 12;
-
 }

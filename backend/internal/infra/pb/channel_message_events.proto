@@ -1,0 +1,25 @@
+edition = "2023";
+
+package pb;
+option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
+
+import "google/protobuf/timestamp.proto";
+
+import "attachment.proto";
+
+message ChannelMessageUpdated {
+    int32 ver = 1;
+    string id = 2;
+    string content = 3;
+    bool pinned = 4;
+    int32 flag = 5;
+    string channel_id = 6;
+    google.protobuf.Timestamp updated_at = 7;
+    repeated Attachment attachments = 8;
+}
+
+message ChannelMessageDeleted {
+    int32 ver = 1;
+    string id = 2;
+    string channel_id = 3;
+}

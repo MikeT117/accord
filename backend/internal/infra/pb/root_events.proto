@@ -1,0 +1,83 @@
+edition = "2023";
+
+package pb;
+option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
+
+import "op_code.proto";
+import "channel.proto";
+import "channel_events.proto";
+import "channel_message.proto";
+import "channel_message_events.proto";
+import "guild.proto";
+import "guild_events.proto";
+import "guild_role.proto";
+import "guild_role_events.proto";
+import "relationship.proto";
+import "relationship_events.proto";
+
+/*
+Events such as adding/removing roles to/from an active client connection, e.g. a role being assigned/unassigned,
+these are not sent to users, instead they are used by the provider to update the roles for the clients defined in the user_ids. 
+*/
+
+message ProviderEvent {
+    int32 ver = 1;
+    int32 op = 2;
+    repeated string role_ids = 3;
+    repeated string user_ids = 4;
+}
+
+/*
+Events such as creating messages (in guild channels), guild channels, roles, etc. The role_ids define which clients recieve the event, 
+each client connection has their assigned roles, certain events are sent to the default role which encompases all members of the guild.
+*/
+
+message RoleEvent {
+    int32 ver = 1;
+    EventPayload data = 2;
+    repeated string role_ids = 3;
+}
+
+/*
+Events such as creating messages (in user channels), user channels, relationships, etc.
+The user_ids defines which clients recieve the event.
+*/
+
+message UserEvent {
+    int32 ver = 1;
+    EventPayload data = 2;
+    repeated string user_ids = 3;
+}
+
+
+
+/*
+    Event data is the payload, this is the data a clien will receive, it will first parse the 'Op'
+    and parse the 'data' based on the 'Op' value. 
+*/
+
+message EventPayload {
+    int32 ver = 1;
+    OpCode op = 2;
+    oneof payload {
+        Channel channel_created = 3;
+        ChannelUpdated channel_updated = 4;
+        ChannelDeleted channel_deleted = 5;
+
+        ChannelMessage channel_message_created = 6;
+        ChannelMessageUpdated channel_message_updated = 7;
+        ChannelMessageDeleted channel_message_deleted = 8;
+
+        Guild guild_created = 9;
+        GuildUpdated guild_updated = 10;
+        GuildDeleted guild_deleted = 11;
+
+        GuildRole guild_role_created = 12;
+        GuildRoleUpdated guild_role_updated = 13;
+        GuildRoleDeleted guild_role_deleted = 14;
+
+        Relationship relationship_created = 15;
+        RelationshipUpdated relationship_updated = 16;
+        RelationshipDeleted relationship_deleted = 17;
+    };
+}
