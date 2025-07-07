@@ -3,10 +3,10 @@ package rest
 import (
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/config"
-	"github.com/MikeT117/accord/backend/internal/interface/api/authentication"
 	"github.com/MikeT117/accord/backend/internal/interface/api/rest/controller"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -29,7 +29,7 @@ func CreateRouter(
 	sessionService interfaces.SessionService,
 	userAccountService interfaces.UserAccountService,
 	voiceStateService interfaces.VoiceStateService,
-) {
+) *echo.Echo {
 	e := echo.New()
 	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
 		Format: "remote_ip=${remote_ip}, method=${method}, uri=${uri}, status=${status}, latency=${latency_human}\n",
@@ -47,7 +47,7 @@ func CreateRouter(
 	APIV1 := e.Group("/api/v1")
 
 	controller.NewAuthController(config, APIV1, sessionService, authenticationService)
-	APIV1.Use(authentication.CreateAuthenticationMiddleware(config, sessionService))
+	APIV1.Use(CreateAuthenticationMiddleware(config, sessionService))
 	controller.NewAttachmentController(APIV1, attachmentService)
 	controller.NewChannelController(APIV1, channelService)
 	controller.NewChannelMessageController(APIV1, channelMessageService)
@@ -60,7 +60,11 @@ func CreateRouter(
 	controller.NewSessionController(APIV1, sessionService)
 	controller.NewUserAccountController(APIV1, userAccountService)
 
-	if err := e.Start(":4000"); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
-	}
+	go func() {
+		if err := e.Start(":4000"); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("shutting down server: %v", err)
+		}
+	}()
+
+	return e
 }

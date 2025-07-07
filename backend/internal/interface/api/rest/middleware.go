@@ -1,4 +1,4 @@
-package authentication
+package rest
 
 import (
 	"errors"
@@ -10,6 +10,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/config"
 	"github.com/MikeT117/accord/backend/internal/domain"
+	"github.com/MikeT117/accord/backend/internal/interface/api/authentication"
 	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/response"
 	"github.com/labstack/echo/v4"
 )
@@ -20,15 +21,15 @@ func CreateAuthenticationMiddleware(config *config.Config, sessionService interf
 			accesstoken := strings.Replace(c.Request().Header.Get("Authorization"), "Bearer ", "", 1)
 			refreshtoken := c.Request().Header.Get("X-App-Token")
 
-			if _, requestorID, err := ValidateToken(accesstoken, []byte(config.JWTAccesstokenKey)); err == nil {
-				cctx := &AuthenticationContext{
+			if _, requestorID, err := authentication.ValidateToken(accesstoken, []byte(config.JWTAccesstokenKey)); err == nil {
+				cctx := &authentication.AuthenticationContext{
 					Context:     c,
 					RequestorID: requestorID,
 				}
 				return next(cctx)
 			}
 
-			_, requestorID, err := ValidateToken(refreshtoken, []byte(config.JWTRefreshtokenKey))
+			_, requestorID, err := authentication.ValidateToken(refreshtoken, []byte(config.JWTRefreshtokenKey))
 			if err != nil {
 				return response.ErrorResponse(c, http.StatusUnauthorized, nil)
 			}
@@ -46,7 +47,7 @@ func CreateAuthenticationMiddleware(config *config.Config, sessionService interf
 				return response.ErrorResponse(c, http.StatusUnauthorized, nil)
 			}
 
-			_, newAccesstoken, err := CreateAndSignToken(
+			_, newAccesstoken, err := authentication.CreateAndSignToken(
 				config.JWTIssuer,
 				requestorID,
 				config.JWTAccesstokenKey,
@@ -59,7 +60,7 @@ func CreateAuthenticationMiddleware(config *config.Config, sessionService interf
 
 			c.Response().Header().Set("Authorization", fmt.Sprintf("Bearer %s", newAccesstoken))
 
-			cctx := &AuthenticationContext{
+			cctx := &authentication.AuthenticationContext{
 				Context:     c,
 				RequestorID: requestorID,
 				SessionID:   session.Result.ID,
