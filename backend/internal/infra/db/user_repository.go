@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"errors"
-	"log"
 
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
@@ -112,7 +111,6 @@ func (r *UserRepository) GetByAccountID(ctx context.Context, accountID string) (
 }
 
 func (r *UserRepository) GetMapByIDs(ctx context.Context, IDs []string) (map[string]*entities.User, error) {
-	log.Println("IDS: ", IDs)
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,

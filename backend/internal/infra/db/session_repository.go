@@ -210,15 +210,13 @@ func (r *SessionRepository) Update(ctx context.Context, session *entities.Sessio
 	return nil
 }
 
-func (r *SessionRepository) DeleteByID(ctx context.Context, ID string, userID string) error {
+func (r *SessionRepository) DeleteByID(ctx context.Context, ID string) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			session
 		WHERE
-			id = $1
-		AND
-			user_id = $2;
-	`, ID, userID)
+			id = $1;
+	`, ID)
 
 	if err != nil {
 		return wrapUnknownErr("delete session by id failed", err)

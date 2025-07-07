@@ -457,13 +457,13 @@ func (r *GuildRoleRepository) GetMapRoleIDsByUserIDs(ctx context.Context, userID
 func (r *GuildRoleRepository) GetRoleIDsByUserIDAndGuildID(ctx context.Context, userID string, guildID string) ([]string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
-			gru.role_id,
+			gru.role_id
 		FROM
 			guild_role_user gru
 		INNER JOIN
 			guild_role gr
 		WHERE
-			user_id = $1
+			gru.user_id = $1
 		AND 
 			gr.guild_id = $2;
 	`, userID, guildID)
@@ -481,6 +481,36 @@ func (r *GuildRoleRepository) GetRoleIDsByUserIDAndGuildID(ctx context.Context, 
 			&roleID,
 		); err != nil {
 			return nil, wrapUnknownErr("map over select role ids by user id and guild id failed", err)
+		}
+
+		roleIDs = append(roleIDs, roleID)
+	}
+
+	return roleIDs, err
+}
+
+func (r *GuildRoleRepository) GetRoleIDsByUserID(ctx context.Context, userID string) ([]string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			role_id
+		FROM
+			guild_role_user
+		WHERE
+			user_id = $1;
+	`, userID)
+
+	if err != nil {
+		return nil, wrapUnknownErr("select role ids by user id failed", err)
+	}
+	defer rows.Close()
+
+	roleIDs := []string{}
+	for rows.Next() {
+		var roleID string
+		if err := rows.Scan(
+			&roleID,
+		); err != nil {
+			return nil, wrapUnknownErr("map over select role ids by user id failed", err)
 		}
 
 		roleIDs = append(roleIDs, roleID)

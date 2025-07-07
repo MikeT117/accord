@@ -448,7 +448,7 @@ func (r *ChannelRepository) GetMapUsersByChannelIDs(ctx context.Context, channel
 			u.created_at,
 			u.updated_at
 		FROM
-			user u
+			"user" u
 		INNER JOIN
 			channel_user cu ON u.id = cu.user_id
 		WHERE
