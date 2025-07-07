@@ -18,8 +18,8 @@ func ToChannelResponse(channel *common.ChannelResult) *response.ChannelResponse 
 		Name:        channel.Name,
 		Topic:       channel.Topic,
 		ChannelType: channel.ChannelType,
-		CreatedAt:   channel.CreatedAt,
-		UpdatedAt:   channel.UpdatedAt,
+		CreatedAt:   channel.CreatedAt.Unix(),
+		UpdatedAt:   channel.UpdatedAt.Unix(),
 	}
 
 	if len(channel.Users) != 0 {

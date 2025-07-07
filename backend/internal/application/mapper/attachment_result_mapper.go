@@ -4,7 +4,6 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func NewAttachmentResultFromAttachment(attachment *entities.Attachment) *common.AttachmentResult {
@@ -41,6 +40,8 @@ func NewAttachmentProtoResultFromAttachment(attachment *entities.Attachment) *pb
 	}
 
 	var status int32 = int32(attachment.Status)
+	createdAt := attachment.CreatedAt.Unix()
+	updatedAt := attachment.UpdatedAt.Unix()
 	return &pb.Attachment{
 		Id:           &attachment.ID,
 		ResourceType: &attachment.ResourceType,
@@ -48,8 +49,8 @@ func NewAttachmentProtoResultFromAttachment(attachment *entities.Attachment) *pb
 		Height:       attachment.Height,
 		Width:        attachment.Width,
 		Filesize:     &attachment.Filesize,
-		CreatedAt:    timestamppb.New(attachment.CreatedAt),
-		UpdatedAt:    timestamppb.New(attachment.UpdatedAt),
+		CreatedAt:    &createdAt,
+		UpdatedAt:    &updatedAt,
 		Status:       &status,
 	}
 }

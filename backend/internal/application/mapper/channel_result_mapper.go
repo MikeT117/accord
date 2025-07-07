@@ -4,7 +4,6 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func NewChannelResultFromChannel(channel *entities.Channel, roleIDs []string, users []*entities.User) *common.ChannelResult {
@@ -52,6 +51,8 @@ func NewChannelProtoResultFromChannel(channel *entities.Channel, roleIDs []strin
 
 	var ver int32 = 0
 	channelType := int32(channel.ChannelType)
+	createdAt := channel.CreatedAt.Unix()
+	updatedAt := channel.UpdatedAt.Unix()
 	return &pb.Channel{
 		Ver:         &ver,
 		Id:          &channel.ID,
@@ -61,12 +62,21 @@ func NewChannelProtoResultFromChannel(channel *entities.Channel, roleIDs []strin
 		Name:        channel.Name,
 		Topic:       channel.Topic,
 		ChannelType: &channelType,
-		CreatedAt:   timestamppb.New(channel.CreatedAt),
-		UpdatedAt:   timestamppb.New(channel.UpdatedAt),
+		CreatedAt:   &createdAt,
+		UpdatedAt:   &updatedAt,
 		Users:       tempUsers,
 		RoleIds:     roleIDs,
 	}
+}
 
+func NewChannelListProtoResultFromChannel(channels []*entities.Channel, roleIDs map[string][]string, users map[string][]*entities.User) []*pb.Channel {
+	tempChannels := make([]*pb.Channel, len(channels))
+
+	for i := 0; i < len(channels); i++ {
+		tempChannels = append(tempChannels, NewChannelProtoResultFromChannel(channels[i], roleIDs[channels[i].ID], users[channels[i].ID]))
+	}
+
+	return tempChannels
 }
 
 func NewChannelCreatedProtoEvent(channel *entities.Channel, roleIDs []string, users []*entities.User) *pb.EventPayload {
@@ -90,6 +100,7 @@ func NewChannelCreatedProtoEvent(channel *entities.Channel, roleIDs []string, us
 
 func NewChannelUpdatedProtoEvent(channel *entities.Channel) *pb.EventPayload {
 	var ver int32 = 0
+	updatedAt := channel.UpdatedAt.Unix()
 	return &pb.EventPayload{
 		Ver: &ver,
 		Op:  pb.OpCode_CHANNEL_DELETE_EVENT.Enum(),
@@ -101,7 +112,7 @@ func NewChannelUpdatedProtoEvent(channel *entities.Channel) *pb.EventPayload {
 				ParentId:  channel.ParentID,
 				Name:      channel.Name,
 				Topic:     channel.Topic,
-				UpdatedAt: timestamppb.New(channel.UpdatedAt),
+				UpdatedAt: &updatedAt,
 			},
 		},
 	}

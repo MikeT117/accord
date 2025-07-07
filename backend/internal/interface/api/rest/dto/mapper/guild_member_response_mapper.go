@@ -13,8 +13,8 @@ func ToGuildMemberResponse(guildMember *common.GuildMemberResult) *response.Guil
 	return &response.GuildMemberResponse{
 		GuildID:   guildMember.GuildID,
 		Nickname:  guildMember.Nickname,
-		CreatedAt: guildMember.CreatedAt,
-		UpdatedAt: guildMember.UpdatedAt,
+		CreatedAt: guildMember.CreatedAt.Unix(),
+		UpdatedAt: guildMember.UpdatedAt.Unix(),
 		Avatar:    guildMember.AvatarID,
 		Banner:    guildMember.BannerID,
 		Roles:     guildMember.Roles,

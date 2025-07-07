@@ -15,8 +15,8 @@ func ToAttachmentResponse(attachment *common.AttachmentResult) *response.Attachm
 		Height:       attachment.Height,
 		Width:        attachment.Width,
 		Filesize:     attachment.Filesize,
-		CreatedAt:    attachment.CreatedAt,
-		UpdatedAt:    attachment.UpdatedAt,
+		CreatedAt:    attachment.CreatedAt.Unix(),
+		UpdatedAt:    attachment.UpdatedAt.Unix(),
 		Status:       attachment.Status,
 	}
 }

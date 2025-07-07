@@ -15,8 +15,8 @@ func ToSessionResponse(session *common.SessionResult) *response.SessionResponse 
 		Token:     session.Token,
 		IPAddress: session.IPAddress,
 		UserAgent: session.UserAgent,
-		CreatedAt: session.CreatedAt,
-		UpdatedAt: session.UpdatedAt,
+		CreatedAt: session.CreatedAt.Unix(),
+		UpdatedAt: session.UpdatedAt.Unix(),
 	}
 }
 

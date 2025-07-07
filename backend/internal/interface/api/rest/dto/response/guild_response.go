@@ -1,7 +1,5 @@
 package response
 
-import "time"
-
 type GuildResponse struct {
 	ID              string               `json:"id"`
 	CreatorID       string               `json:"creatorId"`
@@ -11,8 +9,8 @@ type GuildResponse struct {
 	Discoverable    bool                 `json:"discoverable"`
 	ChannelCount    int64                `json:"channelCount"`
 	MemberCount     int64                `json:"memberCount"`
-	CreatedAt       time.Time            `json:"createdAt"`
-	UpdatedAt       time.Time            `json:"updatedAt"`
+	CreatedAt       int64                `json:"createdAt"`
+	UpdatedAt       int64                `json:"updatedAt"`
 	Icon            *string              `json:"icon"`
 	Banner          *string              `json:"banner"`
 	Channels        []*ChannelResponse   `json:"channels,omitempty"`

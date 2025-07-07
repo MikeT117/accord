@@ -4,7 +4,6 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func NewGuildResultFromGuild(
@@ -97,6 +96,8 @@ func NewGuildProtoResultFromGuild(
 
 	channelCount := int32(guild.ChannelCount)
 	memberCount := int32(guild.MemberCount)
+	createdAt := guild.CreatedAt.Unix()
+	updatedAt := guild.UpdatedAt.Unix()
 	var ver int32 = 0
 	return &pb.Guild{
 		Ver:             &ver,
@@ -108,14 +109,33 @@ func NewGuildProtoResultFromGuild(
 		Discoverable:    &guild.Discoverable,
 		ChannelCount:    &channelCount,
 		MemberCount:     &memberCount,
-		CreatedAt:       timestamppb.New(guild.CreatedAt),
-		UpdatedAt:       timestamppb.New(guild.UpdatedAt),
+		CreatedAt:       &createdAt,
+		UpdatedAt:       &updatedAt,
 		Icon:            guild.IconID,
 		Banner:          guild.BannerID,
 		Roles:           tempRoles,
 		Channels:        tempChannels,
 	}
+}
 
+func NewGuildProtoListResultFromGuild(
+	guilds []*entities.Guild,
+	channelsMap map[string][]*entities.Channel,
+	channelRolesMap map[string][]string,
+	rolesMap map[string][]*entities.GuildRole,
+) []*pb.Guild {
+	guildsResult := make([]*pb.Guild, len(guilds))
+
+	for i := 0; i < len(guilds); i++ {
+		guildsResult[i] = NewGuildProtoResultFromGuild(
+			guilds[i],
+			channelsMap[guilds[i].ID],
+			channelRolesMap,
+			rolesMap[guilds[i].ID],
+		)
+	}
+
+	return guildsResult
 }
 
 func NewGuildCreatedProtoEvent(
@@ -137,6 +157,8 @@ func NewGuildCreatedProtoEvent(
 func NewGuildUpdatedProtoEvent(guild *entities.Guild) *pb.EventPayload {
 	channelCount := int32(guild.ChannelCount)
 	memberCount := int32(guild.MemberCount)
+
+	updatedAt := guild.UpdatedAt.Unix()
 	var ver int32 = 0
 	return &pb.EventPayload{
 		Ver: &ver,
@@ -151,7 +173,7 @@ func NewGuildUpdatedProtoEvent(guild *entities.Guild) *pb.EventPayload {
 				Discoverable:    &guild.Discoverable,
 				ChannelCount:    &channelCount,
 				MemberCount:     &memberCount,
-				UpdatedAt:       timestamppb.New(guild.UpdatedAt),
+				UpdatedAt:       &updatedAt,
 				Icon:            guild.IconID,
 				Banner:          guild.BannerID,
 			},

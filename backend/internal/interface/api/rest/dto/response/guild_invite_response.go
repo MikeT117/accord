@@ -2,7 +2,7 @@ package response
 
 type GuildInviteResponse struct {
 	ID           string  `json:"id"`
-	GuildID      string  `json:"guildID"`
+	GuildID      string  `json:"guildId"`
 	Name         string  `json:"name"`
 	Description  string  `json:"description"`
 	ChannelCount int64   `json:"channelCount"`

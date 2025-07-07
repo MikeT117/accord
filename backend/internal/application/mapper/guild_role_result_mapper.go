@@ -4,7 +4,6 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func NewGuildRoleResultFromGuildRole(guildRole *entities.GuildRole) *common.GuildRoleResult {
@@ -30,14 +29,16 @@ func NewGuildRoleListResultFromGuildRole(guildRoles []*entities.GuildRole) []*co
 
 func NewGuildRoleProtoResultFromGuildRole(guildRole *entities.GuildRole) *pb.GuildRole {
 	var ver int32 = 0
+	createdAt := guildRole.CreatedAt.Unix()
+	updatedAt := guildRole.UpdatedAt.Unix()
 	return &pb.GuildRole{
 		Ver:         &ver,
 		Id:          &guildRole.ID,
 		GuildId:     &guildRole.GuildID,
 		Name:        &guildRole.Name,
 		Permissions: &guildRole.Permissions,
-		CreatedAt:   timestamppb.New(guildRole.CreatedAt),
-		UpdatedAt:   timestamppb.New(guildRole.UpdatedAt),
+		CreatedAt:   &createdAt,
+		UpdatedAt:   &updatedAt,
 	}
 }
 
@@ -54,6 +55,8 @@ func NewGuildRoleCreatedProtoEvent(guildRole *entities.GuildRole) *pb.EventPaylo
 
 func NewGuildRoleUpdatedProtoEvent(guildRole *entities.GuildRole) *pb.EventPayload {
 	var ver int32 = 0
+
+	updatedAt := guildRole.UpdatedAt.Unix()
 	return &pb.EventPayload{
 		Ver: &ver,
 		Op:  pb.OpCode_GUILD_ROLE_UPDATE_EVENT.Enum(),
@@ -64,7 +67,7 @@ func NewGuildRoleUpdatedProtoEvent(guildRole *entities.GuildRole) *pb.EventPaylo
 				GuildId:     &guildRole.GuildID,
 				Name:        &guildRole.Name,
 				Permissions: &guildRole.Permissions,
-				UpdatedAt:   timestamppb.New(guildRole.UpdatedAt),
+				UpdatedAt:   &updatedAt,
 			},
 		},
 	}

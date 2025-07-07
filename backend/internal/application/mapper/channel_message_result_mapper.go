@@ -4,7 +4,6 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func NewChannelMessageResultFromChannelMessage(channelMessage *entities.ChannelMessage, user *entities.User, guildMember *entities.GuildMember, attachments []*entities.Attachment) *common.ChannelMessageResult {
@@ -42,6 +41,8 @@ func NewChannelMessageListResultFromChannelMessage(channelMessages []*entities.C
 func NewChannelMessageProtoResultFromChannelMessage(channelMessage *entities.ChannelMessage, user *entities.User, guildMember *entities.GuildMember, attachments []*entities.Attachment) *pb.ChannelMessage {
 	var ver int32 = 0
 	var flag int32 = int32(channelMessage.Flag)
+	createdAt := channelMessage.CreatedAt.Unix()
+	updatedAt := channelMessage.UpdatedAt.Unix()
 	return &pb.ChannelMessage{
 		Ver:         &ver,
 		Id:          &channelMessage.ID,
@@ -50,8 +51,8 @@ func NewChannelMessageProtoResultFromChannelMessage(channelMessage *entities.Cha
 		Flag:        &flag,
 		AuthorId:    &channelMessage.AuthorID,
 		ChannelId:   &channelMessage.ChannelID,
-		CreatedAt:   timestamppb.New(channelMessage.CreatedAt),
-		UpdatedAt:   timestamppb.New(channelMessage.UpdatedAt),
+		CreatedAt:   &createdAt,
+		UpdatedAt:   &updatedAt,
 		Author:      NewChannelMessageAuthorProtoResultFromUserGuildMember(user, guildMember),
 		Attachments: NewAttachmentListProtoResultFromAttachments(attachments),
 	}
@@ -71,6 +72,8 @@ func NewChannelMessageCreatedProtoEvent(channelMessage *entities.ChannelMessage,
 func NewChannelMessageUpdatedProtoEvent(channelMessage *entities.ChannelMessage, attachments []*entities.Attachment) *pb.EventPayload {
 	var ver int32 = 0
 	var flag int32 = int32(channelMessage.Flag)
+
+	updatedAt := channelMessage.UpdatedAt.Unix()
 	return &pb.EventPayload{
 		Ver: &ver,
 		Op:  pb.OpCode_CHANNEL_MESSAGE_UPDATE_EVENT.Enum(),
@@ -82,7 +85,7 @@ func NewChannelMessageUpdatedProtoEvent(channelMessage *entities.ChannelMessage,
 				Pinned:      &channelMessage.Pinned,
 				Flag:        &flag,
 				ChannelId:   &channelMessage.ChannelID,
-				UpdatedAt:   timestamppb.New(channelMessage.UpdatedAt),
+				UpdatedAt:   &updatedAt,
 				Attachments: NewAttachmentListProtoResultFromAttachments(attachments),
 			},
 		},

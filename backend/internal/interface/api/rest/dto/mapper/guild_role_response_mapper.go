@@ -14,8 +14,8 @@ func ToGuildRoleResponse(role *common.GuildRoleResult) *response.GuildRoleRespon
 		GuildID:     role.GuildID,
 		Name:        role.Name,
 		Permissions: role.Permissions,
-		CreatedAt:   role.CreatedAt,
-		UpdatedAt:   role.UpdatedAt,
+		CreatedAt:   role.CreatedAt.Unix(),
+		UpdatedAt:   role.UpdatedAt.Unix(),
 	}
 }
 

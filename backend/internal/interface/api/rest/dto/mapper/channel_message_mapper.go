@@ -15,8 +15,8 @@ func ToChannelMessageResponse(channelMessage *common.ChannelMessageResult) *resp
 		Pinned:      channelMessage.Pinned,
 		Flag:        channelMessage.Flag,
 		ChannelID:   channelMessage.ChannelID,
-		CreatedAt:   channelMessage.CreatedAt,
-		UpdatedAt:   channelMessage.UpdatedAt,
+		CreatedAt:   channelMessage.CreatedAt.Unix(),
+		UpdatedAt:   channelMessage.UpdatedAt.Unix(),
 		Attachments: ToAttachmentsResponse(channelMessage.Attachments),
 		Author:      ToChannelMessageAuthorResponse(channelMessage.Author),
 	}

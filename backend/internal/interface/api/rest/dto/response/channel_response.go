@@ -1,7 +1,5 @@
 package response
 
-import "time"
-
 type ChannelResponse struct {
 	ID          string          `json:"id"`
 	CreatorID   string          `json:"creatorId"`
@@ -10,8 +8,8 @@ type ChannelResponse struct {
 	Name        *string         `json:"name"`
 	Topic       *string         `json:"topic"`
 	ChannelType int8            `json:"channelType"`
-	CreatedAt   time.Time       `json:"createdAt"`
-	UpdatedAt   time.Time       `json:"updatedAt"`
+	CreatedAt   int64           `json:"createdAt"`
+	UpdatedAt   int64           `json:"updatedAt"`
 	Roles       []string        `json:"roles,omitempty"`
 	Users       []*UserResponse `json:"users,omitempty"`
 }
