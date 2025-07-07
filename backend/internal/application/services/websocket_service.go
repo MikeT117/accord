@@ -1,0 +1,126 @@
+package services
+
+import (
+	"context"
+	"time"
+
+	"github.com/MikeT117/accord/backend/internal/application/interfaces"
+	"github.com/MikeT117/accord/backend/internal/application/mapper"
+	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+)
+
+type WebsocketService struct {
+	userRepository        repositories.UserRepository
+	sessionRepository     repositories.SessionRepository
+	guildRepository       repositories.GuildRepository
+	guildMemberRepository repositories.GuildMemberRepository
+	guildRoleRepository   repositories.GuildRoleRepository
+	channelRepository     repositories.ChannelRepository
+}
+
+func CreateWebsocketService(
+	userRepository repositories.UserRepository,
+	sessionRepository repositories.SessionRepository,
+	guildRepository repositories.GuildRepository,
+	guildMemberRepository repositories.GuildMemberRepository,
+	guildRoleRepository repositories.GuildRoleRepository,
+	channelRepository repositories.ChannelRepository,
+) interfaces.WebsocketService {
+	return &WebsocketService{
+		userRepository:        userRepository,
+		sessionRepository:     sessionRepository,
+		guildRepository:       guildRepository,
+		guildMemberRepository: guildMemberRepository,
+		guildRoleRepository:   guildRoleRepository,
+		channelRepository:     channelRepository,
+	}
+}
+
+func (s *WebsocketService) GetInitialisationPayload(ctx context.Context, userID string) (*pb.Initialisation, error) {
+
+	guildIDs, err := s.guildMemberRepository.GetGuildIDsByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	guilds, err := s.guildRepository.GetByGuildIDs(ctx, guildIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	guildChannelsMap, channelIDs, err := s.channelRepository.GetMapByGuildIDs(ctx, guildIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	privateChannels, privateChannelIDs, err := s.channelRepository.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	privateChannelUsers, err := s.channelRepository.GetMapUsersByChannelIDs(ctx, privateChannelIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	guildChannelRolesMap, err := s.guildRoleRepository.GetMapRoleIDsByChannelIDs(ctx, channelIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	rolesMap, _, err := s.guildRoleRepository.GetMapByGuildIDs(ctx, guildIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := s.userRepository.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	userRoleIDs, err := s.guildRoleRepository.GetRoleIDsByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	var ver int32 = 0
+	return &pb.Initialisation{
+		Ver:     &ver,
+		User:    mapper.NewUserProtoResultFromUser(user),
+		RoleIds: userRoleIDs,
+		Guilds: mapper.NewGuildProtoListResultFromGuild(
+			guilds,
+			guildChannelsMap,
+			guildChannelRolesMap,
+			rolesMap,
+		),
+		PrivateChannels: mapper.NewChannelListProtoResultFromChannel(
+			privateChannels,
+			nil,
+			privateChannelUsers,
+		),
+	}, nil
+}
+
+func (s *WebsocketService) ValidateSession(ctx context.Context, token string) (bool, error) {
+	session, err := s.sessionRepository.GetByToken(context.Background(), token)
+	if err != nil {
+		return false, err
+	}
+
+	if !session.ExpiresAt.After(time.Now()) {
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func (s *WebsocketService) GetUserRoleIDs(ctx context.Context, userID string) ([]string, error) {
+	roleIDs, err := s.guildRoleRepository.GetRoleIDsByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return roleIDs, nil
+}
