@@ -3,8 +3,6 @@ edition = "2023";
 package pb;
 option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
 
-import "google/protobuf/timestamp.proto";
-
 import "attachment.proto";
 
 message ChannelMessageUpdated {
@@ -14,7 +12,7 @@ message ChannelMessageUpdated {
     bool pinned = 4;
     int32 flag = 5;
     string channel_id = 6;
-    google.protobuf.Timestamp updated_at = 7;
+    int64 updated_at = 7;
     repeated Attachment attachments = 8;
 }
 

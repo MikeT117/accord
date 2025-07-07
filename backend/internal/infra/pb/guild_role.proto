@@ -3,14 +3,12 @@ edition = "2023";
 package pb;
 option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
 
-import "google/protobuf/timestamp.proto";
-
 message GuildRole {
     int32 ver = 1;
     string id = 2;
     string guild_id = 3;
     string name = 4;
     int32 permissions = 5;
-    google.protobuf.Timestamp created_at = 6;
-    google.protobuf.Timestamp updated_at = 7;
+    int64 created_at = 6;
+    int64 updated_at = 7;
 }

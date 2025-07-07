@@ -3,8 +3,6 @@ edition = "2023";
 package pb;
 option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
 
-import "google/protobuf/timestamp.proto";
-
 message ChannelUpdated {
     int32 ver = 1;
     string id = 2;
@@ -12,7 +10,21 @@ message ChannelUpdated {
     string parent_id = 4;
     string name = 5;
     string topic = 6;
-    google.protobuf.Timestamp updated_at = 7;
+    int64 updated_at = 7;
+}
+
+message ChannelRoleAssociated {
+    int32 ver = 1;
+    string id = 2;
+    string guild_id = 3;
+    string role_id = 4;
+}
+
+message ChannelRoleDisassociated {
+    int32 ver = 1;
+    string id = 2;
+    string guild_id = 3;
+    string role_id = 4;
 }
 
 message ChannelDeleted {
