@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/mapper"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
 	"github.com/MikeT117/accord/backend/internal/infra/pubsub"
 )
 
@@ -187,9 +188,14 @@ func (s *EventService) ChannelUpdated(ctx context.Context, ID string) error {
 	return s.eventPublisher.PublishUserEvent(userIDs, mapper.NewChannelUpdatedProtoEvent(channel))
 }
 
-func (s *EventService) ChannelDeleted(ctx context.Context, ID string, guildID *string, roleIDs []string, userIDs []string) error {
+func (s *EventService) ChannelDeleted(ctx context.Context, ID string, guildID *string, userIDs []string) error {
 	if guildID != nil {
-		return s.eventPublisher.PublishRoleEvent(roleIDs, mapper.NewChannelDeletedProtoEvent(ID, guildID))
+		roleID, err := s.guildRoleRepository.GetDefaultGuildRoleIDByGuildID(ctx, *guildID)
+		if err != nil {
+			return err
+		}
+
+		return s.eventPublisher.PublishRoleEvent([]string{roleID}, mapper.NewChannelDeletedProtoEvent(ID, guildID))
 	}
 
 	return s.eventPublisher.PublishUserEvent(userIDs, mapper.NewChannelDeletedProtoEvent(ID, nil))
@@ -350,4 +356,102 @@ func (s *EventService) ChannelMessageDeleted(ctx context.Context, ID string, cha
 	}
 
 	return s.eventPublisher.PublishUserEvent(userIDs, mapper.NewChannelMessageDeletedProtoEvent(ID, channelID))
+}
+
+func (s *EventService) InvalidateToken(ctx context.Context, userID string, token string) error {
+	var ver int32 = 0
+	return s.eventPublisher.PublishProviderEvent(*pb.ProviderOpCode_INVALIDATE_TOKEN.Enum(), userID, &pb.ProviderEvent_InvalidateToken{
+		InvalidateToken: &pb.InvalidateToken{
+			Ver:   &ver,
+			Token: &token,
+		},
+	})
+}
+
+func (s *EventService) UserRoleAssociated(ctx context.Context, userID string, roleID string) error {
+	var ver int32 = 0
+	if err := s.eventPublisher.PublishUserEvent([]string{userID}, &pb.EventPayload{
+		Ver: &ver,
+		Op:  pb.OpCode_USER_ROLE_ASSOCIATE.Enum(),
+		Payload: &pb.EventPayload_UserRoleAssociated{
+			UserRoleAssociated: &pb.UserRoleAssociated{
+				Ver:    &ver,
+				RoleId: &roleID,
+			},
+		},
+	}); err != nil {
+		return err
+	}
+
+	return s.eventPublisher.PublishProviderEvent(*pb.ProviderOpCode_ASSOCIATE_USER_ROLE.Enum(), userID, &pb.ProviderEvent_UserRoleAssociate{
+		UserRoleAssociate: &pb.UserRoleAssociated{
+			Ver:    &ver,
+			RoleId: &roleID,
+		},
+	})
+}
+
+func (s *EventService) UserRoleDisassociated(ctx context.Context, userID string, roleID string) error {
+	var ver int32 = 0
+	if err := s.eventPublisher.PublishUserEvent([]string{userID}, &pb.EventPayload{
+		Ver: &ver,
+		Op:  pb.OpCode_USER_ROLE_DISASSOCIATE.Enum(),
+		Payload: &pb.EventPayload_UserRoleDisassociated{
+			UserRoleDisassociated: &pb.UserRoleDisassociated{
+				Ver:    &ver,
+				RoleId: &roleID,
+			},
+		},
+	}); err != nil {
+		return err
+	}
+
+	return s.eventPublisher.PublishProviderEvent(*pb.ProviderOpCode_ASSOCIATE_USER_ROLE.Enum(), userID, &pb.ProviderEvent_UserRoleDisassociate{
+		UserRoleDisassociate: &pb.UserRoleDisassociated{
+			Ver:    &ver,
+			RoleId: &roleID,
+		},
+	})
+}
+
+func (s *EventService) ChannelRoleAssociated(ctx context.Context, ID string, guildID string, roleID string) error {
+	defaultRoleID, err := s.guildRoleRepository.GetDefaultGuildRoleIDByGuildID(ctx, ID)
+	if err != nil {
+		return err
+	}
+
+	var ver int32 = 0
+	return s.eventPublisher.PublishRoleEvent([]string{defaultRoleID}, &pb.EventPayload{
+		Ver: &ver,
+		Op:  pb.OpCode_CHANNEL_ROLE_ASSOCIATE.Enum(),
+		Payload: &pb.EventPayload_ChannelRoleAssociated{
+			ChannelRoleAssociated: &pb.ChannelRoleAssociated{
+				Ver:     &ver,
+				Id:      &ID,
+				GuildId: &guildID,
+				RoleId:  &roleID,
+			},
+		},
+	})
+}
+
+func (s *EventService) ChannelRoleDisassociated(ctx context.Context, ID string, guildID string, roleID string) error {
+	defaultRoleID, err := s.guildRoleRepository.GetDefaultGuildRoleIDByGuildID(ctx, ID)
+	if err != nil {
+		return err
+	}
+
+	var ver int32 = 0
+	return s.eventPublisher.PublishRoleEvent([]string{defaultRoleID}, &pb.EventPayload{
+		Ver: &ver,
+		Op:  pb.OpCode_CHANNEL_ROLE_DISASSOCIATE.Enum(),
+		Payload: &pb.EventPayload_ChannelRoleDisassociated{
+			ChannelRoleDisassociated: &pb.ChannelRoleDisassociated{
+				Ver:     &ver,
+				Id:      &ID,
+				GuildId: &guildID,
+				RoleId:  &roleID,
+			},
+		},
+	})
 }

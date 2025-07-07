@@ -13,7 +13,7 @@ type EventService interface {
 
 	ChannelCreated(ctx context.Context, ID string) error
 	ChannelUpdated(ctx context.Context, ID string) error
-	ChannelDeleted(ctx context.Context, ID string, guildID *string, roleIDs []string, userIDs []string) error
+	ChannelDeleted(ctx context.Context, ID string, guildID *string, userIDs []string) error
 
 	RelationshipCreated(ctx context.Context, ID string) error
 	RelationshipUpdated(ctx context.Context, ID string) error
@@ -22,4 +22,12 @@ type EventService interface {
 	ChannelMessageCreated(ctx context.Context, ID string) error
 	ChannelMessageUpdated(ctx context.Context, ID string) error
 	ChannelMessageDeleted(ctx context.Context, ID string, channelID string) error
+
+	InvalidateToken(ctx context.Context, userID string, token string) error
+
+	UserRoleAssociated(ctx context.Context, userID string, roleID string) error
+	UserRoleDisassociated(ctx context.Context, userID string, roleID string) error
+
+	ChannelRoleAssociated(ctx context.Context, ID string, guildID string, roleID string) error
+	ChannelRoleDisassociated(ctx context.Context, ID string, guildID string, roleID string) error
 }
