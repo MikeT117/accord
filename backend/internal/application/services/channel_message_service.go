@@ -17,6 +17,7 @@ import (
 type ChannelMessageService struct {
 	transactor               *db.Transactor
 	authorisationService     interfaces.AuthorisationService
+	eventService             interfaces.EventService
 	channelMessageRepository repositories.ChannelMessageRepository
 	channelRepository        repositories.ChannelRepository
 	userRepository           repositories.UserRepository
@@ -25,11 +26,12 @@ type ChannelMessageService struct {
 	attachmentRepository     repositories.AttachmentRepository
 }
 
-func CreateChannelMessageService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, channelMessageRepository repositories.ChannelMessageRepository, channelRepository repositories.ChannelRepository, userRepository repositories.UserRepository,
+func CreateChannelMessageService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, channelMessageRepository repositories.ChannelMessageRepository, channelRepository repositories.ChannelRepository, userRepository repositories.UserRepository,
 	guildMemberRepository repositories.GuildMemberRepository, guildRoleRepository repositories.GuildRoleRepository, attachmentRepository repositories.AttachmentRepository) interfaces.ChannelMessageService {
 	return &ChannelMessageService{
 		transactor:               transactor,
 		authorisationService:     authorisationService,
+		eventService:             eventService,
 		channelMessageRepository: channelMessageRepository,
 		channelRepository:        channelRepository,
 		userRepository:           userRepository,
@@ -143,6 +145,7 @@ func (s *ChannelMessageService) Create(ctx context.Context, cmd *command.CreateC
 			if attachment.OwnerID != cmd.RequestorID {
 				return ErrNotAuthorised
 			}
+			attachments = append(attachments, attachment)
 		}
 	}
 
@@ -151,7 +154,8 @@ func (s *ChannelMessageService) Create(ctx context.Context, cmd *command.CreateC
 		return err
 	}
 
-	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+	if err := s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+
 		if err := s.channelMessageRepository.Create(ctx, channelMessage); err != nil {
 			return err
 		}
@@ -163,8 +167,14 @@ func (s *ChannelMessageService) Create(ctx context.Context, cmd *command.CreateC
 		}
 
 		return nil
-	})
+
+	}); err != nil {
+		return err
+	}
+
+	return s.eventService.ChannelMessageCreated(ctx, channelMessage.ID)
 }
+
 func (s *ChannelMessageService) Update(ctx context.Context, cmd *command.UpdateChannelMessageCommand) error {
 	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
 	if err != nil {
@@ -188,7 +198,7 @@ func (s *ChannelMessageService) Update(ctx context.Context, cmd *command.UpdateC
 		return err
 	}
 
-	return nil
+	return s.eventService.ChannelMessageUpdated(ctx, channelMessage.ID)
 }
 
 func (s *ChannelMessageService) Delete(ctx context.Context, cmd *command.DeleteChannelMessageCommand) error {
@@ -210,5 +220,5 @@ func (s *ChannelMessageService) Delete(ctx context.Context, cmd *command.DeleteC
 		return err
 	}
 
-	return nil
+	return s.eventService.ChannelMessageDeleted(ctx, channelMessage.ID, channelMessage.ChannelID)
 }

@@ -16,14 +16,16 @@ import (
 type GuildRoleService struct {
 	transactor            *db.Transactor
 	authorisationService  interfaces.AuthorisationService
+	eventService          interfaces.EventService
 	guildRoleRepository   repositories.GuildRoleRepository
 	guildMemberRepository repositories.GuildMemberRepository
 }
 
-func CreateGuildRoleService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, guildRoleRepository repositories.GuildRoleRepository, guildMemberRepository repositories.GuildMemberRepository) interfaces.GuildRoleService {
+func CreateGuildRoleService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, guildRoleRepository repositories.GuildRoleRepository, guildMemberRepository repositories.GuildMemberRepository) interfaces.GuildRoleService {
 	return &GuildRoleService{
 		transactor:            transactor,
 		authorisationService:  authorisationService,
+		eventService:          eventService,
 		guildRoleRepository:   guildRoleRepository,
 		guildMemberRepository: guildMemberRepository,
 	}
@@ -60,7 +62,7 @@ func (s *GuildRoleService) Create(ctx context.Context, cmd *command.CreateGuildR
 		return err
 	}
 
-	return nil
+	return s.eventService.GuildRoleCreated(ctx, guildRoleEntity.ID)
 }
 
 func (s *GuildRoleService) Update(ctx context.Context, cmd *command.UpdateGuildRoleCommand) error {
@@ -85,7 +87,7 @@ func (s *GuildRoleService) Update(ctx context.Context, cmd *command.UpdateGuildR
 		return err
 	}
 
-	return nil
+	return s.eventService.GuildRoleUpdated(ctx, guildRole.ID)
 }
 
 func (s *GuildRoleService) Delete(ctx context.Context, cmd *command.DeleteGuildRoleCommand) error {
@@ -98,7 +100,7 @@ func (s *GuildRoleService) Delete(ctx context.Context, cmd *command.DeleteGuildR
 		return err
 	}
 
-	return nil
+	return s.eventService.GuildRoleDeleted(ctx, cmd.ID, cmd.GuildID)
 }
 
 func (s *GuildRoleService) CreateUserAssoc(ctx context.Context, cmd *command.CreateGuildRoleUserAssociationCommand) error {
@@ -111,7 +113,7 @@ func (s *GuildRoleService) CreateUserAssoc(ctx context.Context, cmd *command.Cre
 		return err
 	}
 
-	return nil
+	return s.eventService.UserRoleAssociated(ctx, cmd.UserID, cmd.RoleID)
 }
 
 func (s *GuildRoleService) DeleteUserAssoc(ctx context.Context, cmd *command.DeleteGuildRoleUserAssociationCommand) error {
@@ -124,7 +126,7 @@ func (s *GuildRoleService) DeleteUserAssoc(ctx context.Context, cmd *command.Del
 		return err
 	}
 
-	return nil
+	return s.eventService.UserRoleDisassociated(ctx, cmd.UserID, cmd.RoleID)
 }
 
 func (s *GuildRoleService) CreateChannelAssoc(ctx context.Context, cmd *command.CreateGuildRoleChannelAssociationCommand) error {
@@ -137,7 +139,7 @@ func (s *GuildRoleService) CreateChannelAssoc(ctx context.Context, cmd *command.
 		return err
 	}
 
-	return nil
+	return s.eventService.ChannelRoleAssociated(ctx, cmd.ChannelID, cmd.GuildID, cmd.RoleID)
 }
 
 func (s *GuildRoleService) DeleteChannelAssoc(ctx context.Context, cmd *command.DeleteGuildRoleChannelAssociationCommand) error {
@@ -150,5 +152,5 @@ func (s *GuildRoleService) DeleteChannelAssoc(ctx context.Context, cmd *command.
 		return err
 	}
 
-	return nil
+	return s.eventService.ChannelRoleDisassociated(ctx, cmd.ChannelID, cmd.GuildID, cmd.RoleID)
 }

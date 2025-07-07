@@ -17,15 +17,17 @@ import (
 type ChannelService struct {
 	transactor           *db.Transactor
 	authorisationService interfaces.AuthorisationService
+	eventService         interfaces.EventService
 	channelRepository    repositories.ChannelRepository
 	guildRoleRepository  repositories.GuildRoleRepository
 	userRepository       repositories.UserRepository
 }
 
-func CreateChannelService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, channelRepository repositories.ChannelRepository, guildRoleRepository repositories.GuildRoleRepository, userRepository repositories.UserRepository) interfaces.ChannelService {
+func CreateChannelService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, channelRepository repositories.ChannelRepository, guildRoleRepository repositories.GuildRoleRepository, userRepository repositories.UserRepository) interfaces.ChannelService {
 	return &ChannelService{
 		transactor:           transactor,
 		authorisationService: authorisationService,
+		eventService:         eventService,
 		channelRepository:    channelRepository,
 		guildRoleRepository:  guildRoleRepository,
 		userRepository:       userRepository,
@@ -49,7 +51,7 @@ func (s *ChannelService) GetByGuildID(ctx context.Context, guildID string, reque
 	}
 
 	return &query.ChannelQueryListResult{
-		Result: mapper.NewGuildChannelListResultFromChannel(channels, roleIDs),
+		Result: mapper.NewChannelListResultFromChannel(channels, roleIDs, nil),
 	}, nil
 }
 
@@ -66,7 +68,7 @@ func (s *ChannelService) GetByUserID(ctx context.Context, userID string) (*query
 	}
 
 	return &query.ChannelQueryListResult{
-		Result: mapper.NewUserChannelListResultFromChannel(channels, users),
+		Result: mapper.NewChannelListResultFromChannel(channels, nil, users),
 	}, nil
 }
 
@@ -77,10 +79,16 @@ func (s *ChannelService) Create(ctx context.Context, cmd *command.CreateChannelC
 	}
 
 	if channel.IsGuildChannel() {
-		return s.createGuildChannel(ctx, channel, cmd.RoleIDs, cmd.CreatorID)
+		if err := s.createGuildChannel(ctx, channel, cmd.RoleIDs, cmd.CreatorID); err != nil {
+			return err
+		}
+	} else {
+		if err := s.createUserChannel(ctx, channel, cmd.UserIDs, cmd.CreatorID); err != nil {
+			return err
+		}
 	}
 
-	return s.createUserChannel(ctx, channel, cmd.UserIDs, cmd.CreatorID)
+	return s.eventService.ChannelCreated(ctx, channel.ID)
 }
 
 func (s *ChannelService) Update(ctx context.Context, cmd *command.UpdateChannelCommand) error {
@@ -108,7 +116,7 @@ func (s *ChannelService) Update(ctx context.Context, cmd *command.UpdateChannelC
 		return err
 	}
 
-	return nil
+	return s.eventService.ChannelUpdated(ctx, channel.ID)
 }
 
 func (s *ChannelService) Delete(ctx context.Context, cmd *command.DeleteChannelCommand) error {
@@ -117,11 +125,30 @@ func (s *ChannelService) Delete(ctx context.Context, cmd *command.DeleteChannelC
 		return err
 	}
 
+	channel, err := s.channelRepository.GetByID(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+
+	var userIDs []string
+	if !channel.IsGuildChannel() {
+		userIDs, err = s.channelRepository.GetUserIDsByChannelID(ctx, channel.ID)
+		if err != nil {
+			return err
+		}
+
+	}
+
 	if err := s.channelRepository.Delete(ctx, cmd.ID); err != nil {
 		return err
 	}
 
-	return nil
+	if channel.IsGuildChannel() {
+		return s.eventService.ChannelDeleted(ctx, channel.ID, channel.GuildID, nil)
+	}
+
+	return s.eventService.ChannelDeleted(ctx, channel.ID, nil, userIDs)
+
 }
 
 func (s *ChannelService) CreateUserAssoc(ctx context.Context, cmd *command.CreateUserChannelAssociationCommand) error {

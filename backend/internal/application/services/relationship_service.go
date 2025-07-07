@@ -15,14 +15,16 @@ import (
 type RelationshipService struct {
 	transactor             *db.Transactor
 	authorisationService   interfaces.AuthorisationService
+	eventService           interfaces.EventService
 	relationshipRepository repositories.RelationshipRepository
 	userRepository         repositories.UserRepository
 }
 
-func CreateRelationshipService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, relationshipRepository repositories.RelationshipRepository, userRepository repositories.UserRepository) interfaces.RelationshipService {
+func CreateRelationshipService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, relationshipRepository repositories.RelationshipRepository, userRepository repositories.UserRepository) interfaces.RelationshipService {
 	return &RelationshipService{
 		transactor:             transactor,
 		authorisationService:   authorisationService,
+		eventService:           eventService,
 		relationshipRepository: relationshipRepository,
 		userRepository:         userRepository,
 	}
@@ -89,7 +91,7 @@ func (s *RelationshipService) Create(ctx context.Context, cmd *command.CreateRel
 		return err
 	}
 
-	return nil
+	return s.eventService.RelationshipCreated(ctx, relationship.ID)
 }
 
 func (s *RelationshipService) Update(ctx context.Context, cmd *command.UpdateRelationshipCommand) error {
@@ -110,9 +112,18 @@ func (s *RelationshipService) Update(ctx context.Context, cmd *command.UpdateRel
 		return err
 	}
 
-	return nil
+	return s.eventService.RelationshipUpdated(ctx, relationship.ID)
 }
 
 func (s *RelationshipService) Delete(ctx context.Context, cmd *command.DeleteRelationshipCommand) error {
-	return s.relationshipRepository.Delete(ctx, cmd.ID, cmd.RequestorID)
+	userIDs, err := s.relationshipRepository.GetUserIDsByID(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+
+	if err := s.relationshipRepository.Delete(ctx, cmd.ID, cmd.RequestorID); err != nil {
+		return err
+	}
+
+	return s.eventService.RelationshipDeleted(ctx, cmd.ID, userIDs)
 }

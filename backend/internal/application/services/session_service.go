@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/application/mapper"
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
@@ -14,13 +15,15 @@ import (
 
 type SessionService struct {
 	transactor        *db.Transactor
+	eventService      interfaces.EventService
 	sessionRepository repositories.SessionRepository
 	userRepository    repositories.UserRepository
 }
 
-func CreateSessionService(transactor *db.Transactor, sessionRepository repositories.SessionRepository, userRepository repositories.UserRepository) interfaces.SessionService {
+func CreateSessionService(transactor *db.Transactor, eventService interfaces.EventService, sessionRepository repositories.SessionRepository, userRepository repositories.UserRepository) interfaces.SessionService {
 	return &SessionService{
 		transactor:        transactor,
+		eventService:      eventService,
 		sessionRepository: sessionRepository,
 		userRepository:    userRepository,
 	}
@@ -73,9 +76,18 @@ func (s *SessionService) Create(ctx context.Context, cmd *command.CreateSessionC
 }
 
 func (s *SessionService) Delete(ctx context.Context, cmd *command.DeleteSessionCommand) error {
-	if err := s.sessionRepository.DeleteByID(ctx, cmd.ID, cmd.RequestorID); err != nil {
+	session, err := s.sessionRepository.GetByID(ctx, cmd.ID, cmd.RequestorID)
+	if err != nil {
 		return err
 	}
 
-	return nil
+	if session.UserID != cmd.RequestorID {
+		return domain.ErrEntityNotFound
+	}
+
+	if err := s.sessionRepository.DeleteByID(ctx, cmd.ID); err != nil {
+		return err
+	}
+
+	return s.eventService.InvalidateToken(ctx, cmd.RequestorID, session.Token)
 }

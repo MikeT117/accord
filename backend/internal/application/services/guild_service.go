@@ -17,16 +17,18 @@ import (
 type GuildService struct {
 	transactor            *db.Transactor
 	authorisationService  interfaces.AuthorisationService
+	eventService          interfaces.EventService
 	guildRepository       repositories.GuildRepository
 	guildMemberRepository repositories.GuildMemberRepository
 	guildRoleRepository   repositories.GuildRoleRepository
 	channelRepository     repositories.ChannelRepository
 }
 
-func CreateGuildService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, guildRepository repositories.GuildRepository, guildMemberRepository repositories.GuildMemberRepository, guildRoleRepository repositories.GuildRoleRepository, channelRepository repositories.ChannelRepository) interfaces.GuildService {
+func CreateGuildService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, guildRepository repositories.GuildRepository, guildMemberRepository repositories.GuildMemberRepository, guildRoleRepository repositories.GuildRoleRepository, channelRepository repositories.ChannelRepository) interfaces.GuildService {
 	return &GuildService{
 		transactor:            transactor,
 		authorisationService:  authorisationService,
+		eventService:          eventService,
 		guildRepository:       guildRepository,
 		guildMemberRepository: guildMemberRepository,
 		guildRoleRepository:   guildRoleRepository,
@@ -76,27 +78,27 @@ func (s *GuildService) GetByUserID(ctx context.Context, userID string) (*query.G
 }
 
 func (s *GuildService) Create(ctx context.Context, cmd *command.CreateGuildCommand) error {
+	guild, err := entities.NewGuild(cmd.CreatorID, cmd.Name, cmd.Description, cmd.Discoverable, cmd.IconID, cmd.BannerID)
+	if err != nil {
+		return err
+	}
 
-	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
-		guild, err := entities.NewGuild(cmd.CreatorID, cmd.Name, cmd.Description, cmd.Discoverable, cmd.IconID, cmd.BannerID)
-		if err != nil {
-			return err
-		}
+	guildMember, err := entities.NewGuildMember(cmd.CreatorID, guild.ID, nil, nil)
+	if err != nil {
+		return err
+	}
 
-		guildMember, err := entities.NewGuildMember(cmd.CreatorID, guild.ID, nil, nil)
-		if err != nil {
-			return err
-		}
+	ownerGuildRole, err := entities.NewOwnerGuildRole(guild.ID)
+	if err != nil {
+		return err
+	}
 
-		ownerGuildRole, err := entities.NewOwnerGuildRole(guild.ID)
-		if err != nil {
-			return err
-		}
+	defaultGuildRole, err := entities.NewDefaultGuildRole(guild.ID)
+	if err != nil {
+		return err
+	}
 
-		defaultGuildRole, err := entities.NewDefaultGuildRole(guild.ID)
-		if err != nil {
-			return err
-		}
+	if err := s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 
 		err = s.guildRepository.Create(ctx, guild)
 		if err != nil {
@@ -127,7 +129,11 @@ func (s *GuildService) Create(ctx context.Context, cmd *command.CreateGuildComma
 		}
 
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	return s.eventService.GuildCreated(ctx, guild.ID)
 }
 
 func (s *GuildService) Update(ctx context.Context, cmd *command.UpdateGuildCommand) error {
@@ -164,7 +170,7 @@ func (s *GuildService) Update(ctx context.Context, cmd *command.UpdateGuildComma
 		return err
 	}
 
-	return nil
+	return s.eventService.GuildUpdated(ctx, guild.ID)
 }
 
 func (s *GuildService) Delete(ctx context.Context, cmd *command.DeleteGuildCommand) error {
@@ -180,9 +186,13 @@ func (s *GuildService) Delete(ctx context.Context, cmd *command.DeleteGuildComma
 		}
 	}
 
+	roleID, err := s.guildRoleRepository.GetDefaultGuildRoleIDByGuildID(ctx, guild.ID)
+	if err != nil {
+		return err
+	}
 	if err := s.guildRepository.Delete(ctx, cmd.ID); err != nil {
 		return err
 	}
 
-	return nil
+	return s.eventService.GuildDeleted(ctx, guild.ID, roleID)
 }

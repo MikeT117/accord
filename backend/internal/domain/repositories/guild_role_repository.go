@@ -22,6 +22,7 @@ type GuildRoleRepository interface {
 	AssociateUser(ctx context.Context, roleID string, userID string) error
 	DisassociateUser(ctx context.Context, roleID string, userID string) error
 	GetMapRoleIDsByUserIDs(ctx context.Context, userIDs []string) (map[string][]string, error)
+	GetRoleIDsByUserID(ctx context.Context, userID string) ([]string, error)
 	GetRoleIDsByUserIDAndGuildID(ctx context.Context, userID string, guildID string) ([]string, error)
 
 	AssociateChannel(ctx context.Context, roleID string, userID string) error
