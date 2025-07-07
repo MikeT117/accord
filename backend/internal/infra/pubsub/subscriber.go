@@ -40,6 +40,10 @@ func MustCreateEventSubscriber(config *config.Config) *EventSubscriber {
 	}
 }
 
+func (es *EventSubscriber) Shutdown() {
+	es.conn.Close()
+}
+
 func (es *EventSubscriber) MustSubscribe(subject string, handler func(data []byte)) *nats.Subscription {
 	subscription, err := es.conn.Subscribe(subject, func(msg *nats.Msg) {
 		handler(msg.Data)
