@@ -47,17 +47,28 @@ func (ep *EventPublisher) Close() {
 	ep.conn.Close()
 }
 
-func (ep *EventPublisher) PublishProviderEvent(op int32, userIDs []string, roleIDs []string) error {
+func (ep *EventPublisher) PublishProviderEvent(op pb.ProviderOpCode, userID string, payload interface{}) error {
 	var ver int32 = 0
-	event, err := proto.Marshal(&pb.ProviderEvent{
-		Ver:     &ver,
-		Op:      &op,
-		UserIds: userIDs,
-		RoleIds: roleIDs,
-	})
+	providerEvent := &pb.ProviderEvent{
+		Ver:    &ver,
+		Op:     &op,
+		UserId: &userID,
+	}
 
+	switch p := payload.(type) {
+	case *pb.ProviderEvent_InvalidateToken:
+		providerEvent.Payload = p
+	case *pb.ProviderEvent_UserRoleAssociate:
+		providerEvent.Payload = p
+	case *pb.ProviderEvent_UserRoleDisassociate:
+		providerEvent.Payload = p
+	default:
+		return ErrInvalidPayload
+	}
+
+	event, err := proto.Marshal(providerEvent)
 	if err != nil {
-		return err
+		return ErrInvalidPayload
 	}
 
 	return ep.conn.Publish("ACCORD.EVENTS.PROVIDER", event)
@@ -65,14 +76,18 @@ func (ep *EventPublisher) PublishProviderEvent(op int32, userIDs []string, roleI
 
 func (ep *EventPublisher) PublishUserEvent(userIDs []string, data *pb.EventPayload) error {
 	var ver int32 = 0
+	eventData, err := proto.Marshal(data)
+	if err != nil {
+		return err
+	}
+
 	event, err := proto.Marshal(&pb.UserEvent{
 		Ver:     &ver,
 		UserIds: userIDs,
-		Data:    data,
+		Data:    eventData,
 	})
-
 	if err != nil {
-		return err
+		return ErrInvalidPayload
 	}
 
 	return ep.conn.Publish("ACCORD.EVENTS.USER", event)
@@ -80,14 +95,19 @@ func (ep *EventPublisher) PublishUserEvent(userIDs []string, data *pb.EventPaylo
 
 func (ep *EventPublisher) PublishRoleEvent(roleIDs []string, data *pb.EventPayload) error {
 	var ver int32 = 0
+	eventData, err := proto.Marshal(data)
+	if err != nil {
+		return err
+	}
+
 	event, err := proto.Marshal(&pb.RoleEvent{
 		Ver:     &ver,
 		RoleIds: roleIDs,
-		Data:    data,
+		Data:    eventData,
 	})
 
 	if err != nil {
-		return err
+		return ErrInvalidPayload
 	}
 
 	return ep.conn.Publish("ACCORD.EVENTS.ROLE", event)
