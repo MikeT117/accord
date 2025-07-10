@@ -61,8 +61,8 @@ func (s *RelationshipService) GetByID(ctx context.Context, ID string, userID str
 	}, nil
 }
 
-func (s *RelationshipService) GetByUserID(ctx context.Context, userID string) (*query.RelationshipQueryListResult, error) {
-	relationship, userIDs, err := s.relationshipRepository.GetByUserID(ctx, userID)
+func (s *RelationshipService) GetByUserID(ctx context.Context, qry *query.RelatationshipsQuery) (*query.RelationshipQueryListResult, error) {
+	relationship, userIDs, err := s.relationshipRepository.GetByUserID(ctx, qry.RequestorID, qry.Status, qry.Before, 50)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (s *RelationshipService) GetByUserID(ctx context.Context, userID string) (*
 		Result: mapper.NewRelationshipListResultFromRelationship(
 			relationship,
 			usersMap,
-			userID,
+			qry.RequestorID,
 		),
 	}, nil
 }

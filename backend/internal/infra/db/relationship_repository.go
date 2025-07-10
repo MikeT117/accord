@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
@@ -53,7 +54,7 @@ func (r *RelationshipRepository) GetByID(ctx context.Context, ID string) (*entit
 	return relationship, nil
 }
 
-func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID string) ([]*entities.Relationship, []string, error) {
+func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID string, status int8, before time.Time, limit int8) ([]*entities.Relationship, []string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -75,8 +76,15 @@ func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID string)
 				)
 			)
 		OR
-			creator_id = $1;
-	`, userID)
+			creator_id = $1
+		AND
+			status = $2
+		AND
+			created_at < $3
+		ORDER BY
+			created_at ASC
+		LIMIT $4;
+	`, userID, status, before, limit)
 
 	if err != nil {
 		return nil, []string{}, wrapUnknownErr("select relationships by user id failed", err)
