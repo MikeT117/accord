@@ -155,23 +155,23 @@ func (r *GuildRepository) Create(ctx context.Context, guild *entities.Guild) err
 }
 func (r *GuildRepository) Update(ctx context.Context, guild *entities.Guild) error {
 	result, err := r.db(ctx).Exec(ctx, `
-	UPDATE
-		account 
-	SET
-		creator_id = $2,
-		guild_category_id = $3,
-		name = $4,
-		description = $5,
-		discoverable = $6,
-		channel_count = $7,
-		member_count = $8,
-		icon_id = $9,
-		banner_id = $10,
-		created_at = $11,
-		updated_at = $12,
-	WHERE
-		id =  $1;
-`,
+		UPDATE
+			guild 
+		SET
+			creator_id = $2,
+			guild_category_id = $3,
+			name = $4,
+			description = $5,
+			discoverable = $6,
+			channel_count = $7,
+			member_count = $8,
+			icon_id = $9,
+			banner_id = $10,
+			created_at = $11,
+			updated_at = $12
+		WHERE
+			id =  $1;
+	`,
 		guild.ID,
 		guild.CreatorID,
 		guild.GuildCategoryID,

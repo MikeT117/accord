@@ -77,7 +77,7 @@ func main() {
 	// Services
 	attachmentService := services.CreateAttachmentService(transactor, cloudinaryUpload, attachmentRepository)
 	accountService := services.CreateUserAccountService(transactor, accountRepository, userRepository)
-	channelService := services.CreateChannelService(transactor, authorisationService, eventService, channelRepository, guildRoleRepository, userRepository)
+	channelService := services.CreateChannelService(transactor, authorisationService, eventService, channelRepository, guildRepository, guildRoleRepository, userRepository)
 	guildBanService := services.CreateGuildBanService(transactor, authorisationService, guildMemberRepository, guildBanRepository)
 	guildCategoryService := services.CreateGuildCategoryService(transactor, authorisationService, guildCategoryRepository)
 	guildInviteService := services.CreateGuildInviteService(transactor, authorisationService, guildInviteRepository, guildRepository)

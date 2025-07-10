@@ -19,16 +19,18 @@ type ChannelService struct {
 	authorisationService interfaces.AuthorisationService
 	eventService         interfaces.EventService
 	channelRepository    repositories.ChannelRepository
+	guildRepository      repositories.GuildRepository
 	guildRoleRepository  repositories.GuildRoleRepository
 	userRepository       repositories.UserRepository
 }
 
-func CreateChannelService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, channelRepository repositories.ChannelRepository, guildRoleRepository repositories.GuildRoleRepository, userRepository repositories.UserRepository) interfaces.ChannelService {
+func CreateChannelService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, channelRepository repositories.ChannelRepository, guildRepository repositories.GuildRepository, guildRoleRepository repositories.GuildRoleRepository, userRepository repositories.UserRepository) interfaces.ChannelService {
 	return &ChannelService{
 		transactor:           transactor,
 		authorisationService: authorisationService,
 		eventService:         eventService,
 		channelRepository:    channelRepository,
+		guildRepository:      guildRepository,
 		guildRoleRepository:  guildRoleRepository,
 		userRepository:       userRepository,
 	}
@@ -78,14 +80,38 @@ func (s *ChannelService) Create(ctx context.Context, cmd *command.CreateChannelC
 		return err
 	}
 
-	if channel.IsGuildChannel() {
-		if err := s.createGuildChannel(ctx, channel, cmd.RoleIDs, cmd.CreatorID); err != nil {
-			return err
-		}
-	} else {
+	if !channel.IsGuildChannel() {
 		if err := s.createUserChannel(ctx, channel, cmd.UserIDs, cmd.CreatorID); err != nil {
 			return err
 		}
+
+		return s.eventService.ChannelCreated(ctx, channel.ID)
+	}
+
+	if err := s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+		guild, err := s.guildRepository.GetByID(ctx, *channel.GuildID)
+		if err != nil {
+			return err
+		}
+
+		guild.IncrementChannelCount()
+
+		if err := s.guildRepository.Update(ctx, guild); err != nil {
+			return err
+		}
+
+		if err := s.createGuildChannel(ctx, channel, cmd.RoleIDs, cmd.CreatorID); err != nil {
+			return err
+		}
+
+		return nil
+
+	}); err != nil {
+		return err
+	}
+
+	if err := s.eventService.GuildUpdated(ctx, *cmd.GuildID); err != nil {
+		return err
 	}
 
 	return s.eventService.ChannelCreated(ctx, channel.ID)

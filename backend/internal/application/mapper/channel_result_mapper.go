@@ -103,7 +103,7 @@ func NewChannelUpdatedProtoEvent(channel *entities.Channel) *pb.EventPayload {
 	updatedAt := channel.UpdatedAt.Unix()
 	return &pb.EventPayload{
 		Ver: &ver,
-		Op:  pb.OpCode_CHANNEL_DELETE_EVENT.Enum(),
+		Op:  pb.OpCode_CHANNEL_UPDATE_EVENT.Enum(),
 		Payload: &pb.EventPayload_ChannelUpdated{
 			ChannelUpdated: &pb.ChannelUpdated{
 				Ver:       &ver,
