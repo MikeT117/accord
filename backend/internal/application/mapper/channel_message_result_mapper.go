@@ -96,7 +96,7 @@ func NewChannelMessageDeletedProtoEvent(ID string, channelID string) *pb.EventPa
 	var ver int32 = 0
 	return &pb.EventPayload{
 		Ver: &ver,
-		Op:  pb.OpCode_CHANNEL_MESSAGE_UPDATE_EVENT.Enum(),
+		Op:  pb.OpCode_CHANNEL_MESSAGE_DELETE_EVENT.Enum(),
 		Payload: &pb.EventPayload_ChannelMessageDeleted{
 			ChannelMessageDeleted: &pb.ChannelMessageDeleted{
 				Ver:       &ver,

@@ -71,7 +71,9 @@ func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID s
 		FROM
 			channel_message
 		WHERE
-			author_id = $1;
+			author_id = $1
+		ORDER BY
+			created_at ASC;
 	`, authorID)
 
 	if err != nil {
@@ -125,6 +127,8 @@ func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID
 				pinned
 			AND
 				created_at < $2
+			ORDER BY
+				created_at ASC
 			LIMIT
 				$3;
 	`
@@ -145,6 +149,8 @@ func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID
 				channel_id = $1
 			AND
 				created_at < $2
+			ORDER BY
+				created_at ASC
 			LIMIT
 				$3;
 	`

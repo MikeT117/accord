@@ -7,9 +7,9 @@ import (
 )
 
 type QueryChannelMessagesRequest struct {
-	ChannelID string     `param:"channelID"`
-	Pinned    bool       `query:"pinned"`
-	Before    *time.Time `query:"before"`
+	ChannelID string `param:"channelID"`
+	Pinned    bool   `query:"pinned"`
+	Before    *int64 `query:"before"`
 }
 
 func (r *QueryChannelMessagesRequest) ToChannelMessagesQuery(requestorID string) (*query.ChannelMessagesQuery, error) {
@@ -25,7 +25,7 @@ func (r *QueryChannelMessagesRequest) ToChannelMessagesQuery(requestorID string)
 	}
 
 	if r.Before != nil {
-		query.Before = *r.Before
+		query.Before = time.Unix(*r.Before, 0)
 	} else {
 		query.Before = time.Now().UTC()
 	}
