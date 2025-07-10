@@ -4,7 +4,7 @@ import "github.com/MikeT117/accord/backend/internal/application/command"
 
 type UpdateChannelRequest struct {
 	ID       string  `param:"channelID"`
-	ParentID *string `json:"parentID"`
+	ParentID *string `json:"parentId"`
 	Name     string  `json:"name"`
 	Topic    *string `json:"topic"`
 }
