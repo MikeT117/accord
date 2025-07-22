@@ -90,6 +90,6 @@ func (ac *AuthController) HandleGithubAuthCallback(ctx echo.Context) error {
 
 	return response.TemporaryRedirect(
 		ctx,
-		fmt.Sprintf("https://%s?accesstoken=%s&refreshtoken=%s", ac.config.Host, accesstoken, refreshtoken),
+		fmt.Sprintf("https://%s/auth?accesstoken=%s&refreshtoken=%s", ac.config.Host, accesstoken, refreshtoken),
 	)
 }
