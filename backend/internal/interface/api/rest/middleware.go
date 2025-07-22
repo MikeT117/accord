@@ -3,6 +3,7 @@ package rest
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -21,7 +22,7 @@ func CreateAuthenticationMiddleware(config *config.Config, sessionService interf
 			accesstoken := strings.Replace(c.Request().Header.Get("Authorization"), "Bearer ", "", 1)
 			refreshtoken := c.Request().Header.Get("X-App-Token")
 
-			if _, requestorID, err := authentication.ValidateToken(accesstoken, []byte(config.JWTAccesstokenKey)); err == nil {
+			if _, requestorID, err := authentication.ValidateToken(accesstoken, config.JWTAccesstokenKey); err == nil {
 				cctx := &authentication.AuthenticationContext{
 					Context:     c,
 					RequestorID: requestorID,
@@ -29,22 +30,24 @@ func CreateAuthenticationMiddleware(config *config.Config, sessionService interf
 				return next(cctx)
 			}
 
-			_, requestorID, err := authentication.ValidateToken(refreshtoken, []byte(config.JWTRefreshtokenKey))
+			_, requestorID, err := authentication.ValidateToken(refreshtoken, config.JWTRefreshtokenKey)
 			if err != nil {
-				return response.ErrorResponse(c, http.StatusUnauthorized, nil)
+				log.Printf("%s\n\n%s", refreshtoken, err.Error())
+				return response.ErrorResponse(c, http.StatusUnauthorized, "invalid tokens")
 			}
 
 			session, err := sessionService.GetByToken(c.Request().Context(), refreshtoken)
 			if err != nil {
+
 				if errors.Is(err, domain.ErrEntityNotFound) {
-					return response.ErrorResponse(c, http.StatusUnauthorized, nil)
+					return response.ErrorResponse(c, http.StatusUnauthorized, "invalid tokens")
 				}
 
-				return response.ErrorResponse(c, http.StatusInternalServerError, nil)
+				return response.ErrorResponse(c, http.StatusInternalServerError, "invalid tokens")
 			}
 
 			if session.Result.UserID != requestorID {
-				return response.ErrorResponse(c, http.StatusUnauthorized, nil)
+				return response.ErrorResponse(c, http.StatusUnauthorized, "invalid tokens")
 			}
 
 			_, newAccesstoken, err := authentication.CreateAndSignToken(
