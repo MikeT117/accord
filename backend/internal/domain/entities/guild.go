@@ -48,7 +48,7 @@ func (g *Guild) validate() error {
 	return nil
 }
 
-func NewGuild(creatorID string, name string, description string, discoverable bool, iconID *string, bannerID *string) (*Guild, error) {
+func NewGuild(creatorID string, name string, iconID *string) (*Guild, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -60,14 +60,14 @@ func NewGuild(creatorID string, name string, description string, discoverable bo
 		CreatorID:       creatorID,
 		GuildCategoryID: nil,
 		Name:            name,
-		Description:     description,
-		Discoverable:    discoverable,
+		Description:     "",
+		Discoverable:    false,
 		ChannelCount:    0,
 		MemberCount:     1,
 		CreatedAt:       timestamp,
 		UpdatedAt:       timestamp,
 		IconID:          iconID,
-		BannerID:        bannerID,
+		BannerID:        nil,
 	}
 
 	if err := guild.validate(); err != nil {

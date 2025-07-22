@@ -78,7 +78,7 @@ func (s *GuildService) GetByUserID(ctx context.Context, userID string) (*query.G
 }
 
 func (s *GuildService) Create(ctx context.Context, cmd *command.CreateGuildCommand) error {
-	guild, err := entities.NewGuild(cmd.CreatorID, cmd.Name, cmd.Description, cmd.Discoverable, cmd.IconID, cmd.BannerID)
+	guild, err := entities.NewGuild(cmd.CreatorID, cmd.Name, cmd.IconID)
 	if err != nil {
 		return err
 	}
