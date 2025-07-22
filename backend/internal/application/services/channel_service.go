@@ -100,7 +100,7 @@ func (s *ChannelService) Create(ctx context.Context, cmd *command.CreateChannelC
 			return err
 		}
 
-		if err := s.createGuildChannel(ctx, channel, cmd.RoleIDs, cmd.CreatorID); err != nil {
+		if err := s.createGuildChannel(ctx, channel, cmd.IsPrivate, cmd.RoleIDs, cmd.CreatorID); err != nil {
 			return err
 		}
 
@@ -207,7 +207,7 @@ func (s *ChannelService) DeleteUserAssoc(ctx context.Context, cmd *command.Delet
 	return nil
 }
 
-func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entities.Channel, roleIDs *[]string, requestorID string) error {
+func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entities.Channel, isPrivate bool, roleIDs []string, requestorID string) error {
 	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 		err := s.authorisationService.VerifyUserGuildPermission(ctx, *channel.GuildID, requestorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
 		if err != nil {
@@ -216,17 +216,26 @@ func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entiti
 
 		var rolesToAssign []*entities.GuildRole
 
-		if roleIDs != nil && len(*roleIDs) != 0 {
-			roles, err := s.guildRoleRepository.GetByIDs(ctx, *roleIDs, *channel.GuildID)
+		if len(roleIDs) != 0 {
+			roles, err := s.guildRoleRepository.GetByIDs(ctx, roleIDs, *channel.GuildID)
 			if err != nil {
 				return err
 			}
 
-			if len(roles) != len(*roleIDs) {
+			if len(roles) != len(roleIDs) {
 				return domain.ErrEntityNotFound
 			}
 
 			rolesToAssign = append(rolesToAssign, roles...)
+		}
+
+		if !isPrivate {
+			role, err := s.guildRoleRepository.GetByNameAndGuildID(ctx, "@default", *channel.GuildID)
+			if err != nil {
+				return err
+			}
+
+			rolesToAssign = append(rolesToAssign, role)
 		}
 
 		role, err := s.guildRoleRepository.GetByNameAndGuildID(ctx, "@owner", *channel.GuildID)
@@ -250,18 +259,18 @@ func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entiti
 	})
 }
 
-func (s *ChannelService) createUserChannel(ctx context.Context, channel *entities.Channel, userIDs *[]string, requestorID string) error {
+func (s *ChannelService) createUserChannel(ctx context.Context, channel *entities.Channel, userIDs []string, requestorID string) error {
 	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
-		if err := s.authorisationService.VerifyRelationships(ctx, requestorID, *userIDs, false, true, false); err != nil {
+		if err := s.authorisationService.VerifyRelationships(ctx, requestorID, userIDs, false, true, false); err != nil {
 			return err
 		}
 
-		users, err := s.userRepository.GetByIDs(ctx, *userIDs)
+		users, err := s.userRepository.GetByIDs(ctx, userIDs)
 		if err != nil {
 			return err
 		}
 
-		if len(users) != len(*userIDs) {
+		if len(users) != len(userIDs) {
 			return domain.ErrEntityNotFound
 		}
 

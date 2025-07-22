@@ -128,7 +128,7 @@ func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID
 			AND
 				created_at < $2
 			ORDER BY
-				created_at ASC
+				created_at DESC
 			LIMIT
 				$3;
 	`
@@ -150,7 +150,7 @@ func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID
 			AND
 				created_at < $2
 			ORDER BY
-				created_at ASC
+				created_at DESC
 			LIMIT
 				$3;
 	`
@@ -283,7 +283,7 @@ func (r *ChannelMessageRepository) AssociateAttachment(ctx context.Context, chan
 				attachment_id
 			)
 		VALUES ($1, $2);
-	`)
+	`, channelMessageID, attachmentID)
 
 	if err != nil {
 		return wrapUnknownErr("insert channel message attachment association failed", err)
