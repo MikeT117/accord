@@ -45,8 +45,8 @@ func CreateRouter(
 	}))
 
 	APIV1 := e.Group("/api/v1")
-
 	controller.NewAuthController(config, APIV1, sessionService, authenticationService)
+	controller.NewWebhooksController(config, APIV1, attachmentService)
 	APIV1.Use(CreateAuthenticationMiddleware(config, sessionService))
 	controller.NewAttachmentController(APIV1, attachmentService)
 	controller.NewChannelController(APIV1, channelService)

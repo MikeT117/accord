@@ -22,6 +22,7 @@ func (r *AttachmentRepository) GetByID(ctx context.Context, ID string) (*entitie
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
+			filename,
 			resource_type,
 			owner_id,
 			height,
@@ -39,6 +40,7 @@ func (r *AttachmentRepository) GetByID(ctx context.Context, ID string) (*entitie
 	attachment := &entities.Attachment{}
 	if err := row.Scan(
 		&attachment.ID,
+		&attachment.Filename,
 		&attachment.ResourceType,
 		&attachment.OwnerID,
 		&attachment.Height,
@@ -61,6 +63,7 @@ func (r *AttachmentRepository) GetMapByIDs(ctx context.Context, IDs []string) (m
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
+			filename,
 			resource_type,
 			owner_id,
 			height,
@@ -86,10 +89,11 @@ func (r *AttachmentRepository) GetMapByIDs(ctx context.Context, IDs []string) (m
 		attachment := &entities.Attachment{}
 		if err := rows.Scan(
 			&attachment.ID,
+			&attachment.Filename,
 			&attachment.ResourceType,
-			&attachment.OwnerID,
 			&attachment.Height,
 			&attachment.Width,
+			&attachment.OwnerID,
 			&attachment.Filesize,
 			&attachment.CreatedAt,
 			&attachment.UpdatedAt,
@@ -108,6 +112,7 @@ func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []string) ([]*e
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
+			filename,
 			resource_type,
 			owner_id,
 			height,
@@ -133,6 +138,7 @@ func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []string) ([]*e
 		attachment := &entities.Attachment{}
 		if err := rows.Scan(
 			&attachment.ID,
+			&attachment.Filename,
 			&attachment.ResourceType,
 			&attachment.OwnerID,
 			&attachment.Height,
@@ -155,6 +161,7 @@ func (r *AttachmentRepository) GetByAssociatedChannelMessageID(ctx context.Conte
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			a.id,
+			a.filename,
 			a.resource_type,
 			a.owner_id,
 			a.height,
@@ -182,6 +189,7 @@ func (r *AttachmentRepository) GetByAssociatedChannelMessageID(ctx context.Conte
 		attachment := &entities.Attachment{}
 		if err := rows.Scan(
 			&attachment.ID,
+			&attachment.Filename,
 			&attachment.ResourceType,
 			&attachment.OwnerID,
 			&attachment.Height,
@@ -205,6 +213,7 @@ func (r *AttachmentRepository) GetMapByAssociatedChannelMessageIDs(ctx context.C
 		SELECT
 			cma.channel_message_id,
 			a.id,
+			a.filename,
 			a.resource_type,
 			a.owner_id,
 			a.height,
@@ -234,6 +243,7 @@ func (r *AttachmentRepository) GetMapByAssociatedChannelMessageIDs(ctx context.C
 		if err := rows.Scan(
 			&channelMessageID,
 			&attachment.ID,
+			&attachment.Filename,
 			&attachment.ResourceType,
 			&attachment.OwnerID,
 			&attachment.Height,
@@ -257,6 +267,7 @@ func (r *AttachmentRepository) Create(ctx context.Context, attachment *entities.
 		INSERT INTO
 			attachment (
 				id,
+				filename,
 				resource_type,
 				owner_id,
 				height,
@@ -264,11 +275,12 @@ func (r *AttachmentRepository) Create(ctx context.Context, attachment *entities.
 				filesize,
 				created_at,
 				updated_at,
-				status,
+				status
 			)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
 	`,
 		attachment.ID,
+		attachment.Filename,
 		attachment.ResourceType,
 		attachment.OwnerID,
 		attachment.Height,
@@ -278,8 +290,11 @@ func (r *AttachmentRepository) Create(ctx context.Context, attachment *entities.
 		attachment.UpdatedAt,
 		attachment.Status,
 	)
+	if err != nil {
+		return wrapUnknownErr("insert attachment failed", err)
+	}
 
-	return wrapUnknownErr("insert attachment failed", err)
+	return nil
 }
 
 func (r *AttachmentRepository) Update(ctx context.Context, attachment *entities.Attachment) error {
@@ -287,17 +302,20 @@ func (r *AttachmentRepository) Update(ctx context.Context, attachment *entities.
 		UPDATE
 			attachment
 		SET
-			resource_type = $2,
-			owner_id = $3,
-			height = $4,
-			width = $5,
-			filesize = $6,
-			created_at = $7,
-			updated_at = $8
+			filename = $2,
+			resource_type = $3,
+			owner_id = $4,
+			height = $5,
+			width = $6,
+			filesize = $7,
+			created_at = $8,
+			updated_at = $9,
+			status = $10
 		WHERE
 			id = $1;
 	`,
 		attachment.ID,
+		attachment.Filename,
 		attachment.ResourceType,
 		attachment.OwnerID,
 		attachment.Height,

@@ -154,10 +154,11 @@ CREATE TABLE IF NOT EXISTS "channel_message" (
 
 CREATE TABLE IF NOT EXISTS "attachment" (
     "id" UUID NOT NULL PRIMARY KEY,
+    "filename" TEXT NOT NULL,
     "resource_type" VARCHAR(128) NOT NULL,
     "owner_id" UUID NOT NULL REFERENCES "user" ("id"),
-    "height" INT,
-    "width" INT,
+    "height" integer,
+    "width" integer,
     "filesize" INT NOT NULL,
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL,

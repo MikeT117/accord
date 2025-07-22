@@ -11,7 +11,9 @@ func ToAttachmentResponse(attachment *common.AttachmentResult) *response.Attachm
 	}
 	return &response.AttachmentResponse{
 		ID:           attachment.ID,
+		Filename:     attachment.Filename,
 		ResourceType: attachment.ResourceType,
+		OwnerID:      attachment.OwnerID,
 		Height:       attachment.Height,
 		Width:        attachment.Width,
 		Filesize:     attachment.Filesize,

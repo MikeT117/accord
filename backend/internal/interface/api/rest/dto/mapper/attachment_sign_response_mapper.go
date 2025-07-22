@@ -12,5 +12,6 @@ func ToAttachmentSignResponse(attachmentSign *common.AttachmentSignResult) *resp
 	return &response.AttachmentSignResponse{
 		ID:        attachmentSign.ID,
 		Signature: attachmentSign.Signature,
+		Timestamp: attachmentSign.CreatedAt.Unix(),
 	}
 }

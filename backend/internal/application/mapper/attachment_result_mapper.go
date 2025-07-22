@@ -14,10 +14,11 @@ func NewAttachmentResultFromAttachment(attachment *entities.Attachment) *common.
 
 	return &common.AttachmentResult{
 		ID:           attachment.ID,
+		Filename:     attachment.Filename,
 		ResourceType: attachment.ResourceType,
-		OwnerID:      attachment.OwnerID,
 		Height:       attachment.Height,
 		Width:        attachment.Width,
+		OwnerID:      attachment.OwnerID,
 		Filesize:     attachment.Filesize,
 		CreatedAt:    attachment.CreatedAt,
 		UpdatedAt:    attachment.UpdatedAt,
@@ -44,10 +45,11 @@ func NewAttachmentProtoResultFromAttachment(attachment *entities.Attachment) *pb
 	updatedAt := attachment.UpdatedAt.Unix()
 	return &pb.Attachment{
 		Id:           &attachment.ID,
+		Filename:     &attachment.Filename,
 		ResourceType: &attachment.ResourceType,
-		OwnerId:      &attachment.OwnerID,
 		Height:       attachment.Height,
 		Width:        attachment.Width,
+		OwnerId:      &attachment.OwnerID,
 		Filesize:     &attachment.Filesize,
 		CreatedAt:    &createdAt,
 		UpdatedAt:    &updatedAt,

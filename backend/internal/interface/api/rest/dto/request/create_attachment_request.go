@@ -3,22 +3,20 @@ package request
 import "github.com/MikeT117/accord/backend/internal/application/command"
 
 type CreateAttachmentRequest struct {
+	Filename     string `json:"filename"`
 	ResourceType string `json:"resourceType"`
-	Height       *int64 `json:"height"`
-	Width        *int64 `json:"width"`
 	Filesize     int64  `json:"filesize"`
 }
 
 func (r *CreateAttachmentRequest) ToCreateAttachmentCommand(requestorID string) (*command.CreateAttachmentCommand, error) {
-	if r.ResourceType != "image/jpeg" {
+	if r.ResourceType != "image/jpeg" && r.ResourceType != "image/png" {
 		return nil, NewRequestValidationError("invalid resource type")
 	}
 
 	return &command.CreateAttachmentCommand{
+		Filename:     r.Filename,
 		ResourceType: r.ResourceType,
 		OwnerID:      requestorID,
-		Height:       r.Height,
-		Width:        r.Width,
 		Filesize:     r.Filesize,
 	}, nil
 }

@@ -16,6 +16,7 @@ const (
 
 type Attachment struct {
 	ID           string
+	Filename     string
 	ResourceType string
 	OwnerID      string
 	Height       *int64
@@ -30,6 +31,9 @@ func (u *Attachment) validate() error {
 	if strings.Trim(u.ID, " ") == "" {
 		return domain.NewDomainValidationError("id must not be empty")
 	}
+	if strings.Trim(u.Filename, " ") == "" {
+		return domain.NewDomainValidationError("filename must not be empty")
+	}
 	if strings.Trim(u.ResourceType, " ") == "" {
 		return domain.NewDomainValidationError("resourceType must not be empty")
 	}
@@ -42,7 +46,7 @@ func (u *Attachment) validate() error {
 	return nil
 }
 
-func NewAttachment(resourceType string, ownerID string, height *int64, width *int64, filesize int64) (*Attachment, error) {
+func NewAttachment(filename string, resourceType string, ownerID string, filesize int64) (*Attachment, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -51,10 +55,11 @@ func NewAttachment(resourceType string, ownerID string, height *int64, width *in
 	timestamp := time.Now().UTC()
 	attachment := &Attachment{
 		ID:           ID.String(),
+		Filename:     filename,
 		ResourceType: resourceType,
 		OwnerID:      ownerID,
-		Height:       height,
-		Width:        width,
+		Height:       nil,
+		Width:        nil,
 		Filesize:     filesize,
 		CreatedAt:    timestamp,
 		UpdatedAt:    timestamp,
@@ -70,6 +75,13 @@ func NewAttachment(resourceType string, ownerID string, height *int64, width *in
 
 func (a *Attachment) UpdateStatus(status int8) error {
 	a.Status = status
+	a.UpdatedAt = time.Now().UTC()
+	return a.validate()
+}
+
+func (a *Attachment) UpdateDimensions(height *int64, width *int64) error {
+	a.Height = height
+	a.Width = width
 	a.UpdatedAt = time.Now().UTC()
 	return a.validate()
 }

@@ -6,12 +6,13 @@ option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
 message Attachment {
     int32 ver = 1;
     string id = 2;
-    string resource_type = 3;
-    string owner_id = 4;
-    int64 height = 5;
-    int64 width = 6;
-    int64 filesize = 7;
-    int64 created_at = 8;
-    int64 updated_at = 9;
-    int32 status = 10;
+    string filename = 3;
+    string resource_type = 4;
+    string owner_id = 5;
+    int64 height = 6;
+    int64 width = 7;
+    int64 filesize = 8;
+    int64 created_at = 9;
+    int64 updated_at = 10;
+    int32 status = 11;
 }

@@ -25,9 +25,7 @@ func NewAttachmentController(
 	}
 
 	subGroup := baseGroup.Group("/attachments")
-
 	subGroup.POST("", controller.createAttachment)
-	subGroup.PATCH("/:attachmentID", controller.updateAttachment)
 	subGroup.DELETE("/:attachmentID", controller.deleteAttachment)
 
 	return controller
@@ -51,25 +49,6 @@ func (c *AttachmentController) createAttachment(ctx echo.Context) error {
 	}
 
 	return response.JSONResponse(ctx, http.StatusOK, mapper.ToAttachmentSignResponse(attachmentSignResult.Result))
-}
-
-func (c *AttachmentController) updateAttachment(ctx echo.Context) error {
-	var payload request.UpdateAttachmentRequest
-	if err := ctx.Bind(&payload); err != nil {
-		return response.ErrorResponse(ctx, http.StatusBadRequest, nil)
-	}
-
-	requestorID, _ := authentication.GetRequestorDetails(ctx)
-	cmd, err := payload.ToUpdateAttachmentCommand(requestorID)
-	if err != nil {
-		return handleError(ctx, err)
-	}
-
-	if err := c.attachmentService.Update(ctx.Request().Context(), cmd); err != nil {
-		return handleError(ctx, err)
-	}
-
-	return response.NoContentResponse(ctx)
 }
 
 func (c *AttachmentController) deleteAttachment(ctx echo.Context) error {

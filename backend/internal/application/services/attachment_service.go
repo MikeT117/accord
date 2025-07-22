@@ -27,7 +27,7 @@ func CreateAttachmentService(transactor *db.Transactor, cloudinaryUpload *cloudi
 }
 
 func (s *AttachmentService) Create(ctx context.Context, cmd *command.CreateAttachmentCommand) (*command.CreateAttachmentCommandResult, error) {
-	attachment, err := entities.NewAttachment(cmd.ResourceType, cmd.OwnerID, cmd.Height, cmd.Width, cmd.Filesize)
+	attachment, err := entities.NewAttachment(cmd.Filename, cmd.ResourceType, cmd.OwnerID, cmd.Filesize)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +51,10 @@ func (s *AttachmentService) Update(ctx context.Context, cmd *command.UpdateAttac
 	}
 
 	if err := attachment.UpdateStatus(cmd.Status); err != nil {
+		return err
+	}
+
+	if err := attachment.UpdateDimensions(cmd.Height, cmd.Width); err != nil {
 		return err
 	}
 

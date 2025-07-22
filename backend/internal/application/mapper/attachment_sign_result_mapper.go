@@ -13,5 +13,6 @@ func NewAttachmentSignResultFromAttachment(attachment *entities.Attachment, sign
 	return &common.AttachmentSignResult{
 		ID:        attachment.ID,
 		Signature: signature,
+		CreatedAt: attachment.CreatedAt,
 	}
 }
