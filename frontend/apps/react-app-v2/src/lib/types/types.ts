@@ -119,7 +119,7 @@ export type PrivateDirectChannelType = Extract<PrivateChannelType, { channelType
 export type PrivateGroupChannelType = Extract<PrivateChannelType, { channelType: 4 }>;
 
 // USer Role Permissions
-export type PermissionsType = {
+export type GuildRolePermissionsType = {
     hasViewGuildChannel: boolean;
     hasManageGuildChannel: boolean;
     hasCreateChannelMessage: boolean;
@@ -131,6 +131,3 @@ export type PermissionsType = {
     hasViewGuildMember: boolean;
     hasCreateChannelPin: boolean;
 };
-
-// App Theme
-export type Themetype = "dark" | "light" | "system";

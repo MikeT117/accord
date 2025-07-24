@@ -1,3 +1,4 @@
+import type { AxiosError } from "axios";
 import { GUILD_CHANNEL_TYPE, PRIVATE_CHANNEL_TYPE } from "../zod-validation/channel-schema";
 import type {
     PrivateGroupChannelType,
@@ -59,4 +60,8 @@ export function isPrivateGroupChannel(
     channel: Snapshot<PrivateChannelType>
 ): channel is Snapshot<PrivateGroupChannelType> {
     return channel.channelType === PRIVATE_CHANNEL_TYPE.PRIVATE_GROUP_CHANNEL;
+}
+
+export function isAxiosError(error: Error): error is AxiosError {
+    return error.name === "AxiosError";
 }
