@@ -1,4 +1,6 @@
 import { RootErrorComponent } from "@/components/error/error-component";
+import { GuildCategoryCreator } from "@/components/guild-category-creator/create-guild-category-dialog";
+import { GuildChannelCreator } from "@/components/guild-channel-creator/create-guild-channel-dialog";
 import { GuildSidebar } from "@/components/guild-sidebar/guild-sidebar";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
@@ -11,6 +13,8 @@ function RouteComponent() {
     return (
         <>
             <GuildSidebar />
+            <GuildChannelCreator />
+            <GuildCategoryCreator />
             <Outlet />
         </>
     );
