@@ -1,0 +1,14 @@
+edition = "2023";
+
+package pb;
+option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
+
+message UserRoleAssociated {
+    int32 ver = 1;
+    string role_id = 2;
+}
+
+message UserRoleDisassociated {
+    int32 ver = 1;
+    string role_id = 2;
+}

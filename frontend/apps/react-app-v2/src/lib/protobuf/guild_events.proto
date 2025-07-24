@@ -1,0 +1,23 @@
+edition = "2023";
+
+package pb;
+option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
+
+message GuildUpdated {
+    int32 ver = 1;
+    string id = 2;
+    string guild_category_id = 3;
+    string name = 4;
+    string description = 5;
+    bool discoverable = 6;
+    int32 channel_count = 7;
+    int32 member_count = 8;
+    int64 updated_at = 9;
+    string icon = 10;
+    string banner = 11;
+}
+
+message GuildDeleted {
+    int32 ver = 1;
+    string id = 2;
+}
