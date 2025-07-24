@@ -42,9 +42,21 @@ func CreateChannelMessageService(transactor *db.Transactor, authorisationService
 }
 
 func (s *ChannelMessageService) GetByID(ctx context.Context, qry *query.ChannelMessageQuery) (*query.ChannelMessageQueryResult, error) {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, qry.ChannelID, qry.RequestorID, constants.VIEW_GUILD_CHANNEL_PERMISSION)
+	channel, err := s.channelRepository.GetByID(ctx, qry.ChannelID)
 	if err != nil {
 		return nil, err
+	}
+
+	if channel.IsGuildChannel() {
+		err := s.authorisationService.VerifyGuildChannelPermission(ctx, qry.ChannelID, qry.RequestorID, constants.VIEW_GUILD_CHANNEL_PERMISSION)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err := s.authorisationService.VerifyPrivateChannelMember(ctx, qry.ChannelID, qry.RequestorID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	channelMessage, err := s.channelMessageRepository.GetByID(ctx, qry.ID)
@@ -58,11 +70,6 @@ func (s *ChannelMessageService) GetByID(ctx context.Context, qry *query.ChannelM
 	}
 
 	attachments, err := s.attachmentRepository.GetByAssociatedChannelMessageID(ctx, channelMessage.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	channel, err := s.channelRepository.GetByID(ctx, qry.ChannelID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,9 +88,22 @@ func (s *ChannelMessageService) GetByID(ctx context.Context, qry *query.ChannelM
 }
 
 func (s *ChannelMessageService) GetByChannelID(ctx context.Context, qry *query.ChannelMessagesQuery) (*query.ChannelMessageQueryListResult, error) {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, qry.ChannelID, qry.RequestorID, constants.VIEW_GUILD_CHANNEL_PERMISSION)
+
+	channel, err := s.channelRepository.GetByID(ctx, qry.ChannelID)
 	if err != nil {
 		return nil, err
+	}
+
+	if channel.IsGuildChannel() {
+		err := s.authorisationService.VerifyGuildChannelPermission(ctx, qry.ChannelID, qry.RequestorID, constants.VIEW_GUILD_CHANNEL_PERMISSION)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		err := s.authorisationService.VerifyPrivateChannelMember(ctx, qry.ChannelID, qry.RequestorID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	channelMessage, channelMessageIDs, authorIDs, err := s.channelMessageRepository.GetByChannelID(ctx, qry.ChannelID, qry.Pinned, qry.Before, 50)
@@ -107,11 +127,6 @@ func (s *ChannelMessageService) GetByChannelID(ctx context.Context, qry *query.C
 		return nil, err
 	}
 
-	channel, err := s.channelRepository.GetByID(ctx, qry.ChannelID)
-	if err != nil {
-		return nil, err
-	}
-
 	if !channel.IsGuildChannel() {
 		return &query.ChannelMessageQueryListResult{
 			Result: mapper.NewChannelMessageListResultFromChannelMessage(channelMessage, usersMap, nil, attachments),
@@ -130,7 +145,7 @@ func (s *ChannelMessageService) GetByChannelID(ctx context.Context, qry *query.C
 }
 
 func (s *ChannelMessageService) Create(ctx context.Context, cmd *command.CreateChannelMessageCommand) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
+	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
 	if err != nil {
 		return err
 	}
@@ -176,7 +191,7 @@ func (s *ChannelMessageService) Create(ctx context.Context, cmd *command.CreateC
 }
 
 func (s *ChannelMessageService) Update(ctx context.Context, cmd *command.UpdateChannelMessageCommand) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
+	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
 	if err != nil {
 		return err
 	}
@@ -202,7 +217,7 @@ func (s *ChannelMessageService) Update(ctx context.Context, cmd *command.UpdateC
 }
 
 func (s *ChannelMessageService) Delete(ctx context.Context, cmd *command.DeleteChannelMessageCommand) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
+	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
 	if err != nil {
 		return err
 	}

@@ -97,7 +97,7 @@ func (s *VoiceStateService) Delete(ctx context.Context, cmd *command.DeleteVoice
 	}
 
 	if !voiceState.IsOwner(cmd.RequestorID) {
-		err := s.authorisationService.VerifyUserChannelPermission(ctx, voiceState.ChannelID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
+		err := s.authorisationService.VerifyGuildChannelPermission(ctx, voiceState.ChannelID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 		if err != nil {
 			return err
 		}

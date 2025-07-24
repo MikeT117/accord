@@ -118,7 +118,7 @@ func (s *ChannelService) Create(ctx context.Context, cmd *command.CreateChannelC
 }
 
 func (s *ChannelService) Update(ctx context.Context, cmd *command.UpdateChannelCommand) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ID, cmd.RequestorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
+	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ID, cmd.RequestorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func (s *ChannelService) Update(ctx context.Context, cmd *command.UpdateChannelC
 }
 
 func (s *ChannelService) Delete(ctx context.Context, cmd *command.DeleteChannelCommand) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ID, cmd.RequestorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
+	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ID, cmd.RequestorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
 	if err != nil {
 		return err
 	}
@@ -178,7 +178,7 @@ func (s *ChannelService) Delete(ctx context.Context, cmd *command.DeleteChannelC
 }
 
 func (s *ChannelService) CreateUserAssoc(ctx context.Context, cmd *command.CreateUserChannelAssociationCommand) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, 0)
+	err := s.authorisationService.VerifyPrivateChannelMember(ctx, cmd.ChannelID, cmd.RequestorID)
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func (s *ChannelService) CreateUserAssoc(ctx context.Context, cmd *command.Creat
 }
 
 func (s *ChannelService) DeleteUserAssoc(ctx context.Context, cmd *command.DeleteUserChannelAssociationCommand) error {
-	err := s.authorisationService.VerifyUserChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, 0)
+	err := s.authorisationService.VerifyPrivateChannelMember(ctx, cmd.ChannelID, cmd.RequestorID)
 	if err != nil {
 		return err
 	}

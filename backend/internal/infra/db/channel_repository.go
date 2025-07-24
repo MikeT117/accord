@@ -300,53 +300,6 @@ func (r *ChannelRepository) Delete(ctx context.Context, ID string) error {
 	return nil
 }
 
-func (r *ChannelRepository) GetUserChannelPermission(ctx context.Context, channelID string, userID string) (*entities.User, error) {
-	row := r.db(ctx).QueryRow(ctx, `
-		SELECT
-			u.id,
-			u.username,
-			u.display_name,
-			u.email,
-			u.email_verified,
-			u.public_flags,
-			u.relationship_count,
-			u.avatar_id,
-			u.banner_id,
-			u.created_at,
-			u.updated_at
-		FROM
-			user u
-		INNER JOIN
-			channel_user cu ON u.id = cu.user_id
-		WHERE
-			cu.channel_id = $1
-		AND
-			cu.user_id = $2;
-	`, channelID, userID)
-
-	user := &entities.User{}
-	if err := row.Scan(
-		&user.ID,
-		&user.Username,
-		&user.DisplayName,
-		&user.Email,
-		&user.EmailVerified,
-		&user.PublicFlags,
-		&user.RelationshipCount,
-		&user.AvatarID,
-		&user.BannerID,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, domain.ErrEntityNotFound
-		}
-		return nil, wrapUnknownErr("select channel permission by user id failed", err)
-	}
-
-	return user, nil
-}
-
 func (r *ChannelRepository) GetUsersByChannelID(ctx context.Context, channelID string) ([]*entities.User, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
@@ -430,6 +383,26 @@ func (r *ChannelRepository) GetUserIDsByChannelID(ctx context.Context, channelID
 	}
 
 	return userIDs, err
+}
+
+func (r *ChannelRepository) VerifyUserChannelMembership(ctx context.Context, userID string, channelID string) error {
+	var result *string
+	err := r.db(ctx).QueryRow(ctx, `
+		SELECT
+			user_id
+		FROM
+			channel_user
+		WHERE
+			user_id = $1
+		AND
+			channel_id = $2;
+	`, userID, channelID).Scan(&result)
+
+	if err != nil {
+		return wrapUnknownErr("select user ids by channel id and user id failed", err)
+	}
+
+	return err
 }
 
 func (r *ChannelRepository) GetMapUsersByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]*entities.User, error) {

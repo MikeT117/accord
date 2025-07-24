@@ -88,17 +88,13 @@ func (s *AuthorisationService) VerifyGuildMember(ctx context.Context, guildID, r
 	return nil
 }
 
-func (s *AuthorisationService) VerifyChannelMember(ctx context.Context, channelID, requestorID string) error {
-	_, err := s.channelRepository.GetUserChannelPermission(ctx, channelID, requestorID)
-	if err != nil {
-		if domain.IsDomainNotFoundErr(err) {
-			return ErrNotAuthorised
-		}
-
-		return err
+func (s *AuthorisationService) VerifyPrivateChannelMember(ctx context.Context, channelID, requestorID string) error {
+	err := s.channelRepository.VerifyUserChannelMembership(ctx, channelID, requestorID)
+	if err == nil {
+		return nil
 	}
 
-	return nil
+	return err
 }
 
 func (s *AuthorisationService) VerifyUserGuildPermission(ctx context.Context, guildID string, requestorID string, permissionOffset int) error {
@@ -118,7 +114,7 @@ func (s *AuthorisationService) VerifyUserGuildPermission(ctx context.Context, gu
 	return nil
 }
 
-func (s *AuthorisationService) VerifyUserChannelPermission(ctx context.Context, channelID string, requestorID string, permissionOffset int) error {
+func (s *AuthorisationService) VerifyGuildChannelPermission(ctx context.Context, channelID string, requestorID string, permissionOffset int) error {
 	permissions, err := s.guildRoleRepository.GetChannelPermissions(ctx, channelID, requestorID)
 
 	if err == nil {
@@ -129,13 +125,8 @@ func (s *AuthorisationService) VerifyUserChannelPermission(ctx context.Context, 
 	}
 
 	if domain.IsDomainNotFoundErr(err) {
-		if _, err := s.channelRepository.GetUserChannelPermission(ctx, channelID, requestorID); err != nil {
-			if domain.IsDomainNotFoundErr(err) {
-				return ErrNotAuthorised
-			}
-			return err
-		}
+		return ErrNotAuthorised
 	}
 
-	return nil
+	return err
 }
