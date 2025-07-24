@@ -7,17 +7,18 @@ type GuildSidebarTextChannelPropsType = {
     sub?: boolean;
     isActive?: boolean;
     onClick: () => void;
-};
+} & Pick<React.ComponentProps<"li">, "ref">;
 
 export function GuildSidebarTextChannel({
     channel,
     isActive = false,
     sub = false,
     onClick,
+    ref,
 }: GuildSidebarTextChannelPropsType) {
     if (sub) {
         return (
-            <SidebarMenuSubItem key={channel.id}>
+            <SidebarMenuSubItem key={channel.id} ref={ref}>
                 <SidebarMenuSubButton className="cursor-pointer select-none" isActive={isActive} onClick={onClick}>
                     <HashIcon /> {channel.name}
                 </SidebarMenuSubButton>
@@ -26,7 +27,7 @@ export function GuildSidebarTextChannel({
     }
 
     return (
-        <SidebarMenuItem key={channel.id}>
+        <SidebarMenuItem key={channel.id} ref={ref}>
             <SidebarMenuButton className="cursor-pointer select-none" isActive={isActive} onClick={onClick}>
                 <HashIcon /> {channel.name}
             </SidebarMenuButton>

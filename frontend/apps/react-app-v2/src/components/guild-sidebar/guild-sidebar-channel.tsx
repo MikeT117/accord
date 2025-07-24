@@ -4,6 +4,7 @@ import { GuildSidebarTextChannel } from "./guild-sidebar-text-channel";
 import { GuildSidebarVoiceChannel } from "./guild-sidebar-voice-channel";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { GuildSidebarChannelContextMenu } from "./guild-sidebar-channel-context-menu";
+import { useDraggable } from "@dnd-kit/react";
 
 type GuildSidebarChannelPropsType = {
     channel: Snapshot<GuildTextChannelType | GuildVoiceChannelType>;
@@ -15,6 +16,12 @@ export function GuildSidebarChannel({ channel, sub = false }: GuildSidebarChanne
         from: "/_auth/app/$guildId/$channelId",
         shouldThrow: false,
     });
+
+    const { ref } = useDraggable({
+        id: channel.id,
+        data: { id: channel.id, name: channel.name, topic: channel.topic },
+    });
+
     const navigate = useNavigate();
     function handleChannelClick() {
         navigate({
@@ -36,6 +43,7 @@ export function GuildSidebarChannel({ channel, sub = false }: GuildSidebarChanne
                     onClick={handleChannelClick}
                     isActive={channel.id === params?.channelId}
                     sub={sub}
+                    ref={ref}
                 />
             ) : (
                 <GuildSidebarVoiceChannel
@@ -43,6 +51,7 @@ export function GuildSidebarChannel({ channel, sub = false }: GuildSidebarChanne
                     onClick={handleChannelClick}
                     isActive={channel.id === params?.channelId}
                     sub={sub}
+                    ref={ref}
                 />
             )}
         </GuildSidebarChannelContextMenu>

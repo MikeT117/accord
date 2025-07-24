@@ -12,6 +12,8 @@ import { GuildSidebarChannel } from "./guild-sidebar-channel";
 import { GuildSidebarHeader } from "./guild-sidebar-header";
 import { useGuild, useSortedGuildChannels } from "@/lib/valtio/queries/guild-store-queries";
 import { useParams } from "@tanstack/react-router";
+import { DnDProvider } from "./guild-sidebar-dnd-provider";
+import { GuildSidebarDnDDroppable } from "./guild-sidebar-channel-dnd-droppable";
 
 export function GuildSidebar() {
     const { guildId } = useParams({ from: "/_auth/app/$guildId" });
@@ -25,24 +27,31 @@ export function GuildSidebar() {
                     <GuildSidebarHeader id={guild.id} name={guild.name} />
                 </SidebarHeader>
                 <SidebarContent>
-                    <SidebarGroup>
-                        <SidebarGroupContent>
-                            <SidebarMenu>
-                                {channels?.parents.map((parent) => (
-                                    <GuildSidebarCategoryChannel key={parent.id} channel={parent}>
-                                        {channels.children.map(
-                                            (child) =>
-                                                parent.id === child.parentId && (
-                                                    <GuildSidebarChannel key={child.id} channel={child} sub={true} />
-                                                )
-                                        )}
-                                    </GuildSidebarCategoryChannel>
-                                ))}
-                                {channels?.orphans &&
-                                    channels.orphans.map((c) => <GuildSidebarChannel key={c.id} channel={c} />)}
-                            </SidebarMenu>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
+                    <DnDProvider>
+                        <SidebarGroup>
+                            <SidebarGroupContent>
+                                <SidebarMenu>
+                                    {channels?.parents.map((parent) => (
+                                        <GuildSidebarCategoryChannel key={parent.id} channel={parent}>
+                                            {channels.children.map(
+                                                (child) =>
+                                                    parent.id === child.parentId && (
+                                                        <GuildSidebarChannel
+                                                            key={child.id}
+                                                            channel={child}
+                                                            sub={true}
+                                                        />
+                                                    )
+                                            )}
+                                        </GuildSidebarCategoryChannel>
+                                    ))}
+                                    {channels?.orphans &&
+                                        channels.orphans.map((c) => <GuildSidebarChannel key={c.id} channel={c} />)}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+                        <GuildSidebarDnDDroppable />
+                    </DnDProvider>
                 </SidebarContent>
             </Sidebar>
         </SidebarProvider>
