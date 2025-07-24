@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { Avatar, AvatarImage } from "../ui/avatar";
 import { AvatarFallback } from "@radix-ui/react-avatar";
 import { useGuilds } from "@/lib/valtio/queries/guild-store-queries";
+import { openCreateGuildDialog } from "@/lib/valtio/mutations/create-guild-dialog-ui-store-mutations";
 import { ButtonWithTooltip } from "../button-with-tooltip";
 import { cn } from "@/lib/utils";
 import {
@@ -60,7 +61,7 @@ export function AppSidebar() {
                     tooltipText="Create Server"
                     side="right"
                     size="lg"
-                    onClick={() => void 0}
+                    onClick={openCreateGuildDialog}
                     className="flex justify-center items-center p-0 h-10 w-10 rounded-lg"
                     variant="secondary"
                 >
