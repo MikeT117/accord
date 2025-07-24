@@ -1,5 +1,6 @@
-import { tokensSchema } from "@/lib/zod-validation/token-schema";
-import { handleTokenStoreInitialisation } from "@/lib/valtio-stores/token-store";
+import { handleTokenStoreInitialisation } from "@/lib/valtio/mutations/token-store-mutations";
+import { tokensSchema } from "@/lib/zod-validation/localstorage-schema";
+
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 type AuthSearchParamsType = {
@@ -21,11 +22,8 @@ export const Route = createFileRoute("/auth")({
         });
 
         if (newTokensValid) {
-            handleTokenStoreInitialisation(
-                ctx.search.accesstoken,
-                ctx.search.refreshtoken
-            );
-            throw redirect({ to: "/app" });
+            handleTokenStoreInitialisation(ctx.search.accesstoken, ctx.search.refreshtoken);
+            throw redirect({ to: "/app/home" });
         }
 
         throw redirect({ to: "/" });
