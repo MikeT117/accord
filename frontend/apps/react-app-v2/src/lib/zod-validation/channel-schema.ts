@@ -42,36 +42,27 @@ const baseGuildChannelSchema = z.extend(baseChannelSchema, {
     channelType: guildChannelType,
     guildId: z.string(),
     name: z.string(),
-    roleIds: z.array(z.string()).check(z.minLength(1)),
-});
-
-const basePrivateChannelSchema = z.extend(baseChannelSchema, {
-    channelType: privateChannelType,
-    users: z.array(userSchema).check(z.minLength(2)),
+    roleIds: z.array(z.uuid()),
 });
 
 export const guildChannelSchema = z.discriminatedUnion("channelType", [
     z.extend(baseGuildChannelSchema, {
         channelType: z.literal(GUILD_CHANNEL_TYPE.GUILD_TEXT_CHANNEL),
-        guildId: z.string(),
         parentId: z.nullable(z.string()),
-        name: z.string(),
-        roleIds: z.array(z.string()).check(z.minLength(1)),
     }),
     z.extend(baseGuildChannelSchema, {
         channelType: z.literal(GUILD_CHANNEL_TYPE.GUILD_VOICE_CHANNEL),
-        guildId: z.string(),
         parentId: z.nullable(z.string()),
-        name: z.string(),
-        roleIds: z.array(z.string()).check(z.minLength(1)),
     }),
     z.extend(baseGuildChannelSchema, {
         channelType: z.literal(GUILD_CHANNEL_TYPE.GUILD_CATEGORY_CHANNEL),
-        guildId: z.string(),
-        name: z.string(),
-        roleIds: z.array(z.string()).check(z.minLength(1)),
     }),
 ]);
+
+const basePrivateChannelSchema = z.extend(baseChannelSchema, {
+    channelType: privateChannelType,
+    users: z.array(userSchema).check(z.minLength(2)),
+});
 
 export const privateChannelSchema = z.discriminatedUnion("channelType", [
     z.extend(basePrivateChannelSchema, {
@@ -80,7 +71,7 @@ export const privateChannelSchema = z.discriminatedUnion("channelType", [
     }),
     z.extend(basePrivateChannelSchema, {
         channelType: z.literal(PRIVATE_CHANNEL_TYPE.PRIVATE_GROUP_CHANNEL),
-        users: z.array(userSchema).check(z.minLength(2)),
+        users: z.array(userSchema).check(z.minLength(3)),
     }),
 ]);
 
