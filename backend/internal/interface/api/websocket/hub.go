@@ -115,7 +115,7 @@ func (h *Hub) handleProviderEvent(event []byte) {
 		}
 	case pb.ProviderOpCode_INVALIDATE_TOKEN.Enum():
 		for _, client := range h.clients.Data {
-			client.shutdown()
+			client.shutdown(CLOSE_SESSION_EXPIRED)
 		}
 	}
 }

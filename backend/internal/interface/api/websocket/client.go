@@ -14,10 +14,14 @@ import (
 )
 
 const (
-	AUTH_TIMEOUT  = time.Second * 10
-	PING_INTERVAL = time.Second * 30
-	PONG_WAIT     = time.Second * 45
-	WRITE_WAIT    = time.Second * 5
+	AUTH_TIMEOUT                 = time.Second * 10
+	PING_INTERVAL                = time.Second * 30
+	PONG_WAIT                    = time.Second * 45
+	WRITE_WAIT                   = time.Second * 5
+	CLOSE_UNKNOWN                = 4000
+	CLOSE_AUTHENTICATION_TIMEOUT = 4001
+	CLOSE_AUTHENTICATION_FAILED  = 4002
+	CLOSE_SESSION_EXPIRED        = 4003
 )
 
 type Client struct {
@@ -60,10 +64,7 @@ func (h *Hub) HandleNewClient(conn *websocket.Conn, hub *Hub) {
 
 	client.authDeadline = time.AfterFunc(AUTH_TIMEOUT, func() {
 		if client.token == "" {
-			client.conn.WriteMessage(
-				websocket.CloseMessage,
-				websocket.FormatCloseMessage(websocket.ClosePolicyViolation, "AUTHENTICATION_TIMEOUT"),
-			)
+			client.shutdown(CLOSE_AUTHENTICATION_TIMEOUT)
 		}
 	})
 
@@ -168,8 +169,8 @@ func (c *Client) sendUserInitPayload() error {
 		return err
 	}
 
-	c.conn.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
-	return c.conn.WriteMessage(websocket.BinaryMessage, data)
+	c.send <- data
+	return nil
 }
 
 func (c *Client) getUserInitRoles() error {
@@ -185,7 +186,8 @@ func (c *Client) getUserInitRoles() error {
 	return nil
 }
 
-func (c *Client) shutdown() {
+func (c *Client) shutdown(code int) {
+	c.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(code, ""))
 	c.done()
 	c.hub.deleteClient(c.id)
 }
@@ -211,7 +213,7 @@ func (c *Client) handleWrite() {
 func (c *Client) writeMessage(msgType int, payload []byte) {
 	c.conn.SetWriteDeadline(time.Now().Add(WRITE_WAIT))
 	if err := c.conn.WriteMessage(msgType, payload); err != nil {
-		c.shutdown()
+		c.shutdown(CLOSE_UNKNOWN)
 	}
 }
 
@@ -229,7 +231,7 @@ func (c *Client) handleRead() {
 			_, p, err := c.conn.ReadMessage()
 			if err != nil {
 				log.Println("ERR: read message on client connection failed", err)
-				c.shutdown()
+				c.shutdown(CLOSE_UNKNOWN)
 				return
 			}
 
@@ -239,19 +241,19 @@ func (c *Client) handleRead() {
 
 			if err := c.authenticateUser(p); err != nil {
 				log.Println("ERR: authenticate user failed", err)
-				c.shutdown()
+				c.shutdown(CLOSE_AUTHENTICATION_FAILED)
 				return
 			}
 
 			if err := c.getUserInitRoles(); err != nil {
 				log.Println("ERR: get user init roles failed", err)
-				c.shutdown()
+				c.shutdown(CLOSE_UNKNOWN)
 				return
 			}
 
 			if err := c.sendUserInitPayload(); err != nil {
 				log.Println("ERR: sending init payload to user failed", err)
-				c.shutdown()
+				c.shutdown(CLOSE_UNKNOWN)
 				return
 			}
 
