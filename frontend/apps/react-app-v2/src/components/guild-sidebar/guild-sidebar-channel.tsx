@@ -6,12 +6,12 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { GuildSidebarChannelContextMenu } from "./guild-sidebar-channel-context-menu";
 import { useDraggable } from "@dnd-kit/react";
 
-type GuildSidebarChannelPropsType = {
+type GuildSidebarChannelProps = {
     channel: Snapshot<GuildTextChannelType | GuildVoiceChannelType>;
     sub?: boolean;
 };
 
-export function GuildSidebarChannel({ channel, sub = false }: GuildSidebarChannelPropsType) {
+export function GuildSidebarChannel({ channel, sub = false }: GuildSidebarChannelProps) {
     const params = useParams({
         from: "/_auth/app/$guildId/$channelId",
         shouldThrow: false,

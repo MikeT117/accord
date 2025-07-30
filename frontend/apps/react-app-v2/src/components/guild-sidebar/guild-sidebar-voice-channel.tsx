@@ -2,7 +2,7 @@ import type { GuildVoiceChannelType, Snapshot } from "@/lib/types/types";
 import { Volume2Icon } from "lucide-react";
 import { SidebarMenuItem, SidebarMenuButton, SidebarMenuSubButton, SidebarMenuSubItem } from "../ui/sidebar";
 
-type GuildSidebarVoiceChannelPropsType = {
+type GuildSidebarVoiceChannelProps = {
     channel: Snapshot<GuildVoiceChannelType>;
     sub?: boolean;
     isActive?: boolean;
@@ -15,7 +15,7 @@ export function GuildSidebarVoiceChannel({
     sub = false,
     onClick,
     ref,
-}: GuildSidebarVoiceChannelPropsType) {
+}: GuildSidebarVoiceChannelProps) {
     if (sub) {
         return (
             <SidebarMenuSubItem key={channel.id} ref={ref}>

@@ -2,7 +2,7 @@ import type { GuildTextChannelType, Snapshot } from "@/lib/types/types";
 import { HashIcon } from "lucide-react";
 import { SidebarMenuSubItem, SidebarMenuSubButton, SidebarMenuItem, SidebarMenuButton } from "../ui/sidebar";
 
-type GuildSidebarTextChannelPropsType = {
+type GuildSidebarTextChannelProps = {
     channel: Snapshot<GuildTextChannelType>;
     sub?: boolean;
     isActive?: boolean;
@@ -15,7 +15,7 @@ export function GuildSidebarTextChannel({
     sub = false,
     onClick,
     ref,
-}: GuildSidebarTextChannelPropsType) {
+}: GuildSidebarTextChannelProps) {
     if (sub) {
         return (
             <SidebarMenuSubItem key={channel.id} ref={ref}>

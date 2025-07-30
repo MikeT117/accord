@@ -8,12 +8,12 @@ import { useCollapsedCategoryUIState } from "@/lib/valtio/queries/collapsed-cate
 import { setCollapsedCategoryUIStore } from "@/lib/valtio/mutations/collapsed-categories-ui-store-mutations";
 import { useDroppable } from "@dnd-kit/react";
 
-type GuildSidebarCategoryChannelPropsType = {
+type GuildSidebarCategoryChannelProps = {
     channel: Snapshot<GuildCategoryChannelType>;
     children: ReactNode;
 };
 
-export function GuildSidebarCategoryChannel({ channel, children }: GuildSidebarCategoryChannelPropsType) {
+export function GuildSidebarCategoryChannel({ channel, children }: GuildSidebarCategoryChannelProps) {
     const isOpen = useCollapsedCategoryUIState(channel.id);
     const { ref, isDropTarget } = useDroppable({
         id: channel.id,

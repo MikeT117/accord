@@ -5,7 +5,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useGuildPermissions } from "@/lib/authorisation/permissions";
+import { useUserGuildPermissions } from "@/lib/authorisation/permissions";
 import { openCreateGuildCategoryDialog } from "@/lib/valtio/mutations/create-guild-category-dialog-ui-store-mutations";
 import { openCreateGuildChannelDialog } from "@/lib/valtio/mutations/create-guild-channel-dialog-ui-store-mutations";
 import {
@@ -18,10 +18,10 @@ import {
     XIcon,
 } from "lucide-react";
 
-type GuildSidebarHeaderDropdownPropsType = { id: string };
+type GuildSidebarHeaderDropdownProps = { id: string };
 
-export function GuildSidebarHeaderDropdown({ id }: GuildSidebarHeaderDropdownPropsType) {
-    const { hasManageGuild, hasManageGuildChannel } = useGuildPermissions(id);
+export function GuildSidebarHeaderDropdown({ id }: GuildSidebarHeaderDropdownProps) {
+    const { hasManageGuild, hasManageGuildChannel } = useUserGuildPermissions(id);
 
     return (
         <DropdownMenu>
