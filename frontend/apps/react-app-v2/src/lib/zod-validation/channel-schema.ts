@@ -99,3 +99,9 @@ export const channelRoleAssociationChangeSchema = z.object({
     guildId: z.string(),
     roleId: z.string(),
 });
+
+export const channelRoleAssociationsSetSchema = z.object({
+    id: z.string(),
+    guildId: z.string(),
+    roleIds: z.array(z.string()),
+});

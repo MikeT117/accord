@@ -32,6 +32,8 @@ enum OpCode {
 
     INIT = 19;
     IDENTIFY = 20;
+
+    CHANNEL_ROLES_SET = 21;
 }
 
 enum ProviderOpCode {

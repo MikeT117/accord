@@ -8,6 +8,9 @@ import type {
     APIChannelDeletedType,
     APIGuildRoleType,
     APIGuildRoleUpdatedType,
+    APIChannelRoleAssociationChangeType,
+    Normalize,
+    APIChannelRoleAssociationsSetType,
 } from "@/lib/types/types";
 import { apiGuildChannelToGuildChannel } from "../mapper/api-guild-channel-mapper";
 import { apiGuildToGuild } from "../mapper/api-guild-mapper";
@@ -130,13 +133,37 @@ export function handleGuildRoleUpdated(roleUpdate: APIGuildRoleUpdatedType) {
     role.updatedAt = roleUpdate.updatedAt;
 }
 
-export function handleChannelRoleAdded(guildId: string, chnanelId: string, roleId: string) {
+export function handleChannelRolesSet({ guildId, id, roleIds }: APIChannelRoleAssociationsSetType) {
     const guild = guildStore.values[guildId];
     if (!guild) {
         return;
     }
 
-    const channel = guild.channels.values[chnanelId];
+    const channel = guild.channels.values[id];
+    if (!channel) {
+        return;
+    }
+
+    const newRoleIds: Normalize<boolean> = {
+        keys: [],
+        values: {},
+    };
+
+    roleIds.forEach((r) => {
+        newRoleIds.keys.push(r);
+        newRoleIds.values[r] = true;
+    });
+
+    channel.roleIds = newRoleIds;
+}
+
+export function handleChannelRoleAdded({ guildId, id, roleId }: APIChannelRoleAssociationChangeType) {
+    const guild = guildStore.values[guildId];
+    if (!guild) {
+        return;
+    }
+
+    const channel = guild.channels.values[id];
     if (!channel) {
         return;
     }
@@ -145,13 +172,13 @@ export function handleChannelRoleAdded(guildId: string, chnanelId: string, roleI
     channel.roleIds.values[roleId] = true;
 }
 
-export function handleChannelRoleRemoved(guildId: string, channelId: string, roleId: string) {
+export function handleChannelRoleRemoved({ guildId, id, roleId }: APIChannelRoleAssociationChangeType) {
     const guild = guildStore.values[guildId];
     if (!guild) {
         return;
     }
 
-    const channel = guild.channels.values[channelId];
+    const channel = guild.channels.values[id];
     if (!channel) {
         return;
     }

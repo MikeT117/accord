@@ -2,7 +2,13 @@ import { initialisationSchema } from "@/lib/zod-validation/initialisation-schema
 import * as root from "../protobuf/gen/proto-bundle";
 import { guildDeletedSchema, guildSchema, guildUpdatedSchema } from "@/lib/zod-validation/guild-schema";
 import { guildRoleDeletedSchema, guildRoleSchema, guildRoleUpdatedSchema } from "@/lib/zod-validation/guild-role";
-import { channelDeletedSchema, channelSchema, channelUpdatedSchema } from "@/lib/zod-validation/channel-schema";
+import {
+    channelDeletedSchema,
+    channelRoleAssociationChangeSchema,
+    channelRoleAssociationsSetSchema,
+    channelSchema,
+    channelUpdatedSchema,
+} from "@/lib/zod-validation/channel-schema";
 import {
     channelMessageDeletedSchema,
     channelMessageSchema,
@@ -15,6 +21,9 @@ import {
 } from "@/lib/zod-validation/relationship-schema";
 import { tokenStore } from "../valtio/stores/token-store";
 import {
+    handleChannelRoleAdded,
+    handleChannelRoleRemoved,
+    handleChannelRolesSet,
     handleGuildChannelCreated,
     handleGuildChannelDeleted,
     handleGuildChannelUpdated,
@@ -30,7 +39,11 @@ import {
     handlePrivateChannelCreated,
     handlePrivateChannelStoreInitialisation,
 } from "../valtio/mutations/private-channel-mutations";
-import { handleUserRoleStoreInitialisation } from "../valtio/mutations/user-roles-store-mutations";
+import {
+    handleUserRoleAdded,
+    handleUserRoleRemoved,
+    handleUserRoleStoreInitialisation,
+} from "../valtio/mutations/user-roles-store-mutations";
 import { handleUserStoreInitialisation } from "../valtio/mutations/user-store-mutations";
 import {
     handleChannelMessageCreated,
@@ -43,9 +56,18 @@ import {
     handleRelationshipDeleted,
 } from "../react-query/query-cache-mutations/relationship-cache-mutations";
 import { isAPIGuildChannel } from "../types/guards";
+import { handleResetTokenStore } from "../valtio/mutations/token-store-mutations";
+import { userRoleAssociationChangeSchema } from "../zod-validation/user-schema";
 
 const MAX_RETRY_INTERVAL = 30000;
 const CONNECTION_TIMEOUT = 5000;
+
+const WEBSOCKET_CLOSE_CODE = {
+    UNKNOWN: 4000,
+    AUTHENTICATION_TIMEOUT: 4001,
+    AUTHENTICATION_FAILED: 4002,
+    SESSION_EXPIRED: 4003,
+} as const;
 
 export const eventWebsocket = (() => {
     let conn: WebSocket;
@@ -101,6 +123,13 @@ export const eventWebsocket = (() => {
         if (retryAttempts > 10) {
             console.error("websocket connection failed, max attempts (10) reached!");
             return;
+        }
+
+        if (
+            ev.code === WEBSOCKET_CLOSE_CODE.AUTHENTICATION_FAILED ||
+            ev.code === WEBSOCKET_CLOSE_CODE.SESSION_EXPIRED
+        ) {
+            handleResetTokenStore();
         }
 
         setTimeout(
@@ -242,6 +271,28 @@ export const eventWebsocket = (() => {
             case root.pb.OpCode.RELATIONSHIP_DELETE_EVENT:
                 const relationshipDeleted = relationshipDeletedSchema.parse(payload.relationshipDeleted);
                 handleRelationshipDeleted(relationshipDeleted);
+                break;
+            case root.pb.OpCode.CHANNEL_ROLE_ASSOCIATE:
+                const channelRoleAssociated = channelRoleAssociationChangeSchema.parse(payload.channelRoleAssociated);
+                handleChannelRoleAdded(channelRoleAssociated);
+                break;
+            case root.pb.OpCode.CHANNEL_ROLE_DISASSOCIATE:
+                const channelRoleDisassociated = channelRoleAssociationChangeSchema.parse(
+                    payload.channelRoleDisassociated
+                );
+                handleChannelRoleRemoved(channelRoleDisassociated);
+                break;
+            case root.pb.OpCode.USER_ROLE_ASSOCIATE:
+                const userRoleAssociated = userRoleAssociationChangeSchema.parse(payload.userRoleAssociated);
+                handleUserRoleAdded(userRoleAssociated);
+                break;
+            case root.pb.OpCode.USER_ROLE_DISASSOCIATE:
+                const userRoleDisassociated = userRoleAssociationChangeSchema.parse(payload.userRoleDisassociated);
+                handleUserRoleRemoved(userRoleDisassociated);
+                break;
+            case root.pb.OpCode.CHANNEL_ROLES_SET:
+                const channelRolesSet = channelRoleAssociationsSetSchema.parse(payload.channelRolesSet);
+                handleChannelRolesSet(channelRolesSet);
                 break;
             default:
                 console.error("unknown op code, ignoring");

@@ -8,6 +8,7 @@ import {
 import {
     channelDeletedSchema,
     channelRoleAssociationChangeSchema,
+    channelRoleAssociationsSetSchema,
     channelUpdatedSchema,
     guildChannelSchema,
     privateChannelSchema,
@@ -86,6 +87,7 @@ export type APIRelationshipUpdatedType = z.infer<typeof relationshipUpdatedSchem
 export type APIRelationshipDeletedType = z.infer<typeof relationshipDeletedSchema>;
 export type APIChannelRoleAssociationChangeType = z.infer<typeof channelRoleAssociationChangeSchema>;
 export type APIUserRoleAssociationChangeType = z.infer<typeof userRoleAssociationChangeSchema>;
+export type APIChannelRoleAssociationsSetType = z.infer<typeof channelRoleAssociationsSetSchema>;
 
 // Client Types
 export type AttachmentType = APIAttachmentType;
