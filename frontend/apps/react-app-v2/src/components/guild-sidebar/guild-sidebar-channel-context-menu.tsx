@@ -55,14 +55,20 @@ export function GuildSidebarChannelContextMenu({
         <ContextMenu>
             <ContextMenuTrigger>{children}</ContextMenuTrigger>
             <ContextMenuContent className="w-40">
-                {!isGuildCategoryChannel && <ContextMenuItem>Mute Channel</ContextMenuItem>}
-                <ContextMenuItem onClick={handleCopyLinkClick}>Copy Link</ContextMenuItem>
-                <ContextMenuSeparator />
+                {!isGuildCategoryChannel && (
+                    <>
+                        <ContextMenuItem>Mute Channel</ContextMenuItem>
+                        <ContextMenuItem onClick={handleCopyLinkClick}>Copy Link</ContextMenuItem>
+                        <ContextMenuSeparator />
+                    </>
+                )}
+
                 {hasManageGuildChannel && (
                     <ContextMenuItem onClick={handleEditClick}>
                         Edit {isGuildCategoryChannel ? "Category" : "Channel"}
                     </ContextMenuItem>
                 )}
+                <ContextMenuSeparator />
                 {hasManageGuildChannel && (
                     <ContextMenuItem variant="destructive" onClick={handleDeleteClick}>
                         Delete
