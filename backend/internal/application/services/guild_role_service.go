@@ -19,15 +19,17 @@ type GuildRoleService struct {
 	eventService          interfaces.EventService
 	guildRoleRepository   repositories.GuildRoleRepository
 	guildMemberRepository repositories.GuildMemberRepository
+	channelRepository     repositories.ChannelRepository
 }
 
-func CreateGuildRoleService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, guildRoleRepository repositories.GuildRoleRepository, guildMemberRepository repositories.GuildMemberRepository) interfaces.GuildRoleService {
+func CreateGuildRoleService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, guildRoleRepository repositories.GuildRoleRepository, guildMemberRepository repositories.GuildMemberRepository, channelRepository repositories.ChannelRepository) interfaces.GuildRoleService {
 	return &GuildRoleService{
 		transactor:            transactor,
 		authorisationService:  authorisationService,
 		eventService:          eventService,
 		guildRoleRepository:   guildRoleRepository,
 		guildMemberRepository: guildMemberRepository,
+		channelRepository:     channelRepository,
 	}
 }
 
@@ -135,11 +137,63 @@ func (s *GuildRoleService) CreateChannelAssoc(ctx context.Context, cmd *command.
 		return err
 	}
 
-	if err := s.guildRoleRepository.AssociateChannel(ctx, cmd.RoleID, cmd.ChannelID); err != nil {
+	channel, err := s.channelRepository.GetByID(ctx, cmd.ChannelID)
+	if err != nil {
 		return err
 	}
 
-	return s.eventService.ChannelRoleAssociated(ctx, cmd.ChannelID, cmd.GuildID, cmd.RoleID)
+	if !channel.IsGuildCategoryChannel() {
+		if err := s.guildRoleRepository.AssociateChannel(ctx, cmd.RoleID, cmd.ChannelID); err != nil {
+			return err
+		}
+
+		return s.eventService.ChannelRoleAssociated(ctx, cmd.ChannelID, cmd.GuildID, cmd.RoleID)
+	}
+
+	ids, err := s.channelRepository.GetIDsSyncedWithParentByParentID(ctx, cmd.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+		channelIDsToAssociate := append(ids, cmd.ChannelID)
+		if err := s.guildRoleRepository.BulkChannelAssociateRole(ctx, cmd.RoleID, channelIDsToAssociate); err != nil {
+			return err
+		}
+
+		for _, channelID := range channelIDsToAssociate {
+			if err := s.eventService.ChannelRoleAssociated(ctx, channelID, cmd.GuildID, cmd.RoleID); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+}
+
+func (s *GuildRoleService) SyncGuildChannelRoleAssociations(ctx context.Context, cmd *command.SyncGuildRoleChannelAssociationsCommand) error {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
+	if err != nil {
+		return err
+	}
+
+	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+
+		if err := s.guildRoleRepository.WipeChannelAssociations(ctx, cmd.SourceChannelID); err != nil {
+			return err
+		}
+
+		roleIDs, err := s.guildRoleRepository.GetRoleIDsByChannelID(ctx, cmd.TargetChannelID)
+		if err != nil {
+			return err
+		}
+
+		if err := s.guildRoleRepository.BulkRoleAssociateChannel(ctx, cmd.SourceChannelID, roleIDs); err != nil {
+			return err
+		}
+
+		return s.eventService.ChannelRolesSet(ctx, cmd.SourceChannelID, cmd.GuildID, roleIDs)
+	})
 }
 
 func (s *GuildRoleService) DeleteChannelAssoc(ctx context.Context, cmd *command.DeleteGuildRoleChannelAssociationCommand) error {
@@ -148,9 +202,37 @@ func (s *GuildRoleService) DeleteChannelAssoc(ctx context.Context, cmd *command.
 		return err
 	}
 
-	if err := s.guildRoleRepository.DisassociateChannel(ctx, cmd.RoleID, cmd.ChannelID); err != nil {
+	channel, err := s.channelRepository.GetByID(ctx, cmd.ChannelID)
+	if err != nil {
 		return err
 	}
 
-	return s.eventService.ChannelRoleDisassociated(ctx, cmd.ChannelID, cmd.GuildID, cmd.RoleID)
+	if !channel.IsGuildCategoryChannel() {
+		if err := s.guildRoleRepository.DisassociateChannel(ctx, cmd.RoleID, cmd.ChannelID); err != nil {
+			return err
+		}
+
+		return s.eventService.ChannelRoleDisassociated(ctx, cmd.ChannelID, cmd.GuildID, cmd.RoleID)
+	}
+
+	ids, err := s.channelRepository.GetIDsSyncedWithParentByParentID(ctx, cmd.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+		channelIDsToDisassociate := append(ids, cmd.ChannelID)
+		if err := s.guildRoleRepository.BulkChannelDisassociateRole(ctx, cmd.RoleID, channelIDsToDisassociate); err != nil {
+			return err
+		}
+
+		for _, channelID := range channelIDsToDisassociate {
+			if err := s.eventService.ChannelRoleDisassociated(ctx, channelID, cmd.GuildID, cmd.RoleID); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
 }

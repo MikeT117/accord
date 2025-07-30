@@ -99,5 +99,6 @@ message EventPayload {
 
         UserRoleAssociated user_role_associated = 21;
         UserRoleDisassociated user_role_disassociated = 22;
+        ChannelRolesSet channel_roles_set = 23;
     };
 }

@@ -30,4 +30,6 @@ type EventService interface {
 
 	ChannelRoleAssociated(ctx context.Context, ID string, guildID string, roleID string) error
 	ChannelRoleDisassociated(ctx context.Context, ID string, guildID string, roleID string) error
+
+	ChannelRolesSet(ctx context.Context, ID string, guildID string, roleIDs []string) error
 }

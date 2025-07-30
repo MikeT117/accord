@@ -414,8 +414,29 @@ func (s *EventService) UserRoleDisassociated(ctx context.Context, userID string,
 	})
 }
 
+func (s *EventService) ChannelRolesSet(ctx context.Context, ID string, guildID string, roleIDs []string) error {
+	defaultRoleID, err := s.guildRoleRepository.GetDefaultGuildRoleIDByGuildID(ctx, guildID)
+	if err != nil {
+		return err
+	}
+
+	var ver int32 = 0
+	return s.eventPublisher.PublishRoleEvent([]string{defaultRoleID}, &pb.EventPayload{
+		Ver: &ver,
+		Op:  pb.OpCode_CHANNEL_ROLES_SET.Enum(),
+		Payload: &pb.EventPayload_ChannelRolesSet{
+			ChannelRolesSet: &pb.ChannelRolesSet{
+				Ver:     &ver,
+				Id:      &ID,
+				GuildId: &guildID,
+				RoleIds: roleIDs,
+			},
+		},
+	})
+}
+
 func (s *EventService) ChannelRoleAssociated(ctx context.Context, ID string, guildID string, roleID string) error {
-	defaultRoleID, err := s.guildRoleRepository.GetDefaultGuildRoleIDByGuildID(ctx, ID)
+	defaultRoleID, err := s.guildRoleRepository.GetDefaultGuildRoleIDByGuildID(ctx, guildID)
 	if err != nil {
 		return err
 	}
@@ -436,7 +457,7 @@ func (s *EventService) ChannelRoleAssociated(ctx context.Context, ID string, gui
 }
 
 func (s *EventService) ChannelRoleDisassociated(ctx context.Context, ID string, guildID string, roleID string) error {
-	defaultRoleID, err := s.guildRoleRepository.GetDefaultGuildRoleIDByGuildID(ctx, ID)
+	defaultRoleID, err := s.guildRoleRepository.GetDefaultGuildRoleIDByGuildID(ctx, guildID)
 	if err != nil {
 		return err
 	}

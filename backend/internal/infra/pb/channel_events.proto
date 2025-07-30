@@ -13,6 +13,13 @@ message ChannelUpdated {
     int64 updated_at = 7;
 }
 
+message ChannelRolesSet {
+    int32 ver = 1;
+    string id = 2;
+    string guild_id = 3;
+    repeated string role_ids = 4;
+}
+
 message ChannelRoleAssociated {
     int32 ver = 1;
     string id = 2;

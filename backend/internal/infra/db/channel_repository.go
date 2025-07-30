@@ -57,6 +57,65 @@ func (r *ChannelRepository) GetByID(ctx context.Context, ID string) (*entities.C
 	return channel, nil
 }
 
+func (r *ChannelRepository) GetIDsSyncedWithParentByParentID(ctx context.Context, parentID string) ([]string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		WITH parent_roles AS (
+			SELECT
+				ARRAY_AGG(role_id) AS role_ids
+			FROM
+				guild_role_channel
+			WHERE
+				channel_id = $1
+		),
+		children AS (
+			SELECT
+				id
+			FROM 
+				channel
+			WHERE
+				parent_id = $1
+		),
+		child_roles AS (
+			SELECT
+				c.id,
+				ARRAY_AGG(grc.role_id) AS role_ids
+			FROM
+				children c
+			LEFT JOIN
+				guild_role_channel grc ON grc.channel_id = c.id
+			GROUP BY
+				c.id
+		)
+
+		SELECT
+			cr.id
+		FROM
+			child_roles cr,
+			parent_roles pr
+		WHERE
+			cr.role_ids = pr.role_ids;
+	`, parentID)
+
+	if err != nil {
+		return nil, wrapUnknownErr("select channels by parent id with sync failed", err)
+	}
+
+	defer rows.Close()
+	channelIDs := []string{}
+	for rows.Next() {
+		var channelID string
+		if err := rows.Scan(
+			&channelID,
+		); err != nil {
+			return nil, wrapUnknownErr("map over select channels by parent id with sync failed", err)
+		}
+
+		channelIDs = append(channelIDs, channelID)
+	}
+
+	return channelIDs, nil
+}
+
 func (r *ChannelRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.Channel, []string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
@@ -77,7 +136,6 @@ func (r *ChannelRepository) GetByGuildID(ctx context.Context, guildID string) ([
 
 	if err != nil {
 		return nil, []string{}, wrapUnknownErr("select channels by guild id failed", err)
-
 	}
 
 	defer rows.Close()

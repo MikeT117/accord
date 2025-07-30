@@ -83,7 +83,7 @@ func main() {
 	guildInviteService := services.CreateGuildInviteService(transactor, authorisationService, guildInviteRepository, guildRepository)
 	guildMemberService := services.CreateGuildMemberService(transactor, authorisationService, userRepository, guildMemberRepository, guildRoleRepository, guildRepository, guildInviteRepository)
 	guildService := services.CreateGuildService(transactor, authorisationService, eventService, guildRepository, guildMemberRepository, guildRoleRepository, channelRepository)
-	guildRoleService := services.CreateGuildRoleService(transactor, authorisationService, eventService, guildRoleRepository, guildMemberRepository)
+	guildRoleService := services.CreateGuildRoleService(transactor, authorisationService, eventService, guildRoleRepository, guildMemberRepository, channelRepository)
 	relationshipService := services.CreateRelationshipService(transactor, authorisationService, eventService, relationshipRepository, userRepository)
 	sessionService := services.CreateSessionService(transactor, eventService, sessionRepository, userRepository)
 	voiceStateService := services.CreateVoiceStateService(transactor, authorisationService, voiceStateRepository, userRepository)

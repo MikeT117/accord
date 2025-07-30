@@ -30,9 +30,31 @@ func NewGuildRoleController(
 
 	subGroup.PUT("/:roleID/users/:userID", controller.createUserRoleAssociation)
 	subGroup.PUT("/:roleID/channels/:channelID", controller.createChannelRoleAssociation)
-	subGroup.DELETE("/:roleID/users/:userID", controller.createUserRoleAssociation)
-	subGroup.DELETE("/:roleID/channels/:channelID", controller.createChannelRoleAssociation)
+	subGroup.DELETE("/:roleID/users/:userID", controller.deleteUserRoleAssociation)
+	subGroup.DELETE("/:roleID/channels/:channelID", controller.deleteChannelRoleAssociation)
+
+	subGroup.POST("/sync/:sourceChannelID/:targetChannelID", controller.syncChannelRoleAssociations)
+
 	return controller
+}
+
+func (c *GuildRoleController) syncChannelRoleAssociations(ctx echo.Context) error {
+	var payload request.SyncChannelRoleAssociationsRequest
+	if err := ctx.Bind(&payload); err != nil {
+		return handleError(ctx, err)
+	}
+
+	requestorID, _ := authentication.GetRequestorDetails(ctx)
+	cmd, err := payload.ToSyncGuildRoleChannelAssociationsCommand(requestorID)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	if err := c.guildRoleService.SyncGuildChannelRoleAssociations(ctx.Request().Context(), cmd); err != nil {
+		return handleError(ctx, err)
+	}
+
+	return response.NoContentResponse(ctx)
 }
 
 func (c *GuildRoleController) createUserRoleAssociation(ctx echo.Context) error {

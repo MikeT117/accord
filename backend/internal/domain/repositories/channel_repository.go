@@ -22,4 +22,6 @@ type ChannelRepository interface {
 	VerifyUserChannelMembership(ctx context.Context, userID string, channelID string) error
 	AssociateUser(ctx context.Context, channelID string, userID string) error
 	DisassociateUser(ctx context.Context, channelID string, userID string) error
+
+	GetIDsSyncedWithParentByParentID(ctx context.Context, parentID string) ([]string, error)
 }

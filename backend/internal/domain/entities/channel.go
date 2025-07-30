@@ -90,6 +90,10 @@ func (u *Channel) IsGuildChannel() bool {
 	return u.ChannelType < DMChannel && u.GuildID != nil
 }
 
+func (u *Channel) IsGuildCategoryChannel() bool {
+	return u.ChannelType == GuildCategoryChannel
+}
+
 func (c *Channel) UpdateParentID(parentID *string) error {
 	c.ParentID = parentID
 	c.UpdatedAt = time.Now().UTC()

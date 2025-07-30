@@ -32,4 +32,9 @@ type GuildRoleRepository interface {
 
 	GetChannelPermissions(ctx context.Context, channelID string, userID string) (int32, error)
 	GetGuildPermissions(ctx context.Context, guildID string, userID string) (int32, error)
+
+	BulkRoleAssociateChannel(ctx context.Context, channelID string, roleIDs []string) error
+	BulkChannelAssociateRole(ctx context.Context, roleID string, channelIDs []string) error
+	WipeChannelAssociations(ctx context.Context, channelID string) error
+	BulkChannelDisassociateRole(ctx context.Context, roleID string, channelIDs []string) error
 }

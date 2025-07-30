@@ -16,4 +16,5 @@ type GuildRoleService interface {
 	DeleteUserAssoc(ctx context.Context, cmd *command.DeleteGuildRoleUserAssociationCommand) error
 	CreateChannelAssoc(ctx context.Context, cmd *command.CreateGuildRoleChannelAssociationCommand) error
 	DeleteChannelAssoc(ctx context.Context, cmd *command.DeleteGuildRoleChannelAssociationCommand) error
+	SyncGuildChannelRoleAssociations(ctx context.Context, cmd *command.SyncGuildRoleChannelAssociationsCommand) error
 }

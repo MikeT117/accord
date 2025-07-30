@@ -519,6 +519,90 @@ func (r *GuildRoleRepository) GetRoleIDsByUserID(ctx context.Context, userID str
 	return roleIDs, err
 }
 
+func (r *GuildRoleRepository) BulkRoleAssociateChannel(ctx context.Context, channelID string, roleIDs []string) error {
+	result, err := r.db(ctx).Exec(ctx, `
+		INSERT INTO
+			guild_role_channel (
+				channel_id,
+				role_id
+			)
+		SELECT
+			$1,
+			UNNEST($2::UUID[]);
+	`, channelID, roleIDs)
+
+	if err != nil {
+		return wrapUnknownErr("bulk role associate channel failed", err)
+	}
+
+	if result.RowsAffected() != int64(len(roleIDs)) {
+		return domain.ErrEntityNotFound
+	}
+
+	return nil
+}
+
+func (r *GuildRoleRepository) BulkChannelAssociateRole(ctx context.Context, roleID string, channelIDs []string) error {
+	result, err := r.db(ctx).Exec(ctx, `
+		INSERT INTO
+			guild_role_channel (
+				role_id,
+				channel_id
+			)
+		SELECT
+			$1,
+			UNNEST($2::UUID[]);
+	`, roleID, channelIDs)
+
+	if err != nil {
+		return wrapUnknownErr("bulk channel associate role failed", err)
+	}
+
+	if result.RowsAffected() != int64(len(channelIDs)) {
+		return domain.ErrEntityNotFound
+	}
+
+	return nil
+}
+
+func (r *GuildRoleRepository) BulkChannelDisassociateRole(ctx context.Context, roleID string, channelIDs []string) error {
+	result, err := r.db(ctx).Exec(ctx, `
+			DELETE FROM
+				guild_role_channel
+			WHERE
+				role_id = $1
+			AND
+				channel_id = ANY($2);
+		`, roleID, channelIDs,
+	)
+
+	if err != nil {
+		return wrapUnknownErr("bulk channel disassociate role failed", err)
+	}
+
+	if result.RowsAffected() != int64(len(channelIDs)) {
+		return domain.ErrEntityNotFound
+	}
+
+	return nil
+}
+
+func (r *GuildRoleRepository) WipeChannelAssociations(ctx context.Context, channelID string) error {
+	_, err := r.db(ctx).Exec(ctx, `
+			DELETE FROM
+				guild_role_channel
+			WHERE
+				channel_id = $1;
+		`, channelID,
+	)
+
+	if err != nil {
+		return wrapUnknownErr("bulk delete role channel associations failed", err)
+	}
+
+	return nil
+}
+
 func (r *GuildRoleRepository) AssociateChannel(ctx context.Context, roleID string, channelID string) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			INSERT INTO
