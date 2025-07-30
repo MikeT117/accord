@@ -1,7 +1,7 @@
 import { Trash2, Plus, ShieldIcon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
-import { useGuildChannelRoles } from "@/lib/valtio/queries/guild-store-queries";
+import { useGuildChannelPermissions } from "@/lib/valtio/queries/guild-store-queries";
 import { Switch } from "../ui/switch";
 import { useDeleteRoleChannelAssoc } from "@/lib/react-query/mutations/delete-role-channel-assoc-mutation";
 import { useCreateRoleChannelAssoc } from "@/lib/react-query/mutations/create-role-channel-assoc-mutation";
@@ -10,22 +10,33 @@ import { SettingsDialogUnsavedChanges } from "../settings-dialog/settings-dialog
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "../ui/form";
 import { GuildRolePermissionBadges } from "../guild-role-permission-badges";
 import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog-content-section";
+import { GuildChannelSettingsPermissionSyncAlert } from "./guild-channel-settings-permission-sync-alert";
+import { useSyncChannelRoleAssociationsMutation } from "@/lib/react-query/mutations/sync-channel-role-associsations-mutation";
 
 type GuildChannelSettingsPermissionsSectionProps = {
     id: string;
     guildId: string;
+    parentId: string | null;
 };
 
-export function GuildChannelSettingsPermissionsSection({ id, guildId }: GuildChannelSettingsPermissionsSectionProps) {
-    const { assignedRoles, availableRoles, defaultRoleId, isPrivate } = useGuildChannelRoles(guildId, id);
+export function GuildChannelSettingsPermissionsSection({
+    id,
+    guildId,
+    parentId,
+}: GuildChannelSettingsPermissionsSectionProps) {
+    const { assignedRoles, availableRoles, defaultRoleId, isPrivate, isSyncedWithParent } = useGuildChannelPermissions(
+        guildId,
+        id
+    );
+
+    const { mutate: syncChannelRoleAssociations } = useSyncChannelRoleAssociationsMutation({ onSuccess: resetForm });
+    const { mutate: createRoleChannelAssoc } = useCreateRoleChannelAssoc({ onSuccess: resetForm });
+    const { mutate: deleteRoleChannelAssoc } = useDeleteRoleChannelAssoc({ onSuccess: resetForm });
 
     const form = useForm<{ isPrivate: boolean }>({
         defaultValues: { isPrivate },
         values: { isPrivate },
     });
-
-    const { mutate: createRoleChannelAssoc } = useCreateRoleChannelAssoc({ onSuccess: resetForm });
-    const { mutate: deleteRoleChannelAssoc } = useDeleteRoleChannelAssoc({ onSuccess: resetForm });
 
     function handleRoleAssign(roleId: string) {
         createRoleChannelAssoc({ channelId: id, guildId, roleId });
@@ -33,6 +44,14 @@ export function GuildChannelSettingsPermissionsSection({ id, guildId }: GuildCha
 
     function handleRoleUnassign(roleId: string) {
         deleteRoleChannelAssoc({ channelId: id, guildId, roleId });
+    }
+
+    function handleSyncParentRoleAssociations() {
+        if (!parentId) {
+            return;
+        }
+
+        syncChannelRoleAssociations({ guildId, sourceChannelId: id, targetChannelId: parentId });
     }
 
     async function handleSaveChanges() {
@@ -54,6 +73,12 @@ export function GuildChannelSettingsPermissionsSection({ id, guildId }: GuildCha
             title="Channel Roles"
             description="Manage roles, permissions and visibility for this channel."
         >
+            {parentId && isSyncedWithParent === false && (
+                <GuildChannelSettingsPermissionSyncAlert
+                    isVisible={!isSyncedWithParent}
+                    onSync={handleSyncParentRoleAssociations}
+                />
+            )}
             <Card>
                 <CardHeader>
                     <CardTitle>Visibility</CardTitle>

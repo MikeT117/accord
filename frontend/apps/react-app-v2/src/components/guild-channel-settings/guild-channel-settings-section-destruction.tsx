@@ -42,11 +42,10 @@ export function GuildChannelSettingsDestructionSection({ id, name }: GuildChanne
                 <CardContent className="space-y-4">
                     <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20">
                         <h4 className="font-semibold text-destructive mb-2">This action will:</h4>
-                        <ul className="text-sm text-muted-foreground space-y-1 ml-8 list-disc">
+                        <ul className="text-sm text-muted-foreground space-y-0.5 ml-4 list-disc list-inside">
                             <li>Permanently delete all messages in this channel</li>
                             <li>Remove all files and attachments</li>
                             <li>Delete all channel settings and permissions</li>
-                            <li>Remove the channel from all user interfaces</li>
                         </ul>
                     </div>
                     <div className="space-y-4">

@@ -23,6 +23,8 @@ export function GuildChannelSettingsOverviewSection({
     parentId,
     topic,
 }: GuildChannelSettingsOverviewSectionProps) {
+    const { mutate: updateGuildChannel } = useUpdateGuildChannelMutation({ onSuccess: resetForm });
+
     const form = useForm<UpdateGuildChannelFormType>({
         resolver: zodResolver(updateGuildChannelFormSchema),
         defaultValues: {
@@ -30,8 +32,6 @@ export function GuildChannelSettingsOverviewSection({
             topic,
         },
     });
-
-    const { mutate: updateGuildChannel } = useUpdateGuildChannelMutation({ onSuccess: resetForm });
 
     function handleSaveChanges() {
         form.handleSubmit((values: UpdateGuildChannelFormType) =>

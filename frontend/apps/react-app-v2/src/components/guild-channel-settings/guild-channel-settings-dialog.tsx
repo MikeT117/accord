@@ -1,7 +1,6 @@
 import * as React from "react";
 import { Hash, Users, Trash2Icon } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
-import { useGuildChannelSettingsState } from "@/lib/valtio/queries/guild-channel-settings-ui-store-queries";
 import { closeGuildChannelSettings } from "@/lib/valtio/mutations/guild-channel-settings-ui-store-mutations";
 import type { ValueOf } from "@/lib/types/types";
 import { useGuildTextChannel } from "@/lib/valtio/queries/guild-store-queries";
@@ -10,6 +9,7 @@ import { GuildChannelSettingsPermissionsSection } from "./guild-channel-settings
 import { GuildChannelSettingsDestructionSection } from "./guild-channel-settings-section-destruction";
 import { SettingsDialogContent } from "../settings-dialog/settings-dialog-content";
 import { SettingsDialogSidebar } from "../settings-dialog/settings-dialog-sidebar";
+import { useGuildChannelSettingsState } from "@/lib/valtio/queries/guild-channel-settings-ui-store-queries";
 
 export function GuildChannelSettings() {
     const { isOpen, channelId, guildId } = useGuildChannelSettingsState();
@@ -75,7 +75,11 @@ function GuildChannelSettingsContent({ channelId, guildId }: GuildChannelSetting
                 />
             )}
             {activeSection === CHANNEL_SETTINGS_SECTION.CHANNEL_PERMISSIONS && (
-                <GuildChannelSettingsPermissionsSection guildId={channel.guildId} id={channel.id} />
+                <GuildChannelSettingsPermissionsSection
+                    id={channel.id}
+                    guildId={channel.guildId}
+                    parentId={channel.parentId}
+                />
             )}
             {activeSection === CHANNEL_SETTINGS_SECTION.DELETE_CHANNEL && (
                 <GuildChannelSettingsDestructionSection id={channel.id} name={channel.name} />
