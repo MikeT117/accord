@@ -34,6 +34,7 @@ enum OpCode {
     IDENTIFY = 20;
 
     CHANNEL_ROLES_SET = 21;
+    USER_UPDATED = 22;
 }
 
 enum ProviderOpCode {

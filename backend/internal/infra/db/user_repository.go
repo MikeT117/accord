@@ -303,25 +303,23 @@ func (r *UserRepository) Update(ctx context.Context, user *entities.User) error 
 		UPDATE
 			"user"
 		SET
-			name = $2,
+			display_name = $2,
 			email = $3,
 			email_verified = $4,
-			image = $5,
-			created_at = $6,
-			updated_at = $7
+			public_flags = $5,
+			avatar_id = $6,
+			banner_id = $7,
+			updated_at = $8
 		WHERE
 			id = $1;
-	`,
+		`,
 		user.ID,
-		user.Username,
 		user.DisplayName,
 		user.Email,
 		user.EmailVerified,
 		user.PublicFlags,
-		user.RelationshipCount,
 		user.AvatarID,
 		user.BannerID,
-		user.CreatedAt,
 		user.UpdatedAt,
 	)
 

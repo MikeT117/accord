@@ -76,7 +76,7 @@ func main() {
 
 	// Services
 	attachmentService := services.CreateAttachmentService(transactor, cloudinaryUpload, attachmentRepository)
-	accountService := services.CreateUserAccountService(transactor, accountRepository, userRepository)
+	userAccountService := services.CreateUserAccountService(transactor, eventService, accountRepository, userRepository)
 	channelService := services.CreateChannelService(transactor, authorisationService, eventService, channelRepository, guildRepository, guildRoleRepository, userRepository)
 	guildBanService := services.CreateGuildBanService(transactor, authorisationService, guildMemberRepository, guildBanRepository)
 	guildCategoryService := services.CreateGuildCategoryService(transactor, authorisationService, guildCategoryRepository)
@@ -90,7 +90,7 @@ func main() {
 	channelMessageService := services.CreateChannelMessageService(transactor, authorisationService, eventService, channelMessageRepository, channelRepository, userRepository, guildMemberRepository, guildRoleRepository, attachmentRepository)
 
 	// Rest API
-	server := rest.CreateRouter(config, authenticationService, attachmentService, authorisationService, channelMessageService, channelService, guildBanService, guildCategoryService, guildInviteService, guildMemberService, guildRoleService, guildService, relationshipService, sessionService, accountService, voiceStateService)
+	server := rest.CreateRouter(config, authenticationService, attachmentService, authorisationService, channelMessageService, channelService, guildBanService, guildCategoryService, guildInviteService, guildMemberService, guildRoleService, guildService, relationshipService, sessionService, userAccountService, voiceStateService)
 	defer func() {
 		log.Println("shutting down echo router")
 		if err := server.Shutdown(ctx); err != nil {

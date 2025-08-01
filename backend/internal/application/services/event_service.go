@@ -368,6 +368,15 @@ func (s *EventService) InvalidateToken(ctx context.Context, userID string, token
 	})
 }
 
+func (s *EventService) UserUpdated(ctx context.Context, ID string) error {
+	user, err := s.userRepository.GetByID(ctx, ID)
+	if err != nil {
+		return err
+	}
+
+	return s.eventPublisher.PublishUserEvent([]string{ID}, mapper.NewUserUpdatedProtoEvent(user))
+}
+
 func (s *EventService) UserRoleAssociated(ctx context.Context, userID string, roleID string) error {
 	var ver int32 = 0
 	if err := s.eventPublisher.PublishUserEvent([]string{userID}, &pb.EventPayload{

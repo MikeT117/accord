@@ -13,17 +13,20 @@ import (
 
 type UserAccountService struct {
 	transactor        *db.Transactor
+	eventService      interfaces.EventService
 	accountRepository repositories.AccountRepository
 	userRepository    repositories.UserRepository
 }
 
 func CreateUserAccountService(
 	transactor *db.Transactor,
+	eventService interfaces.EventService,
 	accountRepository repositories.AccountRepository,
 	userRepository repositories.UserRepository,
 ) interfaces.UserAccountService {
 	return &UserAccountService{
 		transactor:        transactor,
+		eventService:      eventService,
 		accountRepository: accountRepository,
 		userRepository:    userRepository,
 	}
@@ -63,5 +66,5 @@ func (s *UserAccountService) UpdateUserAccount(ctx context.Context, cmd *command
 		return err
 	}
 
-	return nil
+	return s.eventService.UserUpdated(ctx, user.ID)
 }

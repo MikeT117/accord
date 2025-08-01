@@ -42,3 +42,27 @@ func NewUserProtoResultFromUser(user *entities.User) *pb.User {
 	}
 
 }
+
+func NewUserUpdatedProtoEvent(user *entities.User) *pb.EventPayload {
+	if user == nil {
+		return nil
+	}
+
+	var ver int32 = 0
+	publicFlags := int32(user.PublicFlags)
+
+	return &pb.EventPayload{
+		Ver: &ver,
+		Op:  pb.OpCode_USER_UPDATED.Enum(),
+		Payload: &pb.EventPayload_UserUpdated{
+			UserUpdated: &pb.UserUpdated{
+				Ver:         &ver,
+				DisplayName: &user.DisplayName,
+				PublicFlags: &publicFlags,
+				Avatar:      user.AvatarID,
+				Banner:      user.BannerID,
+			},
+		},
+	}
+
+}
