@@ -1,4 +1,4 @@
-import { Trash2, Plus, ShieldIcon } from "lucide-react";
+import { Trash2, Plus, ShieldIcon, Trash2Icon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { useGuildChannelPermissions } from "@/lib/valtio/queries/guild-store-queries";
@@ -12,6 +12,7 @@ import { GuildRolePermissionBadges } from "../guild-role-permission-badges";
 import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog-content-section";
 import { GuildChannelSettingsPermissionSyncAlert } from "./guild-channel-settings-permission-sync-alert";
 import { useSyncChannelRoleAssociationsMutation } from "@/lib/react-query/mutations/sync-channel-role-associsations-mutation";
+import { DestructiveIconButton } from "../destructive-icon-button";
 
 type GuildChannelSettingsPermissionsSectionProps = {
     id: string;
@@ -106,11 +107,6 @@ export function GuildChannelSettingsPermissionsSection({
                     </Form>
                 </CardContent>
             </Card>
-            <SettingsDialogUnsavedChanges
-                isVisible={form.formState.isDirty}
-                onDiscard={resetForm}
-                onSave={handleSaveChanges}
-            />
             <Card>
                 <CardHeader>
                     <CardTitle>Assigned Roles</CardTitle>
@@ -127,14 +123,10 @@ export function GuildChannelSettingsPermissionsSection({
                                         <GuildRolePermissionBadges permissions={role.permissions} />
                                     </div>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleRoleUnassign(role.id)}
-                                    className="text-destructive hover:text-destructive"
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
+
+                                <DestructiveIconButton onClick={() => handleRoleUnassign(role.id)}>
+                                    <Trash2Icon />
+                                </DestructiveIconButton>
                             </div>
                         ))}
                         {assignedRoles.length === 0 && (
@@ -175,6 +167,11 @@ export function GuildChannelSettingsPermissionsSection({
                     </div>
                 </CardContent>
             </Card>
+            <SettingsDialogUnsavedChanges
+                isVisible={form.formState.isDirty}
+                onDiscard={resetForm}
+                onSave={handleSaveChanges}
+            />
         </SettingsDialogContentSection>
     );
 }

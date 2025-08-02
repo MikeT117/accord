@@ -5,10 +5,29 @@ export const userSchema = z.object({
     username: z.string(),
     displayName: z.string(),
     publicFlags: z.number(),
-    avatar: z.optional(z.nullable(z.string())),
-    banner: z.optional(z.nullable(z.string())),
+    avatar: z.pipe(
+        z.optional(z.nullable(z.string())),
+        z.transform((a) => (!a || a.trim() === "" ? null : a))
+    ),
+    banner: z.pipe(
+        z.optional(z.nullable(z.string())),
+        z.transform((a) => (!a || a.trim() === "" ? null : a))
+    ),
 });
 
 export const userRoleAssociationChangeSchema = z.object({
     roleId: z.string(),
+});
+
+export const userUpdatedSchema = z.object({
+    displayName: z.string(),
+    publicFlags: z.number(),
+    avatar: z.pipe(
+        z.optional(z.nullable(z.string())),
+        z.transform((a) => (!a || a.trim() === "" ? null : a))
+    ),
+    banner: z.pipe(
+        z.optional(z.nullable(z.string())),
+        z.transform((a) => (!a || a.trim() === "" ? null : a))
+    ),
 });

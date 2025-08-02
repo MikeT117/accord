@@ -1,77 +1,50 @@
 import { guildStore } from "../valtio/stores/guild-store";
 import { userRoleStore } from "../valtio/stores/user-roles-store";
-import { GUILD_PERMISSION } from "../constants";
-import type { OptionalReadonly, Dictionary, GuildRoleType } from "../types/types";
+import { GUILD_PERMISSION, USER_FLAG } from "../constants";
+import type { OptionalReadonly, Dictionary, GuildRoleType, ValueOf } from "../types/types";
 import { useGuild } from "../valtio/queries/guild-store-queries";
 import { ErrChannelNotFound } from "../error";
 
-function hasViewGuildChannel(permission: number) {
-    return (permission & (1 << GUILD_PERMISSION.VIEW_GUILD_CHANNEL)) !== 0;
+function hasRolePermission(permission: number, flag: ValueOf<typeof GUILD_PERMISSION>) {
+    return (permission & (1 << flag)) !== 0;
 }
 
-function hasManageGuildChannel(permission: number) {
-    return (permission & (1 << GUILD_PERMISSION.MANAGE_GUILD_CHANNELS)) !== 0;
+function hasUserFlag(permission: number, flag: ValueOf<typeof USER_FLAG>) {
+    return (permission & (1 << flag)) !== 0;
 }
 
-function hasCreateChannelMessage(permission: number) {
-    return (permission & (1 << GUILD_PERMISSION.CREATE_CHANNEL_MESSAGE)) !== 0;
+export function generatePublicFlagsObj(flag: number) {
+    return {
+        allowFriendRequests: hasUserFlag(flag, USER_FLAG.ALLOW_FRIEND_REQUESTS),
+        allowGuildMemberDMs: hasUserFlag(flag, USER_FLAG.ALLOW_GUILD_MEMBER_DMS),
+    };
 }
 
-function hasManageChannelMessage(permission: number) {
-    return (permission & (1 << GUILD_PERMISSION.MANAGE_CHANNEL_MESSAGES)) !== 0;
-}
+export function generatePublicFlagsNumber(permissionsObj: ReturnType<typeof generatePublicFlagsObj>) {
+    let publicFlags = 0;
+    if (permissionsObj.allowFriendRequests) {
+        publicFlags = publicFlags | (1 << USER_FLAG.ALLOW_FRIEND_REQUESTS);
+    }
 
-function hasManageGuild(permission: number) {
-    return (permission & (1 << GUILD_PERMISSION.MANAGE_GUILD)) !== 0;
-}
+    if (permissionsObj.allowGuildMemberDMs) {
+        publicFlags = publicFlags | (1 << USER_FLAG.ALLOW_GUILD_MEMBER_DMS);
+    }
 
-function hasGuildAdmin(permission: number) {
-    return (permission & (1 << GUILD_PERMISSION.GUILD_ADMIN)) !== 0;
-}
-
-function hasGuildSuperAdmin(permission: number) {
-    return (permission & (1 << GUILD_PERMISSION.GUILD_SUPER_ADMIN)) !== 0;
-}
-
-function hasGuildOwner(permission: number) {
-    return (permission & (1 << GUILD_PERMISSION.GUILD_OWNER)) !== 0;
-}
-
-function hasViewGuildMember(permission: number) {
-    return (permission & (1 << GUILD_PERMISSION.VIEW_GUILD_MEMBERS)) !== 0;
-}
-
-function hasCreateChannelPin(permission: number) {
-    return (permission & (1 << GUILD_PERMISSION.CREATE_CHANNEL_PIN)) !== 0;
+    return publicFlags;
 }
 
 export function generatePermissionsObj(permission: number) {
-    if (permission === 0) {
-        return {
-            hasViewGuildChannel: false,
-            hasManageGuildChannel: false,
-            hasCreateChannelMessage: false,
-            hasManageChannelMessage: false,
-            hasManageGuild: false,
-            hasGuildAdmin: false,
-            hasGuildSuperAdmin: false,
-            hasGuildOwner: false,
-            hasViewGuildMember: false,
-            hasCreateChannelPin: false,
-        };
-    }
-
     return {
-        hasViewGuildChannel: hasViewGuildChannel(permission),
-        hasManageGuildChannel: hasManageGuildChannel(permission),
-        hasCreateChannelMessage: hasCreateChannelMessage(permission),
-        hasManageChannelMessage: hasManageChannelMessage(permission),
-        hasManageGuild: hasManageGuild(permission),
-        hasGuildAdmin: hasGuildAdmin(permission),
-        hasGuildSuperAdmin: hasGuildSuperAdmin(permission),
-        hasGuildOwner: hasGuildOwner(permission),
-        hasViewGuildMember: hasViewGuildMember(permission),
-        hasCreateChannelPin: hasCreateChannelPin(permission),
+        hasViewGuildChannel: hasRolePermission(permission, GUILD_PERMISSION.VIEW_GUILD_CHANNEL),
+        hasManageGuildChannel: hasRolePermission(permission, GUILD_PERMISSION.MANAGE_GUILD_CHANNELS),
+        hasCreateChannelMessage: hasRolePermission(permission, GUILD_PERMISSION.CREATE_CHANNEL_MESSAGE),
+        hasManageChannelMessage: hasRolePermission(permission, GUILD_PERMISSION.MANAGE_CHANNEL_MESSAGES),
+        hasManageGuild: hasRolePermission(permission, GUILD_PERMISSION.MANAGE_GUILD),
+        hasGuildAdmin: hasRolePermission(permission, GUILD_PERMISSION.GUILD_ADMIN),
+        hasGuildSuperAdmin: hasRolePermission(permission, GUILD_PERMISSION.GUILD_SUPER_ADMIN),
+        hasGuildOwner: hasRolePermission(permission, GUILD_PERMISSION.GUILD_OWNER),
+        hasViewGuildMember: hasRolePermission(permission, GUILD_PERMISSION.VIEW_GUILD_MEMBERS),
+        hasCreateChannelPin: hasRolePermission(permission, GUILD_PERMISSION.CREATE_CHANNEL_PIN),
     };
 }
 
@@ -113,7 +86,7 @@ export function isChannelViewable(
             continue;
         }
 
-        if (hasViewGuildChannel(guildRoles[channelRoleId].permissions)) {
+        if (hasRolePermission(guildRoles[channelRoleId].permissions, GUILD_PERMISSION.VIEW_GUILD_CHANNEL)) {
             return true;
         }
     }

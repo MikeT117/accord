@@ -25,7 +25,7 @@ import {
     relationshipDeletedSchema,
 } from "../zod-validation/relationship-schema";
 import { sessionSchema } from "../zod-validation/session-schema";
-import { userSchema, userRoleAssociationChangeSchema } from "../zod-validation/user-schema";
+import { userSchema, userRoleAssociationChangeSchema, userUpdatedSchema } from "../zod-validation/user-schema";
 import type { envSchema } from "../zod-validation/env-schema";
 import type { useSnapshot } from "valtio";
 
@@ -88,6 +88,7 @@ export type APIRelationshipDeletedType = z.infer<typeof relationshipDeletedSchem
 export type APIChannelRoleAssociationChangeType = z.infer<typeof channelRoleAssociationChangeSchema>;
 export type APIUserRoleAssociationChangeType = z.infer<typeof userRoleAssociationChangeSchema>;
 export type APIChannelRoleAssociationsSetType = z.infer<typeof channelRoleAssociationsSetSchema>;
+export type APIUserUpdatedType = z.infer<typeof userUpdatedSchema>;
 
 // Client Types
 export type AttachmentType = APIAttachmentType;

@@ -44,7 +44,7 @@ import {
     handleUserRoleRemoved,
     handleUserRoleStoreInitialisation,
 } from "../valtio/mutations/user-roles-store-mutations";
-import { handleUserStoreInitialisation } from "../valtio/mutations/user-store-mutations";
+import { handleUserStoreInitialisation, handleUserUpdated } from "../valtio/mutations/user-store-mutations";
 import {
     handleChannelMessageCreated,
     handleChannelMessageUpdated,
@@ -57,7 +57,7 @@ import {
 } from "../react-query/query-cache-mutations/relationship-cache-mutations";
 import { isAPIGuildChannel } from "../types/guards";
 import { handleResetTokenStore } from "../valtio/mutations/token-store-mutations";
-import { userRoleAssociationChangeSchema } from "../zod-validation/user-schema";
+import { userRoleAssociationChangeSchema, userUpdatedSchema } from "../zod-validation/user-schema";
 
 const MAX_RETRY_INTERVAL = 30000;
 const CONNECTION_TIMEOUT = 5000;
@@ -293,6 +293,10 @@ export const eventWebsocket = (() => {
             case root.pb.OpCode.CHANNEL_ROLES_SET:
                 const channelRolesSet = channelRoleAssociationsSetSchema.parse(payload.channelRolesSet);
                 handleChannelRolesSet(channelRolesSet);
+                break;
+            case root.pb.OpCode.USER_UPDATED:
+                const userUpdated = userUpdatedSchema.parse(payload.userUpdated);
+                handleUserUpdated(userUpdated);
                 break;
             default:
                 console.error("unknown op code, ignoring");

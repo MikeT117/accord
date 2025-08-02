@@ -1,7 +1,5 @@
-import type { UserType } from "@/lib/types/types";
-import { useSnapshot } from "valtio";
+import type { APIUserUpdatedType, UserType } from "@/lib/types/types";
 import { userStore } from "../stores/user-store";
-import { ErrUserNotInitialised } from "@/lib/error";
 
 function resetUserStore() {
     userStore.user = null;
@@ -14,8 +12,7 @@ export function handleUserStoreInitialisation(user: UserType) {
     userStore.initialised = true;
 }
 
-export function useUser() {
-    const snapshot = useSnapshot(userStore);
-    if (!snapshot.user) throw new ErrUserNotInitialised();
-    return snapshot.user;
+export function handleUserUpdated(userUpdated: APIUserUpdatedType) {
+    if (!userStore.initialised) return;
+    userStore.user = { ...userStore.user, ...userUpdated };
 }

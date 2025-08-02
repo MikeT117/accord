@@ -84,11 +84,7 @@ export function GuildCategoryChannelSettingsPermissionsSection({
                     </Form>
                 </CardContent>
             </Card>
-            <SettingsDialogUnsavedChanges
-                isVisible={form.formState.isDirty}
-                onDiscard={resetForm}
-                onSave={handleSaveChanges}
-            />
+
             <Card>
                 <CardHeader>
                     <CardTitle>Assigned Roles</CardTitle>
@@ -153,6 +149,11 @@ export function GuildCategoryChannelSettingsPermissionsSection({
                     </div>
                 </CardContent>
             </Card>
+            <SettingsDialogUnsavedChanges
+                isVisible={form.formState.isDirty}
+                onDiscard={resetForm}
+                onSave={handleSaveChanges}
+            />
         </SettingsDialogContentSection>
     );
 }
