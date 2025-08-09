@@ -6,7 +6,7 @@ type UpdateGuildCommand struct {
 	Name            string
 	Description     string
 	Discoverable    bool
-	IconID          string
-	BannerID        string
+	IconID          *string
+	BannerID        *string
 	RequestorID     string
 }

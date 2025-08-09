@@ -1,21 +1,34 @@
 package request
 
-import "github.com/MikeT117/accord/backend/internal/application/command"
+import (
+	"strings"
+
+	"github.com/MikeT117/accord/backend/internal/application/command"
+)
 
 type UpdateGuildRequest struct {
 	ID              string  `param:"guildID"`
-	GuildCategoryID *string `json:"email"`
+	GuildCategoryID *string `json:"guildCategoryId"`
 	Name            string  `json:"name"`
 	Description     string  `json:"description"`
 	Discoverable    bool    `json:"discoverable"`
-	IconID          string  `json:"iconID"`
-	BannerID        string  `json:"bannerID"`
+	IconID          *string `json:"iconID"`
+	BannerID        *string `json:"bannerID"`
 }
 
 func (r *UpdateGuildRequest) ToUpdateGuildCommand(requestorID string) (*command.UpdateGuildCommand, error) {
-	if r.ID == "" || r.Name == "" {
-		return nil, NewRequestValidationError("invalid id and/or name")
+	if strings.Trim(r.ID, " ") == "" {
+		return nil, NewRequestValidationError("invalid id")
 	}
+
+	if strings.Trim(r.Name, " ") == "" || len(strings.Trim(r.Name, " ")) < 1 || len(strings.Trim(r.Name, " ")) > 32 {
+		return nil, NewRequestValidationError("invalid name")
+	}
+
+	if len(r.Description) > 300 {
+		return nil, NewRequestValidationError("description length invalid")
+	}
+
 	return &command.UpdateGuildCommand{
 		ID:              r.ID,
 		GuildCategoryID: r.GuildCategoryID,

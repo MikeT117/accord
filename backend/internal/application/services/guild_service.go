@@ -159,10 +159,10 @@ func (s *GuildService) Update(ctx context.Context, cmd *command.UpdateGuildComma
 	if err := guild.UpdateDiscoverable(cmd.Discoverable); err != nil {
 		return err
 	}
-	if err := guild.UpdateIconID(&cmd.IconID); err != nil {
+	if err := guild.UpdateIconID(cmd.IconID); err != nil {
 		return err
 	}
-	if err := guild.UpdateBannerID(&cmd.BannerID); err != nil {
+	if err := guild.UpdateBannerID(cmd.BannerID); err != nil {
 		return err
 	}
 
