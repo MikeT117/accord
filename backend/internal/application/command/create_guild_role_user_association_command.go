@@ -2,7 +2,7 @@ package command
 
 type CreateGuildRoleUserAssociationCommand struct {
 	RoleID      string
-	UserID      string
+	UserIDs     []string
 	GuildID     string
 	RequestorID string
 }

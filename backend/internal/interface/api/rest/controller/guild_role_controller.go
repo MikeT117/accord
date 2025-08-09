@@ -2,9 +2,12 @@ package controller
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
+	"github.com/MikeT117/accord/backend/internal/application/query"
 	"github.com/MikeT117/accord/backend/internal/interface/api/authentication"
+	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/mapper"
 	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/request"
 	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/response"
 
@@ -24,18 +27,47 @@ func NewGuildRoleController(
 	}
 
 	subGroup := baseGroup.Group("/guilds/:guildID/roles")
+	subGroup.GET("/:roleID/members", controller.getGuildRoleMembers)
+
 	subGroup.POST("", controller.createGuildRole)
 	subGroup.PATCH("/:roleID", controller.updateGuildRole)
 	subGroup.DELETE("/:roleID", controller.deleteGuildRole)
 
-	subGroup.PUT("/:roleID/users/:userID", controller.createUserRoleAssociation)
-	subGroup.PUT("/:roleID/channels/:channelID", controller.createChannelRoleAssociation)
+	subGroup.PATCH("/:roleID/users", controller.createUserRoleAssociation)
 	subGroup.DELETE("/:roleID/users/:userID", controller.deleteUserRoleAssociation)
+
+	subGroup.PUT("/:roleID/channels/:channelID", controller.createChannelRoleAssociation)
 	subGroup.DELETE("/:roleID/channels/:channelID", controller.deleteChannelRoleAssociation)
 
 	subGroup.POST("/sync/:sourceChannelID/:targetChannelID", controller.syncChannelRoleAssociations)
 
 	return controller
+}
+
+func (c *GuildRoleController) getGuildRoleMembers(ctx echo.Context) error {
+	var payload request.QueryGuildRoleMembersRequest
+	if err := ctx.Bind(&payload); err != nil {
+		return response.ErrorResponse(ctx, http.StatusBadRequest, nil)
+	}
+
+	requestorID, _ := authentication.GetRequestorDetails(ctx)
+	qry, err := payload.ToGuildRoleMembersQuery(requestorID)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	var guildRoleMembers *query.GuildMemberQueryListResult
+	if payload.Assigned == nil || *payload.Assigned {
+		guildRoleMembers, err = c.guildRoleService.GetAssignedGuildMembersByRoleID(ctx.Request().Context(), qry)
+	} else {
+		guildRoleMembers, err = c.guildRoleService.GetUnassignedGuildMembersByRoleID(ctx.Request().Context(), qry)
+	}
+
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildMemberUsersResponse(guildRoleMembers.Result))
 }
 
 func (c *GuildRoleController) syncChannelRoleAssociations(ctx echo.Context) error {

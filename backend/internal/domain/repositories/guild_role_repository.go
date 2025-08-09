@@ -20,6 +20,7 @@ type GuildRoleRepository interface {
 	Delete(ctx context.Context, ID string) error
 
 	AssociateUser(ctx context.Context, roleID string, userID string) error
+	BulkAssociateUser(ctx context.Context, roleID string, userIDs []string) error
 	DisassociateUser(ctx context.Context, roleID string, userID string) error
 	GetMapRoleIDsByUserIDs(ctx context.Context, userIDs []string) (map[string][]string, error)
 	GetRoleIDsByUserID(ctx context.Context, userID string) ([]string, error)

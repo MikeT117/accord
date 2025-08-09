@@ -20,9 +20,10 @@ type GuildRoleService struct {
 	guildRoleRepository   repositories.GuildRoleRepository
 	guildMemberRepository repositories.GuildMemberRepository
 	channelRepository     repositories.ChannelRepository
+	userRepository        repositories.UserRepository
 }
 
-func CreateGuildRoleService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, guildRoleRepository repositories.GuildRoleRepository, guildMemberRepository repositories.GuildMemberRepository, channelRepository repositories.ChannelRepository) interfaces.GuildRoleService {
+func CreateGuildRoleService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, guildRoleRepository repositories.GuildRoleRepository, guildMemberRepository repositories.GuildMemberRepository, channelRepository repositories.ChannelRepository, userRepository repositories.UserRepository) interfaces.GuildRoleService {
 	return &GuildRoleService{
 		transactor:            transactor,
 		authorisationService:  authorisationService,
@@ -30,6 +31,7 @@ func CreateGuildRoleService(transactor *db.Transactor, authorisationService inte
 		guildRoleRepository:   guildRoleRepository,
 		guildMemberRepository: guildMemberRepository,
 		channelRepository:     channelRepository,
+		userRepository:        userRepository,
 	}
 }
 
@@ -55,7 +57,7 @@ func (s *GuildRoleService) Create(ctx context.Context, cmd *command.CreateGuildR
 		return err
 	}
 
-	guildRoleEntity, err := entities.NewGuildRole(cmd.GuildID, cmd.Name)
+	guildRoleEntity, err := entities.NewGuildRole(cmd.GuildID)
 	if err != nil {
 		return err
 	}
@@ -81,6 +83,7 @@ func (s *GuildRoleService) Update(ctx context.Context, cmd *command.UpdateGuildR
 	if err := guildRole.UpdateName(cmd.Name); err != nil {
 		return err
 	}
+
 	if err := guildRole.UpdatedPermissions(cmd.Permissions); err != nil {
 		return err
 	}
@@ -111,11 +114,19 @@ func (s *GuildRoleService) CreateUserAssoc(ctx context.Context, cmd *command.Cre
 		return err
 	}
 
-	if err := s.guildRoleRepository.AssociateUser(ctx, cmd.RoleID, cmd.UserID); err != nil {
-		return err
-	}
+	return s.transactor.WithinTransaction(ctx, func(context.Context) error {
+		if err := s.guildRoleRepository.BulkAssociateUser(ctx, cmd.RoleID, cmd.UserIDs); err != nil {
+			return err
+		}
 
-	return s.eventService.UserRoleAssociated(ctx, cmd.UserID, cmd.RoleID)
+		for _, userID := range cmd.UserIDs {
+			if err := s.eventService.UserRoleAssociated(ctx, userID, cmd.RoleID); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func (s *GuildRoleService) DeleteUserAssoc(ctx context.Context, cmd *command.DeleteGuildRoleUserAssociationCommand) error {
@@ -137,7 +148,7 @@ func (s *GuildRoleService) CreateChannelAssoc(ctx context.Context, cmd *command.
 		return err
 	}
 
-	channel, err := s.channelRepository.GetByID(ctx, cmd.ChannelID)
+	channel, err := s.channelRepository.GetByIDAndGuildID(ctx, cmd.ChannelID, cmd.GuildID)
 	if err != nil {
 		return err
 	}
@@ -177,6 +188,20 @@ func (s *GuildRoleService) SyncGuildChannelRoleAssociations(ctx context.Context,
 		return err
 	}
 
+	sourceChannel, err := s.channelRepository.GetByIDAndGuildID(ctx, cmd.SourceChannelID, cmd.GuildID)
+	if err != nil {
+		return err
+	}
+
+	if !sourceChannel.IsGuildCategoryChannel() {
+		return ErrInvalidChannelType
+	}
+
+	_, err = s.channelRepository.GetByIDAndGuildIDAndParentID(ctx, cmd.TargetChannelID, cmd.GuildID, sourceChannel.ID)
+	if err != nil {
+		return err
+	}
+
 	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 
 		if err := s.guildRoleRepository.WipeChannelAssociations(ctx, cmd.SourceChannelID); err != nil {
@@ -202,7 +227,7 @@ func (s *GuildRoleService) DeleteChannelAssoc(ctx context.Context, cmd *command.
 		return err
 	}
 
-	channel, err := s.channelRepository.GetByID(ctx, cmd.ChannelID)
+	channel, err := s.channelRepository.GetByIDAndGuildID(ctx, cmd.ChannelID, cmd.GuildID)
 	if err != nil {
 		return err
 	}
@@ -235,4 +260,56 @@ func (s *GuildRoleService) DeleteChannelAssoc(ctx context.Context, cmd *command.
 		return nil
 	})
 
+}
+
+func (s *GuildRoleService) GetAssignedGuildMembersByRoleID(ctx context.Context, qry *query.GuildRoleMembersQuery) (*query.GuildMemberQueryListResult, error) {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, qry.GuildID, qry.RequestorID, constants.MANAGE_GUILD_PERMISSION)
+	if err != nil {
+		return nil, err
+	}
+
+	guildMembers, guildMemberIDs, err := s.guildMemberRepository.GetAssignedByGuildIDAndRoleID(ctx, qry.GuildID, qry.RoleID, qry.Before, 50)
+	if err != nil {
+		return nil, err
+	}
+
+	usersMap, err := s.userRepository.GetMapByIDs(ctx, guildMemberIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	guildMembersRolesMap, err := s.guildRoleRepository.GetMapRoleIDsByUserIDs(ctx, guildMemberIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &query.GuildMemberQueryListResult{
+		Result: mapper.NewGuildMemberUserListResultFromGuildMember(guildMembers, guildMembersRolesMap, usersMap),
+	}, nil
+}
+
+func (s *GuildRoleService) GetUnassignedGuildMembersByRoleID(ctx context.Context, qry *query.GuildRoleMembersQuery) (*query.GuildMemberQueryListResult, error) {
+	err := s.authorisationService.VerifyUserGuildPermission(ctx, qry.GuildID, qry.RequestorID, constants.MANAGE_GUILD_PERMISSION)
+	if err != nil {
+		return nil, err
+	}
+
+	guildMembers, guildMemberIDs, err := s.guildMemberRepository.GetUnassignedByGuildIDAndRoleID(ctx, qry.GuildID, qry.RoleID, qry.Before, 50)
+	if err != nil {
+		return nil, err
+	}
+
+	usersMap, err := s.userRepository.GetMapByIDs(ctx, guildMemberIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	guildMembersRolesMap, err := s.guildRoleRepository.GetMapRoleIDsByUserIDs(ctx, guildMemberIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &query.GuildMemberQueryListResult{
+		Result: mapper.NewGuildMemberUserListResultFromGuildMember(guildMembers, guildMembersRolesMap, usersMap),
+	}, nil
 }

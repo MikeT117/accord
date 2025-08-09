@@ -9,6 +9,8 @@ import (
 
 type GuildRoleService interface {
 	GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.GuildRoleQueryListResult, error)
+	GetAssignedGuildMembersByRoleID(ctx context.Context, qry *query.GuildRoleMembersQuery) (*query.GuildMemberQueryListResult, error)
+	GetUnassignedGuildMembersByRoleID(ctx context.Context, qry *query.GuildRoleMembersQuery) (*query.GuildMemberQueryListResult, error)
 	Create(ctx context.Context, cmd *command.CreateGuildRoleCommand) error
 	Update(ctx context.Context, cmd *command.UpdateGuildRoleCommand) error
 	Delete(ctx context.Context, cmd *command.DeleteGuildRoleCommand) error

@@ -132,7 +132,7 @@ func (r *GuildRoleRepository) GetByIDs(ctx context.Context, roleIDs []string, gu
 			guild_role
 		WHERE
 			id = ANY($1)
-		AND 
+		AND
 			guild_id = $2;
 	`, roleIDs, guildID)
 
@@ -275,11 +275,10 @@ func (r *GuildRoleRepository) Update(ctx context.Context, guildRole *entities.Gu
 			name = $3,
 			permissions = $4,
 			created_at = $5,
-			updated_at = $6,
-			
+			updated_at = $6
 		WHERE
 			id = $1;
-	`,
+		`,
 		guildRole.ID,
 		guildRole.GuildID,
 		guildRole.Name,
@@ -398,6 +397,32 @@ func (r *GuildRoleRepository) AssociateUser(ctx context.Context, roleID string, 
 	return nil
 }
 
+func (r *GuildRoleRepository) BulkAssociateUser(ctx context.Context, roleID string, userIDs []string) error {
+	result, err := r.db(ctx).Exec(ctx, `
+			INSERT INTO
+				guild_role_user (
+					role_id,
+					user_id
+				)
+			SELECT
+				$1,
+				UNNEST($2::UUID[])
+			ON CONFLICT (role_id, user_id)
+			DO UPDATE SET role_id = EXCLUDED.role_id, user_id = EXCLUDED.user_id;
+		`, roleID, userIDs,
+	)
+
+	if err != nil {
+		return wrapUnknownErr("bulk insert guild role user association failed", err)
+	}
+
+	if result.RowsAffected() != int64(len(userIDs)) {
+		return domain.ErrEntityNotFound
+	}
+
+	return nil
+}
+
 func (r *GuildRoleRepository) DisassociateUser(ctx context.Context, roleID string, userID string) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
@@ -464,7 +489,7 @@ func (r *GuildRoleRepository) GetRoleIDsByUserIDAndGuildID(ctx context.Context, 
 			guild_role gr
 		WHERE
 			gru.user_id = $1
-		AND 
+		AND
 			gr.guild_id = $2;
 	`, userID, guildID)
 
