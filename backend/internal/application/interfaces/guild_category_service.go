@@ -8,6 +8,7 @@ import (
 )
 
 type GuildCategoryService interface {
+	GetAll(ctx context.Context) (*query.GuildCategoryQueryListResult, error)
 	GetByID(ctx context.Context, ID string) (*query.GuildCategoryQueryResult, error)
 	Create(ctx context.Context, createCommand *command.CreateGuildCategoryCommand) error
 }

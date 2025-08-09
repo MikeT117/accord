@@ -13,3 +13,13 @@ func NewGuildCategoryResultFromGuildCategory(guildCatgeory *entities.GuildCatego
 		UpdatedAt: guildCatgeory.UpdatedAt,
 	}
 }
+
+func NewGuildCategoryListResultFromGuildCategory(guildCategories []*entities.GuildCategory) []*common.GuildCategoryResult {
+	guildCategoriesResult := make([]*common.GuildCategoryResult, len(guildCategories))
+
+	for i := 0; i < len(guildCategories); i++ {
+		guildCategoriesResult[i] = NewGuildCategoryResultFromGuildCategory(guildCategories[i])
+	}
+
+	return guildCategoriesResult
+}

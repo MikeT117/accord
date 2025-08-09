@@ -37,6 +37,17 @@ func (s *GuildCategoryService) GetByID(ctx context.Context, ID string) (*query.G
 	}, nil
 }
 
+func (s *GuildCategoryService) GetAll(ctx context.Context) (*query.GuildCategoryQueryListResult, error) {
+	guildGategories, err := s.guildCategoryRepository.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &query.GuildCategoryQueryListResult{
+		Result: mapper.NewGuildCategoryListResultFromGuildCategory(guildGategories),
+	}, nil
+}
+
 func (s *GuildCategoryService) Create(ctx context.Context, cmd *command.CreateGuildCategoryCommand) error {
 	guildCategory, err := entities.NewGuildCategory(cmd.Name)
 	if err != nil {
