@@ -59,6 +59,7 @@ func CreateRouter(
 	controller.NewRelationshipController(APIV1, relationshipService)
 	controller.NewSessionController(APIV1, sessionService)
 	controller.NewUserAccountController(APIV1, userAccountService)
+	controller.NewGuildCategoriesController(APIV1, guildCategoryService)
 
 	go func() {
 		if err := e.Start(":4000"); err != nil && err != http.ErrServerClosed {
