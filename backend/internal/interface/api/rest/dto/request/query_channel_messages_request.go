@@ -10,9 +10,15 @@ type QueryChannelMessagesRequest struct {
 	ChannelID string `param:"channelID"`
 	Pinned    bool   `query:"pinned"`
 	Before    *int64 `query:"before"`
+	After     *int64 `query:"after"`
+	Limit     *int   `query:"limit"`
 }
 
 func (r *QueryChannelMessagesRequest) ToChannelMessagesQuery(requestorID string) (*query.ChannelMessagesQuery, error) {
+
+	if r.After != nil && r.Before != nil {
+		return nil, NewRequestValidationError("invalid query")
+	}
 
 	if r.ChannelID == "" {
 		return nil, NewRequestValidationError("invalid channel id")
@@ -28,6 +34,18 @@ func (r *QueryChannelMessagesRequest) ToChannelMessagesQuery(requestorID string)
 		query.Before = time.Unix(*r.Before, 0)
 	} else {
 		query.Before = time.Now().UTC()
+	}
+
+	if r.After != nil {
+		query.After = time.Unix(*r.After, 0)
+	} else {
+		query.After = time.Unix(0, 0)
+	}
+
+	if r.Limit != nil {
+		query.Limit = *r.Limit
+	} else {
+		query.Limit = 50
 	}
 
 	return query, nil

@@ -106,7 +106,7 @@ func (s *ChannelMessageService) GetByChannelID(ctx context.Context, qry *query.C
 		}
 	}
 
-	channelMessage, channelMessageIDs, authorIDs, err := s.channelMessageRepository.GetByChannelID(ctx, qry.ChannelID, qry.Pinned, qry.Before, 50)
+	channelMessage, channelMessageIDs, authorIDs, err := s.channelMessageRepository.GetByChannelID(ctx, qry.ChannelID, qry.Pinned, qry.Before, qry.After, qry.Limit)
 	if err != nil {
 		return nil, err
 	}

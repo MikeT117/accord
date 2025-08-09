@@ -104,7 +104,7 @@ func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID s
 
 	return channelMessages, nil
 }
-func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID string, pinned bool, before time.Time, limit int) ([]*entities.ChannelMessage, []string, []string, error) {
+func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID string, pinned bool, before time.Time, after time.Time, limit int) ([]*entities.ChannelMessage, []string, []string, error) {
 
 	query := ``
 
@@ -127,10 +127,12 @@ func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID
 				pinned
 			AND
 				created_at < $2
+			AND
+				created_at::timestamp(0) > $3
 			ORDER BY
 				created_at DESC
 			LIMIT
-				$3;
+				$4;
 	`
 	} else {
 		query = `
@@ -149,14 +151,16 @@ func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID
 				channel_id = $1
 			AND
 				created_at < $2
+			AND
+				created_at::timestamp(0) > $3
 			ORDER BY
 				created_at DESC
 			LIMIT
-				$3;
+				$4;
 	`
 	}
 
-	rows, err := r.db(ctx).Query(ctx, query, channelID, before, limit)
+	rows, err := r.db(ctx).Query(ctx, query, channelID, before, after, limit)
 	if err != nil {
 		return nil, []string{}, []string{}, wrapUnknownErr("select channel messages by channel id failed", err)
 	}
