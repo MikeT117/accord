@@ -114,7 +114,7 @@ func (r *GuildMemberRepository) GetByGuildID(ctx context.Context, guildID string
 		WHERE
 			guild_id = $1
 		AND
-			created_at < $2
+			created_at::timestamp(0) < $2
 		LIMIT
 			$3;
 	`, guildID, before, limit)
@@ -299,7 +299,7 @@ func (r *GuildMemberRepository) Delete(ctx context.Context, userID string, guild
 				guild_member
 			WHERE
 				user_id = $1
-			AND 
+			AND
 				guild_id = $2
 		`, userID, guildID)
 
@@ -312,4 +312,112 @@ func (r *GuildMemberRepository) Delete(ctx context.Context, userID string, guild
 	}
 
 	return nil
+}
+
+func (r *GuildMemberRepository) GetAssignedByGuildIDAndRoleID(ctx context.Context, guildID string, roleID string, before time.Time, limit int) ([]*entities.GuildMember, []string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			g.user_id,
+			g.guild_id,
+			g.nickname,
+			g.avatar_id,
+			g.banner_id,
+			g.created_at,
+			g.updated_at
+		FROM
+			guild_member g
+		INNER JOIN
+			guild_role_user gru ON gru.user_id = g.user_id
+		WHERE
+			g.guild_id = $1
+		AND
+			gru.role_id = $2
+		AND
+			g.created_at::timestamp(0) < $3
+		LIMIT
+			$4;
+	`, guildID, roleID, before, limit)
+
+	if err != nil {
+		return nil, nil, wrapUnknownErr("select guild members by guild id and role id failed", err)
+	}
+
+	defer rows.Close()
+
+	guildMembers := []*entities.GuildMember{}
+	guildMemberIDs := []string{}
+
+	for rows.Next() {
+		guildMember := &entities.GuildMember{}
+		if err := rows.Scan(
+			&guildMember.UserID,
+			&guildMember.GuildID,
+			&guildMember.Nickname,
+			&guildMember.AvatarID,
+			&guildMember.BannerID,
+			&guildMember.CreatedAt,
+			&guildMember.UpdatedAt,
+		); err != nil {
+			return nil, nil, wrapUnknownErr("map over select guild members by guild id and role id failed", err)
+		}
+
+		guildMembers = append(guildMembers, guildMember)
+		guildMemberIDs = append(guildMemberIDs, guildMember.UserID)
+	}
+
+	return guildMembers, guildMemberIDs, nil
+}
+
+func (r *GuildMemberRepository) GetUnassignedByGuildIDAndRoleID(ctx context.Context, guildID string, roleID string, before time.Time, limit int) ([]*entities.GuildMember, []string, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			g.user_id,
+			g.guild_id,
+			g.nickname,
+			g.avatar_id,
+			g.banner_id,
+			g.created_at,
+			g.updated_at
+		FROM
+			guild_member g
+		LEFT JOIN
+			guild_role_user gru ON gru.user_id = g.user_id AND gru.role_id = $2
+		WHERE
+			g.guild_id = $1
+		AND
+			g.created_at::timestamp(0) < $3
+		AND
+			gru.role_id IS NULL
+		LIMIT
+			$4;
+	`, guildID, roleID, before, limit)
+
+	if err != nil {
+		return nil, nil, wrapUnknownErr("select guild members by guild id and role id failed", err)
+	}
+
+	defer rows.Close()
+
+	guildMembers := []*entities.GuildMember{}
+	guildMemberIDs := []string{}
+
+	for rows.Next() {
+		guildMember := &entities.GuildMember{}
+		if err := rows.Scan(
+			&guildMember.UserID,
+			&guildMember.GuildID,
+			&guildMember.Nickname,
+			&guildMember.AvatarID,
+			&guildMember.BannerID,
+			&guildMember.CreatedAt,
+			&guildMember.UpdatedAt,
+		); err != nil {
+			return nil, nil, wrapUnknownErr("map over select guild members by guild id and role id failed", err)
+		}
+
+		guildMembers = append(guildMembers, guildMember)
+		guildMemberIDs = append(guildMemberIDs, guildMember.UserID)
+	}
+
+	return guildMembers, guildMemberIDs, nil
 }

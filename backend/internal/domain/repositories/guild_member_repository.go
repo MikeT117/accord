@@ -13,6 +13,8 @@ type GuildMemberRepository interface {
 	GetByGuildID(ctx context.Context, guildID string, before time.Time, limit int) ([]*entities.GuildMember, []string, error)
 	GetMapByUserID(ctx context.Context, userID string) (map[string]*entities.GuildMember, []string, error)
 	GetGuildIDsByUserID(ctx context.Context, userID string) ([]string, error)
+	GetUnassignedByGuildIDAndRoleID(ctx context.Context, guildID string, roleID string, before time.Time, limit int) ([]*entities.GuildMember, []string, error)
+	GetAssignedByGuildIDAndRoleID(ctx context.Context, guildID string, roleID string, before time.Time, limit int) ([]*entities.GuildMember, []string, error)
 	Create(ctx context.Context, guildMember *entities.GuildMember) error
 	Update(ctx context.Context, guildMember *entities.GuildMember) error
 	Delete(ctx context.Context, userID string, guildID string) error
