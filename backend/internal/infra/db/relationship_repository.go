@@ -80,7 +80,7 @@ func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID string,
 		AND
 			status = $2
 		AND
-			created_at < $3
+			created_at::timestamp(0) < $3
 		ORDER BY
 			created_at ASC
 		LIMIT $4;
