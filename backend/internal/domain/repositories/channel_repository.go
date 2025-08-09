@@ -8,6 +8,8 @@ import (
 
 type ChannelRepository interface {
 	GetByID(ctx context.Context, ID string) (*entities.Channel, error)
+	GetByIDAndGuildID(ctx context.Context, ID string, guildID string) (*entities.Channel, error)
+	GetByIDAndGuildIDAndParentID(ctx context.Context, ID string, guildID string, parentID string) (*entities.Channel, error)
 	GetByGuildID(ctx context.Context, guildID string) ([]*entities.Channel, []string, error)
 	GetMapByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.Channel, []string, error)
 	GetByUserID(ctx context.Context, userID string) ([]*entities.Channel, []string, error)

@@ -57,6 +57,90 @@ func (r *ChannelRepository) GetByID(ctx context.Context, ID string) (*entities.C
 	return channel, nil
 }
 
+func (r *ChannelRepository) GetByIDAndGuildID(ctx context.Context, ID string, guildID string) (*entities.Channel, error) {
+	row := r.db(ctx).QueryRow(ctx, `
+		SELECT
+			id,
+			creator_id,
+			guild_id,
+			parent_id,
+			name,
+			topic,
+			channel_type,
+			created_at,
+			updated_at
+		FROM
+			channel
+		WHERE
+			id = $1
+		AND
+			guild_id = $2;
+	`, ID, guildID)
+
+	channel := &entities.Channel{}
+	if err := row.Scan(
+		&channel.ID,
+		&channel.CreatorID,
+		&channel.GuildID,
+		&channel.ParentID,
+		&channel.Name,
+		&channel.Topic,
+		&channel.ChannelType,
+		&channel.CreatedAt,
+		&channel.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrEntityNotFound
+		}
+		return nil, wrapUnknownErr("select channel by id and guild id failed", err)
+	}
+
+	return channel, nil
+}
+
+func (r *ChannelRepository) GetByIDAndGuildIDAndParentID(ctx context.Context, ID string, guildID string, parentID string) (*entities.Channel, error) {
+	row := r.db(ctx).QueryRow(ctx, `
+		SELECT
+			id,
+			creator_id,
+			guild_id,
+			parent_id,
+			name,
+			topic,
+			channel_type,
+			created_at,
+			updated_at
+		FROM
+			channel
+		WHERE
+			id = $1
+		AND
+			guild_id = $2
+		AND
+			parent_id = $3;
+	`, ID, guildID, parentID)
+
+	channel := &entities.Channel{}
+	if err := row.Scan(
+		&channel.ID,
+		&channel.CreatorID,
+		&channel.GuildID,
+		&channel.ParentID,
+		&channel.Name,
+		&channel.Topic,
+		&channel.ChannelType,
+		&channel.CreatedAt,
+		&channel.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrEntityNotFound
+		}
+		return nil, wrapUnknownErr("select channel by id, guild id and parent id failed", err)
+	}
+
+	return channel, nil
+}
+
 func (r *ChannelRepository) GetIDsSyncedWithParentByParentID(ctx context.Context, parentID string) ([]string, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		WITH parent_roles AS (
