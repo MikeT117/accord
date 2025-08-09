@@ -9,9 +9,9 @@ import (
 )
 
 type Guild struct {
-	ID              string
-	CreatorID       string
-	GuildCategoryID *string
+	ID              uuid.UUID
+	CreatorID       uuid.UUID
+	GuildCategoryID *uuid.UUID
 	Name            string
 	Description     string
 	Discoverable    bool
@@ -19,15 +19,15 @@ type Guild struct {
 	MemberCount     int64
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	IconID          *string
-	BannerID        *string
+	IconID          *uuid.UUID
+	BannerID        *uuid.UUID
 }
 
 func (g *Guild) validate() error {
-	if strings.Trim(g.ID, " ") == "" {
+	if g.ID == uuid.Nil {
 		return domain.NewDomainValidationError("empty id")
 	}
-	if strings.Trim(g.CreatorID, " ") == "" {
+	if g.CreatorID == uuid.Nil {
 		return domain.NewDomainValidationError("empty creator id")
 	}
 	if strings.Trim(g.Name, " ") == "" {
@@ -39,16 +39,16 @@ func (g *Guild) validate() error {
 	if g.MemberCount < 1 {
 		return domain.NewDomainValidationError("memberCount less than 1")
 	}
-	if g.IconID != nil && strings.Trim(*g.IconID, " ") == "" {
+	if g.IconID != nil && *g.IconID == uuid.Nil {
 		return domain.NewDomainValidationError("empty icon id")
 	}
-	if g.BannerID != nil && strings.Trim(*g.BannerID, " ") == "" {
+	if g.BannerID != nil && *g.BannerID == uuid.Nil {
 		return domain.NewDomainValidationError("empty banner id")
 	}
 	return nil
 }
 
-func NewGuild(creatorID string, name string, iconID *string) (*Guild, error) {
+func NewGuild(creatorID uuid.UUID, name string, iconID *uuid.UUID) (*Guild, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func NewGuild(creatorID string, name string, iconID *string) (*Guild, error) {
 
 	timestamp := time.Now().UTC()
 	guild := &Guild{
-		ID:              ID.String(),
+		ID:              ID,
 		CreatorID:       creatorID,
 		GuildCategoryID: nil,
 		Name:            name,
@@ -77,11 +77,11 @@ func NewGuild(creatorID string, name string, iconID *string) (*Guild, error) {
 	return guild, nil
 }
 
-func (g *Guild) IsOwner(userID string) bool {
+func (g *Guild) IsOwner(userID uuid.UUID) bool {
 	return g.CreatorID == userID
 }
 
-func (g *Guild) UpdateGuildCategoryID(guildCategoryID *string) error {
+func (g *Guild) UpdateGuildCategoryID(guildCategoryID *uuid.UUID) error {
 	g.UpdatedAt = time.Now().UTC()
 	g.GuildCategoryID = guildCategoryID
 	return g.validate()
@@ -129,13 +129,13 @@ func (g *Guild) DecrementMemberCount() error {
 	return g.validate()
 }
 
-func (g *Guild) UpdateIconID(iconID *string) error {
+func (g *Guild) UpdateIconID(iconID *uuid.UUID) error {
 	g.UpdatedAt = time.Now().UTC()
 	g.IconID = iconID
 	return g.validate()
 }
 
-func (g *Guild) UpdateBannerID(bannerID *string) error {
+func (g *Guild) UpdateBannerID(bannerID *uuid.UUID) error {
 	g.UpdatedAt = time.Now().UTC()
 	g.BannerID = bannerID
 	return g.validate()

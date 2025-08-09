@@ -8,6 +8,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -21,7 +22,7 @@ func CreateChannelMessageRepository(db DBGetter) repositories.ChannelMessageRepo
 	}
 }
 
-func (r *ChannelMessageRepository) GetByID(ctx context.Context, ID string) (*entities.ChannelMessage, error) {
+func (r *ChannelMessageRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.ChannelMessage, error) {
 	messageRow := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -57,7 +58,7 @@ func (r *ChannelMessageRepository) GetByID(ctx context.Context, ID string) (*ent
 
 	return channelMessage, nil
 }
-func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID string, before time.Time, limit int) ([]*entities.ChannelMessage, error) {
+func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID uuid.UUID, before time.Time, limit int) ([]*entities.ChannelMessage, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -104,7 +105,7 @@ func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID s
 
 	return channelMessages, nil
 }
-func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID string, pinned bool, before time.Time, after time.Time, limit int) ([]*entities.ChannelMessage, []string, []string, error) {
+func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID uuid.UUID, pinned bool, before time.Time, after time.Time, limit int) ([]*entities.ChannelMessage, []uuid.UUID, []uuid.UUID, error) {
 
 	query := ``
 
@@ -162,14 +163,14 @@ func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID
 
 	rows, err := r.db(ctx).Query(ctx, query, channelID, before, after, limit)
 	if err != nil {
-		return nil, []string{}, []string{}, wrapUnknownErr("select channel messages by channel id failed", err)
+		return nil, nil, nil, wrapUnknownErr("select channel messages by channel id failed", err)
 	}
 
 	defer rows.Close()
 
 	channelMessages := []*entities.ChannelMessage{}
-	channelMessageIDs := []string{}
-	authorIDs := []string{}
+	channelMessageIDs := []uuid.UUID{}
+	authorIDs := []uuid.UUID{}
 
 	for rows.Next() {
 		channelMessage := &entities.ChannelMessage{}
@@ -183,7 +184,7 @@ func (r *ChannelMessageRepository) GetByChannelID(ctx context.Context, channelID
 			&channelMessage.CreatedAt,
 			&channelMessage.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, []string{}, wrapUnknownErr("map over select channel messages by channel id failed", err)
+			return nil, nil, nil, wrapUnknownErr("map over select channel messages by channel id failed", err)
 		}
 
 		channelMessages = append(channelMessages, channelMessage)
@@ -209,14 +210,14 @@ func (r *ChannelMessageRepository) Create(ctx context.Context, channelMessage *e
 			)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 	`,
-		channelMessage.ID,
-		channelMessage.Content,
-		channelMessage.Pinned,
-		channelMessage.Flag,
-		channelMessage.AuthorID,
-		channelMessage.ChannelID,
-		channelMessage.CreatedAt,
-		channelMessage.UpdatedAt,
+		&channelMessage.ID,
+		&channelMessage.Content,
+		&channelMessage.Pinned,
+		&channelMessage.Flag,
+		&channelMessage.AuthorID,
+		&channelMessage.ChannelID,
+		&channelMessage.CreatedAt,
+		&channelMessage.UpdatedAt,
 	)
 
 	if err != nil {
@@ -240,14 +241,14 @@ func (r *ChannelMessageRepository) Update(ctx context.Context, channelMessage *e
 		WHERE
 			id = $1;
 	`,
-		channelMessage.ID,
-		channelMessage.Content,
-		channelMessage.Pinned,
-		channelMessage.Flag,
-		channelMessage.AuthorID,
-		channelMessage.ChannelID,
-		channelMessage.CreatedAt,
-		channelMessage.UpdatedAt,
+		&channelMessage.ID,
+		&channelMessage.Content,
+		&channelMessage.Pinned,
+		&channelMessage.Flag,
+		&channelMessage.AuthorID,
+		&channelMessage.ChannelID,
+		&channelMessage.CreatedAt,
+		&channelMessage.UpdatedAt,
 	)
 
 	if err != nil {
@@ -260,7 +261,7 @@ func (r *ChannelMessageRepository) Update(ctx context.Context, channelMessage *e
 
 	return nil
 }
-func (r *ChannelMessageRepository) Delete(ctx context.Context, ID string) error {
+func (r *ChannelMessageRepository) Delete(ctx context.Context, ID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			channel_message
@@ -279,7 +280,7 @@ func (r *ChannelMessageRepository) Delete(ctx context.Context, ID string) error 
 	return nil
 }
 
-func (r *ChannelMessageRepository) AssociateAttachment(ctx context.Context, channelMessageID string, attachmentID string) error {
+func (r *ChannelMessageRepository) AssociateAttachment(ctx context.Context, channelMessageID uuid.UUID, attachmentID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
 			channel_message_attachment(
@@ -299,7 +300,7 @@ func (r *ChannelMessageRepository) AssociateAttachment(ctx context.Context, chan
 
 	return nil
 }
-func (r *ChannelMessageRepository) DisassociateAttachment(ctx context.Context, channelMessageID string, attachmentID string) error {
+func (r *ChannelMessageRepository) DisassociateAttachment(ctx context.Context, channelMessageID uuid.UUID, attachmentID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			channel_message_attachment

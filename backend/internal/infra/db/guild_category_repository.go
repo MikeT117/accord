@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -18,7 +19,7 @@ func CreateGuildCategoryRepository(db DBGetter) repositories.GuildCategoryReposi
 	return &GuildCategoryRepository{db: db}
 }
 
-func (r *GuildCategoryRepository) GetByID(ctx context.Context, ID string) (*entities.GuildCategory, error) {
+func (r *GuildCategoryRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.GuildCategory, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -96,10 +97,10 @@ func (r *GuildCategoryRepository) Create(ctx context.Context, guildCategory *ent
 			)
 		VALUES ($1, $2, $3, $4);
 	`,
-		guildCategory.ID,
-		guildCategory.Name,
-		guildCategory.CreatedAt,
-		guildCategory.UpdatedAt,
+		&guildCategory.ID,
+		&guildCategory.Name,
+		&guildCategory.CreatedAt,
+		&guildCategory.UpdatedAt,
 	)
 
 	if err != nil {
@@ -109,7 +110,7 @@ func (r *GuildCategoryRepository) Create(ctx context.Context, guildCategory *ent
 	return nil
 }
 
-func (r *GuildCategoryRepository) Delete(ctx context.Context, ID string) error {
+func (r *GuildCategoryRepository) Delete(ctx context.Context, ID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			guild_category

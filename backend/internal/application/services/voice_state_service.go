@@ -11,6 +11,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
+	"github.com/google/uuid"
 )
 
 type VoiceStateService struct {
@@ -29,7 +30,7 @@ func CreateVoiceStateService(transactor *db.Transactor, authorisationService int
 	}
 }
 
-func (s *VoiceStateService) GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.VoiceStateQueryListResult, error) {
+func (s *VoiceStateService) GetByGuildID(ctx context.Context, guildID uuid.UUID, requestorID uuid.UUID) (*query.VoiceStateQueryListResult, error) {
 	err := s.authorisationService.VerifyGuildMember(ctx, guildID, requestorID)
 	if err != nil {
 		return nil, err

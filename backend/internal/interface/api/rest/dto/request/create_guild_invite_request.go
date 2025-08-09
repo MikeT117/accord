@@ -4,17 +4,15 @@ import (
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
 )
 
 type CreateGuildInviteRequest struct {
-	GuildID   string    `param:"guildID"`
+	GuildID   uuid.UUID `param:"guildID"`
 	ExpiresAt time.Time `json:"expiresAt"`
 }
 
-func (r *CreateGuildInviteRequest) ToCreateGuildInviteCommand(requestorID string) (*command.CreateGuildInviteCommand, error) {
-	if r.GuildID == "" {
-		return nil, NewRequestValidationError("invalid guild id")
-	}
+func (r *CreateGuildInviteRequest) ToCreateGuildInviteCommand(requestorID uuid.UUID) (*command.CreateGuildInviteCommand, error) {
 	return &command.CreateGuildInviteCommand{
 		GuildID:     r.GuildID,
 		ExpiresAt:   r.ExpiresAt,

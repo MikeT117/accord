@@ -1,11 +1,15 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type GuildInviteResult struct {
-	ID           string
+	ID           uuid.UUID
 	UsedCount    int64
-	GuildID      string
+	GuildID      uuid.UUID
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	ExpiresAt    time.Time
@@ -13,6 +17,6 @@ type GuildInviteResult struct {
 	Description  string
 	ChannelCount int64
 	MemberCount  int64
-	IconID       *string
-	BannerID     *string
+	IconID       *uuid.UUID
+	BannerID     *uuid.UUID
 }

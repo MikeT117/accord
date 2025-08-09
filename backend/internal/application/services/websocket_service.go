@@ -8,6 +8,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/mapper"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+	"github.com/google/uuid"
 )
 
 type WebsocketService struct {
@@ -37,7 +38,7 @@ func CreateWebsocketService(
 	}
 }
 
-func (s *WebsocketService) GetInitialisationPayload(ctx context.Context, userID string) (*pb.Initialisation, error) {
+func (s *WebsocketService) GetInitialisationPayload(ctx context.Context, userID uuid.UUID) (*pb.Initialisation, error) {
 
 	guildIDs, err := s.guildMemberRepository.GetGuildIDsByUserID(ctx, userID)
 	if err != nil {
@@ -84,11 +85,16 @@ func (s *WebsocketService) GetInitialisationPayload(ctx context.Context, userID 
 		return nil, err
 	}
 
+	var userRoleIDStrs []string
+	for _, userRoleID := range userRoleIDs {
+		userRoleIDStrs = append(userRoleIDStrs, userRoleID.String())
+	}
+
 	var ver int32 = 0
 	return &pb.Initialisation{
 		Ver:     &ver,
 		User:    mapper.NewUserProtoResultFromUser(user),
-		RoleIds: userRoleIDs,
+		RoleIds: userRoleIDStrs,
 		Guilds: mapper.NewGuildProtoListResultFromGuild(
 			guilds,
 			guildChannelsMap,
@@ -116,7 +122,7 @@ func (s *WebsocketService) ValidateSession(ctx context.Context, token string) (b
 	return true, nil
 }
 
-func (s *WebsocketService) GetUserRoleIDs(ctx context.Context, userID string) ([]string, error) {
+func (s *WebsocketService) GetUserRoleIDs(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
 	roleIDs, err := s.guildRoleRepository.GetRoleIDsByUserID(ctx, userID)
 	if err != nil {
 		return nil, err

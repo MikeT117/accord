@@ -4,9 +4,11 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+	pointer "github.com/MikeT117/accord/backend/internal/ptr"
+	"github.com/google/uuid"
 )
 
-func NewChannelResultFromChannel(channel *entities.Channel, roleIDs []string, users []*entities.User) *common.ChannelResult {
+func NewChannelResultFromChannel(channel *entities.Channel, roleIDs []uuid.UUID, users []*entities.User) *common.ChannelResult {
 	tempUsers := make([]*common.UserResult, len(users))
 
 	if len(tempUsers) != 0 {
@@ -30,7 +32,7 @@ func NewChannelResultFromChannel(channel *entities.Channel, roleIDs []string, us
 	}
 }
 
-func NewChannelListResultFromChannel(channels []*entities.Channel, roleIDs map[string][]string, users map[string][]*entities.User) []*common.ChannelResult {
+func NewChannelListResultFromChannel(channels []*entities.Channel, roleIDs map[uuid.UUID][]uuid.UUID, users map[uuid.UUID][]*entities.User) []*common.ChannelResult {
 	tempChannels := make([]*common.ChannelResult, len(channels))
 
 	for i := 0; i < len(channels); i++ {
@@ -40,7 +42,7 @@ func NewChannelListResultFromChannel(channels []*entities.Channel, roleIDs map[s
 	return tempChannels
 }
 
-func NewChannelProtoResultFromChannel(channel *entities.Channel, roleIDs []string, users []*entities.User) *pb.Channel {
+func NewChannelProtoResultFromChannel(channel *entities.Channel, roleIDs []uuid.UUID, users []*entities.User) *pb.Channel {
 	tempUsers := make([]*pb.User, len(users))
 
 	if len(tempUsers) != 0 {
@@ -53,23 +55,29 @@ func NewChannelProtoResultFromChannel(channel *entities.Channel, roleIDs []strin
 	channelType := int32(channel.ChannelType)
 	createdAt := channel.CreatedAt.Unix()
 	updatedAt := channel.UpdatedAt.Unix()
+
+	var roleIDstrs []string
+	for _, roleID := range roleIDs {
+		roleIDstrs = append(roleIDstrs, roleID.String())
+	}
+
 	return &pb.Channel{
 		Ver:         &ver,
-		Id:          &channel.ID,
-		CreatorId:   &channel.CreatorID,
-		GuildId:     channel.GuildID,
-		ParentId:    channel.ParentID,
+		Id:          pointer.UUIDToStringPtr(channel.ID),
+		CreatorId:   pointer.UUIDToStringPtr(channel.CreatorID),
+		GuildId:     pointer.UUIDPtrToStringPtr(channel.GuildID),
+		ParentId:    pointer.UUIDPtrToStringPtr(channel.ParentID),
 		Name:        channel.Name,
 		Topic:       channel.Topic,
 		ChannelType: &channelType,
 		CreatedAt:   &createdAt,
 		UpdatedAt:   &updatedAt,
 		Users:       tempUsers,
-		RoleIds:     roleIDs,
+		RoleIds:     roleIDstrs,
 	}
 }
 
-func NewChannelListProtoResultFromChannel(channels []*entities.Channel, roleIDs map[string][]string, users map[string][]*entities.User) []*pb.Channel {
+func NewChannelListProtoResultFromChannel(channels []*entities.Channel, roleIDs map[uuid.UUID][]uuid.UUID, users map[uuid.UUID][]*entities.User) []*pb.Channel {
 	tempChannels := make([]*pb.Channel, len(channels))
 
 	for i := 0; i < len(channels); i++ {
@@ -79,7 +87,7 @@ func NewChannelListProtoResultFromChannel(channels []*entities.Channel, roleIDs 
 	return tempChannels
 }
 
-func NewChannelCreatedProtoEvent(channel *entities.Channel, roleIDs []string, users []*entities.User) *pb.EventPayload {
+func NewChannelCreatedProtoEvent(channel *entities.Channel, roleIDs []uuid.UUID, users []*entities.User) *pb.EventPayload {
 	tempUsers := make([]*pb.User, len(users))
 
 	if len(tempUsers) != 0 {
@@ -107,9 +115,9 @@ func NewChannelUpdatedProtoEvent(channel *entities.Channel) *pb.EventPayload {
 		Payload: &pb.EventPayload_ChannelUpdated{
 			ChannelUpdated: &pb.ChannelUpdated{
 				Ver:       &ver,
-				Id:        &channel.ID,
-				GuildId:   channel.GuildID,
-				ParentId:  channel.ParentID,
+				Id:        pointer.UUIDToStringPtr(channel.ID),
+				GuildId:   pointer.UUIDPtrToStringPtr(channel.GuildID),
+				ParentId:  pointer.UUIDPtrToStringPtr(channel.ParentID),
 				Name:      channel.Name,
 				Topic:     channel.Topic,
 				UpdatedAt: &updatedAt,
@@ -118,7 +126,7 @@ func NewChannelUpdatedProtoEvent(channel *entities.Channel) *pb.EventPayload {
 	}
 }
 
-func NewChannelDeletedProtoEvent(ID string, guildID *string) *pb.EventPayload {
+func NewChannelDeletedProtoEvent(ID uuid.UUID, guildID *uuid.UUID) *pb.EventPayload {
 	var ver int32 = 0
 	return &pb.EventPayload{
 		Ver: &ver,
@@ -126,8 +134,8 @@ func NewChannelDeletedProtoEvent(ID string, guildID *string) *pb.EventPayload {
 		Payload: &pb.EventPayload_ChannelDeleted{
 			ChannelDeleted: &pb.ChannelDeleted{
 				Ver:     &ver,
-				Id:      &ID,
-				GuildId: guildID,
+				Id:      pointer.UUIDToStringPtr(ID),
+				GuildId: pointer.UUIDPtrToStringPtr(guildID),
 			},
 		},
 	}

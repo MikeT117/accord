@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 type CloudinaryUpload struct {
@@ -22,7 +24,7 @@ func NewCloudinaryUpload(environment string, APIKey string, secret string) *Clou
 	}
 }
 
-func (c *CloudinaryUpload) DeleteAttachment(ID string, signature string, unixTimestamp int64) error {
+func (c *CloudinaryUpload) DeleteAttachment(ID uuid.UUID, signature string, unixTimestamp int64) error {
 	response, err := http.Post(
 		fmt.Sprintf(
 			"https://api.cloudinary.com/v1_1/%s/image/destroy?api_key=%s&signature=%s&timestamp=%d&public_id=%s",
@@ -47,15 +49,13 @@ func (c *CloudinaryUpload) DeleteAttachment(ID string, signature string, unixTim
 	return nil
 }
 
-func (c *CloudinaryUpload) SignAttachment(ID string, unixTimestamp int64) string {
+func (c *CloudinaryUpload) SignAttachment(ID uuid.UUID, unixTimestamp int64) string {
 	hash := sha1.New()
 	hash.Write(
-		[]byte(
-			fmt.Sprintf("public_id=%s&timestamp=%d%s",
-				ID,
-				unixTimestamp,
-				c.cloudinarySecret,
-			),
+		fmt.Appendf(nil, "public_id=%s&timestamp=%d%s",
+			ID,
+			unixTimestamp,
+			c.cloudinarySecret,
 		),
 	)
 

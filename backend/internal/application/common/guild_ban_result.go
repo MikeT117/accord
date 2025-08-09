@@ -1,10 +1,14 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type GuildBanResult struct {
-	UserID    string
-	GuildID   string
+	UserID    uuid.UUID
+	GuildID   uuid.UUID
 	Reason    string
 	CreatedAt time.Time
 	UpdatedAt time.Time

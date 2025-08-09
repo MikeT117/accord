@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -20,7 +21,7 @@ func CreateGuildRoleRepository(db DBGetter) repositories.GuildRoleRepository {
 	}
 }
 
-func (r *GuildRoleRepository) GetByID(ctx context.Context, ID string) (*entities.GuildRole, error) {
+func (r *GuildRoleRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.GuildRole, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -53,7 +54,7 @@ func (r *GuildRoleRepository) GetByID(ctx context.Context, ID string) (*entities
 	return role, nil
 }
 
-func (r *GuildRoleRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildRole, []string, error) {
+func (r *GuildRoleRepository) GetByGuildID(ctx context.Context, guildID uuid.UUID) ([]*entities.GuildRole, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -69,12 +70,12 @@ func (r *GuildRoleRepository) GetByGuildID(ctx context.Context, guildID string) 
 	`, guildID)
 
 	if err != nil {
-		return nil, []string{}, wrapUnknownErr("select guild roles by guild id failed", err)
+		return nil, nil, wrapUnknownErr("select guild roles by guild id failed", err)
 	}
 	defer rows.Close()
 
 	roles := []*entities.GuildRole{}
-	roleIDs := []string{}
+	roleIDs := []uuid.UUID{}
 	for rows.Next() {
 		role := &entities.GuildRole{}
 		if err := rows.Scan(
@@ -85,7 +86,7 @@ func (r *GuildRoleRepository) GetByGuildID(ctx context.Context, guildID string) 
 			&role.CreatedAt,
 			&role.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, wrapUnknownErr("map over select guild roles by guild id failed", err)
+			return nil, nil, wrapUnknownErr("map over select guild roles by guild id failed", err)
 		}
 		roleIDs = append(roleIDs, role.ID)
 		roles = append(roles, role)
@@ -94,7 +95,7 @@ func (r *GuildRoleRepository) GetByGuildID(ctx context.Context, guildID string) 
 	return roles, roleIDs, nil
 }
 
-func (r *GuildRoleRepository) GetDefaultGuildRoleIDByGuildID(ctx context.Context, guildID string) (string, error) {
+func (r *GuildRoleRepository) GetDefaultGuildRoleIDByGuildID(ctx context.Context, guildID uuid.UUID) (uuid.UUID, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id
@@ -106,20 +107,20 @@ func (r *GuildRoleRepository) GetDefaultGuildRoleIDByGuildID(ctx context.Context
 			name = '@default';
 	`, guildID)
 
-	var roleID string
+	var roleID uuid.UUID
 	if err := row.Scan(
 		&roleID,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", domain.ErrEntityNotFound
+			return uuid.UUID{}, domain.ErrEntityNotFound
 		}
-		return "", wrapUnknownErr("select default guild role ID by guild id failed", err)
+		return uuid.UUID{}, wrapUnknownErr("select default guild role ID by guild id failed", err)
 	}
 
 	return roleID, nil
 }
 
-func (r *GuildRoleRepository) GetByIDs(ctx context.Context, roleIDs []string, guildID string) ([]*entities.GuildRole, error) {
+func (r *GuildRoleRepository) GetByIDs(ctx context.Context, roleIDs []uuid.UUID, guildID uuid.UUID) ([]*entities.GuildRole, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -160,7 +161,7 @@ func (r *GuildRoleRepository) GetByIDs(ctx context.Context, roleIDs []string, gu
 	return roles, nil
 }
 
-func (r *GuildRoleRepository) GetByNameAndGuildID(ctx context.Context, name string, guildID string) (*entities.GuildRole, error) {
+func (r *GuildRoleRepository) GetByNameAndGuildID(ctx context.Context, name string, guildID uuid.UUID) (*entities.GuildRole, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -195,7 +196,7 @@ func (r *GuildRoleRepository) GetByNameAndGuildID(ctx context.Context, name stri
 	return role, nil
 }
 
-func (r *GuildRoleRepository) GetMapByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.GuildRole, []string, error) {
+func (r *GuildRoleRepository) GetMapByGuildIDs(ctx context.Context, guildIDs []uuid.UUID) (map[uuid.UUID][]*entities.GuildRole, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -211,13 +212,13 @@ func (r *GuildRoleRepository) GetMapByGuildIDs(ctx context.Context, guildIDs []s
 	`, guildIDs)
 
 	if err != nil {
-		return nil, []string{}, wrapUnknownErr("select guild roles by guild ids failed", err)
+		return nil, nil, wrapUnknownErr("select guild roles by guild ids failed", err)
 	}
 
 	defer rows.Close()
 
-	rolesMap := make(map[string][]*entities.GuildRole)
-	roleIDs := []string{}
+	rolesMap := make(map[uuid.UUID][]*entities.GuildRole)
+	roleIDs := []uuid.UUID{}
 	for rows.Next() {
 		role := &entities.GuildRole{}
 		if err := rows.Scan(
@@ -228,7 +229,7 @@ func (r *GuildRoleRepository) GetMapByGuildIDs(ctx context.Context, guildIDs []s
 			&role.CreatedAt,
 			&role.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, wrapUnknownErr("map over select guild roles by guild ids failed", err)
+			return nil, nil, wrapUnknownErr("map over select guild roles by guild ids failed", err)
 		}
 
 		roleIDs = append(roleIDs, role.ID)
@@ -251,12 +252,12 @@ func (r *GuildRoleRepository) Create(ctx context.Context, guildRole *entities.Gu
 			)
 		VALUES ($1, $2, $3, $4, $5, $6);
 	`,
-		guildRole.ID,
-		guildRole.GuildID,
-		guildRole.Name,
-		guildRole.Permissions,
-		guildRole.CreatedAt,
-		guildRole.UpdatedAt,
+		&guildRole.ID,
+		&guildRole.GuildID,
+		&guildRole.Name,
+		&guildRole.Permissions,
+		&guildRole.CreatedAt,
+		&guildRole.UpdatedAt,
 	)
 
 	if err != nil {
@@ -279,12 +280,12 @@ func (r *GuildRoleRepository) Update(ctx context.Context, guildRole *entities.Gu
 		WHERE
 			id = $1;
 		`,
-		guildRole.ID,
-		guildRole.GuildID,
-		guildRole.Name,
-		guildRole.Permissions,
-		guildRole.CreatedAt,
-		guildRole.UpdatedAt,
+		&guildRole.ID,
+		&guildRole.GuildID,
+		&guildRole.Name,
+		&guildRole.Permissions,
+		&guildRole.CreatedAt,
+		&guildRole.UpdatedAt,
 	)
 
 	if err != nil {
@@ -299,7 +300,7 @@ func (r *GuildRoleRepository) Update(ctx context.Context, guildRole *entities.Gu
 
 }
 
-func (r *GuildRoleRepository) Delete(ctx context.Context, ID string) error {
+func (r *GuildRoleRepository) Delete(ctx context.Context, ID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				guild_role
@@ -319,7 +320,7 @@ func (r *GuildRoleRepository) Delete(ctx context.Context, ID string) error {
 	return nil
 }
 
-func (r *GuildRoleRepository) GetPermissionByUserIDAndGuildID(ctx context.Context, userID string, guildID string) (int32, error) {
+func (r *GuildRoleRepository) GetPermissionByUserIDAndGuildID(ctx context.Context, userID uuid.UUID, guildID uuid.UUID) (int32, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		Select
 			bit_or(gr.permissions) as permissions
@@ -345,7 +346,7 @@ func (r *GuildRoleRepository) GetPermissionByUserIDAndGuildID(ctx context.Contex
 	return permissions, nil
 }
 
-func (r *GuildRoleRepository) GetPermissionByUserIDAndChannelID(ctx context.Context, userID string, channelID string) (int32, error) {
+func (r *GuildRoleRepository) GetPermissionByUserIDAndChannelID(ctx context.Context, userID uuid.UUID, channelID uuid.UUID) (int32, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		Select
 			bit_or(gr.permissions) as permissions
@@ -373,7 +374,7 @@ func (r *GuildRoleRepository) GetPermissionByUserIDAndChannelID(ctx context.Cont
 	return permissions, nil
 }
 
-func (r *GuildRoleRepository) AssociateUser(ctx context.Context, roleID string, userID string) error {
+func (r *GuildRoleRepository) AssociateUser(ctx context.Context, roleID uuid.UUID, userID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			INSERT INTO
 				guild_role_user (
@@ -397,7 +398,7 @@ func (r *GuildRoleRepository) AssociateUser(ctx context.Context, roleID string, 
 	return nil
 }
 
-func (r *GuildRoleRepository) BulkAssociateUser(ctx context.Context, roleID string, userIDs []string) error {
+func (r *GuildRoleRepository) BulkAssociateUser(ctx context.Context, roleID uuid.UUID, userIDs []uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			INSERT INTO
 				guild_role_user (
@@ -423,7 +424,7 @@ func (r *GuildRoleRepository) BulkAssociateUser(ctx context.Context, roleID stri
 	return nil
 }
 
-func (r *GuildRoleRepository) DisassociateUser(ctx context.Context, roleID string, userID string) error {
+func (r *GuildRoleRepository) DisassociateUser(ctx context.Context, roleID uuid.UUID, userID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				guild_role_user
@@ -445,7 +446,7 @@ func (r *GuildRoleRepository) DisassociateUser(ctx context.Context, roleID strin
 	return nil
 }
 
-func (r *GuildRoleRepository) GetMapRoleIDsByUserIDs(ctx context.Context, userIDs []string) (map[string][]string, error) {
+func (r *GuildRoleRepository) GetMapRoleIDsByUserIDs(ctx context.Context, userIDs []uuid.UUID) (map[uuid.UUID][]uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			role_id,
@@ -462,10 +463,10 @@ func (r *GuildRoleRepository) GetMapRoleIDsByUserIDs(ctx context.Context, userID
 
 	defer rows.Close()
 
-	roleUsersMap := make(map[string][]string)
+	roleUsersMap := make(map[uuid.UUID][]uuid.UUID)
 	for rows.Next() {
-		var roleID string
-		var userID string
+		var roleID uuid.UUID
+		var userID uuid.UUID
 		if err := rows.Scan(
 			&roleID,
 			&userID,
@@ -479,7 +480,7 @@ func (r *GuildRoleRepository) GetMapRoleIDsByUserIDs(ctx context.Context, userID
 	return roleUsersMap, err
 }
 
-func (r *GuildRoleRepository) GetRoleIDsByUserIDAndGuildID(ctx context.Context, userID string, guildID string) ([]string, error) {
+func (r *GuildRoleRepository) GetRoleIDsByUserIDAndGuildID(ctx context.Context, userID uuid.UUID, guildID uuid.UUID) ([]uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			gru.role_id
@@ -499,9 +500,9 @@ func (r *GuildRoleRepository) GetRoleIDsByUserIDAndGuildID(ctx context.Context, 
 
 	defer rows.Close()
 
-	roleIDs := []string{}
+	roleIDs := []uuid.UUID{}
 	for rows.Next() {
-		var roleID string
+		var roleID uuid.UUID
 		if err := rows.Scan(
 			&roleID,
 		); err != nil {
@@ -514,7 +515,7 @@ func (r *GuildRoleRepository) GetRoleIDsByUserIDAndGuildID(ctx context.Context, 
 	return roleIDs, err
 }
 
-func (r *GuildRoleRepository) GetRoleIDsByUserID(ctx context.Context, userID string) ([]string, error) {
+func (r *GuildRoleRepository) GetRoleIDsByUserID(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			role_id
@@ -529,9 +530,9 @@ func (r *GuildRoleRepository) GetRoleIDsByUserID(ctx context.Context, userID str
 	}
 	defer rows.Close()
 
-	roleIDs := []string{}
+	roleIDs := []uuid.UUID{}
 	for rows.Next() {
-		var roleID string
+		var roleID uuid.UUID
 		if err := rows.Scan(
 			&roleID,
 		); err != nil {
@@ -544,7 +545,7 @@ func (r *GuildRoleRepository) GetRoleIDsByUserID(ctx context.Context, userID str
 	return roleIDs, err
 }
 
-func (r *GuildRoleRepository) BulkRoleAssociateChannel(ctx context.Context, channelID string, roleIDs []string) error {
+func (r *GuildRoleRepository) BulkRoleAssociateChannel(ctx context.Context, channelID uuid.UUID, roleIDs []uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
 			guild_role_channel (
@@ -567,7 +568,7 @@ func (r *GuildRoleRepository) BulkRoleAssociateChannel(ctx context.Context, chan
 	return nil
 }
 
-func (r *GuildRoleRepository) BulkChannelAssociateRole(ctx context.Context, roleID string, channelIDs []string) error {
+func (r *GuildRoleRepository) BulkChannelAssociateRole(ctx context.Context, roleID uuid.UUID, channelIDs []uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
 			guild_role_channel (
@@ -590,7 +591,7 @@ func (r *GuildRoleRepository) BulkChannelAssociateRole(ctx context.Context, role
 	return nil
 }
 
-func (r *GuildRoleRepository) BulkChannelDisassociateRole(ctx context.Context, roleID string, channelIDs []string) error {
+func (r *GuildRoleRepository) BulkChannelDisassociateRole(ctx context.Context, roleID uuid.UUID, channelIDs []uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				guild_role_channel
@@ -612,7 +613,7 @@ func (r *GuildRoleRepository) BulkChannelDisassociateRole(ctx context.Context, r
 	return nil
 }
 
-func (r *GuildRoleRepository) WipeChannelAssociations(ctx context.Context, channelID string) error {
+func (r *GuildRoleRepository) WipeChannelAssociations(ctx context.Context, channelID uuid.UUID) error {
 	_, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				guild_role_channel
@@ -628,7 +629,7 @@ func (r *GuildRoleRepository) WipeChannelAssociations(ctx context.Context, chann
 	return nil
 }
 
-func (r *GuildRoleRepository) AssociateChannel(ctx context.Context, roleID string, channelID string) error {
+func (r *GuildRoleRepository) AssociateChannel(ctx context.Context, roleID uuid.UUID, channelID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			INSERT INTO
 				guild_role_channel (
@@ -652,7 +653,7 @@ func (r *GuildRoleRepository) AssociateChannel(ctx context.Context, roleID strin
 	return nil
 }
 
-func (r *GuildRoleRepository) DisassociateChannel(ctx context.Context, roleID string, channelID string) error {
+func (r *GuildRoleRepository) DisassociateChannel(ctx context.Context, roleID uuid.UUID, channelID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				guild_role_channel
@@ -674,7 +675,7 @@ func (r *GuildRoleRepository) DisassociateChannel(ctx context.Context, roleID st
 	return nil
 }
 
-func (r *GuildRoleRepository) GetMapRoleIDsByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]string, error) {
+func (r *GuildRoleRepository) GetMapRoleIDsByChannelIDs(ctx context.Context, channelIDs []uuid.UUID) (map[uuid.UUID][]uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			role_id,
@@ -691,10 +692,10 @@ func (r *GuildRoleRepository) GetMapRoleIDsByChannelIDs(ctx context.Context, cha
 
 	defer rows.Close()
 
-	roleChannelsMap := make(map[string][]string)
+	roleChannelsMap := make(map[uuid.UUID][]uuid.UUID)
 	for rows.Next() {
-		var channelID string
-		var roleID string
+		var channelID uuid.UUID
+		var roleID uuid.UUID
 		if err := rows.Scan(
 			&roleID,
 			&channelID,
@@ -708,7 +709,7 @@ func (r *GuildRoleRepository) GetMapRoleIDsByChannelIDs(ctx context.Context, cha
 	return roleChannelsMap, err
 }
 
-func (r *GuildRoleRepository) GetRoleIDsByChannelID(ctx context.Context, channelID string) ([]string, error) {
+func (r *GuildRoleRepository) GetRoleIDsByChannelID(ctx context.Context, channelID uuid.UUID) ([]uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			role_id
@@ -724,9 +725,9 @@ func (r *GuildRoleRepository) GetRoleIDsByChannelID(ctx context.Context, channel
 
 	defer rows.Close()
 
-	roleIDs := []string{}
+	roleIDs := []uuid.UUID{}
 	for rows.Next() {
-		var roleID string
+		var roleID uuid.UUID
 		if err := rows.Scan(
 			&roleID,
 		); err != nil {
@@ -740,7 +741,7 @@ func (r *GuildRoleRepository) GetRoleIDsByChannelID(ctx context.Context, channel
 	return roleIDs, err
 }
 
-func (r *GuildRoleRepository) GetChannelPermissions(ctx context.Context, channelID string, userID string) (int32, error) {
+func (r *GuildRoleRepository) GetChannelPermissions(ctx context.Context, channelID uuid.UUID, userID uuid.UUID) (int32, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			COALESCE(bit_or(gr.permissions), -1)::int
@@ -767,7 +768,7 @@ func (r *GuildRoleRepository) GetChannelPermissions(ctx context.Context, channel
 	return permissions, nil
 }
 
-func (r *GuildRoleRepository) GetGuildPermissions(ctx context.Context, guildID string, userID string) (int32, error) {
+func (r *GuildRoleRepository) GetGuildPermissions(ctx context.Context, guildID uuid.UUID, userID uuid.UUID) (int32, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			COALESCE(bit_or(gr.permissions), -1)::int

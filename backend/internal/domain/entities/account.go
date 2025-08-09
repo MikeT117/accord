@@ -14,7 +14,7 @@ const (
 )
 
 type Account struct {
-	ID                    string
+	ID                    uuid.UUID
 	Provider              string
 	ProviderID            *string
 	Accesstoken           *string
@@ -29,7 +29,7 @@ type Account struct {
 }
 
 func (a *Account) validate() error {
-	if a.ID == "" {
+	if a.ID == uuid.Nil {
 		return domain.NewDomainValidationError("id must not be empty")
 	}
 	if a.Provider != PROVIDER_CREDENTIALS && a.Provider != PROVIDER_OAUTH {
@@ -76,7 +76,7 @@ func NewOAuthAccount(providerID string, accesstoken *string, refreshtoken *strin
 	timestamp := time.Now().UTC()
 
 	account := &Account{
-		ID:                    id.String(),
+		ID:                    id,
 		Provider:              PROVIDER_OAUTH,
 		ProviderID:            &providerID,
 		Accesstoken:           accesstoken,
@@ -106,7 +106,7 @@ func NewCredentialsAccount(password *string) (*Account, error) {
 	timestamp := time.Now().UTC()
 
 	account := &Account{
-		ID:                    id.String(),
+		ID:                    id,
 		Provider:              PROVIDER_CREDENTIALS,
 		ProviderID:            nil,
 		Accesstoken:           nil,

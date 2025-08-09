@@ -4,6 +4,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+	pointer "github.com/MikeT117/accord/backend/internal/ptr"
 )
 
 func NewChannelMessageAuthorResultFromUserGuildMember(user *entities.User, guildmember *entities.GuildMember) *common.ChannelMessageAuthorResult {
@@ -44,12 +45,12 @@ func NewChannelMessageAuthorProtoResultFromUserGuildMember(user *entities.User, 
 
 	var publicFlags int32 = int32(user.PublicFlags)
 	author := &pb.User{
-		Id:          &user.ID,
+		Id:          pointer.UUIDToStringPtr(user.ID),
 		Username:    &user.Username,
 		PublicFlags: &publicFlags,
 		DisplayName: &user.DisplayName,
-		Avatar:      user.AvatarID,
-		Banner:      user.BannerID,
+		Avatar:      pointer.UUIDPtrToStringPtr(user.AvatarID),
+		Banner:      pointer.UUIDPtrToStringPtr(user.BannerID),
 	}
 
 	if guildmember == nil {
@@ -57,11 +58,13 @@ func NewChannelMessageAuthorProtoResultFromUserGuildMember(user *entities.User, 
 	}
 
 	if guildmember.AvatarID != nil {
-		author.Avatar = guildmember.AvatarID
+		author.Avatar = pointer.UUIDPtrToStringPtr(guildmember.AvatarID)
 	}
+
 	if guildmember.BannerID != nil {
-		author.Banner = guildmember.BannerID
+		author.Banner = pointer.UUIDPtrToStringPtr(guildmember.BannerID)
 	}
+
 	if guildmember.Nickname != nil {
 		author.DisplayName = guildmember.Nickname
 	}

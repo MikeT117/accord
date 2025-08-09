@@ -115,7 +115,7 @@ func (s *GuildMemberService) Create(ctx context.Context, cmd *command.CreateGuil
 			return err
 		}
 
-		defaultGuildRole, err := s.guildRoleRepository.GetByNameAndGuildID(ctx, "@default", cmd.GuildID)
+		defaultGuildRole, err := s.guildRoleRepository.GetByNameAndGuildID(ctx, entities.DefaultRootRoleName, cmd.GuildID)
 		if err != nil {
 			return err
 		}

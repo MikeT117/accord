@@ -1,12 +1,16 @@
 package interfaces
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 type AuthorisationService interface {
-	VerifyRelationships(ctx context.Context, requestorID string, userIDs []string, isBlocked bool, isFriend bool, isPending bool) error
-	VerifyRelationship(ctx context.Context, requestorID string, userID string, isBlocked bool, isFriend bool, isPending bool) error
-	VerifyGuildMember(ctx context.Context, guildID, requestorID string) error
-	VerifyUserGuildPermission(ctx context.Context, guildID string, requestorID string, permission int) error
-	VerifyPrivateChannelMember(ctx context.Context, channelID, requestorID string) error
-	VerifyGuildChannelPermission(ctx context.Context, channelID string, requestorID string, permissionOffset int) error
+	VerifyRelationships(ctx context.Context, requestorID uuid.UUID, userIDs []uuid.UUID, isBlocked bool, isFriend bool, isPending bool) error
+	VerifyRelationship(ctx context.Context, requestorID uuid.UUID, userID uuid.UUID, isBlocked bool, isFriend bool, isPending bool) error
+	VerifyGuildMember(ctx context.Context, guildID uuid.UUID, requestorID uuid.UUID) error
+	VerifyUserGuildPermission(ctx context.Context, guildID uuid.UUID, requestorID uuid.UUID, permission int) error
+	VerifyPrivateChannelMember(ctx context.Context, channelID uuid.UUID, requestorID uuid.UUID) error
+	VerifyGuildChannelPermission(ctx context.Context, channelID uuid.UUID, requestorID uuid.UUID, permissionOffset int) error
 }

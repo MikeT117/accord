@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -18,7 +19,7 @@ func CreateGuildInviteRepository(db DBGetter) repositories.GuildInviteRepository
 	return &GuildInviteRepository{db: db}
 }
 
-func (r *GuildInviteRepository) GetByID(ctx context.Context, ID string) (*entities.GuildInvite, error) {
+func (r *GuildInviteRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.GuildInvite, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -50,7 +51,7 @@ func (r *GuildInviteRepository) GetByID(ctx context.Context, ID string) (*entiti
 	return guildInvite, nil
 }
 
-func (r *GuildInviteRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildInvite, error) {
+func (r *GuildInviteRepository) GetByGuildID(ctx context.Context, guildID uuid.UUID) ([]*entities.GuildInvite, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -102,11 +103,11 @@ func (r *GuildInviteRepository) Create(ctx context.Context, guildInvite *entitie
 				)
 			VALUES ($1, $2, $3, $4, $5);
 		`,
-		guildInvite.ID,
-		guildInvite.UsedCount,
-		guildInvite.GuildID,
-		guildInvite.CreatedAt,
-		guildInvite.ExpiresAt,
+		&guildInvite.ID,
+		&guildInvite.UsedCount,
+		&guildInvite.GuildID,
+		&guildInvite.CreatedAt,
+		&guildInvite.ExpiresAt,
 	)
 
 	if err != nil {
@@ -116,7 +117,7 @@ func (r *GuildInviteRepository) Create(ctx context.Context, guildInvite *entitie
 	return nil
 }
 
-func (r *GuildInviteRepository) Delete(ctx context.Context, ID string) error {
+func (r *GuildInviteRepository) Delete(ctx context.Context, ID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				guild_invite

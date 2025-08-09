@@ -1,9 +1,13 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type GuildCategoryResult struct {
-	ID        string
+	ID        uuid.UUID
 	Name      string
 	CreatedAt time.Time
 	UpdatedAt time.Time

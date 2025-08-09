@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -18,7 +19,7 @@ func CreateAccountRepository(db DBGetter) repositories.AccountRepository {
 	return &AccountRepository{db: db}
 }
 
-func (r *AccountRepository) GetByID(ctx context.Context, ID string) (*entities.Account, error) {
+func (r *AccountRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.Account, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -60,7 +61,7 @@ func (r *AccountRepository) GetByID(ctx context.Context, ID string) (*entities.A
 
 	return account, nil
 }
-func (r *AccountRepository) GetByUserID(ctx context.Context, userID string) (*entities.Account, error) {
+func (r *AccountRepository) GetByUserID(ctx context.Context, userID uuid.UUID) (*entities.Account, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 	SELECT
 		id,
@@ -163,7 +164,7 @@ func (r *AccountRepository) Create(ctx context.Context, validatedAccount *entiti
 			)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
 	`,
-		validatedAccount.ID,
+		&validatedAccount.ID,
 		validatedAccount.ProviderID,
 		validatedAccount.Accesstoken,
 		validatedAccount.Refreshtoken,
@@ -172,8 +173,8 @@ func (r *AccountRepository) Create(ctx context.Context, validatedAccount *entiti
 		validatedAccount.Scope,
 		validatedAccount.IDToken,
 		validatedAccount.Password,
-		validatedAccount.CreatedAt,
-		validatedAccount.UpdatedAt,
+		&validatedAccount.CreatedAt,
+		&validatedAccount.UpdatedAt,
 	)
 
 	if err != nil {
@@ -185,7 +186,7 @@ func (r *AccountRepository) Create(ctx context.Context, validatedAccount *entiti
 func (r *AccountRepository) Update(ctx context.Context, validatedAccount *entities.Account) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		UPDATE
-			account 
+			account
 		SET
 			provider_id = $2,
 			access_token = $3,
@@ -200,7 +201,7 @@ func (r *AccountRepository) Update(ctx context.Context, validatedAccount *entiti
 		WHERE
 			id =  $1;
 	`,
-		validatedAccount.ID,
+		&validatedAccount.ID,
 		validatedAccount.ProviderID,
 		validatedAccount.Accesstoken,
 		validatedAccount.Refreshtoken,
@@ -209,8 +210,8 @@ func (r *AccountRepository) Update(ctx context.Context, validatedAccount *entiti
 		validatedAccount.Scope,
 		validatedAccount.IDToken,
 		validatedAccount.Password,
-		validatedAccount.CreatedAt,
-		validatedAccount.UpdatedAt,
+		&validatedAccount.CreatedAt,
+		&validatedAccount.UpdatedAt,
 	)
 
 	if err != nil {
@@ -224,7 +225,7 @@ func (r *AccountRepository) Update(ctx context.Context, validatedAccount *entiti
 	return nil
 }
 
-func (r *AccountRepository) Delete(ctx context.Context, ID string) error {
+func (r *AccountRepository) Delete(ctx context.Context, ID uuid.UUID) error {
 
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM

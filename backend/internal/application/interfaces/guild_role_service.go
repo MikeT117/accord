@@ -5,10 +5,11 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/google/uuid"
 )
 
 type GuildRoleService interface {
-	GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.GuildRoleQueryListResult, error)
+	GetByGuildID(ctx context.Context, guildID uuid.UUID, requestorID uuid.UUID) (*query.GuildRoleQueryListResult, error)
 	GetAssignedGuildMembersByRoleID(ctx context.Context, qry *query.GuildRoleMembersQuery) (*query.GuildMemberQueryListResult, error)
 	GetUnassignedGuildMembersByRoleID(ctx context.Context, qry *query.GuildRoleMembersQuery) (*query.GuildMemberQueryListResult, error)
 	Create(ctx context.Context, cmd *command.CreateGuildRoleCommand) error

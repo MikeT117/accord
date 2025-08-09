@@ -4,21 +4,22 @@ import (
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/application/common"
+	"github.com/google/uuid"
 )
 
 type ChannelMessagesQuery struct {
-	ChannelID   string
+	ChannelID   uuid.UUID
 	Pinned      bool
 	Before      time.Time
 	After       time.Time
-	RequestorID string
+	RequestorID uuid.UUID
 	Limit       int
 }
 
 type ChannelMessageQuery struct {
-	ID          string
-	ChannelID   string
-	RequestorID string
+	ID          uuid.UUID
+	ChannelID   uuid.UUID
+	RequestorID uuid.UUID
 }
 
 type ChannelMessageQueryResult struct {

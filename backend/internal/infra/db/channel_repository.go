@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -18,7 +19,7 @@ func CreateChannelRepository(db DBGetter) repositories.ChannelRepository {
 	return &ChannelRepository{db: db}
 }
 
-func (r *ChannelRepository) GetByID(ctx context.Context, ID string) (*entities.Channel, error) {
+func (r *ChannelRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.Channel, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -57,7 +58,7 @@ func (r *ChannelRepository) GetByID(ctx context.Context, ID string) (*entities.C
 	return channel, nil
 }
 
-func (r *ChannelRepository) GetByIDAndGuildID(ctx context.Context, ID string, guildID string) (*entities.Channel, error) {
+func (r *ChannelRepository) GetByIDAndGuildID(ctx context.Context, ID uuid.UUID, guildID uuid.UUID) (*entities.Channel, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -98,7 +99,7 @@ func (r *ChannelRepository) GetByIDAndGuildID(ctx context.Context, ID string, gu
 	return channel, nil
 }
 
-func (r *ChannelRepository) GetByIDAndGuildIDAndParentID(ctx context.Context, ID string, guildID string, parentID string) (*entities.Channel, error) {
+func (r *ChannelRepository) GetByIDAndGuildIDAndParentID(ctx context.Context, ID uuid.UUID, guildID uuid.UUID, parentID uuid.UUID) (*entities.Channel, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -141,7 +142,7 @@ func (r *ChannelRepository) GetByIDAndGuildIDAndParentID(ctx context.Context, ID
 	return channel, nil
 }
 
-func (r *ChannelRepository) GetIDsSyncedWithParentByParentID(ctx context.Context, parentID string) ([]string, error) {
+func (r *ChannelRepository) GetIDsSyncedWithParentByParentID(ctx context.Context, parentID uuid.UUID) ([]uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		WITH parent_roles AS (
 			SELECT
@@ -154,7 +155,7 @@ func (r *ChannelRepository) GetIDsSyncedWithParentByParentID(ctx context.Context
 		children AS (
 			SELECT
 				id
-			FROM 
+			FROM
 				channel
 			WHERE
 				parent_id = $1
@@ -185,9 +186,9 @@ func (r *ChannelRepository) GetIDsSyncedWithParentByParentID(ctx context.Context
 	}
 
 	defer rows.Close()
-	channelIDs := []string{}
+	channelIDs := []uuid.UUID{}
 	for rows.Next() {
-		var channelID string
+		var channelID uuid.UUID
 		if err := rows.Scan(
 			&channelID,
 		); err != nil {
@@ -200,7 +201,7 @@ func (r *ChannelRepository) GetIDsSyncedWithParentByParentID(ctx context.Context
 	return channelIDs, nil
 }
 
-func (r *ChannelRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.Channel, []string, error) {
+func (r *ChannelRepository) GetByGuildID(ctx context.Context, guildID uuid.UUID) ([]*entities.Channel, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -219,12 +220,12 @@ func (r *ChannelRepository) GetByGuildID(ctx context.Context, guildID string) ([
 	`, guildID)
 
 	if err != nil {
-		return nil, []string{}, wrapUnknownErr("select channels by guild id failed", err)
+		return nil, nil, wrapUnknownErr("select channels by guild id failed", err)
 	}
 
 	defer rows.Close()
 	channels := []*entities.Channel{}
-	channelIDs := []string{}
+	channelIDs := []uuid.UUID{}
 	for rows.Next() {
 		channel := &entities.Channel{}
 		if err := rows.Scan(
@@ -238,7 +239,7 @@ func (r *ChannelRepository) GetByGuildID(ctx context.Context, guildID string) ([
 			&channel.CreatedAt,
 			&channel.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, wrapUnknownErr("map over select channels by guild id failed", err)
+			return nil, nil, wrapUnknownErr("map over select channels by guild id failed", err)
 		}
 
 		channels = append(channels, channel)
@@ -248,7 +249,7 @@ func (r *ChannelRepository) GetByGuildID(ctx context.Context, guildID string) ([
 	return channels, channelIDs, nil
 }
 
-func (r *ChannelRepository) GetMapByGuildIDs(ctx context.Context, guildIDs []string) (map[string][]*entities.Channel, []string, error) {
+func (r *ChannelRepository) GetMapByGuildIDs(ctx context.Context, guildIDs []uuid.UUID) (map[uuid.UUID][]*entities.Channel, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -267,13 +268,13 @@ func (r *ChannelRepository) GetMapByGuildIDs(ctx context.Context, guildIDs []str
 	`, guildIDs)
 
 	if err != nil {
-		return nil, []string{}, wrapUnknownErr("select channels by guild ids failed", err)
+		return nil, nil, wrapUnknownErr("select channels by guild ids failed", err)
 	}
 
 	defer rows.Close()
 
-	channelsMap := make(map[string][]*entities.Channel)
-	channelIDs := []string{}
+	channelsMap := make(map[uuid.UUID][]*entities.Channel)
+	channelIDs := []uuid.UUID{}
 	for rows.Next() {
 		channel := &entities.Channel{}
 		if err := rows.Scan(
@@ -287,7 +288,7 @@ func (r *ChannelRepository) GetMapByGuildIDs(ctx context.Context, guildIDs []str
 			&channel.CreatedAt,
 			&channel.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, wrapUnknownErr("map over select channels by guild ids failed", err)
+			return nil, nil, wrapUnknownErr("map over select channels by guild ids failed", err)
 		}
 
 		channelIDs = append(channelIDs, channel.ID)
@@ -297,7 +298,7 @@ func (r *ChannelRepository) GetMapByGuildIDs(ctx context.Context, guildIDs []str
 	return channelsMap, channelIDs, err
 }
 
-func (r *ChannelRepository) GetByUserID(ctx context.Context, userID string) ([]*entities.Channel, []string, error) {
+func (r *ChannelRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*entities.Channel, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			c.id,
@@ -318,13 +319,13 @@ func (r *ChannelRepository) GetByUserID(ctx context.Context, userID string) ([]*
 	`, userID)
 
 	if err != nil {
-		return nil, []string{}, wrapUnknownErr("select channels by user id failed", err)
+		return nil, nil, wrapUnknownErr("select channels by user id failed", err)
 
 	}
 
 	defer rows.Close()
 	channels := []*entities.Channel{}
-	channelIDs := []string{}
+	channelIDs := []uuid.UUID{}
 	for rows.Next() {
 		channel := &entities.Channel{}
 		if err := rows.Scan(
@@ -338,7 +339,7 @@ func (r *ChannelRepository) GetByUserID(ctx context.Context, userID string) ([]*
 			&channel.CreatedAt,
 			&channel.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, wrapUnknownErr("map over select channels by user id failed", err)
+			return nil, nil, wrapUnknownErr("map over select channels by user id failed", err)
 		}
 
 		channels = append(channels, channel)
@@ -367,10 +368,10 @@ func (r *ChannelRepository) Create(ctx context.Context, channel *entities.Channe
 	`,
 		&channel.ID,
 		&channel.CreatorID,
-		&channel.GuildID,
-		&channel.ParentID,
-		&channel.Name,
-		&channel.Topic,
+		channel.GuildID,
+		channel.ParentID,
+		channel.Name,
+		channel.Topic,
 		&channel.ChannelType,
 		&channel.CreatedAt,
 		&channel.UpdatedAt,
@@ -402,10 +403,10 @@ func (r *ChannelRepository) Update(ctx context.Context, channel *entities.Channe
 	`,
 		&channel.ID,
 		&channel.CreatorID,
-		&channel.GuildID,
-		&channel.ParentID,
-		&channel.Name,
-		&channel.Topic,
+		channel.GuildID,
+		channel.ParentID,
+		channel.Name,
+		channel.Topic,
 		&channel.ChannelType,
 		&channel.CreatedAt,
 		&channel.UpdatedAt,
@@ -423,7 +424,7 @@ func (r *ChannelRepository) Update(ctx context.Context, channel *entities.Channe
 
 }
 
-func (r *ChannelRepository) Delete(ctx context.Context, ID string) error {
+func (r *ChannelRepository) Delete(ctx context.Context, ID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			channel
@@ -442,7 +443,7 @@ func (r *ChannelRepository) Delete(ctx context.Context, ID string) error {
 	return nil
 }
 
-func (r *ChannelRepository) GetUsersByChannelID(ctx context.Context, channelID string) ([]*entities.User, error) {
+func (r *ChannelRepository) GetUsersByChannelID(ctx context.Context, channelID uuid.UUID) ([]*entities.User, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			u.id,
@@ -496,7 +497,7 @@ func (r *ChannelRepository) GetUsersByChannelID(ctx context.Context, channelID s
 	return users, nil
 }
 
-func (r *ChannelRepository) GetUserIDsByChannelID(ctx context.Context, channelID string) ([]string, error) {
+func (r *ChannelRepository) GetUserIDsByChannelID(ctx context.Context, channelID uuid.UUID) ([]uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			user_id
@@ -512,9 +513,9 @@ func (r *ChannelRepository) GetUserIDsByChannelID(ctx context.Context, channelID
 
 	defer rows.Close()
 
-	userIDs := []string{}
+	userIDs := []uuid.UUID{}
 	for rows.Next() {
-		var userID string
+		var userID uuid.UUID
 		if err := rows.Scan(
 			&userID,
 		); err != nil {
@@ -527,7 +528,7 @@ func (r *ChannelRepository) GetUserIDsByChannelID(ctx context.Context, channelID
 	return userIDs, err
 }
 
-func (r *ChannelRepository) VerifyUserChannelMembership(ctx context.Context, userID string, channelID string) error {
+func (r *ChannelRepository) VerifyUserChannelMembership(ctx context.Context, userID uuid.UUID, channelID uuid.UUID) error {
 	var result *string
 	err := r.db(ctx).QueryRow(ctx, `
 		SELECT
@@ -547,7 +548,7 @@ func (r *ChannelRepository) VerifyUserChannelMembership(ctx context.Context, use
 	return err
 }
 
-func (r *ChannelRepository) GetMapUsersByChannelIDs(ctx context.Context, channelIDs []string) (map[string][]*entities.User, error) {
+func (r *ChannelRepository) GetMapUsersByChannelIDs(ctx context.Context, channelIDs []uuid.UUID) (map[uuid.UUID][]*entities.User, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			cu.channel_id,
@@ -576,10 +577,10 @@ func (r *ChannelRepository) GetMapUsersByChannelIDs(ctx context.Context, channel
 
 	defer rows.Close()
 
-	users := make(map[string][]*entities.User)
+	users := make(map[uuid.UUID][]*entities.User)
 	for rows.Next() {
 		user := &entities.User{}
-		var channelID string
+		var channelID uuid.UUID
 		if err := rows.Scan(
 			&channelID,
 			&user.ID,
@@ -603,7 +604,7 @@ func (r *ChannelRepository) GetMapUsersByChannelIDs(ctx context.Context, channel
 
 }
 
-func (r *ChannelRepository) AssociateUser(ctx context.Context, channelID string, userID string) error {
+func (r *ChannelRepository) AssociateUser(ctx context.Context, channelID uuid.UUID, userID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
 			channel_user (
@@ -624,7 +625,7 @@ func (r *ChannelRepository) AssociateUser(ctx context.Context, channelID string,
 	return nil
 }
 
-func (r *ChannelRepository) DisassociateUser(ctx context.Context, channelID string, userID string) error {
+func (r *ChannelRepository) DisassociateUser(ctx context.Context, channelID uuid.UUID, userID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			channel_user

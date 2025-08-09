@@ -5,21 +5,22 @@ import (
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/domain"
+	"github.com/google/uuid"
 )
 
 type GuildBan struct {
-	UserID    string
-	GuildID   string
+	UserID    uuid.UUID
+	GuildID   uuid.UUID
 	Reason    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 func (u *GuildBan) validate() error {
-	if strings.Trim(u.UserID, " ") == "" {
+	if u.UserID == uuid.Nil {
 		return domain.NewDomainValidationError("user id must not be empty")
 	}
-	if strings.Trim(u.GuildID, " ") == "" {
+	if u.GuildID == uuid.Nil {
 		return domain.NewDomainValidationError("guild id must not be empty")
 	}
 	if strings.Trim(u.Reason, " ") == "" {
@@ -28,7 +29,7 @@ func (u *GuildBan) validate() error {
 	return nil
 }
 
-func NewGuildBan(guildID string, userID string, reason string) (*GuildBan, error) {
+func NewGuildBan(guildID uuid.UUID, userID uuid.UUID, reason string) (*GuildBan, error) {
 	timestamp := time.Now().UTC()
 	guildBan := &GuildBan{
 		UserID:    userID,

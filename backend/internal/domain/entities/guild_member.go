@@ -4,29 +4,30 @@ import (
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/domain"
+	"github.com/google/uuid"
 )
 
 type GuildMember struct {
-	UserID    string
-	GuildID   string
+	UserID    uuid.UUID
+	GuildID   uuid.UUID
 	Nickname  *string
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	AvatarID  *string
-	BannerID  *string
+	AvatarID  *uuid.UUID
+	BannerID  *uuid.UUID
 }
 
 func (u *GuildMember) validate() error {
-	if u.UserID == "" {
+	if u.UserID == uuid.Nil {
 		return domain.NewDomainValidationError("id must not be empty")
 	}
-	if u.GuildID == "" {
+	if u.GuildID == uuid.Nil {
 		return domain.NewDomainValidationError("guild id must not be empty")
 	}
 	return nil
 }
 
-func NewGuildMember(userID string, guildID string, avatarID *string, bannerID *string) (*GuildMember, error) {
+func NewGuildMember(userID uuid.UUID, guildID uuid.UUID, avatarID *uuid.UUID, bannerID *uuid.UUID) (*GuildMember, error) {
 	timestamp := time.Now().UTC()
 
 	guildMember := &GuildMember{
@@ -46,7 +47,7 @@ func NewGuildMember(userID string, guildID string, avatarID *string, bannerID *s
 	return guildMember, nil
 }
 
-func (g *GuildMember) IsOwner(ID string) bool {
+func (g *GuildMember) IsOwner(ID uuid.UUID) bool {
 	return g.UserID == ID
 }
 
@@ -56,13 +57,13 @@ func (g *GuildMember) UpdateNickname(nickname *string) error {
 	return g.validate()
 }
 
-func (g *GuildMember) UpdateAvatarID(avatarID *string) error {
+func (g *GuildMember) UpdateAvatarID(avatarID *uuid.UUID) error {
 	g.AvatarID = avatarID
 	g.UpdatedAt = time.Now().UTC()
 	return g.validate()
 }
 
-func (g *GuildMember) UpdateBannerID(bannerID *string) error {
+func (g *GuildMember) UpdateBannerID(bannerID *uuid.UUID) error {
 	g.BannerID = bannerID
 	g.UpdatedAt = time.Now().UTC()
 	return g.validate()

@@ -1,11 +1,14 @@
 package command
 
-import "github.com/MikeT117/accord/backend/internal/application/common"
+import (
+	"github.com/MikeT117/accord/backend/internal/application/common"
+	"github.com/google/uuid"
+)
 
 type CreateAttachmentCommand struct {
 	Filename     string
 	ResourceType string
-	OwnerID      string
+	OwnerID      uuid.UUID
 	Filesize     int64
 }
 

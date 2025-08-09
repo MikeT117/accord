@@ -1,9 +1,11 @@
 package response
 
+import "github.com/google/uuid"
+
 type GuildResponse struct {
-	ID              string               `json:"id"`
-	CreatorID       string               `json:"creatorId"`
-	GuildCategoryID *string              `json:"guildCategoryId"`
+	ID              uuid.UUID            `json:"id"`
+	CreatorID       uuid.UUID            `json:"creatorId"`
+	GuildCategoryID *uuid.UUID           `json:"guildCategoryId"`
 	Name            string               `json:"name"`
 	Description     string               `json:"description"`
 	Discoverable    bool                 `json:"discoverable"`
@@ -11,8 +13,8 @@ type GuildResponse struct {
 	MemberCount     int64                `json:"memberCount"`
 	CreatedAt       int64                `json:"createdAt"`
 	UpdatedAt       int64                `json:"updatedAt"`
-	Icon            *string              `json:"icon"`
-	Banner          *string              `json:"banner"`
+	Icon            *uuid.UUID           `json:"icon"`
+	Banner          *uuid.UUID           `json:"banner"`
 	Channels        []*ChannelResponse   `json:"channels,omitempty"`
 	Roles           []*GuildRoleResponse `json:"roles,omitempty"`
 }

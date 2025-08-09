@@ -4,24 +4,21 @@ import (
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/google/uuid"
 )
 
 type QueryChannelMessagesRequest struct {
-	ChannelID string `param:"channelID"`
-	Pinned    bool   `query:"pinned"`
-	Before    *int64 `query:"before"`
-	After     *int64 `query:"after"`
-	Limit     *int   `query:"limit"`
+	ChannelID uuid.UUID `param:"channelID"`
+	Pinned    bool      `query:"pinned"`
+	Before    *int64    `query:"before"`
+	After     *int64    `query:"after"`
+	Limit     *int      `query:"limit"`
 }
 
-func (r *QueryChannelMessagesRequest) ToChannelMessagesQuery(requestorID string) (*query.ChannelMessagesQuery, error) {
+func (r *QueryChannelMessagesRequest) ToChannelMessagesQuery(requestorID uuid.UUID) (*query.ChannelMessagesQuery, error) {
 
 	if r.After != nil && r.Before != nil {
 		return nil, NewRequestValidationError("invalid query")
-	}
-
-	if r.ChannelID == "" {
-		return nil, NewRequestValidationError("invalid channel id")
 	}
 
 	query := &query.ChannelMessagesQuery{
@@ -52,16 +49,11 @@ func (r *QueryChannelMessagesRequest) ToChannelMessagesQuery(requestorID string)
 }
 
 type QueryChannelMessageRequest struct {
-	ID        string `param:"messageID"`
-	ChannelID string `param:"channelID"`
+	ID        uuid.UUID `param:"messageID"`
+	ChannelID uuid.UUID `param:"channelID"`
 }
 
-func (r *QueryChannelMessageRequest) ToChannelMessageQuery(requestorID string) (*query.ChannelMessageQuery, error) {
-
-	if r.ChannelID == "" || r.ID == "" {
-		return nil, NewRequestValidationError("invalid id and/or channel id")
-	}
-
+func (r *QueryChannelMessageRequest) ToChannelMessageQuery(requestorID uuid.UUID) (*query.ChannelMessageQuery, error) {
 	return &query.ChannelMessageQuery{
 		ID:          r.ID,
 		ChannelID:   r.ChannelID,

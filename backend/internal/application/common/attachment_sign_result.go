@@ -1,9 +1,13 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type AttachmentSignResult struct {
-	ID        string
+	ID        uuid.UUID
 	Signature string
 	CreatedAt time.Time
 }

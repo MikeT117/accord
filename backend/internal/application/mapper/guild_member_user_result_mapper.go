@@ -3,9 +3,10 @@ package mapper
 import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
+	"github.com/google/uuid"
 )
 
-func NewGuildMemberUserResultFromGuildMember(guildMember *entities.GuildMember, roles []string, user *entities.User) *common.GuildMemberUserResult {
+func NewGuildMemberUserResultFromGuildMember(guildMember *entities.GuildMember, roleIDs []uuid.UUID, user *entities.User) *common.GuildMemberUserResult {
 	if guildMember == nil {
 		return nil
 	}
@@ -18,7 +19,7 @@ func NewGuildMemberUserResultFromGuildMember(guildMember *entities.GuildMember, 
 			UpdatedAt: guildMember.UpdatedAt,
 			AvatarID:  guildMember.AvatarID,
 			BannerID:  guildMember.BannerID,
-			Roles:     roles,
+			RoleIDs:   roleIDs,
 		},
 		User: &common.UserResult{
 			ID:          user.ID,
@@ -34,7 +35,7 @@ func NewGuildMemberUserResultFromGuildMember(guildMember *entities.GuildMember, 
 
 }
 
-func NewGuildMemberUserListResultFromGuildMember(guildMembers []*entities.GuildMember, roles map[string][]string, users map[string]*entities.User) []*common.GuildMemberUserResult {
+func NewGuildMemberUserListResultFromGuildMember(guildMembers []*entities.GuildMember, roles map[uuid.UUID][]uuid.UUID, users map[uuid.UUID]*entities.User) []*common.GuildMemberUserResult {
 	guildMemberResults := make([]*common.GuildMemberUserResult, len(guildMembers))
 
 	for i := 0; i < len(guildMembers); i++ {

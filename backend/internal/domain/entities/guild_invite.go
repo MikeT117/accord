@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"strings"
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/domain"
@@ -9,28 +8,28 @@ import (
 )
 
 type GuildInvite struct {
-	ID        string
+	ID        uuid.UUID
 	UsedCount int64
-	GuildID   string
+	GuildID   uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	ExpiresAt time.Time
 }
 
 func (u *GuildInvite) validate() error {
-	if strings.Trim(u.ID, " ") == "" {
+	if u.ID == uuid.Nil {
 		return domain.NewDomainValidationError("user id must not be empty")
 	}
 	if u.UsedCount != 0 {
 		return domain.NewDomainValidationError("used count must be zero")
 	}
-	if strings.Trim(u.GuildID, " ") == "" {
+	if u.GuildID == uuid.Nil {
 		return domain.NewDomainValidationError("guild id must not be empty")
 	}
 	return nil
 }
 
-func NewGuildInvite(guildID string, expiresAt time.Time) (*GuildInvite, error) {
+func NewGuildInvite(guildID uuid.UUID, expiresAt time.Time) (*GuildInvite, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -38,7 +37,7 @@ func NewGuildInvite(guildID string, expiresAt time.Time) (*GuildInvite, error) {
 
 	timestamp := time.Now().UTC()
 	guildInvite := &GuildInvite{
-		ID:        ID.String(),
+		ID:        ID,
 		UsedCount: 0,
 		GuildID:   guildID,
 		CreatedAt: timestamp,

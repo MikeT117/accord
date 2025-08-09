@@ -5,9 +5,10 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/google/uuid"
 )
 
 type UserAccountService interface {
-	GetByID(ctx context.Context, ID string) (*query.UserQueryResult, error)
+	GetByID(ctx context.Context, ID uuid.UUID) (*query.UserQueryResult, error)
 	UpdateUserAccount(ctx context.Context, cmd *command.UpdateUserCommand) error
 }

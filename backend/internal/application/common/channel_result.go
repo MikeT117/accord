@@ -1,17 +1,21 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type ChannelResult struct {
-	ID          string
-	CreatorID   string
-	GuildID     *string
-	ParentID    *string
+	ID          uuid.UUID
+	CreatorID   uuid.UUID
+	GuildID     *uuid.UUID
+	ParentID    *uuid.UUID
 	Name        *string
 	Topic       *string
 	ChannelType int8
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	Users       []*UserResult
-	RoleIDs     []string
+	RoleIDs     []uuid.UUID
 }

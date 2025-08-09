@@ -3,9 +3,10 @@ package mapper
 import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
+	"github.com/google/uuid"
 )
 
-func NewGuildMemberResultFromGuildMember(guildMember *entities.GuildMember, roles []string) *common.GuildMemberResult {
+func NewGuildMemberResultFromGuildMember(guildMember *entities.GuildMember, roleIDs []uuid.UUID) *common.GuildMemberResult {
 	if guildMember == nil {
 		return nil
 	}
@@ -17,12 +18,12 @@ func NewGuildMemberResultFromGuildMember(guildMember *entities.GuildMember, role
 		UpdatedAt: guildMember.UpdatedAt,
 		AvatarID:  guildMember.AvatarID,
 		BannerID:  guildMember.BannerID,
-		Roles:     roles,
+		RoleIDs:   roleIDs,
 	}
 
 }
 
-func NewGuildMemberListResultFromGuildMember(guildMembers []*entities.GuildMember, roles map[string][]string) []*common.GuildMemberResult {
+func NewGuildMemberListResultFromGuildMember(guildMembers []*entities.GuildMember, roles map[uuid.UUID][]uuid.UUID) []*common.GuildMemberResult {
 	guildMemberResults := make([]*common.GuildMemberResult, len(guildMembers))
 
 	for i := 0; i < len(guildMembers); i++ {

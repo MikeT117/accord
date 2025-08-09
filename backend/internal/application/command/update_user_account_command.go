@@ -1,9 +1,11 @@
 package command
 
+import "github.com/google/uuid"
+
 type UpdateUserCommand struct {
-	ID          string
+	ID          uuid.UUID
 	DisplayName string
 	PublicFlags int8
-	AvatarID    *string
-	BannerID    *string
+	AvatarID    *uuid.UUID
+	BannerID    *uuid.UUID
 }

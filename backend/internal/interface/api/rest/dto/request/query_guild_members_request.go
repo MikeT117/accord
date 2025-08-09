@@ -1,23 +1,18 @@
 package request
 
 import (
-	"strings"
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/google/uuid"
 )
 
 type QueryGuildMembersRequest struct {
-	GuildID string     `param:"guildID"`
+	GuildID uuid.UUID  `param:"guildID"`
 	Before  *time.Time `query:"before"`
 }
 
-func (r *QueryGuildMembersRequest) ToGuildMembersQuery(requestorID string) (*query.GuildMembersQuery, error) {
-
-	if strings.Trim(r.GuildID, " ") == "" {
-		return nil, NewRequestValidationError("invalid guild id")
-	}
-
+func (r *QueryGuildMembersRequest) ToGuildMembersQuery(requestorID uuid.UUID) (*query.GuildMembersQuery, error) {
 	query := &query.GuildMembersQuery{
 		GuildID:     r.GuildID,
 		RequestorID: requestorID,
@@ -33,16 +28,11 @@ func (r *QueryGuildMembersRequest) ToGuildMembersQuery(requestorID string) (*que
 }
 
 type QueryGuildMemberRequest struct {
-	GuildID string `param:"guildID"`
-	UserID  string `param:"userID"`
+	GuildID uuid.UUID `param:"guildID"`
+	UserID  uuid.UUID `param:"userID"`
 }
 
-func (r *QueryGuildMemberRequest) ToGuildMemberQuery(requestorID string) (*query.GuildMemberQuery, error) {
-
-	if strings.Trim(r.GuildID, " ") == "" || strings.Trim(r.UserID, " ") == "" {
-		return nil, NewRequestValidationError("invalid guild id and/or user id")
-	}
-
+func (r *QueryGuildMemberRequest) ToGuildMemberQuery(requestorID uuid.UUID) (*query.GuildMemberQuery, error) {
 	return &query.GuildMemberQuery{
 		GuildID:     r.GuildID,
 		UserID:      r.UserID,

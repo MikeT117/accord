@@ -12,6 +12,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
+	"github.com/google/uuid"
 )
 
 type GuildService struct {
@@ -36,7 +37,7 @@ func CreateGuildService(transactor *db.Transactor, authorisationService interfac
 	}
 }
 
-func (s *GuildService) GetByUserID(ctx context.Context, userID string) (*query.GuildQueryListResult, error) {
+func (s *GuildService) GetByUserID(ctx context.Context, userID uuid.UUID) (*query.GuildQueryListResult, error) {
 
 	guildIDs, err := s.guildMemberRepository.GetGuildIDsByUserID(ctx, userID)
 	if err != nil {

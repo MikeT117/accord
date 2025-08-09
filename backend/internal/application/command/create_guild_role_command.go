@@ -1,6 +1,8 @@
 package command
 
+import "github.com/google/uuid"
+
 type CreateGuildRoleCommand struct {
-	GuildID     string
-	RequestorID string
+	GuildID     uuid.UUID
+	RequestorID uuid.UUID
 }

@@ -1,11 +1,13 @@
 package response
 
+import "github.com/google/uuid"
+
 type ChannelMessageResponse struct {
-	ID          string                        `json:"id"`
+	ID          uuid.UUID                     `json:"id"`
 	Content     string                        `json:"content"`
 	Pinned      bool                          `json:"pinned"`
 	Flag        int8                          `json:"flag"`
-	ChannelID   string                        `json:"channelId"`
+	ChannelID   uuid.UUID                     `json:"channelId"`
 	CreatedAt   int64                         `json:"createdAt"`
 	UpdatedAt   int64                         `json:"updatedAt"`
 	Attachments []*AttachmentResponse         `json:"attachments"`

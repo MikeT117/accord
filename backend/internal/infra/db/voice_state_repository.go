@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -18,7 +19,7 @@ func CreateVoiceStateRepository(db DBGetter) repositories.VoiceStateRepository {
 	return &VoiceStateRepository{db: db}
 }
 
-func (r *VoiceStateRepository) GetByID(ctx context.Context, ID string) (*entities.VoiceState, error) {
+func (r *VoiceStateRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.VoiceState, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			self_mute,
@@ -49,7 +50,7 @@ func (r *VoiceStateRepository) GetByID(ctx context.Context, ID string) (*entitie
 	return voiceState, nil
 }
 
-func (r *VoiceStateRepository) GetByUserID(ctx context.Context, userID string) (*entities.VoiceState, error) {
+func (r *VoiceStateRepository) GetByUserID(ctx context.Context, userID uuid.UUID) (*entities.VoiceState, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			self_mute,
@@ -80,7 +81,7 @@ func (r *VoiceStateRepository) GetByUserID(ctx context.Context, userID string) (
 	return voiceState, nil
 }
 
-func (r *VoiceStateRepository) GetByChannelID(ctx context.Context, channelID string) ([]*entities.VoiceState, error) {
+func (r *VoiceStateRepository) GetByChannelID(ctx context.Context, channelID uuid.UUID) ([]*entities.VoiceState, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			self_mute,
@@ -120,7 +121,7 @@ func (r *VoiceStateRepository) GetByChannelID(ctx context.Context, channelID str
 	return voiceStates, nil
 }
 
-func (r *VoiceStateRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.VoiceState, []string, error) {
+func (r *VoiceStateRepository) GetByGuildID(ctx context.Context, guildID uuid.UUID) ([]*entities.VoiceState, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			self_mute,
@@ -135,13 +136,13 @@ func (r *VoiceStateRepository) GetByGuildID(ctx context.Context, guildID string)
 	`, guildID)
 
 	if err != nil {
-		return nil, []string{}, wrapUnknownErr("select voice state by guild id failed", err)
+		return nil, nil, wrapUnknownErr("select voice state by guild id failed", err)
 	}
 
 	defer rows.Close()
 
 	voiceStates := []*entities.VoiceState{}
-	userIDs := []string{}
+	userIDs := []uuid.UUID{}
 	for rows.Next() {
 		voiceState := &entities.VoiceState{}
 		if err := rows.Scan(
@@ -151,7 +152,7 @@ func (r *VoiceStateRepository) GetByGuildID(ctx context.Context, guildID string)
 			&voiceState.UserID,
 			&voiceState.GuildID,
 		); err != nil {
-			return nil, []string{}, wrapUnknownErr("map over select voice state by guild id failed", err)
+			return nil, nil, wrapUnknownErr("map over select voice state by guild id failed", err)
 		}
 
 		voiceStates = append(voiceStates, voiceState)
@@ -172,10 +173,10 @@ func (r *VoiceStateRepository) Create(ctx context.Context, voiceState *entities.
 			)
 		VALUES ($1, $2, $3, $4, $5);
 	`,
-		voiceState.SelfMute,
-		voiceState.SelfDeaf,
-		voiceState.ChannelID,
-		voiceState.UserID,
+		&voiceState.SelfMute,
+		&voiceState.SelfDeaf,
+		&voiceState.ChannelID,
+		&voiceState.UserID,
 		voiceState.GuildID,
 	)
 
@@ -201,10 +202,10 @@ func (r *VoiceStateRepository) Update(ctx context.Context, voiceState *entities.
 		AND
 			channel_id = $3;
 	`,
-		voiceState.SelfMute,
-		voiceState.SelfDeaf,
-		voiceState.ChannelID,
-		voiceState.UserID,
+		&voiceState.SelfMute,
+		&voiceState.SelfDeaf,
+		&voiceState.ChannelID,
+		&voiceState.UserID,
 		voiceState.GuildID,
 	)
 
@@ -218,7 +219,7 @@ func (r *VoiceStateRepository) Update(ctx context.Context, voiceState *entities.
 
 	return nil
 }
-func (r *VoiceStateRepository) Delete(ctx context.Context, ID string) error {
+func (r *VoiceStateRepository) Delete(ctx context.Context, ID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				voice_state

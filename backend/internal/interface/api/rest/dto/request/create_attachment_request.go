@@ -1,6 +1,9 @@
 package request
 
-import "github.com/MikeT117/accord/backend/internal/application/command"
+import (
+	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
+)
 
 type CreateAttachmentRequest struct {
 	Filename     string `json:"filename"`
@@ -8,7 +11,7 @@ type CreateAttachmentRequest struct {
 	Filesize     int64  `json:"filesize"`
 }
 
-func (r *CreateAttachmentRequest) ToCreateAttachmentCommand(requestorID string) (*command.CreateAttachmentCommand, error) {
+func (r *CreateAttachmentRequest) ToCreateAttachmentCommand(requestorID uuid.UUID) (*command.CreateAttachmentCommand, error) {
 	if r.ResourceType != "image/jpeg" && r.ResourceType != "image/png" {
 		return nil, NewRequestValidationError("invalid resource type")
 	}

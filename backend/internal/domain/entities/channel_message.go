@@ -1,7 +1,6 @@
 package entities
 
 import (
-	"strings"
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/domain"
@@ -9,30 +8,30 @@ import (
 )
 
 type ChannelMessage struct {
-	ID        string
+	ID        uuid.UUID
 	Content   string
 	Pinned    bool
 	Flag      int8
-	AuthorID  string
-	ChannelID string
+	AuthorID  uuid.UUID
+	ChannelID uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 func (u *ChannelMessage) validate() error {
-	if strings.Trim(u.ID, " ") == "" {
+	if u.ID == uuid.Nil {
 		return domain.NewDomainValidationError("id must not be empty")
 	}
-	if strings.Trim(u.AuthorID, " ") == "" {
+	if u.AuthorID == uuid.Nil {
 		return domain.NewDomainValidationError("author id must not be empty")
 	}
-	if strings.Trim(u.ChannelID, " ") == "" {
+	if u.ChannelID == uuid.Nil {
 		return domain.NewDomainValidationError("channel id must not be empty")
 	}
 	return nil
 }
 
-func NewChannelMessage(content string, authorID string, channelID string, attachmentIDs []string) (*ChannelMessage, error) {
+func NewChannelMessage(content string, authorID uuid.UUID, channelID uuid.UUID, attachmentIDs []uuid.UUID) (*ChannelMessage, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -40,7 +39,7 @@ func NewChannelMessage(content string, authorID string, channelID string, attach
 
 	timestamp := time.Now().UTC()
 	channelMessage := &ChannelMessage{
-		ID:        ID.String(),
+		ID:        ID,
 		Content:   content,
 		Pinned:    false,
 		Flag:      0,
@@ -57,7 +56,7 @@ func NewChannelMessage(content string, authorID string, channelID string, attach
 	return channelMessage, nil
 }
 
-func (c *ChannelMessage) IsAuthor(authorID string) bool {
+func (c *ChannelMessage) IsAuthor(authorID uuid.UUID) bool {
 	return c.AuthorID == authorID
 }
 

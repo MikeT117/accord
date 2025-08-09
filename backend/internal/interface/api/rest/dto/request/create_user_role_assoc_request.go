@@ -1,21 +1,20 @@
 package request
 
 import (
-	"strings"
-
 	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
 )
 
 type CreateGuildRoleUserAssocRequest struct {
-	RoleID  string   `param:"roleID"`
-	GuildID string   `param:"guildID"`
-	UserIDs []string `json:"userIds"`
+	RoleID  uuid.UUID   `param:"roleID"`
+	GuildID uuid.UUID   `param:"guildID"`
+	UserIDs []uuid.UUID `json:"userIds"`
 }
 
-func (r *CreateGuildRoleUserAssocRequest) ToCreateGuildRoleUserAssociationCommand(requestorID string) (*command.CreateGuildRoleUserAssociationCommand, error) {
+func (r *CreateGuildRoleUserAssocRequest) ToCreateGuildRoleUserAssociationCommand(requestorID uuid.UUID) (*command.CreateGuildRoleUserAssociationCommand, error) {
 
-	if strings.Trim(r.RoleID, " ") == "" || len(r.UserIDs) == 0 || strings.Trim(r.GuildID, " ") == "" {
-		return nil, NewRequestValidationError("invalid role id or guild id")
+	if len(r.UserIDs) == 0 {
+		return nil, NewRequestValidationError("user ids empty")
 	}
 
 	if len(r.UserIDs) == 0 {

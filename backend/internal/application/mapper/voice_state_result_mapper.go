@@ -3,6 +3,7 @@ package mapper
 import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
+	"github.com/google/uuid"
 )
 
 func NewVoiceStateResultFromVoiceState(voiceState *entities.VoiceState, user *entities.User) *common.VoiceStateResult {
@@ -22,7 +23,7 @@ func NewVoiceStateResultFromVoiceState(voiceState *entities.VoiceState, user *en
 
 }
 
-func NewVoiceStateListResultFromVoiceState(voiceStates []*entities.VoiceState, usersMap map[string]*entities.User) []*common.VoiceStateResult {
+func NewVoiceStateListResultFromVoiceState(voiceStates []*entities.VoiceState, usersMap map[uuid.UUID]*entities.User) []*common.VoiceStateResult {
 
 	voiceStateResults := make([]*common.VoiceStateResult, len(voiceStates))
 

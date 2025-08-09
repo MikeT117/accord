@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -18,7 +19,7 @@ func CreateSessionRepository(db DBGetter) repositories.SessionRepository {
 	return &SessionRepository{db: db}
 }
 
-func (r *SessionRepository) GetByID(ctx context.Context, ID string, userID string) (*entities.Session, error) {
+func (r *SessionRepository) GetByID(ctx context.Context, ID uuid.UUID, userID uuid.UUID) (*entities.Session, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -33,7 +34,7 @@ func (r *SessionRepository) GetByID(ctx context.Context, ID string, userID strin
 			session
 		WHERE
 			id = $1
-		AND 
+		AND
 			user_id = $2;
 	`, ID, userID)
 
@@ -58,7 +59,7 @@ func (r *SessionRepository) GetByID(ctx context.Context, ID string, userID strin
 	return session, nil
 }
 
-func (r *SessionRepository) GetByUserID(ctx context.Context, userID string) ([]*entities.Session, error) {
+func (r *SessionRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*entities.Session, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -157,14 +158,14 @@ func (r *SessionRepository) Create(ctx context.Context, session *entities.Sessio
 			)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 	`,
-		session.ID,
-		session.UserID,
-		session.Token,
-		session.ExpiresAt,
-		session.IPAddress,
-		session.UserAgent,
-		session.CreatedAt,
-		session.UpdatedAt,
+		&session.ID,
+		&session.UserID,
+		&session.Token,
+		&session.ExpiresAt,
+		&session.IPAddress,
+		&session.UserAgent,
+		&session.CreatedAt,
+		&session.UpdatedAt,
 	)
 
 	if err != nil {
@@ -189,14 +190,14 @@ func (r *SessionRepository) Update(ctx context.Context, session *entities.Sessio
 		WHERE
 			id = $1;
 	`,
-		session.ID,
-		session.UserID,
-		session.Token,
-		session.ExpiresAt,
-		session.IPAddress,
-		session.UserAgent,
-		session.CreatedAt,
-		session.UpdatedAt,
+		&session.ID,
+		&session.UserID,
+		&session.Token,
+		&session.ExpiresAt,
+		&session.IPAddress,
+		&session.UserAgent,
+		&session.CreatedAt,
+		&session.UpdatedAt,
 	)
 
 	if err != nil {
@@ -210,7 +211,7 @@ func (r *SessionRepository) Update(ctx context.Context, session *entities.Sessio
 	return nil
 }
 
-func (r *SessionRepository) DeleteByID(ctx context.Context, ID string) error {
+func (r *SessionRepository) DeleteByID(ctx context.Context, ID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			session

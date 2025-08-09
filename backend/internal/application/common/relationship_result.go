@@ -1,11 +1,15 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type RelationshipResult struct {
-	ID          string
-	CreatorID   string
-	RecipientID string
+	ID          uuid.UUID
+	CreatorID   uuid.UUID
+	RecipientID uuid.UUID
 	Status      int8
 	CreatedAt   time.Time
 	UpdatedAt   time.Time

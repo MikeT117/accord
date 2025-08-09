@@ -4,6 +4,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+	pointer "github.com/MikeT117/accord/backend/internal/ptr"
 )
 
 func NewAttachmentResultFromAttachment(attachment *entities.Attachment) *common.AttachmentResult {
@@ -44,12 +45,12 @@ func NewAttachmentProtoResultFromAttachment(attachment *entities.Attachment) *pb
 	createdAt := attachment.CreatedAt.Unix()
 	updatedAt := attachment.UpdatedAt.Unix()
 	return &pb.Attachment{
-		Id:           &attachment.ID,
+		Id:           pointer.UUIDToStringPtr(attachment.ID),
 		Filename:     &attachment.Filename,
 		ResourceType: &attachment.ResourceType,
 		Height:       attachment.Height,
 		Width:        attachment.Width,
-		OwnerId:      &attachment.OwnerID,
+		OwnerId:      pointer.UUIDToStringPtr(attachment.OwnerID),
 		Filesize:     &attachment.Filesize,
 		CreatedAt:    &createdAt,
 		UpdatedAt:    &updatedAt,

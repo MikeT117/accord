@@ -1,16 +1,16 @@
 package request
 
-import "github.com/MikeT117/accord/backend/internal/application/command"
+import (
+	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
+)
 
 type CreateUserChannelAssoc struct {
-	ChannelID string `param:"channelID"`
-	UserID    string `json:"bannerID"`
+	ChannelID uuid.UUID `param:"channelID"`
+	UserID    uuid.UUID `json:"bannerID"`
 }
 
-func (r *CreateUserChannelAssoc) ToCreateUserChannelAssociationCommand(requestorID string) (*command.CreateUserChannelAssociationCommand, error) {
-	if r.ChannelID == "" || r.UserID == "" {
-		return nil, NewRequestValidationError("invalid channel and/or user id")
-	}
+func (r *CreateUserChannelAssoc) ToCreateUserChannelAssociationCommand(requestorID uuid.UUID) (*command.CreateUserChannelAssociationCommand, error) {
 	return &command.CreateUserChannelAssociationCommand{
 		ChannelID:   r.ChannelID,
 		RequestorID: requestorID,

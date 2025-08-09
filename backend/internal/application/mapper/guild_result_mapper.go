@@ -4,12 +4,14 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+	pointer "github.com/MikeT117/accord/backend/internal/ptr"
+	"github.com/google/uuid"
 )
 
 func NewGuildResultFromGuild(
 	guild *entities.Guild,
 	channels []*entities.Channel,
-	channelRoles map[string][]string,
+	channelRoles map[uuid.UUID][]uuid.UUID,
 	roles []*entities.GuildRole,
 ) *common.GuildResult {
 	tempChannels := make([]*common.ChannelResult, len(channels))
@@ -51,9 +53,9 @@ func NewGuildResultFromGuild(
 
 func NewGuildListResultFromGuild(
 	guilds []*entities.Guild,
-	channelsMap map[string][]*entities.Channel,
-	channelRolesMap map[string][]string,
-	rolesMap map[string][]*entities.GuildRole,
+	channelsMap map[uuid.UUID][]*entities.Channel,
+	channelRolesMap map[uuid.UUID][]uuid.UUID,
+	rolesMap map[uuid.UUID][]*entities.GuildRole,
 ) []*common.GuildResult {
 	guildsResult := make([]*common.GuildResult, len(guilds))
 
@@ -72,7 +74,7 @@ func NewGuildListResultFromGuild(
 func NewGuildProtoResultFromGuild(
 	guild *entities.Guild,
 	channels []*entities.Channel,
-	channelRoles map[string][]string,
+	channelRoles map[uuid.UUID][]uuid.UUID,
 	roles []*entities.GuildRole,
 ) *pb.Guild {
 	tempChannels := make([]*pb.Channel, len(channels))
@@ -98,12 +100,13 @@ func NewGuildProtoResultFromGuild(
 	memberCount := int32(guild.MemberCount)
 	createdAt := guild.CreatedAt.Unix()
 	updatedAt := guild.UpdatedAt.Unix()
+
 	var ver int32 = 0
 	return &pb.Guild{
 		Ver:             &ver,
-		Id:              &guild.ID,
-		CreatorId:       &guild.CreatorID,
-		GuildCategoryId: guild.GuildCategoryID,
+		Id:              pointer.UUIDToStringPtr(guild.ID),
+		CreatorId:       pointer.UUIDToStringPtr(guild.CreatorID),
+		GuildCategoryId: pointer.UUIDPtrToStringPtr(guild.GuildCategoryID),
 		Name:            &guild.Name,
 		Description:     &guild.Description,
 		Discoverable:    &guild.Discoverable,
@@ -111,8 +114,8 @@ func NewGuildProtoResultFromGuild(
 		MemberCount:     &memberCount,
 		CreatedAt:       &createdAt,
 		UpdatedAt:       &updatedAt,
-		Icon:            guild.IconID,
-		Banner:          guild.BannerID,
+		Icon:            pointer.UUIDPtrToStringPtr(guild.IconID),
+		Banner:          pointer.UUIDPtrToStringPtr(guild.BannerID),
 		Roles:           tempRoles,
 		Channels:        tempChannels,
 	}
@@ -120,9 +123,9 @@ func NewGuildProtoResultFromGuild(
 
 func NewGuildProtoListResultFromGuild(
 	guilds []*entities.Guild,
-	channelsMap map[string][]*entities.Channel,
-	channelRolesMap map[string][]string,
-	rolesMap map[string][]*entities.GuildRole,
+	channelsMap map[uuid.UUID][]*entities.Channel,
+	channelRolesMap map[uuid.UUID][]uuid.UUID,
+	rolesMap map[uuid.UUID][]*entities.GuildRole,
 ) []*pb.Guild {
 	guildsResult := make([]*pb.Guild, len(guilds))
 
@@ -141,7 +144,7 @@ func NewGuildProtoListResultFromGuild(
 func NewGuildCreatedProtoEvent(
 	guild *entities.Guild,
 	channels []*entities.Channel,
-	channelRoles map[string][]string,
+	channelRoles map[uuid.UUID][]uuid.UUID,
 	roles []*entities.GuildRole,
 ) *pb.EventPayload {
 	var ver int32 = 0
@@ -159,6 +162,7 @@ func NewGuildUpdatedProtoEvent(guild *entities.Guild) *pb.EventPayload {
 	memberCount := int32(guild.MemberCount)
 
 	updatedAt := guild.UpdatedAt.Unix()
+
 	var ver int32 = 0
 	return &pb.EventPayload{
 		Ver: &ver,
@@ -166,22 +170,22 @@ func NewGuildUpdatedProtoEvent(guild *entities.Guild) *pb.EventPayload {
 		Payload: &pb.EventPayload_GuildUpdated{
 			GuildUpdated: &pb.GuildUpdated{
 				Ver:             &ver,
-				Id:              &guild.ID,
-				GuildCategoryId: guild.GuildCategoryID,
+				Id:              pointer.UUIDToStringPtr(guild.ID),
+				GuildCategoryId: pointer.UUIDPtrToStringPtr(guild.GuildCategoryID),
 				Name:            &guild.Name,
 				Description:     &guild.Description,
 				Discoverable:    &guild.Discoverable,
 				ChannelCount:    &channelCount,
 				MemberCount:     &memberCount,
 				UpdatedAt:       &updatedAt,
-				Icon:            guild.IconID,
-				Banner:          guild.BannerID,
+				Icon:            pointer.UUIDPtrToStringPtr(guild.IconID),
+				Banner:          pointer.UUIDPtrToStringPtr(guild.BannerID),
 			},
 		},
 	}
 }
 
-func NewGuildDeletedProtoEvent(ID string) *pb.EventPayload {
+func NewGuildDeletedProtoEvent(ID uuid.UUID) *pb.EventPayload {
 	var ver int32 = 0
 	return &pb.EventPayload{
 		Ver: &ver,
@@ -189,7 +193,7 @@ func NewGuildDeletedProtoEvent(ID string) *pb.EventPayload {
 		Payload: &pb.EventPayload_GuildDeleted{
 			GuildDeleted: &pb.GuildDeleted{
 				Ver: &ver,
-				Id:  &ID,
+				Id:  pointer.UUIDToStringPtr(ID),
 			},
 		},
 	}

@@ -5,10 +5,11 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/google/uuid"
 )
 
 type RelationshipService interface {
-	GetByID(ctx context.Context, ID string, userID string) (*query.RelationshipQueryResult, error)
+	GetByID(ctx context.Context, ID uuid.UUID, userID uuid.UUID) (*query.RelationshipQueryResult, error)
 	GetByUserID(ctx context.Context, qry *query.RelatationshipsQuery) (*query.RelationshipQueryListResult, error)
 	Create(ctx context.Context, cmd *command.CreateRelationshipCommand) error
 	Update(ctx context.Context, cmd *command.UpdateRelationshipCommand) error

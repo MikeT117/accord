@@ -3,18 +3,19 @@ package authentication
 import (
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
 type AuthenticationContext struct {
 	echo.Context
-	RequestorID string
-	SessionID   string
+	RequestorID uuid.UUID
+	SessionID   uuid.UUID
 }
 
 type RequestorIDKey struct{}
 
-func GetRequestorDetails(ctx echo.Context) (string, string) {
+func GetRequestorDetails(ctx echo.Context) (uuid.UUID, uuid.UUID) {
 	authenticationCtx, ok := ctx.(*AuthenticationContext)
 	/*
 		We're panicking here as this will never get called outside an authenticated context,

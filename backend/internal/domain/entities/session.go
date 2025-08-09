@@ -8,8 +8,8 @@ import (
 )
 
 type Session struct {
-	ID        string
-	UserID    string
+	ID        uuid.UUID
+	UserID    uuid.UUID
 	Token     string
 	ExpiresAt time.Time
 	IPAddress string
@@ -19,10 +19,10 @@ type Session struct {
 }
 
 func (u *Session) validate() error {
-	if u.ID == "" {
+	if u.ID == uuid.Nil {
 		return domain.NewDomainValidationError("id must not be empty")
 	}
-	if u.UserID == "" {
+	if u.UserID == uuid.Nil {
 		return domain.NewDomainValidationError("user id must not be empty")
 	}
 	if u.Token == "" {
@@ -31,7 +31,7 @@ func (u *Session) validate() error {
 	return nil
 }
 
-func NewSession(userID string, token string, expiresAt time.Time, ipAddress string, userAgent string) (*Session, error) {
+func NewSession(userID uuid.UUID, token string, expiresAt time.Time, ipAddress string, userAgent string) (*Session, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func NewSession(userID string, token string, expiresAt time.Time, ipAddress stri
 
 	timestamp := time.Now().UTC()
 	session := &Session{
-		ID:        ID.String(),
+		ID:        ID,
 		UserID:    userID,
 		Token:     token,
 		IPAddress: ipAddress,

@@ -1,11 +1,15 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type GuildResult struct {
-	ID              string
-	CreatorID       string
-	GuildCategoryID *string
+	ID              uuid.UUID
+	CreatorID       uuid.UUID
+	GuildCategoryID *uuid.UUID
 	Name            string
 	Description     string
 	Discoverable    bool
@@ -13,8 +17,8 @@ type GuildResult struct {
 	MemberCount     int64
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
-	IconID          *string
-	BannerID        *string
+	IconID          *uuid.UUID
+	BannerID        *uuid.UUID
 	Roles           []*GuildRoleResult
 	Channels        []*ChannelResult
 }

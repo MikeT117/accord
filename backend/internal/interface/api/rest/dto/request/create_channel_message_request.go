@@ -1,14 +1,17 @@
 package request
 
-import "github.com/MikeT117/accord/backend/internal/application/command"
+import (
+	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
+)
 
 type CreateChannelMessageRequest struct {
-	ChannelID     string   `param:"channelID"`
-	Content       string   `json:"content"`
-	AttachmentIDs []string `json:"attachmentIds"`
+	ChannelID     uuid.UUID   `param:"channelID"`
+	Content       string      `json:"content"`
+	AttachmentIDs []uuid.UUID `json:"attachmentIds"`
 }
 
-func (r *CreateChannelMessageRequest) ToCreateChannelMessageCommand(requestorID string) (*command.CreateChannelMessageCommand, error) {
+func (r *CreateChannelMessageRequest) ToCreateChannelMessageCommand(requestorID uuid.UUID) (*command.CreateChannelMessageCommand, error) {
 	if r.Content == "" && len(r.AttachmentIDs) == 0 {
 		return nil, NewRequestValidationError("message has no content")
 	}

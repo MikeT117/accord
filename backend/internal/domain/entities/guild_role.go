@@ -20,8 +20,8 @@ const (
 )
 
 type GuildRole struct {
-	ID          string
-	GuildID     string
+	ID          uuid.UUID
+	GuildID     uuid.UUID
 	Name        string
 	Permissions int32
 	CreatedAt   time.Time
@@ -29,10 +29,10 @@ type GuildRole struct {
 }
 
 func (a *GuildRole) validate() error {
-	if strings.Trim(a.ID, " ") == "" {
+	if a.ID == uuid.Nil {
 		return domain.NewDomainValidationError("id must not be empty")
 	}
-	if strings.Trim(a.GuildID, " ") == "" {
+	if a.GuildID == uuid.Nil {
 		return domain.NewDomainValidationError("guild id id must not be empty")
 	}
 	if strings.Trim(a.Name, " ") == "" {
@@ -41,7 +41,7 @@ func (a *GuildRole) validate() error {
 	return nil
 }
 
-func NewGuildRole(guildID string) (*GuildRole, error) {
+func NewGuildRole(guildID uuid.UUID) (*GuildRole, error) {
 	ID, err := uuid.NewV7()
 
 	if err != nil {
@@ -50,7 +50,7 @@ func NewGuildRole(guildID string) (*GuildRole, error) {
 
 	timestamp := time.Now().UTC()
 	guildRole := &GuildRole{
-		ID:          ID.String(),
+		ID:          ID,
 		GuildID:     guildID,
 		Name:        NewRoleName,
 		Permissions: NewRolePermissions,
@@ -65,7 +65,7 @@ func NewGuildRole(guildID string) (*GuildRole, error) {
 	return guildRole, nil
 }
 
-func NewOwnerGuildRole(guildID string) (*GuildRole, error) {
+func NewOwnerGuildRole(guildID uuid.UUID) (*GuildRole, error) {
 	ID, err := uuid.NewV7()
 
 	if err != nil {
@@ -74,7 +74,7 @@ func NewOwnerGuildRole(guildID string) (*GuildRole, error) {
 
 	timestamp := time.Now().UTC()
 	return &GuildRole{
-		ID:          ID.String(),
+		ID:          ID,
 		GuildID:     guildID,
 		Name:        OwnerRootRoleName,
 		Permissions: OwnerRootRolePermissions,
@@ -83,7 +83,7 @@ func NewOwnerGuildRole(guildID string) (*GuildRole, error) {
 	}, nil
 }
 
-func NewDefaultGuildRole(guildID string) (*GuildRole, error) {
+func NewDefaultGuildRole(guildID uuid.UUID) (*GuildRole, error) {
 	ID, err := uuid.NewV7()
 
 	if err != nil {
@@ -92,7 +92,7 @@ func NewDefaultGuildRole(guildID string) (*GuildRole, error) {
 
 	timestamp := time.Now().UTC()
 	return &GuildRole{
-		ID:          ID.String(),
+		ID:          ID,
 		GuildID:     guildID,
 		Name:        DefaultRootRoleName,
 		Permissions: DefaultRootRolePermissions,

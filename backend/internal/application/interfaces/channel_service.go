@@ -5,11 +5,12 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/google/uuid"
 )
 
 type ChannelService interface {
-	GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.ChannelQueryListResult, error)
-	GetByUserID(ctx context.Context, userID string) (*query.ChannelQueryListResult, error)
+	GetByGuildID(ctx context.Context, guildID uuid.UUID, requestorID uuid.UUID) (*query.ChannelQueryListResult, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID) (*query.ChannelQueryListResult, error)
 	Create(ctx context.Context, cmd *command.CreateChannelCommand) error
 	Update(ctx context.Context, cmd *command.UpdateChannelCommand) error
 	Delete(ctx context.Context, cmd *command.DeleteChannelCommand) error

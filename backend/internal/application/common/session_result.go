@@ -1,10 +1,14 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type SessionResult struct {
-	ID        string
-	UserID    string
+	ID        uuid.UUID
+	UserID    uuid.UUID
 	Token     string
 	ExpiresAt time.Time
 	IPAddress string

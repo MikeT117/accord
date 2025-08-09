@@ -1,10 +1,14 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type GuildRoleResult struct {
-	ID          string
-	GuildID     string
+	ID          uuid.UUID
+	GuildID     uuid.UUID
 	Name        string
 	Permissions int32
 	CreatedAt   time.Time

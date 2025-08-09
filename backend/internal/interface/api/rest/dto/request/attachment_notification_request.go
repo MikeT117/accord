@@ -1,6 +1,10 @@
 package request
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type CloudinaryNotification struct {
 	AccessMode          string              `json:"access_mode"`
@@ -16,7 +20,7 @@ type CloudinaryNotification struct {
 	NotificationType    string              `json:"notification_type"`
 	OriginalFilename    string              `json:"original_filename"`
 	Placeholder         bool                `json:"placeholder"`
-	PublicID            string              `json:"public_id"`
+	PublicID            uuid.UUID           `json:"public_id"`
 	RequestID           string              `json:"request_id"`
 	ResourceType        string              `json:"resource_type"`
 	SecureURL           string              `json:"secure_url"`

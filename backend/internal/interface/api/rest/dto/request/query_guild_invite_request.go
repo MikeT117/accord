@@ -1,22 +1,17 @@
 package request
 
 import (
-	"strings"
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/google/uuid"
 )
 
 type QueryGuildInviteRequest struct {
-	ID string `param:"inviteID"`
+	ID uuid.UUID `param:"inviteID"`
 }
 
-func (r *QueryGuildInviteRequest) ToGuildInviteQuery(requestorID string) (*query.GuildInviteQuery, error) {
-
-	if strings.Trim(r.ID, " ") == "" {
-		return nil, NewRequestValidationError("invalid id")
-	}
-
+func (r *QueryGuildInviteRequest) ToGuildInviteQuery(requestorID uuid.UUID) (*query.GuildInviteQuery, error) {
 	return &query.GuildInviteQuery{
 		ID:          r.ID,
 		RequestorID: requestorID,
@@ -25,16 +20,11 @@ func (r *QueryGuildInviteRequest) ToGuildInviteQuery(requestorID string) (*query
 }
 
 type QueryGuildInvitesRequest struct {
-	GuildID string     `param:"guildID"`
+	GuildID uuid.UUID  `param:"guildID"`
 	Before  *time.Time `query:"before"`
 }
 
-func (r *QueryGuildInvitesRequest) ToGuildInvitesQuery(requestorID string) (*query.GuildInvitesQuery, error) {
-
-	if strings.Trim(r.GuildID, " ") == "" {
-		return nil, NewRequestValidationError("invalid guild ud")
-	}
-
+func (r *QueryGuildInvitesRequest) ToGuildInvitesQuery(requestorID uuid.UUID) (*query.GuildInvitesQuery, error) {
 	query := &query.GuildInvitesQuery{
 		RequestorID: requestorID,
 	}

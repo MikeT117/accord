@@ -4,10 +4,11 @@ import (
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/application/common"
+	"github.com/google/uuid"
 )
 
 type RelatationshipsQuery struct {
-	RequestorID string
+	RequestorID uuid.UUID
 	Before      time.Time
 	Status      int8
 }

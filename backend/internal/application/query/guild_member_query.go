@@ -4,18 +4,19 @@ import (
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/application/common"
+	"github.com/google/uuid"
 )
 
 type GuildMembersQuery struct {
-	GuildID     string
+	GuildID     uuid.UUID
 	Before      time.Time
-	RequestorID string
+	RequestorID uuid.UUID
 }
 
 type GuildMemberQuery struct {
-	UserID      string
-	GuildID     string
-	RequestorID string
+	UserID      uuid.UUID
+	GuildID     uuid.UUID
+	RequestorID uuid.UUID
 }
 
 type GuildMemberQueryResult struct {

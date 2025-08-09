@@ -11,6 +11,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
+	"github.com/google/uuid"
 )
 
 type GuildRoleService struct {
@@ -35,7 +36,7 @@ func CreateGuildRoleService(transactor *db.Transactor, authorisationService inte
 	}
 }
 
-func (s *GuildRoleService) GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.GuildRoleQueryListResult, error) {
+func (s *GuildRoleService) GetByGuildID(ctx context.Context, guildID uuid.UUID, requestorID uuid.UUID) (*query.GuildRoleQueryListResult, error) {
 	err := s.authorisationService.VerifyGuildMember(ctx, guildID, requestorID)
 	if err != nil {
 		return nil, err

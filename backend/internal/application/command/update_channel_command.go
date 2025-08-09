@@ -1,9 +1,11 @@
 package command
 
+import "github.com/google/uuid"
+
 type UpdateChannelCommand struct {
-	ID          string
-	ParentID    *string
+	ID          uuid.UUID
+	ParentID    *uuid.UUID
 	Name        string
 	Topic       *string
-	RequestorID string
+	RequestorID uuid.UUID
 }

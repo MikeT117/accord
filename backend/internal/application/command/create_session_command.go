@@ -1,9 +1,13 @@
 package command
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type CreateSessionCommand struct {
-	UserID    string
+	UserID    uuid.UUID
 	Token     string
 	IPAddress string
 	UserAgent string

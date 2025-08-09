@@ -1,17 +1,22 @@
 package request
 
-import "github.com/MikeT117/accord/backend/internal/application/command"
+import (
+	"strings"
+
+	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
+)
 
 type UpdateChannelRequest struct {
-	ID       string  `param:"channelID"`
-	ParentID *string `json:"parentId"`
-	Name     string  `json:"name"`
-	Topic    *string `json:"topic"`
+	ID       uuid.UUID  `param:"channelID"`
+	ParentID *uuid.UUID `json:"parentId"`
+	Name     string     `json:"name"`
+	Topic    *string    `json:"topic"`
 }
 
-func (r *UpdateChannelRequest) ToUpdateChannelCommand(requestorID string) (*command.UpdateChannelCommand, error) {
-	if r.ID == "" || r.ParentID != nil && *r.ParentID == "" || r.Name == "" {
-		return nil, NewRequestValidationError("invalid id, parentID or name")
+func (r *UpdateChannelRequest) ToUpdateChannelCommand(requestorID uuid.UUID) (*command.UpdateChannelCommand, error) {
+	if strings.Trim(r.Name, " ") == "" {
+		return nil, NewRequestValidationError("invalid name")
 	}
 	return &command.UpdateChannelCommand{
 		ID:          r.ID,

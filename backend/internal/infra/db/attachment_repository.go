@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -18,7 +19,7 @@ func CreateAttachmentRepository(db DBGetter) repositories.AttachmentRepository {
 	return &AttachmentRepository{db: db}
 }
 
-func (r *AttachmentRepository) GetByID(ctx context.Context, ID string) (*entities.Attachment, error) {
+func (r *AttachmentRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.Attachment, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -59,7 +60,7 @@ func (r *AttachmentRepository) GetByID(ctx context.Context, ID string) (*entitie
 	return attachment, nil
 }
 
-func (r *AttachmentRepository) GetMapByIDs(ctx context.Context, IDs []string) (map[string]*entities.Attachment, error) {
+func (r *AttachmentRepository) GetMapByIDs(ctx context.Context, IDs []uuid.UUID) (map[uuid.UUID]*entities.Attachment, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -84,7 +85,7 @@ func (r *AttachmentRepository) GetMapByIDs(ctx context.Context, IDs []string) (m
 
 	defer rows.Close()
 
-	attachmentsMap := make(map[string]*entities.Attachment)
+	attachmentsMap := make(map[uuid.UUID]*entities.Attachment)
 	for rows.Next() {
 		attachment := &entities.Attachment{}
 		if err := rows.Scan(
@@ -108,7 +109,7 @@ func (r *AttachmentRepository) GetMapByIDs(ctx context.Context, IDs []string) (m
 	return attachmentsMap, nil
 }
 
-func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []string) ([]*entities.Attachment, error) {
+func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []uuid.UUID) ([]*entities.Attachment, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -157,7 +158,7 @@ func (r *AttachmentRepository) GetByIDs(ctx context.Context, IDs []string) ([]*e
 	return attachments, nil
 }
 
-func (r *AttachmentRepository) GetByAssociatedChannelMessageID(ctx context.Context, ID string) ([]*entities.Attachment, error) {
+func (r *AttachmentRepository) GetByAssociatedChannelMessageID(ctx context.Context, ID uuid.UUID) ([]*entities.Attachment, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			a.id,
@@ -208,7 +209,7 @@ func (r *AttachmentRepository) GetByAssociatedChannelMessageID(ctx context.Conte
 	return attachments, nil
 }
 
-func (r *AttachmentRepository) GetMapByAssociatedChannelMessageIDs(ctx context.Context, IDs []string) (map[string][]*entities.Attachment, error) {
+func (r *AttachmentRepository) GetMapByAssociatedChannelMessageIDs(ctx context.Context, IDs []uuid.UUID) (map[uuid.UUID][]*entities.Attachment, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			cma.channel_message_id,
@@ -236,10 +237,10 @@ func (r *AttachmentRepository) GetMapByAssociatedChannelMessageIDs(ctx context.C
 
 	defer rows.Close()
 
-	attachmentsMap := make(map[string][]*entities.Attachment)
+	attachmentsMap := make(map[uuid.UUID][]*entities.Attachment)
 	for rows.Next() {
 		attachment := &entities.Attachment{}
-		var channelMessageID string
+		var channelMessageID uuid.UUID
 		if err := rows.Scan(
 			&channelMessageID,
 			&attachment.ID,
@@ -279,16 +280,16 @@ func (r *AttachmentRepository) Create(ctx context.Context, attachment *entities.
 			)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
 	`,
-		attachment.ID,
-		attachment.Filename,
-		attachment.ResourceType,
-		attachment.OwnerID,
+		&attachment.ID,
+		&attachment.Filename,
+		&attachment.ResourceType,
+		&attachment.OwnerID,
 		attachment.Height,
 		attachment.Width,
-		attachment.Filesize,
-		attachment.CreatedAt,
-		attachment.UpdatedAt,
-		attachment.Status,
+		&attachment.Filesize,
+		&attachment.CreatedAt,
+		&attachment.UpdatedAt,
+		&attachment.Status,
 	)
 	if err != nil {
 		return wrapUnknownErr("insert attachment failed", err)
@@ -314,16 +315,16 @@ func (r *AttachmentRepository) Update(ctx context.Context, attachment *entities.
 		WHERE
 			id = $1;
 	`,
-		attachment.ID,
-		attachment.Filename,
-		attachment.ResourceType,
-		attachment.OwnerID,
+		&attachment.ID,
+		&attachment.Filename,
+		&attachment.ResourceType,
+		&attachment.OwnerID,
 		attachment.Height,
 		attachment.Width,
-		attachment.Filesize,
-		attachment.CreatedAt,
-		attachment.UpdatedAt,
-		attachment.Status,
+		&attachment.Filesize,
+		&attachment.CreatedAt,
+		&attachment.UpdatedAt,
+		&attachment.Status,
 	)
 
 	if err != nil {
@@ -337,7 +338,7 @@ func (r *AttachmentRepository) Update(ctx context.Context, attachment *entities.
 	return nil
 }
 
-func (r *AttachmentRepository) Delete(ctx context.Context, ID string, userID string) error {
+func (r *AttachmentRepository) Delete(ctx context.Context, ID uuid.UUID, userID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			attachment

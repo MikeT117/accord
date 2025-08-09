@@ -11,6 +11,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
+	"github.com/google/uuid"
 )
 
 type GuildBanService struct {
@@ -29,7 +30,7 @@ func CreateGuildBanService(transactor *db.Transactor, authorisationService inter
 	}
 }
 
-func (s *GuildBanService) GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.GuildBanQueryListResult, error) {
+func (s *GuildBanService) GetByGuildID(ctx context.Context, guildID uuid.UUID, requestorID uuid.UUID) (*query.GuildBanQueryListResult, error) {
 	err := s.authorisationService.VerifyUserGuildPermission(ctx, guildID, requestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
 		return nil, err

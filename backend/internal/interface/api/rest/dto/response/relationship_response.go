@@ -1,9 +1,11 @@
 package response
 
+import "github.com/google/uuid"
+
 type RelationshipResponse struct {
-	ID          string        `json:"id"`
-	CreatorID   string        `json:"creatorId"`
-	RecipientID string        `json:"recipientId"`
+	ID          uuid.UUID     `json:"id"`
+	CreatorID   uuid.UUID     `json:"creatorId"`
+	RecipientID uuid.UUID     `json:"recipientId"`
 	Status      int8          `json:"status"`
 	CreatedAt   int64         `json:"createdAt"`
 	UpdatedAt   int64         `json:"updatedAt"`

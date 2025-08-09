@@ -1,20 +1,15 @@
 package request
 
 import (
-	"strings"
-
 	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
 )
 
 type DeleteRelationshipRequest struct {
-	ID string `param:"relationshipID"`
+	ID uuid.UUID `param:"relationshipID"`
 }
 
-func (r *DeleteRelationshipRequest) ToDeleteRelationshipCommand(requestorID string) (*command.DeleteRelationshipCommand, error) {
-	if strings.Trim(r.ID, " ") == "" {
-		return nil, NewRequestValidationError("invalid id")
-	}
-
+func (r *DeleteRelationshipRequest) ToDeleteRelationshipCommand(requestorID uuid.UUID) (*command.DeleteRelationshipCommand, error) {
 	return &command.DeleteRelationshipCommand{
 		ID:          r.ID,
 		RequestorID: requestorID,

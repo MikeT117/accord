@@ -12,6 +12,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
+	"github.com/google/uuid"
 )
 
 type ChannelService struct {
@@ -36,7 +37,7 @@ func CreateChannelService(transactor *db.Transactor, authorisationService interf
 	}
 }
 
-func (s *ChannelService) GetByGuildID(ctx context.Context, guildID string, requestorID string) (*query.ChannelQueryListResult, error) {
+func (s *ChannelService) GetByGuildID(ctx context.Context, guildID uuid.UUID, requestorID uuid.UUID) (*query.ChannelQueryListResult, error) {
 	err := s.authorisationService.VerifyGuildMember(ctx, guildID, requestorID)
 	if err != nil {
 		return nil, err
@@ -57,7 +58,7 @@ func (s *ChannelService) GetByGuildID(ctx context.Context, guildID string, reque
 	}, nil
 }
 
-func (s *ChannelService) GetByUserID(ctx context.Context, userID string) (*query.ChannelQueryListResult, error) {
+func (s *ChannelService) GetByUserID(ctx context.Context, userID uuid.UUID) (*query.ChannelQueryListResult, error) {
 
 	channels, channelIDs, err := s.channelRepository.GetByUserID(ctx, userID)
 	if err != nil {
@@ -156,7 +157,7 @@ func (s *ChannelService) Delete(ctx context.Context, cmd *command.DeleteChannelC
 		return err
 	}
 
-	var userIDs []string
+	var userIDs []uuid.UUID
 	if !channel.IsGuildChannel() {
 		userIDs, err = s.channelRepository.GetUserIDsByChannelID(ctx, channel.ID)
 		if err != nil {
@@ -183,7 +184,7 @@ func (s *ChannelService) CreateUserAssoc(ctx context.Context, cmd *command.Creat
 		return err
 	}
 
-	if err := s.authorisationService.VerifyRelationships(ctx, cmd.RequestorID, []string{cmd.UserID}, false, true, false); err != nil {
+	if err := s.authorisationService.VerifyRelationships(ctx, cmd.RequestorID, []uuid.UUID{cmd.UserID}, false, true, false); err != nil {
 		return err
 	}
 
@@ -207,7 +208,7 @@ func (s *ChannelService) DeleteUserAssoc(ctx context.Context, cmd *command.Delet
 	return nil
 }
 
-func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entities.Channel, isPrivate bool, roleIDs []string, requestorID string) error {
+func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entities.Channel, isPrivate bool, roleIDs []uuid.UUID, requestorID uuid.UUID) error {
 	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 		err := s.authorisationService.VerifyUserGuildPermission(ctx, *channel.GuildID, requestorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
 		if err != nil {
@@ -230,7 +231,7 @@ func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entiti
 		}
 
 		if !isPrivate {
-			role, err := s.guildRoleRepository.GetByNameAndGuildID(ctx, "@default", *channel.GuildID)
+			role, err := s.guildRoleRepository.GetByNameAndGuildID(ctx, entities.DefaultRootRoleName, *channel.GuildID)
 			if err != nil {
 				return err
 			}
@@ -238,7 +239,7 @@ func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entiti
 			rolesToAssign = append(rolesToAssign, role)
 		}
 
-		role, err := s.guildRoleRepository.GetByNameAndGuildID(ctx, "@owner", *channel.GuildID)
+		role, err := s.guildRoleRepository.GetByNameAndGuildID(ctx, entities.OwnerRootRoleName, *channel.GuildID)
 		if err != nil {
 			return err
 		}
@@ -259,7 +260,7 @@ func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entiti
 	})
 }
 
-func (s *ChannelService) createUserChannel(ctx context.Context, channel *entities.Channel, userIDs []string, requestorID string) error {
+func (s *ChannelService) createUserChannel(ctx context.Context, channel *entities.Channel, userIDs []uuid.UUID, requestorID uuid.UUID) error {
 	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 		if err := s.authorisationService.VerifyRelationships(ctx, requestorID, userIDs, false, true, false); err != nil {
 			return err

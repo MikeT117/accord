@@ -17,10 +17,10 @@ const (
 )
 
 type Channel struct {
-	ID          string
-	CreatorID   string
-	GuildID     *string
-	ParentID    *string
+	ID          uuid.UUID
+	CreatorID   uuid.UUID
+	GuildID     *uuid.UUID
+	ParentID    *uuid.UUID
 	Name        *string
 	Topic       *string
 	ChannelType int8
@@ -29,7 +29,7 @@ type Channel struct {
 }
 
 func (u *Channel) validate() error {
-	if strings.Trim(u.ID, " ") == "" {
+	if u.ID == uuid.Nil {
 		return domain.NewDomainValidationError("id must not be empty")
 	}
 
@@ -37,12 +37,12 @@ func (u *Channel) validate() error {
 		return domain.NewDomainValidationError("invalid channel type")
 	}
 
-	if strings.Trim(u.CreatorID, " ") == "" {
+	if u.CreatorID == uuid.Nil {
 		return domain.NewDomainValidationError("creator id must not be empty")
 	}
 
 	if u.ChannelType == GuildChannel || u.ChannelType == GuildVoiceChannel || u.ChannelType == GuildCategoryChannel {
-		if u.GuildID == nil || strings.Trim(*u.GuildID, " ") == "" {
+		if u.GuildID == nil || *u.GuildID == uuid.Nil {
 			return domain.NewDomainValidationError("guild id must not be empty")
 		}
 		if u.Name == nil || strings.Trim(*u.Name, " ") == "" {
@@ -60,7 +60,7 @@ func (u *Channel) validate() error {
 	return nil
 }
 
-func NewChannel(channelType int8, guildID *string, creatorID string, name string, topic *string) (*Channel, error) {
+func NewChannel(channelType int8, guildID *uuid.UUID, creatorID uuid.UUID, name string, topic *string) (*Channel, error) {
 	id, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func NewChannel(channelType int8, guildID *string, creatorID string, name string
 
 	timestamp := time.Now().UTC()
 	channel := &Channel{
-		ID:          id.String(),
+		ID:          id,
 		CreatorID:   creatorID,
 		GuildID:     guildID,
 		ParentID:    nil,
@@ -94,7 +94,7 @@ func (u *Channel) IsGuildCategoryChannel() bool {
 	return u.ChannelType == GuildCategoryChannel
 }
 
-func (c *Channel) UpdateParentID(parentID *string) error {
+func (c *Channel) UpdateParentID(parentID *uuid.UUID) error {
 	c.ParentID = parentID
 	c.UpdatedAt = time.Now().UTC()
 	return c.validate()

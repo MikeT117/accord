@@ -17,7 +17,7 @@ func ToGuildMemberResponse(guildMember *common.GuildMemberResult) *response.Guil
 		UpdatedAt: guildMember.UpdatedAt.Unix(),
 		Avatar:    guildMember.AvatarID,
 		Banner:    guildMember.BannerID,
-		Roles:     guildMember.Roles,
+		RoleIDs:   guildMember.RoleIDs,
 	}
 
 }

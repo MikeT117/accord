@@ -1,9 +1,13 @@
 package command
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type CreateGuildInviteCommand struct {
-	GuildID     string
+	GuildID     uuid.UUID
 	ExpiresAt   time.Time
-	RequestorID string
+	RequestorID uuid.UUID
 }

@@ -4,19 +4,20 @@ import (
 	"strings"
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
 )
 
 type UpdateGuildMemberRequest struct {
-	UserID   string  `param:"roleID"`
-	GuildID  string  `param:"guildID"`
-	Nickname *string `json:"nickname"`
-	AvatarID *string `json:"avatar"`
-	BannerID *string `json:"banner"`
+	UserID   uuid.UUID  `param:"roleID"`
+	GuildID  uuid.UUID  `param:"guildID"`
+	Nickname *string    `json:"nickname"`
+	AvatarID *uuid.UUID `json:"avatar"`
+	BannerID *uuid.UUID `json:"banner"`
 }
 
-func (r *UpdateGuildMemberRequest) ToUpdateGuildMemberCommand(requestorID string) (*command.UpdateGuildMemberCommand, error) {
-	if strings.Trim(r.UserID, " ") == "" || strings.Trim(r.GuildID, " ") == "" || (r.Nickname != nil && strings.Trim(*r.Nickname, " ") == "") {
-		return nil, NewRequestValidationError("invalid user id, guild id and/or nickname")
+func (r *UpdateGuildMemberRequest) ToUpdateGuildMemberCommand(requestorID uuid.UUID) (*command.UpdateGuildMemberCommand, error) {
+	if r.Nickname != nil && strings.Trim(*r.Nickname, " ") == "" {
+		return nil, NewRequestValidationError("invalid nickname")
 	}
 
 	return &command.UpdateGuildMemberCommand{

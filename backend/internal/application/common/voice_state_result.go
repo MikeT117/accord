@@ -1,11 +1,13 @@
 package common
 
+import "github.com/google/uuid"
+
 type VoiceStateResult struct {
-	ID        string
+	ID        uuid.UUID
 	SelfMute  bool
 	SelfDeaf  bool
-	ChannelID string
-	UserID    string
-	GuildID   *string
+	ChannelID uuid.UUID
+	UserID    uuid.UUID
+	GuildID   *uuid.UUID
 	User      *UserResult
 }

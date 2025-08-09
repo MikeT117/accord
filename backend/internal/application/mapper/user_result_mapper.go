@@ -4,6 +4,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+	pointer "github.com/MikeT117/accord/backend/internal/ptr"
 )
 
 func NewUserResultFromUser(user *entities.User) *common.UserResult {
@@ -33,12 +34,12 @@ func NewUserProtoResultFromUser(user *entities.User) *pb.User {
 	publicFlags := int32(user.PublicFlags)
 	return &pb.User{
 		Ver:         &ver,
-		Id:          &user.ID,
+		Id:          pointer.UUIDToStringPtr(user.ID),
 		Username:    &user.Username,
 		DisplayName: &user.DisplayName,
 		PublicFlags: &publicFlags,
-		Avatar:      user.AvatarID,
-		Banner:      user.BannerID,
+		Avatar:      pointer.UUIDPtrToStringPtr(user.AvatarID),
+		Banner:      pointer.UUIDPtrToStringPtr(user.BannerID),
 	}
 
 }
@@ -50,7 +51,6 @@ func NewUserUpdatedProtoEvent(user *entities.User) *pb.EventPayload {
 
 	var ver int32 = 0
 	publicFlags := int32(user.PublicFlags)
-
 	return &pb.EventPayload{
 		Ver: &ver,
 		Op:  pb.OpCode_USER_UPDATED.Enum(),
@@ -59,8 +59,8 @@ func NewUserUpdatedProtoEvent(user *entities.User) *pb.EventPayload {
 				Ver:         &ver,
 				DisplayName: &user.DisplayName,
 				PublicFlags: &publicFlags,
-				Avatar:      user.AvatarID,
-				Banner:      user.BannerID,
+				Avatar:      pointer.UUIDPtrToStringPtr(user.AvatarID),
+				Banner:      pointer.UUIDPtrToStringPtr(user.BannerID),
 			},
 		},
 	}

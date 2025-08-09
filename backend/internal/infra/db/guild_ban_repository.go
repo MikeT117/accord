@@ -6,6 +6,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 )
 
 type GuildBanRepository struct {
@@ -16,7 +17,7 @@ func CreateGuildBanRepository(db DBGetter) repositories.GuildBanRepository {
 	return &GuildBanRepository{db: db}
 }
 
-func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID string) ([]*entities.GuildBan, []string, error) {
+func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID uuid.UUID) ([]*entities.GuildBan, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			user_id,
@@ -29,17 +30,17 @@ func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID string) (
 	`, guildID)
 
 	if err != nil {
-		return nil, []string{}, wrapUnknownErr("select guild bans by guild id failed", err)
+		return nil, nil, wrapUnknownErr("select guild bans by guild id failed", err)
 	}
 
 	defer rows.Close()
 
 	guildBans := []*entities.GuildBan{}
-	userIDs := []string{}
+	userIDs := []uuid.UUID{}
 
 	for rows.Next() {
 		guildBan := &entities.GuildBan{}
-		var userID string
+		var userID uuid.UUID
 
 		if err := rows.Scan(
 			&guildBan.UserID,
@@ -48,7 +49,7 @@ func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID string) (
 			&guildBan.CreatedAt,
 			&guildBan.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, wrapUnknownErr("map over select guild bans by guild id failed", err)
+			return nil, nil, wrapUnknownErr("map over select guild bans by guild id failed", err)
 		}
 
 		guildBans = append(guildBans, guildBan)
@@ -69,7 +70,13 @@ func (r *GuildBanRepository) Create(ctx context.Context, guildBan *entities.Guil
 				updated_at
 			)
 		VALUES ($1, $2, $3, $4, $5);
-	`, guildBan.UserID, guildBan.GuildID, guildBan.Reason, guildBan.CreatedAt, guildBan.UpdatedAt)
+	`,
+		&guildBan.UserID,
+		&guildBan.GuildID,
+		&guildBan.Reason,
+		&guildBan.CreatedAt,
+		&guildBan.UpdatedAt,
+	)
 
 	if err != nil {
 		return wrapUnknownErr("insert guild ban failed", err)
@@ -78,7 +85,7 @@ func (r *GuildBanRepository) Create(ctx context.Context, guildBan *entities.Guil
 	return nil
 }
 
-func (r *GuildBanRepository) Delete(ctx context.Context, userID string, guildID string) error {
+func (r *GuildBanRepository) Delete(ctx context.Context, userID uuid.UUID, guildID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		DELETE FROM
 			guild_bans

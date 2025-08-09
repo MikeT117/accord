@@ -9,6 +9,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/query"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
+	"github.com/google/uuid"
 )
 
 type UserAccountService struct {
@@ -32,7 +33,7 @@ func CreateUserAccountService(
 	}
 }
 
-func (s *UserAccountService) GetByID(ctx context.Context, ID string) (*query.UserQueryResult, error) {
+func (s *UserAccountService) GetByID(ctx context.Context, ID uuid.UUID) (*query.UserQueryResult, error) {
 	user, err := s.userRepository.GetByID(ctx, ID)
 	if err != nil {
 		return nil, err

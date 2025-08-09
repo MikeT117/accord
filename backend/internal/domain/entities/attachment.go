@@ -15,10 +15,10 @@ const (
 )
 
 type Attachment struct {
-	ID           string
+	ID           uuid.UUID
 	Filename     string
 	ResourceType string
-	OwnerID      string
+	OwnerID      uuid.UUID
 	Height       *int64
 	Width        *int64
 	Filesize     int64
@@ -28,7 +28,7 @@ type Attachment struct {
 }
 
 func (u *Attachment) validate() error {
-	if strings.Trim(u.ID, " ") == "" {
+	if u.ID == uuid.Nil {
 		return domain.NewDomainValidationError("id must not be empty")
 	}
 	if strings.Trim(u.Filename, " ") == "" {
@@ -37,7 +37,7 @@ func (u *Attachment) validate() error {
 	if strings.Trim(u.ResourceType, " ") == "" {
 		return domain.NewDomainValidationError("resourceType must not be empty")
 	}
-	if strings.Trim(u.OwnerID, " ") == "" {
+	if u.OwnerID == uuid.Nil {
 		return domain.NewDomainValidationError("owner id must not be empty")
 	}
 	if u.Status != UPLOAD_PENDING && u.Status != UPLOAD_SUCCESS && u.Status != UPLOAD_FAILED {
@@ -46,7 +46,7 @@ func (u *Attachment) validate() error {
 	return nil
 }
 
-func NewAttachment(filename string, resourceType string, ownerID string, filesize int64) (*Attachment, error) {
+func NewAttachment(filename string, resourceType string, ownerID uuid.UUID, filesize int64) (*Attachment, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -54,7 +54,7 @@ func NewAttachment(filename string, resourceType string, ownerID string, filesiz
 
 	timestamp := time.Now().UTC()
 	attachment := &Attachment{
-		ID:           ID.String(),
+		ID:           ID,
 		Filename:     filename,
 		ResourceType: resourceType,
 		OwnerID:      ownerID,

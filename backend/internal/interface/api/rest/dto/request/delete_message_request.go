@@ -1,16 +1,16 @@
 package request
 
-import "github.com/MikeT117/accord/backend/internal/application/command"
+import (
+	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
+)
 
 type DeleteChannelMessageRequest struct {
-	ID        string `param:"messageID"`
-	ChannelID string `param:"channelID"`
+	ID        uuid.UUID `param:"messageID"`
+	ChannelID uuid.UUID `param:"channelID"`
 }
 
-func (r *DeleteChannelMessageRequest) ToDeleteChannelMessageCommand(requestorID string) (*command.DeleteChannelMessageCommand, error) {
-	if r.ID == "" && r.ChannelID == "" {
-		return nil, NewRequestValidationError("invalid id and/or channel id")
-	}
+func (r *DeleteChannelMessageRequest) ToDeleteChannelMessageCommand(requestorID uuid.UUID) (*command.DeleteChannelMessageCommand, error) {
 	return &command.DeleteChannelMessageCommand{
 		ID:          r.ID,
 		ChannelID:   r.ChannelID,

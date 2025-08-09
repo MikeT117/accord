@@ -1,7 +1,9 @@
 package command
 
+import "github.com/google/uuid"
+
 type DeleteUserChannelAssociationCommand struct {
-	ChannelID   string
-	UserID      string
-	RequestorID string
+	ChannelID   uuid.UUID
+	UserID      uuid.UUID
+	RequestorID uuid.UUID
 }

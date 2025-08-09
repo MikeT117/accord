@@ -6,6 +6,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 )
 
 type AuthorisationService struct {
@@ -24,7 +25,7 @@ func CreateAuthorisationService(guildRoleRepository repositories.GuildRoleReposi
 	}
 }
 
-func (s *AuthorisationService) VerifyRelationships(ctx context.Context, requestorID string, userIDs []string, isBlocked bool, isFriend bool, isPending bool) error {
+func (s *AuthorisationService) VerifyRelationships(ctx context.Context, requestorID uuid.UUID, userIDs []uuid.UUID, isBlocked bool, isFriend bool, isPending bool) error {
 	relationships, err := s.RelationshipRepository.GetByUserIDAndUserIDs(ctx, requestorID, userIDs)
 
 	if len(relationships) != len(userIDs) {
@@ -49,8 +50,8 @@ func (s *AuthorisationService) VerifyRelationships(ctx context.Context, requesto
 	return nil
 }
 
-func (s *AuthorisationService) VerifyRelationship(ctx context.Context, requestorID string, userID string, isBlocked bool, isFriend bool, isPending bool) error {
-	relationships, err := s.RelationshipRepository.GetByUserIDAndUserIDs(ctx, requestorID, []string{userID})
+func (s *AuthorisationService) VerifyRelationship(ctx context.Context, requestorID uuid.UUID, userID uuid.UUID, isBlocked bool, isFriend bool, isPending bool) error {
+	relationships, err := s.RelationshipRepository.GetByUserIDAndUserIDs(ctx, requestorID, []uuid.UUID{userID})
 
 	if len(relationships) != 1 {
 		return ErrNotAuthorised
@@ -74,7 +75,7 @@ func (s *AuthorisationService) VerifyRelationship(ctx context.Context, requestor
 	return nil
 }
 
-func (s *AuthorisationService) VerifyGuildMember(ctx context.Context, guildID, requestorID string) error {
+func (s *AuthorisationService) VerifyGuildMember(ctx context.Context, guildID uuid.UUID, requestorID uuid.UUID) error {
 	_, err := s.guildMemberRepository.GetByID(ctx, requestorID, guildID)
 
 	if err != nil {
@@ -88,7 +89,7 @@ func (s *AuthorisationService) VerifyGuildMember(ctx context.Context, guildID, r
 	return nil
 }
 
-func (s *AuthorisationService) VerifyPrivateChannelMember(ctx context.Context, channelID, requestorID string) error {
+func (s *AuthorisationService) VerifyPrivateChannelMember(ctx context.Context, channelID uuid.UUID, requestorID uuid.UUID) error {
 	err := s.channelRepository.VerifyUserChannelMembership(ctx, channelID, requestorID)
 	if err == nil {
 		return nil
@@ -97,7 +98,7 @@ func (s *AuthorisationService) VerifyPrivateChannelMember(ctx context.Context, c
 	return err
 }
 
-func (s *AuthorisationService) VerifyUserGuildPermission(ctx context.Context, guildID string, requestorID string, permissionOffset int) error {
+func (s *AuthorisationService) VerifyUserGuildPermission(ctx context.Context, guildID uuid.UUID, requestorID uuid.UUID, permissionOffset int) error {
 	permissions, err := s.guildRoleRepository.GetGuildPermissions(ctx, guildID, requestorID)
 
 	if err != nil {
@@ -114,7 +115,7 @@ func (s *AuthorisationService) VerifyUserGuildPermission(ctx context.Context, gu
 	return nil
 }
 
-func (s *AuthorisationService) VerifyGuildChannelPermission(ctx context.Context, channelID string, requestorID string, permissionOffset int) error {
+func (s *AuthorisationService) VerifyGuildChannelPermission(ctx context.Context, channelID uuid.UUID, requestorID uuid.UUID, permissionOffset int) error {
 	permissions, err := s.guildRoleRepository.GetChannelPermissions(ctx, channelID, requestorID)
 
 	if err == nil {

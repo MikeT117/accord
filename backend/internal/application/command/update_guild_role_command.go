@@ -1,9 +1,11 @@
 package command
 
+import "github.com/google/uuid"
+
 type UpdateGuildRoleCommand struct {
-	ID          string
+	ID          uuid.UUID
 	Name        string
-	GuildID     string
+	GuildID     uuid.UUID
 	Permissions int32
-	RequestorID string
+	RequestorID uuid.UUID
 }

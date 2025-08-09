@@ -31,7 +31,7 @@ type Client struct {
 	ctx          context.Context
 	done         context.CancelFunc
 	conn         *websocket.Conn
-	userID       string
+	userID       uuid.UUID
 	roleIDs      SafeRWMutexMap[map[string]bool]
 	token        string
 	authDeadline *time.Timer
@@ -92,7 +92,12 @@ func (c *Client) hasRoles(roleIDs []string) bool {
 
 func (c *Client) matchesUserIDs(userIDs []string) bool {
 	for i := 0; i < len(userIDs); i++ {
-		if c.matchesUserID(userIDs[i]) {
+		userID, err := uuid.Parse(userIDs[i])
+		if err != nil {
+			continue
+		}
+
+		if c.matchesUserID(userID) {
 			return true
 		}
 	}
@@ -100,7 +105,7 @@ func (c *Client) matchesUserIDs(userIDs []string) bool {
 	return false
 }
 
-func (c *Client) matchesUserID(userID string) bool {
+func (c *Client) matchesUserID(userID uuid.UUID) bool {
 	return c.userID == userID
 }
 
@@ -180,7 +185,7 @@ func (c *Client) getUserInitRoles() error {
 	}
 
 	for i := 0; i < len(roleIDs); i++ {
-		c.addRole(roleIDs[i])
+		c.addRole(roleIDs[i].String())
 	}
 
 	return nil

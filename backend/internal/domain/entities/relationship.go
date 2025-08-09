@@ -14,22 +14,22 @@ const (
 )
 
 type Relationship struct {
-	ID          string
-	CreatorID   string
-	RecipientID string
+	ID          uuid.UUID
+	CreatorID   uuid.UUID
+	RecipientID uuid.UUID
 	Status      int8
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
 
 func (u *Relationship) validate(isNew bool) error {
-	if u.ID == "" {
+	if u.ID == uuid.Nil {
 		return domain.NewDomainValidationError("id must not be empty")
 	}
-	if u.CreatorID == "" {
+	if u.CreatorID == uuid.Nil {
 		return domain.NewDomainValidationError("creator id must not be empty")
 	}
-	if u.RecipientID == "" {
+	if u.RecipientID == uuid.Nil {
 		return domain.NewDomainValidationError("recipient id must not be empty")
 	}
 	if u.Status != PENDING && u.Status != FRIEND && u.Status != BLOCKED {
@@ -57,11 +57,11 @@ func (r *Relationship) IsFriend() bool {
 	return r.Status == FRIEND
 }
 
-func (r *Relationship) IsCreator(creatorID string) bool {
+func (r *Relationship) IsCreator(creatorID uuid.UUID) bool {
 	return r.CreatorID == creatorID
 }
 
-func NewRelationship(creatorID string, status int8, recipientID string) (*Relationship, error) {
+func NewRelationship(creatorID uuid.UUID, status int8, recipientID uuid.UUID) (*Relationship, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func NewRelationship(creatorID string, status int8, recipientID string) (*Relati
 	timestamp := time.Now().UTC()
 
 	relationship := &Relationship{
-		ID:          ID.String(),
+		ID:          ID,
 		CreatorID:   creatorID,
 		RecipientID: recipientID,
 		Status:      status,

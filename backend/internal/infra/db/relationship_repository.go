@@ -8,6 +8,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -21,7 +22,7 @@ func CreateRelationshipRepository(db DBGetter) repositories.RelationshipReposito
 	}
 }
 
-func (r *RelationshipRepository) GetByID(ctx context.Context, ID string) (*entities.Relationship, error) {
+func (r *RelationshipRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.Relationship, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -54,7 +55,7 @@ func (r *RelationshipRepository) GetByID(ctx context.Context, ID string) (*entit
 	return relationship, nil
 }
 
-func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID string, status int8, before time.Time, limit int8) ([]*entities.Relationship, []string, error) {
+func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID uuid.UUID, status int8, before time.Time, limit int8) ([]*entities.Relationship, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -87,12 +88,12 @@ func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID string,
 	`, userID, status, before, limit)
 
 	if err != nil {
-		return nil, []string{}, wrapUnknownErr("select relationships by user id failed", err)
+		return nil, nil, wrapUnknownErr("select relationships by user id failed", err)
 	}
 	defer rows.Close()
 
 	relationships := []*entities.Relationship{}
-	userIDs := []string{}
+	userIDs := []uuid.UUID{}
 	for rows.Next() {
 		relationship := &entities.Relationship{}
 		if err := rows.Scan(
@@ -103,7 +104,7 @@ func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID string,
 			&relationship.CreatedAt,
 			&relationship.UpdatedAt,
 		); err != nil {
-			return nil, []string{}, wrapUnknownErr("map over select relationships by user id failed", err)
+			return nil, nil, wrapUnknownErr("map over select relationships by user id failed", err)
 		}
 
 		relationships = append(relationships, relationship)
@@ -118,7 +119,7 @@ func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID string,
 	return relationships, userIDs, nil
 }
 
-func (r *RelationshipRepository) GetByUserIDAndUserIDs(ctx context.Context, userID string, userIDs []string) ([]*entities.Relationship, error) {
+func (r *RelationshipRepository) GetByUserIDAndUserIDs(ctx context.Context, userID uuid.UUID, userIDs []uuid.UUID) ([]*entities.Relationship, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -167,7 +168,7 @@ func (r *RelationshipRepository) GetByUserIDAndUserIDs(ctx context.Context, user
 	return relationships, nil
 }
 
-func (r *RelationshipRepository) GetUserIDsByID(ctx context.Context, ID string) ([]string, error) {
+func (r *RelationshipRepository) GetUserIDsByID(ctx context.Context, ID uuid.UUID) ([]uuid.UUID, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -179,8 +180,8 @@ func (r *RelationshipRepository) GetUserIDsByID(ctx context.Context, ID string) 
 			id = $1;
 	`, ID)
 
-	var CreatorID string
-	var RecipientID string
+	var CreatorID uuid.UUID
+	var RecipientID uuid.UUID
 	if err := row.Scan(
 		&CreatorID,
 		&RecipientID,
@@ -191,7 +192,7 @@ func (r *RelationshipRepository) GetUserIDsByID(ctx context.Context, ID string) 
 		return nil, wrapUnknownErr("select relationship users by id failed", err)
 	}
 
-	return []string{CreatorID, RecipientID}, nil
+	return []uuid.UUID{CreatorID, RecipientID}, nil
 }
 
 func (r *RelationshipRepository) Create(ctx context.Context, relationship *entities.Relationship) error {
@@ -207,12 +208,12 @@ func (r *RelationshipRepository) Create(ctx context.Context, relationship *entit
 			)
 		VALUES ($1, $2, $3, $4, $5, $6);
 	`,
-		relationship.ID,
-		relationship.CreatorID,
-		relationship.RecipientID,
-		relationship.Status,
-		relationship.CreatedAt,
-		relationship.UpdatedAt,
+		&relationship.ID,
+		&relationship.CreatorID,
+		&relationship.RecipientID,
+		&relationship.Status,
+		&relationship.CreatedAt,
+		&relationship.UpdatedAt,
 	)
 
 	if err != nil {
@@ -225,16 +226,16 @@ func (r *RelationshipRepository) Create(ctx context.Context, relationship *entit
 func (r *RelationshipRepository) Update(ctx context.Context, relationship *entities.Relationship) error {
 	result, err := r.db(ctx).Exec(ctx, `
 	UPDATE
-		user_relationship 
+		user_relationship
 	SET
 		status = $2,
 		updated_at = $3,
 	WHERE
 		id =  $1;
 `,
-		relationship.ID,
-		relationship.Status,
-		relationship.UpdatedAt,
+		&relationship.ID,
+		&relationship.Status,
+		&relationship.UpdatedAt,
 	)
 
 	if err != nil {
@@ -248,7 +249,7 @@ func (r *RelationshipRepository) Update(ctx context.Context, relationship *entit
 	return err
 }
 
-func (r *RelationshipRepository) Delete(ctx context.Context, ID string, creatorID string) error {
+func (r *RelationshipRepository) Delete(ctx context.Context, ID uuid.UUID, creatorID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				user_relationship

@@ -1,10 +1,12 @@
 package command
 
+import "github.com/google/uuid"
+
 type UpdateGuildMemberCommand struct {
-	UserID      string
-	GuildID     string
+	UserID      uuid.UUID
+	GuildID     uuid.UUID
 	Nickname    *string
-	AvatarID    *string
-	BannerID    *string
-	RequestorID string
+	AvatarID    *uuid.UUID
+	BannerID    *uuid.UUID
+	RequestorID uuid.UUID
 }

@@ -1,7 +1,9 @@
 package command
 
+import "github.com/google/uuid"
+
 type DeleteChannelMessageCommand struct {
-	ID          string
-	ChannelID   string
-	RequestorID string
+	ID          uuid.UUID
+	ChannelID   uuid.UUID
+	RequestorID uuid.UUID
 }

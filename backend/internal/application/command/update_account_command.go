@@ -1,7 +1,9 @@
 package command
 
+import "github.com/google/uuid"
+
 type UpdateAccountCommand struct {
-	UserID          string
+	UserID          uuid.UUID
 	Password        string
 	UpdatedPassword string
 }

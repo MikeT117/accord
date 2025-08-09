@@ -4,6 +4,8 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+	pointer "github.com/MikeT117/accord/backend/internal/ptr"
+	"github.com/google/uuid"
 )
 
 func NewGuildRoleResultFromGuildRole(guildRole *entities.GuildRole) *common.GuildRoleResult {
@@ -31,10 +33,11 @@ func NewGuildRoleProtoResultFromGuildRole(guildRole *entities.GuildRole) *pb.Gui
 	var ver int32 = 0
 	createdAt := guildRole.CreatedAt.Unix()
 	updatedAt := guildRole.UpdatedAt.Unix()
+
 	return &pb.GuildRole{
 		Ver:         &ver,
-		Id:          &guildRole.ID,
-		GuildId:     &guildRole.GuildID,
+		Id:          pointer.UUIDToStringPtr(guildRole.ID),
+		GuildId:     pointer.UUIDToStringPtr(guildRole.GuildID),
 		Name:        &guildRole.Name,
 		Permissions: &guildRole.Permissions,
 		CreatedAt:   &createdAt,
@@ -57,14 +60,15 @@ func NewGuildRoleUpdatedProtoEvent(guildRole *entities.GuildRole) *pb.EventPaylo
 	var ver int32 = 0
 
 	updatedAt := guildRole.UpdatedAt.Unix()
+
 	return &pb.EventPayload{
 		Ver: &ver,
 		Op:  pb.OpCode_GUILD_ROLE_UPDATE_EVENT.Enum(),
 		Payload: &pb.EventPayload_GuildRoleUpdated{
 			GuildRoleUpdated: &pb.GuildRoleUpdated{
 				Ver:         &ver,
-				Id:          &guildRole.ID,
-				GuildId:     &guildRole.GuildID,
+				Id:          pointer.UUIDToStringPtr(guildRole.ID),
+				GuildId:     pointer.UUIDToStringPtr(guildRole.GuildID),
 				Name:        &guildRole.Name,
 				Permissions: &guildRole.Permissions,
 				UpdatedAt:   &updatedAt,
@@ -73,7 +77,7 @@ func NewGuildRoleUpdatedProtoEvent(guildRole *entities.GuildRole) *pb.EventPaylo
 	}
 }
 
-func NewGuildRoleDeletedProtoEvent(ID string, guildID string) *pb.EventPayload {
+func NewGuildRoleDeletedProtoEvent(ID uuid.UUID, guildID uuid.UUID) *pb.EventPayload {
 	var ver int32 = 0
 	return &pb.EventPayload{
 		Ver: &ver,
@@ -81,8 +85,8 @@ func NewGuildRoleDeletedProtoEvent(ID string, guildID string) *pb.EventPayload {
 		Payload: &pb.EventPayload_GuildRoleDeleted{
 			GuildRoleDeleted: &pb.GuildRoleDeleted{
 				Ver:     &ver,
-				Id:      &ID,
-				GuildId: &guildID,
+				Id:      pointer.UUIDToStringPtr(ID),
+				GuildId: pointer.UUIDToStringPtr(guildID),
 			},
 		},
 	}

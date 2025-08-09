@@ -1,23 +1,17 @@
 package request
 
 import (
-	"strings"
-
 	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
 )
 
 type SyncChannelRoleAssociationsRequest struct {
-	SourceChannelID string `param:"sourceChannelID"`
-	TargetChannelID string `param:"targetChannelID"`
-	GuildID         string `param:"guildID"`
+	SourceChannelID uuid.UUID `param:"sourceChannelID"`
+	TargetChannelID uuid.UUID `param:"targetChannelID"`
+	GuildID         uuid.UUID `param:"guildID"`
 }
 
-func (r *SyncChannelRoleAssociationsRequest) ToSyncGuildRoleChannelAssociationsCommand(requestorID string) (*command.SyncGuildRoleChannelAssociationsCommand, error) {
-
-	if strings.Trim(r.SourceChannelID, " ") == "" || strings.Trim(r.TargetChannelID, " ") == "" || strings.Trim(r.GuildID, " ") == "" {
-		return nil, NewRequestValidationError("invalid channel id or guild id")
-	}
-
+func (r *SyncChannelRoleAssociationsRequest) ToSyncGuildRoleChannelAssociationsCommand(requestorID uuid.UUID) (*command.SyncGuildRoleChannelAssociationsCommand, error) {
 	return &command.SyncGuildRoleChannelAssociationsCommand{
 		SourceChannelID: r.SourceChannelID,
 		TargetChannelID: r.TargetChannelID,

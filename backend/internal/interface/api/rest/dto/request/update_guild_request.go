@@ -4,22 +4,20 @@ import (
 	"strings"
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
 )
 
 type UpdateGuildRequest struct {
-	ID              string  `param:"guildID"`
-	GuildCategoryID *string `json:"guildCategoryId"`
-	Name            string  `json:"name"`
-	Description     string  `json:"description"`
-	Discoverable    bool    `json:"discoverable"`
-	IconID          *string `json:"iconID"`
-	BannerID        *string `json:"bannerID"`
+	ID              uuid.UUID  `param:"guildID"`
+	GuildCategoryID *uuid.UUID `json:"guildCategoryId"`
+	Name            string     `json:"name"`
+	Description     string     `json:"description"`
+	Discoverable    bool       `json:"discoverable"`
+	IconID          *uuid.UUID `json:"iconID"`
+	BannerID        *uuid.UUID `json:"bannerID"`
 }
 
-func (r *UpdateGuildRequest) ToUpdateGuildCommand(requestorID string) (*command.UpdateGuildCommand, error) {
-	if strings.Trim(r.ID, " ") == "" {
-		return nil, NewRequestValidationError("invalid id")
-	}
+func (r *UpdateGuildRequest) ToUpdateGuildCommand(requestorID uuid.UUID) (*command.UpdateGuildCommand, error) {
 
 	if strings.Trim(r.Name, " ") == "" || len(strings.Trim(r.Name, " ")) < 1 || len(strings.Trim(r.Name, " ")) > 32 {
 		return nil, NewRequestValidationError("invalid name")

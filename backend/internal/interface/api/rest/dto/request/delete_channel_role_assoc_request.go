@@ -1,22 +1,17 @@
 package request
 
 import (
-	"strings"
-
 	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
 )
 
 type DeleteGuildRoleChannelAssocRequest struct {
-	RoleID    string `param:"roleID"`
-	ChannelID string `param:"channelID"`
-	GuildID   string `param:"guildID"`
+	RoleID    uuid.UUID `param:"roleID"`
+	ChannelID uuid.UUID `param:"channelID"`
+	GuildID   uuid.UUID `param:"guildID"`
 }
 
-func (r *DeleteGuildRoleChannelAssocRequest) ToDeleteGuildRoleChannelAssociationCommand(requestorID string) (*command.DeleteGuildRoleChannelAssociationCommand, error) {
-
-	if strings.Trim(r.RoleID, " ") == "" || strings.Trim(r.ChannelID, " ") == "" || strings.Trim(r.GuildID, " ") == "" {
-		return nil, NewRequestValidationError("invalid role id, guild id and/or channel id")
-	}
+func (r *DeleteGuildRoleChannelAssocRequest) ToDeleteGuildRoleChannelAssociationCommand(requestorID uuid.UUID) (*command.DeleteGuildRoleChannelAssociationCommand, error) {
 
 	return &command.DeleteGuildRoleChannelAssociationCommand{
 		RoleID:      r.RoleID,

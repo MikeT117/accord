@@ -1,14 +1,18 @@
 package common
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type AttachmentResult struct {
-	ID           string
+	ID           uuid.UUID
 	Filename     string
 	ResourceType string
 	Height       *int64
 	Width        *int64
-	OwnerID      string
+	OwnerID      uuid.UUID
 	Filesize     int64
 	CreatedAt    time.Time
 	UpdatedAt    time.Time

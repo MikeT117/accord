@@ -1,7 +1,9 @@
 package command
 
+import "github.com/google/uuid"
+
 type CreateGuildCommand struct {
-	CreatorID string
+	CreatorID uuid.UUID
 	Name      string
-	IconID    *string
+	IconID    *uuid.UUID
 }

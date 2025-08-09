@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -18,7 +19,7 @@ func CreateUserRepository(db DBGetter) repositories.UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) GetByID(ctx context.Context, ID string) (*entities.User, error) {
+func (r *UserRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.User, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -64,7 +65,7 @@ func (r *UserRepository) GetByID(ctx context.Context, ID string) (*entities.User
 	return user, nil
 }
 
-func (r *UserRepository) GetByAccountID(ctx context.Context, accountID string) (*entities.User, error) {
+func (r *UserRepository) GetByAccountID(ctx context.Context, accountID uuid.UUID) (*entities.User, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -110,7 +111,7 @@ func (r *UserRepository) GetByAccountID(ctx context.Context, accountID string) (
 	return user, nil
 }
 
-func (r *UserRepository) GetMapByIDs(ctx context.Context, IDs []string) (map[string]*entities.User, error) {
+func (r *UserRepository) GetMapByIDs(ctx context.Context, IDs []uuid.UUID) (map[uuid.UUID]*entities.User, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -135,7 +136,7 @@ func (r *UserRepository) GetMapByIDs(ctx context.Context, IDs []string) (map[str
 		return nil, wrapUnknownErr("select users by ids failed", err)
 	}
 
-	usersMap := make(map[string]*entities.User)
+	usersMap := make(map[uuid.UUID]*entities.User)
 
 	for rows.Next() {
 		user := &entities.User{}
@@ -161,7 +162,7 @@ func (r *UserRepository) GetMapByIDs(ctx context.Context, IDs []string) (map[str
 	return usersMap, nil
 }
 
-func (r *UserRepository) GetByIDs(ctx context.Context, IDs []string) ([]*entities.User, error) {
+func (r *UserRepository) GetByIDs(ctx context.Context, IDs []uuid.UUID) ([]*entities.User, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -260,7 +261,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*entitie
 
 func (r *UserRepository) Create(ctx context.Context, user *entities.User) error {
 	_, err := r.db(ctx).Exec(ctx, `
-		INSERT INTO 
+		INSERT INTO
 			"user" (
 				id,
 				account_id,
@@ -277,18 +278,18 @@ func (r *UserRepository) Create(ctx context.Context, user *entities.User) error 
 			)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
 	`,
-		user.ID,
-		user.AccountID,
-		user.Username,
-		user.DisplayName,
-		user.Email,
-		user.EmailVerified,
-		user.PublicFlags,
-		user.RelationshipCount,
+		&user.ID,
+		&user.AccountID,
+		&user.Username,
+		&user.DisplayName,
+		&user.Email,
+		&user.EmailVerified,
+		&user.PublicFlags,
+		&user.RelationshipCount,
 		user.AvatarID,
 		user.BannerID,
-		user.CreatedAt,
-		user.UpdatedAt,
+		&user.CreatedAt,
+		&user.UpdatedAt,
 	)
 
 	if err != nil {
@@ -313,14 +314,14 @@ func (r *UserRepository) Update(ctx context.Context, user *entities.User) error 
 		WHERE
 			id = $1;
 		`,
-		user.ID,
-		user.DisplayName,
-		user.Email,
-		user.EmailVerified,
-		user.PublicFlags,
+		&user.ID,
+		&user.DisplayName,
+		&user.Email,
+		&user.EmailVerified,
+		&user.PublicFlags,
 		user.AvatarID,
 		user.BannerID,
-		user.UpdatedAt,
+		&user.UpdatedAt,
 	)
 
 	if err != nil {

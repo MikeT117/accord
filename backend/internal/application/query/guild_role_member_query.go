@@ -1,18 +1,22 @@
 package query
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type GuildRoleMemberQuery struct {
-	UserID      string
-	GuildID     string
-	RoleID      string
+	UserID      uuid.UUID
+	GuildID     uuid.UUID
+	RoleID      uuid.UUID
 	Before      time.Time
-	RequestorID string
+	RequestorID uuid.UUID
 }
 
 type GuildRoleMembersQuery struct {
-	GuildID     string
-	RoleID      string
+	GuildID     uuid.UUID
+	RoleID      uuid.UUID
 	Before      time.Time
-	RequestorID string
+	RequestorID uuid.UUID
 }

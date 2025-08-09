@@ -10,6 +10,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
+	"github.com/google/uuid"
 )
 
 type RelationshipService struct {
@@ -38,13 +39,13 @@ type RelationshipsQuery struct {
 	UserID string
 }
 
-func (s *RelationshipService) GetByID(ctx context.Context, ID string, userID string) (*query.RelationshipQueryResult, error) {
+func (s *RelationshipService) GetByID(ctx context.Context, ID uuid.UUID, userID uuid.UUID) (*query.RelationshipQueryResult, error) {
 	relationship, err := s.relationshipRepository.GetByID(ctx, ID)
 	if err != nil {
 		return nil, err
 	}
 
-	var nonRequestingUserID string
+	var nonRequestingUserID uuid.UUID
 	if userID != relationship.CreatorID {
 		nonRequestingUserID = relationship.CreatorID
 	} else {

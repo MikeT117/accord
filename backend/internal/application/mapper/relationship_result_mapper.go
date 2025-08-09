@@ -4,6 +4,8 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+	pointer "github.com/MikeT117/accord/backend/internal/ptr"
+	"github.com/google/uuid"
 )
 
 func NewRelationshipResultFromRelationship(relationship *entities.Relationship, user *entities.User) *common.RelationshipResult {
@@ -18,7 +20,7 @@ func NewRelationshipResultFromRelationship(relationship *entities.Relationship, 
 	}
 }
 
-func NewRelationshipListResultFromRelationship(relationships []*entities.Relationship, users map[string]*entities.User, userID string) []*common.RelationshipResult {
+func NewRelationshipListResultFromRelationship(relationships []*entities.Relationship, users map[uuid.UUID]*entities.User, userID uuid.UUID) []*common.RelationshipResult {
 	relationshipsResult := make([]*common.RelationshipResult, len(relationships))
 
 	for i := 0; i < len(relationships); i++ {
@@ -39,9 +41,9 @@ func NewRelationshipProtoResultFromRelationship(relationship *entities.Relations
 	updatedAt := relationship.UpdatedAt.Unix()
 	return &pb.Relationship{
 		Ver:         &ver,
-		Id:          &relationship.ID,
-		CreatorId:   &relationship.CreatorID,
-		RecipientId: &relationship.RecipientID,
+		Id:          pointer.UUIDToStringPtr(relationship.ID),
+		CreatorId:   pointer.UUIDToStringPtr(relationship.CreatorID),
+		RecipientId: pointer.UUIDToStringPtr(relationship.RecipientID),
 		Status:      &status,
 		CreatedAt:   &createdAt,
 		UpdatedAt:   &updatedAt,
@@ -63,7 +65,6 @@ func NewRelationshipCreatedProtoEvent(relationship *entities.Relationship, user 
 func NewRelationshipUpdatedProtoEvent(relationship *entities.Relationship) *pb.EventPayload {
 	var ver int32 = 0
 	status := int32(relationship.Status)
-
 	updatedAt := relationship.UpdatedAt.Unix()
 	return &pb.EventPayload{
 		Ver: &ver,
@@ -71,7 +72,7 @@ func NewRelationshipUpdatedProtoEvent(relationship *entities.Relationship) *pb.E
 		Payload: &pb.EventPayload_RelationshipUpdated{
 			RelationshipUpdated: &pb.RelationshipUpdated{
 				Ver:       &ver,
-				Id:        &relationship.ID,
+				Id:        pointer.UUIDToStringPtr(relationship.ID),
 				Status:    &status,
 				UpdatedAt: &updatedAt,
 			},
@@ -79,7 +80,7 @@ func NewRelationshipUpdatedProtoEvent(relationship *entities.Relationship) *pb.E
 	}
 }
 
-func NewRelationshipDeletedProtoEvent(ID string) *pb.EventPayload {
+func NewRelationshipDeletedProtoEvent(ID uuid.UUID) *pb.EventPayload {
 	var ver int32 = 0
 	return &pb.EventPayload{
 		Ver: &ver,
@@ -87,7 +88,7 @@ func NewRelationshipDeletedProtoEvent(ID string) *pb.EventPayload {
 		Payload: &pb.EventPayload_RelationshipDeleted{
 			RelationshipDeleted: &pb.RelationshipDeleted{
 				Ver: &ver,
-				Id:  &ID,
+				Id:  pointer.UUIDToStringPtr(ID),
 			},
 		},
 	}

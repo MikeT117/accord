@@ -1,18 +1,17 @@
 package request
 
 import (
-	"strings"
-
 	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
 )
 
 type CreateRelationshipRequest struct {
-	Status      int8   `json:"status"`
-	RecipientID string `json:"recipientID"`
+	Status      int8      `json:"status"`
+	RecipientID uuid.UUID `json:"recipientID"`
 }
 
-func (r *CreateRelationshipRequest) ToCreateRelationshipCommand(requestorID string) (*command.CreateRelationshipCommand, error) {
-	if r.Status > 2 || r.Status < 0 || strings.Trim(r.RecipientID, " ") == "" {
+func (r *CreateRelationshipRequest) ToCreateRelationshipCommand(requestorID uuid.UUID) (*command.CreateRelationshipCommand, error) {
+	if r.Status > 2 || r.Status < 0 {
 		return nil, NewRequestValidationError("invalid status")
 	}
 

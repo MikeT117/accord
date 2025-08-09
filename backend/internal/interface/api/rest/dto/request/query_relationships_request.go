@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/google/uuid"
 )
 
 type QueryRelationshipsRequest struct {
@@ -11,7 +12,7 @@ type QueryRelationshipsRequest struct {
 	Status *int   `query:"status"`
 }
 
-func (r *QueryRelationshipsRequest) ToRelationshipsQuery(requestorID string) (*query.RelatationshipsQuery, error) {
+func (r *QueryRelationshipsRequest) ToRelationshipsQuery(requestorID uuid.UUID) (*query.RelatationshipsQuery, error) {
 
 	query := &query.RelatationshipsQuery{
 		RequestorID: requestorID,

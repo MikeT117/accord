@@ -1,21 +1,16 @@
 package request
 
 import (
-	"strings"
-
 	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
 )
 
 type DeleteGuildMemberRequest struct {
-	UserID  string `param:"roleID"`
-	GuildID string `param:"guildID"`
+	UserID  uuid.UUID `param:"roleID"`
+	GuildID uuid.UUID `param:"guildID"`
 }
 
-func (r *DeleteGuildMemberRequest) ToDeleteGuildMemberCommand(requestorID string) (*command.DeleteGuildMemberCommand, error) {
-	if strings.Trim(r.UserID, " ") == "" || strings.Trim(r.GuildID, " ") == "" {
-		return nil, NewRequestValidationError("invalid user id and/or guild id")
-	}
-
+func (r *DeleteGuildMemberRequest) ToDeleteGuildMemberCommand(requestorID uuid.UUID) (*command.DeleteGuildMemberCommand, error) {
 	return &command.DeleteGuildMemberCommand{
 		UserID:      r.UserID,
 		GuildID:     r.GuildID,

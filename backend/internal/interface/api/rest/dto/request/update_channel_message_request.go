@@ -1,18 +1,17 @@
 package request
 
-import "github.com/MikeT117/accord/backend/internal/application/command"
+import (
+	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
+)
 
 type UpdateChannelMessageRequest struct {
-	ID        string `param:"messageID"`
-	ChannelID string `param:"channelID"`
-	Content   string `json:"content"`
+	ID        uuid.UUID `param:"messageID"`
+	ChannelID uuid.UUID `param:"channelID"`
+	Content   string    `json:"content"`
 }
 
-func (r *UpdateChannelMessageRequest) ToUpdateChannelMessageCommand(requestorID string) (*command.UpdateChannelMessageCommand, error) {
-	if r.ID == "" && r.ChannelID == "" {
-		return nil, NewRequestValidationError("invalid id and/or channel id")
-	}
-
+func (r *UpdateChannelMessageRequest) ToUpdateChannelMessageCommand(requestorID uuid.UUID) (*command.UpdateChannelMessageCommand, error) {
 	return &command.UpdateChannelMessageCommand{
 		ID:          r.ID,
 		Content:     r.Content,

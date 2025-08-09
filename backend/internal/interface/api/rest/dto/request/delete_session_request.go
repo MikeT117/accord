@@ -1,13 +1,15 @@
 package request
 
-import "github.com/MikeT117/accord/backend/internal/application/command"
+import (
+	"github.com/MikeT117/accord/backend/internal/application/command"
+	"github.com/google/uuid"
+)
 
 type DeleteSessionRequest struct {
-	ID string `param:"sessionID"`
+	ID uuid.UUID `param:"sessionID"`
 }
 
-func (r *DeleteSessionRequest) ToDeleteSessionCommand(requestorID string) (*command.DeleteSessionCommand, error) {
-
+func (r *DeleteSessionRequest) ToDeleteSessionCommand(requestorID uuid.UUID) (*command.DeleteSessionCommand, error) {
 	return &command.DeleteSessionCommand{
 		ID:          r.ID,
 		RequestorID: requestorID,

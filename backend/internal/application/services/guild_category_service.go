@@ -10,6 +10,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
+	"github.com/google/uuid"
 )
 
 type GuildCategoryService struct {
@@ -26,7 +27,7 @@ func CreateGuildCategoryService(transactor *db.Transactor, authorisationService 
 	}
 }
 
-func (s *GuildCategoryService) GetByID(ctx context.Context, ID string) (*query.GuildCategoryQueryResult, error) {
+func (s *GuildCategoryService) GetByID(ctx context.Context, ID uuid.UUID) (*query.GuildCategoryQueryResult, error) {
 	guildGategory, err := s.guildCategoryRepository.GetByID(ctx, ID)
 	if err != nil {
 		return nil, err

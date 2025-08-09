@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -18,7 +19,7 @@ func CreateGuildRepository(db DBGetter) repositories.GuildRepository {
 	return &GuildRepository{db: db}
 }
 
-func (r *GuildRepository) GetByID(ctx context.Context, ID string) (*entities.Guild, error) {
+func (r *GuildRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.Guild, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
@@ -62,7 +63,7 @@ func (r *GuildRepository) GetByID(ctx context.Context, ID string) (*entities.Gui
 
 	return guild, nil
 }
-func (r *GuildRepository) GetByGuildIDs(ctx context.Context, guildIDs []string) ([]*entities.Guild, error) {
+func (r *GuildRepository) GetByGuildIDs(ctx context.Context, guildIDs []uuid.UUID) ([]*entities.Guild, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -132,18 +133,18 @@ func (r *GuildRepository) Create(ctx context.Context, guild *entities.Guild) err
 			)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
 	`,
-		guild.ID,
-		guild.CreatorID,
+		&guild.ID,
+		&guild.CreatorID,
 		guild.GuildCategoryID,
-		guild.Name,
-		guild.Description,
-		guild.Discoverable,
-		guild.ChannelCount,
-		guild.MemberCount,
+		&guild.Name,
+		&guild.Description,
+		&guild.Discoverable,
+		&guild.ChannelCount,
+		&guild.MemberCount,
 		guild.IconID,
 		guild.BannerID,
-		guild.CreatedAt,
-		guild.UpdatedAt,
+		&guild.CreatedAt,
+		&guild.UpdatedAt,
 	)
 
 	if err != nil {
@@ -156,7 +157,7 @@ func (r *GuildRepository) Create(ctx context.Context, guild *entities.Guild) err
 func (r *GuildRepository) Update(ctx context.Context, guild *entities.Guild) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		UPDATE
-			guild 
+			guild
 		SET
 			creator_id = $2,
 			guild_category_id = $3,
@@ -172,18 +173,18 @@ func (r *GuildRepository) Update(ctx context.Context, guild *entities.Guild) err
 		WHERE
 			id =  $1;
 	`,
-		guild.ID,
-		guild.CreatorID,
+		&guild.ID,
+		&guild.CreatorID,
 		guild.GuildCategoryID,
-		guild.Name,
-		guild.Description,
-		guild.Discoverable,
-		guild.ChannelCount,
-		guild.MemberCount,
+		&guild.Name,
+		&guild.Description,
+		&guild.Discoverable,
+		&guild.ChannelCount,
+		&guild.MemberCount,
 		guild.IconID,
 		guild.BannerID,
-		guild.CreatedAt,
-		guild.UpdatedAt,
+		&guild.CreatedAt,
+		&guild.UpdatedAt,
 	)
 
 	if err != nil {
@@ -197,7 +198,7 @@ func (r *GuildRepository) Update(ctx context.Context, guild *entities.Guild) err
 	return nil
 }
 
-func (r *GuildRepository) Delete(ctx context.Context, ID string) error {
+func (r *GuildRepository) Delete(ctx context.Context, ID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				guild

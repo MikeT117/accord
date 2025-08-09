@@ -8,14 +8,14 @@ import (
 )
 
 type GuildCategory struct {
-	ID        string
+	ID        uuid.UUID
 	Name      string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
 func (u *GuildCategory) validate() error {
-	if u.ID == "" {
+	if u.ID == uuid.Nil {
 		return domain.NewDomainValidationError("id must not be empty")
 	}
 	if u.Name == "" {
@@ -32,7 +32,7 @@ func NewGuildCategory(name string) (*GuildCategory, error) {
 
 	timestamp := time.Now().UTC()
 	guildCatgeory := &GuildCategory{
-		ID:        ID.String(),
+		ID:        ID,
 		Name:      name,
 		CreatedAt: timestamp,
 		UpdatedAt: timestamp,

@@ -7,6 +7,8 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/config"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+	pointer "github.com/MikeT117/accord/backend/internal/ptr"
+	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"google.golang.org/protobuf/proto"
 )
@@ -47,12 +49,12 @@ func (ep *EventPublisher) Close() {
 	ep.conn.Close()
 }
 
-func (ep *EventPublisher) PublishProviderEvent(op pb.ProviderOpCode, userID string, payload interface{}) error {
+func (ep *EventPublisher) PublishProviderEvent(op pb.ProviderOpCode, userID uuid.UUID, payload interface{}) error {
 	var ver int32 = 0
 	providerEvent := &pb.ProviderEvent{
 		Ver:    &ver,
 		Op:     &op,
-		UserId: &userID,
+		UserId: pointer.UUIDToStringPtr(userID),
 	}
 
 	switch p := payload.(type) {
@@ -74,16 +76,21 @@ func (ep *EventPublisher) PublishProviderEvent(op pb.ProviderOpCode, userID stri
 	return ep.conn.Publish("ACCORD.EVENTS.PROVIDER", event)
 }
 
-func (ep *EventPublisher) PublishUserEvent(userIDs []string, data *pb.EventPayload) error {
+func (ep *EventPublisher) PublishUserEvent(userIDs []uuid.UUID, data *pb.EventPayload) error {
 	var ver int32 = 0
 	eventData, err := proto.Marshal(data)
 	if err != nil {
 		return err
 	}
 
+	var userIDStrs []string
+	for _, userID := range userIDs {
+		userIDStrs = append(userIDStrs, userID.String())
+	}
+
 	event, err := proto.Marshal(&pb.UserEvent{
 		Ver:     &ver,
-		UserIds: userIDs,
+		UserIds: userIDStrs,
 		Data:    eventData,
 	})
 	if err != nil {
@@ -93,16 +100,21 @@ func (ep *EventPublisher) PublishUserEvent(userIDs []string, data *pb.EventPaylo
 	return ep.conn.Publish("ACCORD.EVENTS.USER", event)
 }
 
-func (ep *EventPublisher) PublishRoleEvent(roleIDs []string, data *pb.EventPayload) error {
+func (ep *EventPublisher) PublishRoleEvent(roleIDs []uuid.UUID, data *pb.EventPayload) error {
 	var ver int32 = 0
 	eventData, err := proto.Marshal(data)
 	if err != nil {
 		return err
 	}
 
+	var roleIDstrs []string
+	for _, roleID := range roleIDs {
+		roleIDstrs = append(roleIDstrs, roleID.String())
+	}
+
 	event, err := proto.Marshal(&pb.RoleEvent{
 		Ver:     &ver,
-		RoleIds: roleIDs,
+		RoleIds: roleIDstrs,
 		Data:    eventData,
 	})
 

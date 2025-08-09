@@ -11,6 +11,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
+	"github.com/google/uuid"
 )
 
 type SessionService struct {
@@ -29,7 +30,7 @@ func CreateSessionService(transactor *db.Transactor, eventService interfaces.Eve
 	}
 }
 
-func (s *SessionService) GetByID(ctx context.Context, ID string, userID string) (*query.SessionQueryResult, error) {
+func (s *SessionService) GetByID(ctx context.Context, ID uuid.UUID, userID uuid.UUID) (*query.SessionQueryResult, error) {
 	session, err := s.sessionRepository.GetByID(ctx, ID, userID)
 	if err != nil {
 		return nil, err
@@ -40,7 +41,7 @@ func (s *SessionService) GetByID(ctx context.Context, ID string, userID string) 
 	}, nil
 }
 
-func (s *SessionService) GetByUserID(ctx context.Context, userID string) (*query.SessionQueryListResult, error) {
+func (s *SessionService) GetByUserID(ctx context.Context, userID uuid.UUID) (*query.SessionQueryListResult, error) {
 	sessions, err := s.sessionRepository.GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, err

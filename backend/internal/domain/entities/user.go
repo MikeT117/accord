@@ -8,25 +8,25 @@ import (
 )
 
 type User struct {
-	ID                string
-	AccountID         string
+	ID                uuid.UUID
+	AccountID         uuid.UUID
 	Username          string
 	DisplayName       string
 	Email             string
 	EmailVerified     bool
 	PublicFlags       int8
 	RelationshipCount int64
-	AvatarID          *string
-	BannerID          *string
+	AvatarID          *uuid.UUID
+	BannerID          *uuid.UUID
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
 }
 
 func (u *User) validate() error {
-	if u.ID == "" {
+	if u.ID == uuid.Nil {
 		return domain.NewDomainValidationError("id must not be empty")
 	}
-	if u.AccountID == "" {
+	if u.AccountID == uuid.Nil {
 		return domain.NewDomainValidationError("account id must not be empty")
 	}
 	if u.Username == "" {
@@ -45,7 +45,7 @@ func (u *User) validate() error {
 	return nil
 }
 
-func NewUser(username string, accountID string, email string, avatarID *string, bannerID *string) (*User, error) {
+func NewUser(username string, accountID uuid.UUID, email string, avatarID *uuid.UUID, bannerID *uuid.UUID) (*User, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func NewUser(username string, accountID string, email string, avatarID *string, 
 
 	timestamp := time.Now().UTC()
 	user := &User{
-		ID:                ID.String(),
+		ID:                ID,
 		AccountID:         accountID,
 		Username:          username,
 		DisplayName:       username,
@@ -110,13 +110,13 @@ func (u *User) DecrementRelationshipCount() error {
 	return u.validate()
 }
 
-func (u *User) UpdateAvatarID(avatarID *string) error {
+func (u *User) UpdateAvatarID(avatarID *uuid.UUID) error {
 	u.AvatarID = avatarID
 	u.UpdatedAt = time.Now().UTC()
 	return u.validate()
 }
 
-func (u *User) UpdateBannerID(bannerID *string) error {
+func (u *User) UpdateBannerID(bannerID *uuid.UUID) error {
 	u.BannerID = bannerID
 	u.UpdatedAt = time.Now().UTC()
 	return u.validate()

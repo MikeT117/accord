@@ -4,6 +4,8 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
+	pointer "github.com/MikeT117/accord/backend/internal/ptr"
+	"github.com/google/uuid"
 )
 
 func NewChannelMessageResultFromChannelMessage(channelMessage *entities.ChannelMessage, user *entities.User, guildMember *entities.GuildMember, attachments []*entities.Attachment) *common.ChannelMessageResult {
@@ -22,7 +24,7 @@ func NewChannelMessageResultFromChannelMessage(channelMessage *entities.ChannelM
 	}
 }
 
-func NewChannelMessageListResultFromChannelMessage(channelMessages []*entities.ChannelMessage, user map[string]*entities.User, guildmembers map[string]*entities.GuildMember, attachments map[string][]*entities.Attachment) []*common.ChannelMessageResult {
+func NewChannelMessageListResultFromChannelMessage(channelMessages []*entities.ChannelMessage, user map[uuid.UUID]*entities.User, guildmembers map[uuid.UUID]*entities.GuildMember, attachments map[uuid.UUID][]*entities.Attachment) []*common.ChannelMessageResult {
 
 	channelMessageResult := make([]*common.ChannelMessageResult, len(channelMessages))
 
@@ -45,12 +47,12 @@ func NewChannelMessageProtoResultFromChannelMessage(channelMessage *entities.Cha
 	updatedAt := channelMessage.UpdatedAt.Unix()
 	return &pb.ChannelMessage{
 		Ver:         &ver,
-		Id:          &channelMessage.ID,
+		Id:          pointer.UUIDToStringPtr(channelMessage.ID),
 		Content:     &channelMessage.Content,
 		Pinned:      &channelMessage.Pinned,
 		Flag:        &flag,
-		AuthorId:    &channelMessage.AuthorID,
-		ChannelId:   &channelMessage.ChannelID,
+		AuthorId:    pointer.UUIDToStringPtr(channelMessage.AuthorID),
+		ChannelId:   pointer.UUIDToStringPtr(channelMessage.ChannelID),
 		CreatedAt:   &createdAt,
 		UpdatedAt:   &updatedAt,
 		Author:      NewChannelMessageAuthorProtoResultFromUserGuildMember(user, guildMember),
@@ -80,11 +82,11 @@ func NewChannelMessageUpdatedProtoEvent(channelMessage *entities.ChannelMessage,
 		Payload: &pb.EventPayload_ChannelMessageUpdated{
 			ChannelMessageUpdated: &pb.ChannelMessageUpdated{
 				Ver:         &ver,
-				Id:          &channelMessage.ID,
+				Id:          pointer.UUIDToStringPtr(channelMessage.ID),
 				Content:     &channelMessage.Content,
 				Pinned:      &channelMessage.Pinned,
 				Flag:        &flag,
-				ChannelId:   &channelMessage.ChannelID,
+				ChannelId:   pointer.UUIDToStringPtr(channelMessage.ChannelID),
 				UpdatedAt:   &updatedAt,
 				Attachments: NewAttachmentListProtoResultFromAttachments(attachments),
 			},
@@ -92,7 +94,7 @@ func NewChannelMessageUpdatedProtoEvent(channelMessage *entities.ChannelMessage,
 	}
 }
 
-func NewChannelMessageDeletedProtoEvent(ID string, channelID string) *pb.EventPayload {
+func NewChannelMessageDeletedProtoEvent(ID uuid.UUID, channelID uuid.UUID) *pb.EventPayload {
 	var ver int32 = 0
 	return &pb.EventPayload{
 		Ver: &ver,
@@ -100,8 +102,8 @@ func NewChannelMessageDeletedProtoEvent(ID string, channelID string) *pb.EventPa
 		Payload: &pb.EventPayload_ChannelMessageDeleted{
 			ChannelMessageDeleted: &pb.ChannelMessageDeleted{
 				Ver:       &ver,
-				Id:        &ID,
-				ChannelId: &channelID,
+				Id:        pointer.UUIDToStringPtr(ID),
+				ChannelId: pointer.UUIDToStringPtr(channelID),
 			},
 		},
 	}

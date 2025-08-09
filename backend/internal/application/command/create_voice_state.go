@@ -1,7 +1,9 @@
 package command
 
+import "github.com/google/uuid"
+
 type CreateVoiceStateCommand struct {
-	GuildID   *string
-	ChannelID string
-	UserID    string
+	GuildID   *uuid.UUID
+	ChannelID uuid.UUID
+	UserID    uuid.UUID
 }
