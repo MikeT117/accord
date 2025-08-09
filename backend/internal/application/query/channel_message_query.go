@@ -10,7 +10,9 @@ type ChannelMessagesQuery struct {
 	ChannelID   string
 	Pinned      bool
 	Before      time.Time
+	After       time.Time
 	RequestorID string
+	Limit       int
 }
 
 type ChannelMessageQuery struct {
