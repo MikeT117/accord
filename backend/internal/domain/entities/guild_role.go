@@ -8,6 +8,17 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	OwnerRootRoleName        = "@owner"
+	OwnerRootRolePermissions = 2147483647
+
+	DefaultRootRoleName        = "@default"
+	DefaultRootRolePermissions = 1
+
+	NewRoleName        = "New-Role"
+	NewRolePermissions = 0
+)
+
 type GuildRole struct {
 	ID          string
 	GuildID     string
@@ -30,7 +41,7 @@ func (a *GuildRole) validate() error {
 	return nil
 }
 
-func NewGuildRole(guildID string, name string) (*GuildRole, error) {
+func NewGuildRole(guildID string) (*GuildRole, error) {
 	ID, err := uuid.NewV7()
 
 	if err != nil {
@@ -41,8 +52,8 @@ func NewGuildRole(guildID string, name string) (*GuildRole, error) {
 	guildRole := &GuildRole{
 		ID:          ID.String(),
 		GuildID:     guildID,
-		Name:        name,
-		Permissions: 0,
+		Name:        NewRoleName,
+		Permissions: NewRolePermissions,
 		CreatedAt:   timestamp,
 		UpdatedAt:   timestamp,
 	}
@@ -65,8 +76,8 @@ func NewOwnerGuildRole(guildID string) (*GuildRole, error) {
 	return &GuildRole{
 		ID:          ID.String(),
 		GuildID:     guildID,
-		Name:        "@owner",
-		Permissions: 2147483647,
+		Name:        OwnerRootRoleName,
+		Permissions: OwnerRootRolePermissions,
 		CreatedAt:   timestamp,
 		UpdatedAt:   timestamp,
 	}, nil
@@ -83,20 +94,36 @@ func NewDefaultGuildRole(guildID string) (*GuildRole, error) {
 	return &GuildRole{
 		ID:          ID.String(),
 		GuildID:     guildID,
-		Name:        "@default",
-		Permissions: 1,
+		Name:        DefaultRootRoleName,
+		Permissions: DefaultRootRolePermissions,
 		CreatedAt:   timestamp,
 		UpdatedAt:   timestamp,
 	}, nil
 }
 
+func (g *GuildRole) IsRootOwnerRole() bool {
+	return g.Name == OwnerRootRoleName
+}
+
+func (g *GuildRole) IsRootDefaultRole() bool {
+	return g.Name == DefaultRootRoleName
+}
+
 func (g *GuildRole) UpdatedPermissions(permissions int32) error {
+	if g.IsRootOwnerRole() {
+		return domain.NewDomainValidationError("invalid role permissions")
+	}
+
 	g.Permissions = permissions
 	g.UpdatedAt = time.Now().UTC()
 	return g.validate()
 }
 
 func (g *GuildRole) UpdateName(name string) error {
+	if (g.IsRootOwnerRole() && name != OwnerRootRoleName) || (g.IsRootDefaultRole() && name != DefaultRootRoleName) {
+		return domain.NewDomainValidationError("invalid role name")
+	}
+
 	g.Name = name
 	g.UpdatedAt = time.Now().UTC()
 	return g.validate()
