@@ -46,12 +46,12 @@ func (c *GuildInviteController) getInvite(ctx echo.Context) error {
 		return handleError(ctx, err)
 	}
 
-	channelMessages, err := c.guildInviteService.GetByID(ctx.Request().Context(), qry)
+	guildInvite, err := c.guildInviteService.GetByID(ctx.Request().Context(), qry)
 	if err != nil {
 		return handleError(ctx, err)
 	}
 
-	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildInviteResponse(channelMessages.Result))
+	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildInviteResponse(guildInvite.Result))
 }
 
 func (c *GuildInviteController) getInvites(ctx echo.Context) error {
@@ -66,12 +66,12 @@ func (c *GuildInviteController) getInvites(ctx echo.Context) error {
 		return handleError(ctx, err)
 	}
 
-	channelMessages, err := c.guildInviteService.GetByGuildID(ctx.Request().Context(), qry)
+	guildInvites, err := c.guildInviteService.GetByGuildID(ctx.Request().Context(), qry)
 	if err != nil {
 		return handleError(ctx, err)
 	}
 
-	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildInvitesResponse(channelMessages.Result))
+	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildInvitesResponse(guildInvites.Result))
 }
 
 func (c *GuildInviteController) createInvite(ctx echo.Context) error {

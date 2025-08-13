@@ -18,6 +18,7 @@ func ToGuildInviteResponse(guildInvite *common.GuildInviteResult) *response.Guil
 		MemberCount:  guildInvite.MemberCount,
 		Icon:         guildInvite.IconID,
 		Banner:       guildInvite.BannerID,
+		CreatedAt:    guildInvite.CreatedAt,
 	}
 }
 

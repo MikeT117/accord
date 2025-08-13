@@ -26,6 +26,7 @@ type QueryGuildInvitesRequest struct {
 
 func (r *QueryGuildInvitesRequest) ToGuildInvitesQuery(requestorID uuid.UUID) (*query.GuildInvitesQuery, error) {
 	query := &query.GuildInvitesQuery{
+		GuildID:     r.GuildID,
 		RequestorID: requestorID,
 	}
 

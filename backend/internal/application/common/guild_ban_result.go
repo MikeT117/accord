@@ -7,9 +7,13 @@ import (
 )
 
 type GuildBanResult struct {
-	UserID    uuid.UUID
-	GuildID   uuid.UUID
-	Reason    string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Avatar      *uuid.UUID
+	Banner      *uuid.UUID
+	Username    string
+	DisplayName string
+	UserID      uuid.UUID
+	GuildID     uuid.UUID
+	Reason      string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }

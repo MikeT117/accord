@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
@@ -17,7 +18,7 @@ func CreateGuildBanRepository(db DBGetter) repositories.GuildBanRepository {
 	return &GuildBanRepository{db: db}
 }
 
-func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID uuid.UUID) ([]*entities.GuildBan, []uuid.UUID, error) {
+func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID uuid.UUID, before time.Time, limit int) ([]*entities.GuildBan, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			user_id,
@@ -25,9 +26,15 @@ func (r *GuildBanRepository) GetByGuildID(ctx context.Context, guildID uuid.UUID
 			reason,
 			created_at,
 			updated_at
+		FROM
+			guild_ban
 		WHERE
-			guild_id = $1;
-	`, guildID)
+			guild_id = $1
+		AND
+			created_at::timestamp(0) < $2
+		LIMIT
+			$3;
+	`, guildID, before, limit)
 
 	if err != nil {
 		return nil, nil, wrapUnknownErr("select guild bans by guild id failed", err)
