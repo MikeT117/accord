@@ -20,7 +20,8 @@ export function GuildSidebarTextChannel({
         return (
             <SidebarMenuSubItem key={channel.id} ref={ref}>
                 <SidebarMenuSubButton className="cursor-pointer select-none" isActive={isActive} onClick={onClick}>
-                    <HashIcon /> {channel.name}
+                    <HashIcon />
+                    <p>{channel.name}</p>
                 </SidebarMenuSubButton>
             </SidebarMenuSubItem>
         );
@@ -29,7 +30,8 @@ export function GuildSidebarTextChannel({
     return (
         <SidebarMenuItem key={channel.id} ref={ref}>
             <SidebarMenuButton className="cursor-pointer select-none" isActive={isActive} onClick={onClick}>
-                <HashIcon /> {channel.name}
+                <HashIcon />
+                <p>{channel.name}</p>
             </SidebarMenuButton>
         </SidebarMenuItem>
     );

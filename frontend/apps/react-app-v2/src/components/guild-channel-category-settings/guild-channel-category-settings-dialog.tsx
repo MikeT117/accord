@@ -51,7 +51,7 @@ type GuildCategoryChannelSettingsContentProps = { guildId: string; channelId: st
 
 function GuildCategoryChannelSettingsContent({ channelId, guildId }: GuildCategoryChannelSettingsContentProps) {
     const [activeSection, setActiveSection] = React.useState<ValueOf<typeof CATEGORY_SETTINGS_SECTION>>(
-        CATEGORY_SETTINGS_SECTION.OVERVIEW
+        CATEGORY_SETTINGS_SECTION.OVERVIEW,
     );
     const channel = useGuildCategoryChannel(guildId, channelId);
     return (

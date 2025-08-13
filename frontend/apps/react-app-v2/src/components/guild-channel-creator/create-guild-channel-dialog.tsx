@@ -13,7 +13,7 @@ import { GUILD_CHANNEL_TYPE } from "@/lib/zod-validation/channel-schema";
 import { useState } from "react";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Switch } from "../ui/switch";
-import { useCustomGuildRoles } from "@/lib/valtio/queries/guild-store-queries";
+import { useGuildRolesArray } from "@/lib/valtio/queries/guild-store-queries";
 import { Checkbox } from "../ui/checkbox";
 import { ShieldCheckIcon } from "lucide-react";
 import { useParams } from "@tanstack/react-router";
@@ -38,7 +38,7 @@ export function GuildChannelCreator() {
 function GuildChannelCreatorContent() {
     const { guildId } = useParams({ from: "/_auth/app/$guildId" });
     const [formStage, setFormStage] = useState<ValueOf<typeof FORM_STAGE>>(FORM_STAGE.CHANNEL_DETAILS);
-    const guildRoles = useCustomGuildRoles(guildId);
+    const { custom: customRoles } = useGuildRolesArray(guildId);
     const { mutate: createGuildChannel } = useCreateGuildChannelMutation({ onSuccess: handleSuccess });
 
     const form = useForm<CreateGuildChannelFormType>({
@@ -151,7 +151,7 @@ function GuildChannelCreatorContent() {
                                         <div className="space-y-0.5">
                                             <FormLabel>Private Channel</FormLabel>
                                             <FormDescription className="text-xs">
-                                                Only selected members will be able to view the channel.
+                                                Only members within selected roles will be able to view the channel.
                                             </FormDescription>
                                         </div>
                                         <FormControl>
@@ -172,7 +172,7 @@ function GuildChannelCreatorContent() {
                                         Select the roles you wish to assign to this channel.
                                     </FormDescription>
                                     <div className="flex flex-col grow-0 h-72 overflow-y-auto w-full gap-1 pr-1">
-                                        {guildRoles.map((role) => (
+                                        {customRoles.map((role) => (
                                             <FormField
                                                 key={role.id}
                                                 control={form.control}

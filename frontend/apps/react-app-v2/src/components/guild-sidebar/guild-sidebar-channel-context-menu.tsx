@@ -30,7 +30,7 @@ export function GuildSidebarChannelContextMenu({
     children,
 }: ChannelSidebarChannelContextMenuProps) {
     const { onCopy } = useClipboard();
-    const { hasManageGuildChannel } = useUserGuildChannelPermissions(guildId, id);
+    const { ManageGuildChannel } = useUserGuildChannelPermissions(guildId, id);
     const { mutate: deleteChannel } = useDeleteChannelMutation({ onSuccess: closeConfirmActionDialog });
 
     const isGuildCategoryChannel = channelType === GUILD_CHANNEL_TYPE.GUILD_CATEGORY_CHANNEL;
@@ -63,13 +63,13 @@ export function GuildSidebarChannelContextMenu({
                     </>
                 )}
 
-                {hasManageGuildChannel && (
+                {ManageGuildChannel && (
                     <ContextMenuItem onClick={handleEditClick}>
                         Edit {isGuildCategoryChannel ? "Category" : "Channel"}
                     </ContextMenuItem>
                 )}
                 <ContextMenuSeparator />
-                {hasManageGuildChannel && (
+                {ManageGuildChannel && (
                     <ContextMenuItem variant="destructive" onClick={handleDeleteClick}>
                         Delete
                     </ContextMenuItem>

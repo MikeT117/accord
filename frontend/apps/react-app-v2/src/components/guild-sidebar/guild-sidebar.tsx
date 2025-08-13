@@ -3,7 +3,6 @@ import {
     SidebarContent,
     SidebarGroup,
     SidebarGroupContent,
-    SidebarHeader,
     SidebarMenu,
     SidebarProvider,
 } from "@/components/ui/sidebar";
@@ -23,9 +22,7 @@ export function GuildSidebar() {
     return (
         <SidebarProvider>
             <Sidebar collapsible="none" className="flex border-r max-w-[250px] bg-background border-l">
-                <SidebarHeader className="border-b p-4">
-                    <GuildSidebarHeader id={guild.id} name={guild.name} />
-                </SidebarHeader>
+                <GuildSidebarHeader id={guild.id} name={guild.name} />
                 <SidebarContent>
                     <DnDProvider>
                         <SidebarGroup>

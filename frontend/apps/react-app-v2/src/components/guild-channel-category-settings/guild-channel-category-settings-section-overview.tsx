@@ -1,4 +1,3 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Input } from "../ui/input";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,7 +29,7 @@ export function GuildCategoryChannelSettingsOverviewSection({ id, name }: GuildC
                 ...values,
                 id,
                 parentId: null,
-            })
+            }),
         )();
     }
 
@@ -40,29 +39,21 @@ export function GuildCategoryChannelSettingsOverviewSection({ id, name }: GuildC
 
     return (
         <SettingsDialogContentSection title="Category Overview" description="Manage category properties.">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Category Information</CardTitle>
-                    <CardDescription>Update your category's name.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Form {...form}>
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Name</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Give your category a name" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </Form>
-                </CardContent>
-            </Card>
+            <Form {...form}>
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Category Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Give your category a name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </Form>
             <SettingsDialogUnsavedChanges
                 isVisible={form.formState.isDirty}
                 onDiscard={resetForm}

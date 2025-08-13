@@ -1,4 +1,3 @@
-import { closeGuildChannelSettings } from "@/lib/valtio/mutations/guild-channel-settings-ui-store-mutations";
 import { Trash2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
@@ -7,6 +6,7 @@ import { Label } from "../ui/label";
 import { useDeleteChannelMutation } from "@/lib/react-query/mutations/delete-channel-mutation";
 import { useState } from "react";
 import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog-content-section";
+import { closeGuildChannelSettings } from "@/lib/valtio/mutations/guild-channel-settings-ui-store-mutations";
 
 type GuildChannelSettingsDestructionSectionProps = {
     id: string;
@@ -43,9 +43,9 @@ export function GuildCategoryChannelSettingsDestructionSection({
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="bg-destructive/10 p-4 rounded-lg border border-destructive/20">
-                        <h4 className="font-semibold text-destructive mb-2">This action will:</h4>
-                        <ul className="text-sm text-muted-foreground space-y-1 ml-8 list-disc">
+                    <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
+                        <h4 className="mb-2 font-semibold text-destructive">This action will:</h4>
+                        <ul className="ml-8 list-disc space-y-1 text-sm text-muted-foreground">
                             <li>Unlink all child channels from this category</li>
                             <li>Delete all category settings and permissions</li>
                         </ul>
@@ -53,7 +53,7 @@ export function GuildCategoryChannelSettingsDestructionSection({
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="delete-confirmation">
-                                Type <code className="bg-muted px-1 py-0.5 rounded text-sm">{name}</code> to confirm
+                                Type <code className="rounded bg-muted px-1 py-0.5 text-sm">{name}</code> to confirm
                                 deletion
                             </Label>
                             <Input
@@ -70,7 +70,7 @@ export function GuildCategoryChannelSettingsDestructionSection({
                             disabled={!isConfirmed}
                             onClick={handleDeleteChannelClick}
                         >
-                            <Trash2 className="h-4 w-4 mr-2" />
+                            <Trash2 className="mr-2 h-4 w-4" />
                             Delete Category Permanently
                         </Button>
                     </div>

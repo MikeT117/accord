@@ -38,7 +38,11 @@ export function GuildSidebarCategoryChannel({ channel, children }: GuildSidebarC
                     channelType={channel.channelType}
                 >
                     <CollapsibleTrigger asChild>
-                        <SidebarMenuButton className="cursor-pointer select-none" ref={ref} isActive={isDropTarget}>
+                        <SidebarMenuButton
+                            className="cursor-pointer select-none font-medium"
+                            ref={ref}
+                            isActive={isDropTarget}
+                        >
                             {channel.name}
                             <Plus className="ml-auto group-data-[state=open]/collapsible:hidden" />
                             <Minus className="ml-auto group-data-[state=closed]/collapsible:hidden" />

@@ -10,7 +10,7 @@ import { useCreateGuildChannelMutation } from "@/lib/react-query/mutations/creat
 import { GUILD_CHANNEL_TYPE } from "@/lib/zod-validation/channel-schema";
 import { useState } from "react";
 import { Switch } from "../ui/switch";
-import { useCustomGuildRoles } from "@/lib/valtio/queries/guild-store-queries";
+import { useGuildRolesArray } from "@/lib/valtio/queries/guild-store-queries";
 import { Checkbox } from "../ui/checkbox";
 import { ShieldCheckIcon } from "lucide-react";
 import { useParams } from "@tanstack/react-router";
@@ -37,7 +37,7 @@ export function GuildCategoryCreator() {
 function GuildCategoryCreatorContent() {
     const { guildId } = useParams({ from: "/_auth/app/$guildId" });
     const [formStage, setFormStage] = useState<ValueOf<typeof FORM_STAGE>>(FORM_STAGE.CHANNEL_DETAILS);
-    const guildRoles = useCustomGuildRoles(guildId);
+    const { custom: customRoles } = useGuildRolesArray(guildId);
     const { mutate: createGuildChannel } = useCreateGuildChannelMutation({ onSuccess: handleSuccess });
 
     const form = useForm<CreateGuildCategoryFormType>({
@@ -131,7 +131,7 @@ function GuildCategoryCreatorContent() {
                                         Select the roles you wish to assign to this category.
                                     </FormDescription>
                                     <div className="flex flex-col grow-0 h-72 overflow-y-auto w-full gap-1 pr-1">
-                                        {guildRoles.map((role) => (
+                                        {customRoles.map((role) => (
                                             <FormField
                                                 key={role.id}
                                                 control={form.control}

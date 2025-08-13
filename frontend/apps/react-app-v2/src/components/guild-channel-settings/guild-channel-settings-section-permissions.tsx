@@ -1,4 +1,4 @@
-import { Trash2, Plus, ShieldIcon, Trash2Icon } from "lucide-react";
+import { Plus, ShieldIcon, ShieldUserIcon, Trash2Icon } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { useGuildChannelPermissions } from "@/lib/valtio/queries/guild-store-queries";
@@ -27,7 +27,7 @@ export function GuildChannelSettingsPermissionsSection({
 }: GuildChannelSettingsPermissionsSectionProps) {
     const { assignedRoles, availableRoles, defaultRoleId, isPrivate, isSyncedWithParent } = useGuildChannelPermissions(
         guildId,
-        id
+        id,
     );
 
     const { mutate: syncChannelRoleAssociations } = useSyncChannelRoleAssociationsMutation({ onSuccess: resetForm });
@@ -115,7 +115,7 @@ export function GuildChannelSettingsPermissionsSection({
                 <CardContent>
                     <div className="space-y-3">
                         {assignedRoles.map((role) => (
-                            <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div key={role.id} className="flex items-center justify-between rounded-lg border p-3">
                                 <div className="flex items-center gap-3">
                                     <ShieldIcon className="size-5 shrink-0" />
                                     <div className="space-y-1.5">
@@ -124,13 +124,16 @@ export function GuildChannelSettingsPermissionsSection({
                                     </div>
                                 </div>
 
-                                <DestructiveIconButton onClick={() => handleRoleUnassign(role.id)}>
+                                <DestructiveIconButton
+                                    onClick={() => handleRoleUnassign(role.id)}
+                                    tooltipText="Remove Role"
+                                >
                                     <Trash2Icon />
                                 </DestructiveIconButton>
                             </div>
                         ))}
                         {assignedRoles.length === 0 && (
-                            <div className="text-center py-8 text-muted-foreground">
+                            <div className="py-8 text-center text-muted-foreground">
                                 No roles assigned to this channel.
                             </div>
                         )}
@@ -145,22 +148,22 @@ export function GuildChannelSettingsPermissionsSection({
                 <CardContent>
                     <div className="space-y-3">
                         {availableRoles.map((role) => (
-                            <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg">
+                            <div key={role.id} className="flex items-center justify-between rounded-lg border p-3">
                                 <div className="flex items-center gap-3">
-                                    <ShieldIcon className="size-5" />
+                                    <ShieldUserIcon className="size-5 shrink-0" />
                                     <div className="space-y-1.5">
                                         <div className="font-medium">{role.name}</div>
                                         <GuildRolePermissionBadges permissions={role.permissions} />
                                     </div>
                                 </div>
                                 <Button variant="outline" size="sm" onClick={() => handleRoleAssign(role.id)}>
-                                    <Plus className="h-4 w-4 mr-1" />
+                                    <Plus className="mr-1 h-4 w-4" />
                                     Add
                                 </Button>
                             </div>
                         ))}
                         {availableRoles.length === 0 && (
-                            <div className="text-center py-8 text-muted-foreground">
+                            <div className="py-8 text-center text-muted-foreground">
                                 All available roles have been assigned.
                             </div>
                         )}

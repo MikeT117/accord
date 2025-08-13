@@ -1,4 +1,3 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { useForm } from "react-hook-form";
@@ -39,7 +38,7 @@ export function GuildChannelSettingsOverviewSection({
                 ...values,
                 id,
                 parentId,
-            })
+            }),
         )();
     }
 
@@ -49,42 +48,34 @@ export function GuildChannelSettingsOverviewSection({
 
     return (
         <SettingsDialogContentSection title="Channel Overview" description="Manage channel properties.">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Channel Information</CardTitle>
-                    <CardDescription>Update your channel's name, topic, and description.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Form {...form}>
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Name</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Give your channel a name" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="topic"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Topic</FormLabel>
-                                    <FormControl>
-                                        <Textarea placeholder="Give your channel a topic" {...field} rows={4} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </Form>
-                </CardContent>
-            </Card>
+            <Form {...form}>
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Channel Name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Give your channel a name" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="topic"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Channel Topic</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="Give your channel a topic" {...field} rows={4} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </Form>
             <SettingsDialogUnsavedChanges
                 isVisible={form.formState.isDirty}
                 onDiscard={resetForm}

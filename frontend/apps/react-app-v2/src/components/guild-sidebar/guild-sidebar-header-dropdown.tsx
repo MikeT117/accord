@@ -6,37 +6,31 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUserGuildPermissions } from "@/lib/authorisation/permissions";
+import { cn } from "@/lib/utils";
 import { openCreateGuildCategoryDialog } from "@/lib/valtio/mutations/create-guild-category-dialog-ui-store-mutations";
 import { openCreateGuildChannelDialog } from "@/lib/valtio/mutations/create-guild-channel-dialog-ui-store-mutations";
-import {
-    ChevronDownIcon,
-    CogIcon,
-    DoorOpenIcon,
-    FolderPlusIcon,
-    PlusCircleIcon,
-    UserPlusIcon,
-    XIcon,
-} from "lucide-react";
+import { openGuildSettings } from "@/lib/valtio/mutations/guild-settings-ui-store-mutations";
 
-type GuildSidebarHeaderDropdownProps = { id: string };
+import { CogIcon, DoorOpenIcon, FolderPlusIcon, PlusCircleIcon, UserPlusIcon } from "lucide-react";
+import type { ReactNode } from "react";
 
-export function GuildSidebarHeaderDropdown({ id }: GuildSidebarHeaderDropdownProps) {
-    const { hasManageGuild, hasManageGuildChannel } = useUserGuildPermissions(id);
+type GuildSidebarHeaderDropdownProps = { id: string; className?: string; children: ReactNode };
 
+export function GuildSidebarHeaderDropdown({ id, children, className }: GuildSidebarHeaderDropdownProps) {
+    const { ManageGuild, ManageGuildChannel } = useUserGuildPermissions(id);
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger className="flex group/guild-dropdown items-center">
-                <ChevronDownIcon size={20} className="group-data-[state=open]/guild-dropdown:hidden" />
-                <XIcon size={20} className="group-data-[state=closed]/guild-dropdown:hidden" />
+            <DropdownMenuTrigger className={cn("group/guild-dropdown hover:bg-accent", className)}>
+                {children}
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48" align="end" sideOffset={8} alignOffset={-8} side="bottom">
-                {hasManageGuildChannel && (
+                {ManageGuildChannel && (
                     <DropdownMenuItem className="justify-between" onClick={openCreateGuildChannelDialog}>
                         Create Channel
                         <PlusCircleIcon />
                     </DropdownMenuItem>
                 )}
-                {hasManageGuildChannel && (
+                {ManageGuildChannel && (
                     <DropdownMenuItem className="justify-between" onClick={openCreateGuildCategoryDialog}>
                         Create Category
                         <FolderPlusIcon />
@@ -48,8 +42,8 @@ export function GuildSidebarHeaderDropdown({ id }: GuildSidebarHeaderDropdownPro
                     <UserPlusIcon />
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                {hasManageGuild && (
-                    <DropdownMenuItem className="justify-between">
+                {ManageGuild && (
+                    <DropdownMenuItem onClick={openGuildSettings} className="justify-between">
                         Server Settings
                         <CogIcon />
                     </DropdownMenuItem>
