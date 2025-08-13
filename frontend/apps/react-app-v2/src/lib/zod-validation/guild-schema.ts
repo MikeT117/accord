@@ -12,8 +12,14 @@ export const guildSchema = z.object({
     discoverable: z.boolean(),
     channelCount: z.number(),
     memberCount: z.number(),
-    icon: z.nullable(z.string()),
-    banner: z.nullable(z.string()),
+    icon: z.pipe(
+        z.optional(z.nullable(z.string())),
+        z.transform((a) => (!a || a.trim() === "" ? null : a))
+    ),
+    banner: z.pipe(
+        z.optional(z.nullable(z.string())),
+        z.transform((a) => (!a || a.trim() === "" ? null : a))
+    ),
     createdAt: z.pipe(
         z.number(),
         z.transform((num) => fromUnixTime(num))

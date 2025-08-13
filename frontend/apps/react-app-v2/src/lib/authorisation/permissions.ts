@@ -20,32 +20,77 @@ export function generatePublicFlagsObj(flag: number) {
     };
 }
 
-export function generatePublicFlagsNumber(permissionsObj: ReturnType<typeof generatePublicFlagsObj>) {
+export function generatePublicFlagsNumber(publicFlagsObj: ReturnType<typeof generatePublicFlagsObj>) {
     let publicFlags = 0;
-    if (permissionsObj.allowFriendRequests) {
+    if (publicFlagsObj.allowFriendRequests) {
         publicFlags = publicFlags | (1 << USER_FLAG.ALLOW_FRIEND_REQUESTS);
     }
 
-    if (permissionsObj.allowGuildMemberDMs) {
+    if (publicFlagsObj.allowGuildMemberDMs) {
         publicFlags = publicFlags | (1 << USER_FLAG.ALLOW_GUILD_MEMBER_DMS);
     }
 
     return publicFlags;
 }
 
-export function generatePermissionsObj(permission: number) {
+export function generateRolePermissionsObj(permission: number) {
     return {
-        hasViewGuildChannel: hasRolePermission(permission, GUILD_PERMISSION.VIEW_GUILD_CHANNEL),
-        hasManageGuildChannel: hasRolePermission(permission, GUILD_PERMISSION.MANAGE_GUILD_CHANNELS),
-        hasCreateChannelMessage: hasRolePermission(permission, GUILD_PERMISSION.CREATE_CHANNEL_MESSAGE),
-        hasManageChannelMessage: hasRolePermission(permission, GUILD_PERMISSION.MANAGE_CHANNEL_MESSAGES),
-        hasManageGuild: hasRolePermission(permission, GUILD_PERMISSION.MANAGE_GUILD),
-        hasGuildAdmin: hasRolePermission(permission, GUILD_PERMISSION.GUILD_ADMIN),
-        hasGuildSuperAdmin: hasRolePermission(permission, GUILD_PERMISSION.GUILD_SUPER_ADMIN),
-        hasGuildOwner: hasRolePermission(permission, GUILD_PERMISSION.GUILD_OWNER),
-        hasViewGuildMember: hasRolePermission(permission, GUILD_PERMISSION.VIEW_GUILD_MEMBERS),
-        hasCreateChannelPin: hasRolePermission(permission, GUILD_PERMISSION.CREATE_CHANNEL_PIN),
+        ViewGuildChannel: hasRolePermission(permission, GUILD_PERMISSION.VIEW_GUILD_CHANNEL),
+        ManageGuildChannel: hasRolePermission(permission, GUILD_PERMISSION.MANAGE_GUILD_CHANNELS),
+        CreateChannelMessage: hasRolePermission(permission, GUILD_PERMISSION.CREATE_CHANNEL_MESSAGE),
+        ManageChannelMessage: hasRolePermission(permission, GUILD_PERMISSION.MANAGE_CHANNEL_MESSAGES),
+        ManageGuild: hasRolePermission(permission, GUILD_PERMISSION.MANAGE_GUILD),
+        GuildAdmin: hasRolePermission(permission, GUILD_PERMISSION.GUILD_ADMIN),
+        GuildSuperAdmin: hasRolePermission(permission, GUILD_PERMISSION.GUILD_SUPER_ADMIN),
+        GuildOwner: hasRolePermission(permission, GUILD_PERMISSION.GUILD_OWNER),
+        ViewGuildMember: hasRolePermission(permission, GUILD_PERMISSION.VIEW_GUILD_MEMBERS),
+        CreateChannelPin: hasRolePermission(permission, GUILD_PERMISSION.CREATE_CHANNEL_PIN),
     };
+}
+
+export function generateRolePermissionsNumber(permissionsObj: ReturnType<typeof generateRolePermissionsObj>) {
+    let permissions = 0;
+    if (permissionsObj.CreateChannelMessage) {
+        permissions = permissions | (1 << GUILD_PERMISSION.CREATE_CHANNEL_MESSAGE);
+    }
+
+    if (permissionsObj.CreateChannelPin) {
+        permissions = permissions | (1 << GUILD_PERMISSION.CREATE_CHANNEL_PIN);
+    }
+
+    if (permissionsObj.GuildAdmin) {
+        permissions = permissions | (1 << GUILD_PERMISSION.GUILD_ADMIN);
+    }
+
+    if (permissionsObj.GuildOwner) {
+        permissions = permissions | (1 << GUILD_PERMISSION.GUILD_OWNER);
+    }
+
+    if (permissionsObj.GuildSuperAdmin) {
+        permissions = permissions | (1 << GUILD_PERMISSION.GUILD_SUPER_ADMIN);
+    }
+
+    if (permissionsObj.ManageChannelMessage) {
+        permissions = permissions | (1 << GUILD_PERMISSION.MANAGE_CHANNEL_MESSAGES);
+    }
+
+    if (permissionsObj.ManageGuild) {
+        permissions = permissions | (1 << GUILD_PERMISSION.MANAGE_GUILD);
+    }
+
+    if (permissionsObj.ManageGuildChannel) {
+        permissions = permissions | (1 << GUILD_PERMISSION.MANAGE_GUILD_CHANNELS);
+    }
+
+    if (permissionsObj.ViewGuildChannel) {
+        permissions = permissions | (1 << GUILD_PERMISSION.VIEW_GUILD_CHANNEL);
+    }
+
+    if (permissionsObj.ViewGuildMember) {
+        permissions = permissions | (1 << GUILD_PERMISSION.VIEW_GUILD_MEMBERS);
+    }
+
+    return permissions;
 }
 
 export const useUserGuildChannelPermissions = (guildId: string, channelId: string) => {
@@ -60,7 +105,7 @@ export const useUserGuildChannelPermissions = (guildId: string, channelId: strin
         }
     });
 
-    return generatePermissionsObj(permission);
+    return generateRolePermissionsObj(permission);
 };
 
 export const useUserGuildPermissions = (guildId: string) => {
@@ -73,7 +118,7 @@ export const useUserGuildPermissions = (guildId: string) => {
         }
     });
 
-    return generatePermissionsObj(permission);
+    return generateRolePermissionsObj(permission);
 };
 
 export function isChannelViewable(

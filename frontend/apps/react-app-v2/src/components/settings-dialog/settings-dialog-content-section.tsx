@@ -8,10 +8,10 @@ type SettingsDialogContentSectionProps = {
 
 export function SettingsDialogContentSection({ description, title, children }: SettingsDialogContentSectionProps) {
     return (
-        <div className="space-y-6 relative pb-6 h-full">
+        <div className="relative h-full space-y-6 p-6">
             <div className="flex flex-col space-y-1">
                 <h2 className="text-2xl font-semibold">{title}</h2>
-                <p className="text-muted-foreground text-sm">{description}</p>
+                <p className="text-sm text-muted-foreground">{description}</p>
             </div>
             {children}
         </div>

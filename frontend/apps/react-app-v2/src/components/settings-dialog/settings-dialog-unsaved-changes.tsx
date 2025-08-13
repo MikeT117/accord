@@ -13,7 +13,7 @@ export function SettingsDialogUnsavedChanges({ onDiscard, onSave, isVisible }: U
         return null;
     }
     return (
-        <Alert variant="warning" className="sticky bottom-0">
+        <Alert variant="warning" className="sticky bottom-6">
             <AlertCircleIcon />
             <AlertTitle>You have unsaved changes</AlertTitle>
             <AlertDescription>Your changes will be lost if to exist without saving.</AlertDescription>
