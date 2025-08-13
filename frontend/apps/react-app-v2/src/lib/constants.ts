@@ -18,4 +18,9 @@ export const GUILD_PERMISSION = {
     CREATE_CHANNEL_PIN: 9,
 } as const;
 
+export const USER_FLAG = {
+    ALLOW_FRIEND_REQUESTS: 0,
+    ALLOW_GUILD_MEMBER_DMS: 1,
+} as const;
+
 export const emojiRegExp = emojiRegex();

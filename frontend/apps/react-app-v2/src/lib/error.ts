@@ -6,11 +6,27 @@ export class ErrServerNotFound extends Error {
     }
 }
 
+export class ErrUnknown extends Error {
+    constructor() {
+        super();
+        this.message = "Unknown Error Occurred";
+        this.name = "ErrUnknown";
+    }
+}
+
 export class ErrChannelNotFound extends Error {
     constructor() {
         super();
         this.message = "Channel Not Found";
         this.name = "ErrChannelNotFound";
+    }
+}
+
+export class ErrRoleNotFound extends Error {
+    constructor() {
+        super();
+        this.message = "Role Not Found";
+        this.name = "ErrRoleNotFound";
     }
 }
 
