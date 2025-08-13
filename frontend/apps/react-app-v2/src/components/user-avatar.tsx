@@ -17,7 +17,7 @@ export function UserAvatar({ displayName, avatar, preview, onMutate, className }
         <div className="relative">
             <Avatar
                 className={cn(
-                    "border-4 border-background flex overflow-hidden rounded-full bg-accent justify-center items-center",
+                    "border-4 border-background flex overflow-hidden bg-accent justify-center items-center",
                     "h-16 w-16",
                     className
                 )}

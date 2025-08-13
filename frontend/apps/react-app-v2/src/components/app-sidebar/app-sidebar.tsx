@@ -3,10 +3,9 @@ import { AccordLogo } from "../accord-logo";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Avatar, AvatarImage } from "../ui/avatar";
 import { AvatarFallback } from "@radix-ui/react-avatar";
-import { useGuilds } from "@/lib/valtio/queries/guild-store-queries";
+import { useGuildsArray } from "@/lib/valtio/queries/guild-store-queries";
 import { openCreateGuildDialog } from "@/lib/valtio/mutations/create-guild-dialog-ui-store-mutations";
 import { ButtonWithTooltip } from "../button-with-tooltip";
-import { cn } from "@/lib/utils";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,10 +18,12 @@ import {
 import { cycleAppTheme } from "@/lib/valtio/mutations/theme-store-mutations";
 import { useTheme } from "@/lib/valtio/queries/theme-store-queries";
 import { useUser } from "@/lib/valtio/queries/user-store-queries";
+import { openUserSettings } from "@/lib/valtio/mutations/user-settings-ui-store-mutations";
+import { GuildIcon } from "../guild-icon";
 
 export function AppSidebar() {
     const { guildId } = useParams({ strict: false });
-    const guilds = useGuilds();
+    const guilds = useGuildsArray();
     const user = useUser();
     const theme = useTheme();
 
@@ -37,12 +38,12 @@ export function AppSidebar() {
     }
 
     return (
-        <div className="flex flex-col items-center w-[72px] bg-background py-4 space-y-3">
+        <div className="flex w-[72px] flex-col items-center space-y-3 bg-background py-4">
             <div className="flex flex-col gap-1.5">
                 <ButtonWithTooltip
                     tooltipText="User Dashboard"
                     side="right"
-                    className="flex justify-center items-center bg-accent-foreground text-accent h-10 w-10 rounded-lg"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-foreground text-accent"
                 >
                     <AccordLogo />
                 </ButtonWithTooltip>
@@ -51,7 +52,7 @@ export function AppSidebar() {
                     side="right"
                     size="lg"
                     onClick={() => void 0}
-                    className="flex justify-center items-center p-0 h-10 w-10 rounded-lg"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg p-0"
                     variant="secondary"
                 >
                     <GlobeIcon />
@@ -62,7 +63,7 @@ export function AppSidebar() {
                     side="right"
                     size="lg"
                     onClick={openCreateGuildDialog}
-                    className="flex justify-center items-center p-0 h-10 w-10 rounded-lg"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg p-0"
                     variant="secondary"
                 >
                     <PlusIcon />
@@ -75,16 +76,13 @@ export function AppSidebar() {
                         tooltipText={`${g.name} Server`}
                         side="right"
                         size="icon"
-                        variant="ghost"
-                        className={cn("p-0 h-10 w-10 rounded-lg", g.id === guildId ? "bg-accent" : "")}
+                        variant="link"
+                        className="group relative h-10 w-10 rounded-lg p-0"
+                        data-state={g.id === guildId ? "active" : "inactive"}
                         onClick={() => handleGuildClick(g.id)}
                     >
-                        <Avatar className="flex justify-center items-center rounded-none object-scale-down h-full w-full">
-                            <AvatarImage src={g.icon ?? ""} />
-                            <AvatarFallback className="rounded-md pointer-events-none">
-                                {g.name[0].toUpperCase() + "S"}
-                            </AvatarFallback>
-                        </Avatar>
+                        <div className="absolute -left-5 h-3 w-2 rounded-r-xs transition-all group-hover:h-5 group-data-[state=active]:bg-accent-foreground" />
+                        <GuildIcon name={g.name} icon={g.icon} className="size-10 border-none" />
                     </ButtonWithTooltip>
                 ))}
             </div>
@@ -93,13 +91,13 @@ export function AppSidebar() {
                     <DropdownMenuTrigger asChild>
                         <ButtonWithTooltip
                             size="icon"
-                            className="rounded-lg overflow-hidden"
+                            className="overflow-hidden rounded-lg"
                             tooltipText="Settings"
                             side="right"
                         >
-                            <Avatar className="rounded-none h-full w-full items-center justify-center">
+                            <Avatar className="h-full w-full items-center justify-center rounded-none">
                                 <AvatarImage src={user.avatar ?? ""} alt={user.displayName} />
-                                <AvatarFallback className="rounded-none bg-transparent pointer-events-none">
+                                <AvatarFallback className="pointer-events-none rounded-none bg-transparent">
                                     MT
                                 </AvatarFallback>
                             </Avatar>
@@ -108,7 +106,7 @@ export function AppSidebar() {
                     <DropdownMenuContent className="min-w-56 rounded-lg" align="end" sideOffset={8} side="right">
                         <DropdownMenuLabel className="p-0 font-normal">
                             <div className="flex items-center  gap-2 px-1 py-1.5 text-sm">
-                                <Avatar className="flex justify-center items-center h-8 w-8 rounded-lg">
+                                <Avatar className="flex h-8 w-8 items-center justify-center rounded-lg">
                                     <AvatarImage src={user.avatar ?? ""} alt={user.displayName} />
                                     <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                                 </Avatar>
@@ -120,7 +118,7 @@ export function AppSidebar() {
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={openUserSettings}>
                                 <CogIcon />
                                 User Settings
                             </DropdownMenuItem>

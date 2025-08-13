@@ -1,4 +1,3 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { Switch } from "../ui/switch";
 import { useForm } from "react-hook-form";
 import { SettingsDialogUnsavedChanges } from "../settings-dialog/settings-dialog-unsaved-changes";
@@ -36,7 +35,7 @@ export function UserSettingsPermissionsSection({
                 publicFlags: generatePublicFlagsNumber(values),
                 avatarId: avatar,
                 bannerId: banner,
-            })
+            }),
         )();
     }
 
@@ -46,53 +45,45 @@ export function UserSettingsPermissionsSection({
 
     return (
         <SettingsDialogContentSection title="Account Permissions" description="Manage account communication flags.">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Public Flags</CardTitle>
-                    <CardDescription>Configuration flags for your account</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Form {...form}>
-                        <form className="space-y-3">
-                            <FormField
-                                control={form.control}
-                                name="allowFriendRequests"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 has-[[aria-checked=true]]:bg-muted">
-                                        <div className="space-y-0.5">
-                                            <FormLabel>Allow Friend Requests</FormLabel>
-                                            <FormDescription className="text-xs">
-                                                Toggling this allows any user to send you a friend request.
-                                            </FormDescription>
-                                        </div>
-                                        <FormControl>
-                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="allowGuildMemberDMs"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 has-[[aria-checked=true]]:bg-muted">
-                                        <div className="space-y-0.5">
-                                            <FormLabel>Allow Guild Member Direct Messages</FormLabel>
-                                            <FormDescription className="text-xs">
-                                                Toggling this allows members of mutual servers to message you without
-                                                being friends.
-                                            </FormDescription>
-                                        </div>
-                                        <FormControl>
-                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </form>
-                    </Form>
-                </CardContent>
-            </Card>
+            <Form {...form}>
+                <form className="space-y-3">
+                    <FormField
+                        control={form.control}
+                        name="allowFriendRequests"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 has-[[aria-checked=true]]:bg-muted">
+                                <div className="space-y-0.5">
+                                    <FormLabel>Allow Friend Requests</FormLabel>
+                                    <FormDescription className="text-xs">
+                                        Toggling this allows any user to send you a friend request.
+                                    </FormDescription>
+                                </div>
+                                <FormControl>
+                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="allowGuildMemberDMs"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 has-[[aria-checked=true]]:bg-muted">
+                                <div className="space-y-0.5">
+                                    <FormLabel>Allow Guild Member Direct Messages</FormLabel>
+                                    <FormDescription className="text-xs">
+                                        Toggling this allows members of mutual servers to message you without being
+                                        friends.
+                                    </FormDescription>
+                                </div>
+                                <FormControl>
+                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                </form>
+            </Form>
             <SettingsDialogUnsavedChanges
                 isVisible={form.formState.isDirty}
                 onDiscard={resetForm}
