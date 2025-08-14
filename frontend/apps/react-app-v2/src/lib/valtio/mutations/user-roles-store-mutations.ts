@@ -1,3 +1,4 @@
+import type { APIUserRoleAssociationChangeType } from "@/lib/types/types";
 import { userRoleStore } from "../stores/user-roles-store";
 
 function resetUserRoleStore() {
@@ -16,12 +17,12 @@ export function handleUserRoleStoreInitialisation(roleIds: string[]) {
     userRoleStore.initialised = true;
 }
 
-export function handleUserRoleAdded(roleId: string) {
+export function handleUserRoleAdded({ roleId }: APIUserRoleAssociationChangeType) {
     userRoleStore.keys.push(roleId);
     userRoleStore.values[roleId] = true;
 }
 
-export function handleUserRoleRemoved(roleId: string) {
+export function handleUserRoleRemoved({ roleId }: APIUserRoleAssociationChangeType) {
     const index = userRoleStore.keys.findIndex((r) => r === roleId);
     if (!index) return;
 
