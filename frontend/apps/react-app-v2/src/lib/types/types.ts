@@ -121,16 +121,16 @@ export type GuildCategoryChannelType = Extract<GuildChannelType, { channelType: 
 export type PrivateDirectChannelType = Extract<PrivateChannelType, { channelType: 3 }>;
 export type PrivateGroupChannelType = Extract<PrivateChannelType, { channelType: 4 }>;
 
-// USer Role Permissions
+// User Role Permissions
 export type GuildRolePermissionsType = {
-    hasViewGuildChannel: boolean;
-    hasManageGuildChannel: boolean;
-    hasCreateChannelMessage: boolean;
-    hasManageChannelMessage: boolean;
-    hasManageGuild: boolean;
-    hasGuildAdmin: boolean;
-    hasGuildSuperAdmin: boolean;
-    hasGuildOwner: boolean;
-    hasViewGuildMember: boolean;
-    hasCreateChannelPin: boolean;
+    ViewGuildChannel: boolean;
+    ManageGuildChannel: boolean;
+    CreateChannelMessage: boolean;
+    ManageChannelMessage: boolean;
+    ManageGuild: boolean;
+    GuildAdmin: boolean;
+    GuildSuperAdmin: boolean;
+    GuildOwner: boolean;
+    ViewGuildMember: boolean;
+    CreateChannelPin: boolean;
 };
