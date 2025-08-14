@@ -32,8 +32,8 @@ export function GuildCategoryChannelSettingsDestructionSection({
 
     return (
         <SettingsDialogContentSection
-            title="Delete Channel"
-            description="Permanently delete this channel and all its content."
+            title="Delete Category"
+            description="Permanently delete this category and all its content."
         >
             <Card className="border-destructive/20">
                 <CardHeader>
