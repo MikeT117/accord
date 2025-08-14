@@ -1,26 +1,24 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <script>window.__ENV__ = {
-      HOST: '%VITE_HOST%',
-      CLOUDINARY_URL: '%VITE_CLOUDINARY_URL%',
-      CLOUDINARY_RES_URL: '%VITE_CLOUDINARY_RES_URL%',
-      CLOUDINARY_API_KEY: '%VITE_CLOUDINARY_API_KEY%',
-      API_URL: '%VITE_API_URL%',
-      RTC_URL: '%VITE_RTC_URL%',
-      WS_URL: '%VITE_WS_URL%',
-      }
-    </script>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Accord</title>
-  </head>
-  <body class="text-foreground font-sans antialiased">
-    <div id="root" class="bg-background min-h-svh"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    <head>
+        <script>
+            window.__ENV__ = {
+                HOST: "%VITE_HOST%",
+                CLOUDINARY_URL: "%VITE_CLOUDINARY_URL%",
+                CLOUDINARY_RES_URL: "%VITE_CLOUDINARY_RES_URL%",
+                CLOUDINARY_API_KEY: "%VITE_CLOUDINARY_API_KEY%",
+                API_URL: "%VITE_API_URL%",
+                RTC_URL: "%VITE_RTC_URL%",
+                WS_URL: "%VITE_WS_URL%",
+            };
+        </script>
+        <meta charset="UTF-8" />
+        <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Accord</title>
+    </head>
+    <body class="font-sans text-foreground antialiased">
+        <div id="root" class="min-h-svh bg-background"></div>
+        <script type="module" src="/src/main.tsx"></script>
+    </body>
 </html>
-
-
-

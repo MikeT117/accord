@@ -25,3 +25,5 @@ dist-ssr
 
 # Tanstack
 /.tanstack
+
+gen
