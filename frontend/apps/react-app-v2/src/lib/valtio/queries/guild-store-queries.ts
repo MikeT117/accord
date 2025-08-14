@@ -10,89 +10,93 @@ import { useSnapshot } from "valtio";
 import { guildStore } from "../stores/guild-store";
 import { userRoleStore } from "../stores/user-roles-store";
 import { isChannelViewable } from "@/lib/authorisation/permissions";
-import { ErrChannelNotFound, ErrServerNotFound } from "@/lib/error";
+import { ErrChannelNotFound, ErrRoleNotFound, ErrServerNotFound } from "@/lib/error";
 
 export function useGuild(guildId: string) {
     const guildStoreSnapshot = useSnapshot(guildStore);
     const guild = guildStoreSnapshot.values[guildId];
-    if (!guild) throw new ErrServerNotFound();
+    if (!guild) {
+        throw new ErrServerNotFound();
+    }
 
     return guild;
 }
 
-export function useGuilds() {
+export function useGuildsArray() {
     const guildStoreSnapshot = useSnapshot(guildStore);
     return guildStoreSnapshot.keys.map((k) => guildStoreSnapshot.values[k]!);
 }
 
-export function useGuildChannel(guildId: string, channelId: string) {
-    const guild = useGuild(guildId);
-    const userRoleStoreSnapshot = useSnapshot(userRoleStore);
-
-    const channel = guild.channels.values[channelId];
-    if (!channel) throw new ErrChannelNotFound();
-
-    if (!isChannelViewable(channel.roleIds.keys, userRoleStoreSnapshot.values, guild.roles.values)) {
-        throw new ErrChannelNotFound();
-    }
-
-    return channel;
-}
-
 export function useGuildTextChannel(guildId: string, channelId: string) {
-    const channel = useGuildChannel(guildId, channelId);
-    if (!channel) throw new ErrChannelNotFound();
+    const channel = useViewableGuildChannel(guildId, channelId);
     if (!isGuildTextChannel(channel)) throw new ErrChannelNotFound();
-
     return channel;
 }
 
 export function useGuildCategoryChannel(guildId: string, channelId: string) {
-    const channel = useGuildChannel(guildId, channelId);
-    if (!channel) throw new ErrChannelNotFound();
+    const channel = useViewableGuildChannel(guildId, channelId);
     if (!isGuildCategoryChannel(channel)) throw new ErrChannelNotFound();
-
     return channel;
 }
 
 export function useGuildVoiceChannel(guildId: string, channelId: string) {
-    const channel = useGuildChannel(guildId, channelId);
-    if (!channel) throw new ErrChannelNotFound();
+    const channel = useViewableGuildChannel(guildId, channelId);
     if (!isGuildVoiceChannel(channel)) throw new ErrChannelNotFound();
-
     return channel;
 }
 
-export function useGuildRoles(guildId: string) {
-    const guild = useGuild(guildId);
-    return guild.roles.keys.map((k) => guild.roles.values[k]!);
+export function useGuildRolesArray(guildId: string) {
+    const guildSnapshot = useGuild(guildId);
+    const custom: GuildRoleType[] = [];
+    let defaultRole: GuildRoleType | null = null;
+    let ownerRole: GuildRoleType | null = null;
+
+    for (const key of guildSnapshot.roles.keys) {
+        const role = guildSnapshot.roles.values[key];
+        if (!role) {
+            throw new ErrRoleNotFound();
+        }
+
+        if (role.name === "@default") {
+            defaultRole = role;
+            continue;
+        }
+
+        if (role.name === "@owner") {
+            ownerRole = role;
+            continue;
+        }
+
+        custom.push(role);
+    }
+
+    if (!defaultRole || !ownerRole) {
+        throw new ErrRoleNotFound();
+    }
+
+    return { custom, defaultRole, ownerRole };
 }
 
-export function useCustomGuildRoles(guildId: string) {
-    const guild = useGuild(guildId);
-    const roles: GuildRoleType[] = [];
-    guild.roles.keys.forEach((k) => {
-        if (!guild.roles.values[k]!.name.includes("@")) {
-            roles.push(guild.roles.values[k]!);
-        }
-    });
-
-    return roles;
+export function useGuildRolesMap(guildId: string) {
+    const guildSnapshot = useGuild(guildId);
+    return guildSnapshot.roles.values;
 }
 
 export function useSortedGuildChannels(guildId: string) {
-    const guild = useGuild(guildId);
+    const guildSnapshot = useGuild(guildId);
     const userRoleStoreSnapshot = useSnapshot(userRoleStore);
 
     const parents: Snapshot<GuildCategoryChannelType>[] = [];
     const children: Snapshot<GuildTextChannelType | GuildVoiceChannelType>[] = [];
     const orphans: Snapshot<GuildTextChannelType | GuildVoiceChannelType>[] = [];
 
-    for (let i = 0; i < guild.channels.keys.length; i++) {
-        const channel = guild.channels.values[guild.channels.keys[i]];
-        if (!channel) continue;
+    for (let i = 0; i < guildSnapshot.channels.keys.length; i++) {
+        const channel = guildSnapshot.channels.values[guildSnapshot.channels.keys[i]];
+        if (!channel) {
+            continue;
+        }
 
-        if (!isChannelViewable(channel.roleIds.keys, userRoleStoreSnapshot.values, guild.roles.values)) {
+        if (!isChannelViewable(channel.roleIds.keys, userRoleStoreSnapshot.values, guildSnapshot.roles.values)) {
             continue;
         }
 
@@ -101,16 +105,16 @@ export function useSortedGuildChannels(guildId: string) {
             continue;
         }
 
-        if (!channel.parentId || !guild.channels.values[channel.parentId]) {
+        if (!channel.parentId || !guildSnapshot.channels.values[channel.parentId]) {
             orphans.push(channel);
             continue;
         }
 
         if (
             !isChannelViewable(
-                guild.channels.values[channel.parentId]!.roleIds.keys,
+                guildSnapshot.channels.values[channel.parentId]?.roleIds.keys ?? [],
                 userRoleStoreSnapshot.values,
-                guild.roles.values
+                guildSnapshot.roles.values,
             )
         ) {
             orphans.push(channel);
@@ -121,4 +125,90 @@ export function useSortedGuildChannels(guildId: string) {
     }
 
     return { parents, children, orphans };
+}
+
+export function useGuildChannelPermissions(guildId: string, channelId: string) {
+    const guild = useGuild(guildId);
+    const channel = guild.channels.values[channelId];
+    if (!channel) {
+        throw new ErrChannelNotFound();
+    }
+
+    const isSyncedWithParent = (() => {
+        if (isGuildCategoryChannel(channel) || !channel.parentId) {
+            return null;
+        }
+
+        const parentChannel = guild.channels.values[channel.parentId];
+        if (!parentChannel) {
+            throw new ErrChannelNotFound();
+        }
+
+        if (channel.roleIds.keys.length !== parentChannel.roleIds.keys.length) {
+            return false;
+        }
+
+        for (const key of parentChannel.roleIds.keys) {
+            if (!channel.roleIds.values[key]) {
+                return false;
+            }
+        }
+
+        return true;
+    })();
+
+    const assignedRoles: GuildRoleType[] = [];
+    const availableRoles: GuildRoleType[] = [];
+    let defaultRoleId: string | undefined;
+
+    for (const key of guild.roles.keys) {
+        const role = guild.roles.values[key]!;
+        if (!role) {
+            throw new ErrRoleNotFound();
+        }
+
+        if (role.name === "@default") {
+            defaultRoleId = role.id;
+            continue;
+        }
+
+        if (role.name === "@owner") {
+            continue;
+        }
+
+        if (channel.roleIds.values[key]) {
+            assignedRoles.push(role);
+        } else {
+            availableRoles.push(role);
+        }
+    }
+
+    if (!defaultRoleId) {
+        throw new ErrRoleNotFound();
+    }
+    const isPrivate = !channel.roleIds.values[defaultRoleId];
+
+    return {
+        assignedRoles,
+        availableRoles,
+        defaultRoleId,
+        isSyncedWithParent,
+        isPrivate,
+    };
+}
+
+function useViewableGuildChannel(guildId: string, channelId: string) {
+    const guildSnapshot = useGuild(guildId);
+    const userRoleStoreSnapshot = useSnapshot(userRoleStore);
+
+    const channel = guildSnapshot.channels.values[channelId];
+    if (!channel) {
+        throw new ErrChannelNotFound();
+    }
+
+    if (!isChannelViewable(channel.roleIds.keys, userRoleStoreSnapshot.values, guildSnapshot.roles.values)) {
+        throw new ErrChannelNotFound();
+    }
+
+    return channel;
 }
