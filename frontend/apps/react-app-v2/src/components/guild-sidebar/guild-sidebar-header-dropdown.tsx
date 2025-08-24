@@ -20,10 +20,12 @@ export function GuildSidebarHeaderDropdown({ id, children, className }: GuildSid
     const { ManageGuild, ManageGuildChannel } = useUserGuildPermissions(id);
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger className={cn("group/guild-dropdown hover:bg-accent", className)}>
+            <DropdownMenuTrigger
+                className={cn("group/guild-dropdown hover:bg-accent/50 data-[state=open]:bg-accent/50", className)}
+            >
                 {children}
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48" align="end" sideOffset={8} alignOffset={-8} side="bottom">
+            <DropdownMenuContent className="w-48" align="center" side="bottom">
                 {ManageGuildChannel && (
                     <DropdownMenuItem className="justify-between" onClick={openCreateGuildChannelDialog}>
                         Create Channel

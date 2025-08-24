@@ -36,16 +36,16 @@ export function GuildIcon({ name, icon, preview, onMutate, className }: GuildIco
         <div className="relative">
             <Avatar
                 className={cn(
-                    "border-4 border-background flex overflow-hidden bg-accent justify-center items-center rounded-3xl",
+                    "flex items-center justify-center overflow-hidden rounded-3xl border-4 border-background bg-accent",
                     "size-16",
-                    className
+                    className,
                 )}
             >
                 <AvatarImage src={imageSrc} alt={name} />
                 <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
             {isMutable && (
-                <Button size="sm" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0" onClick={onMutate}>
+                <Button size="sm" className="absolute -right-2 -bottom-2 h-8 w-8 rounded-full p-0" onClick={onMutate}>
                     <CameraIcon className="h-3 w-3" />
                 </Button>
             )}
