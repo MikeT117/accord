@@ -139,3 +139,18 @@
         @apply bg-muted-foreground/50;
     }
 }
+
+@layer overrides {
+    .epr-search-container > input {
+        @apply border-input! bg-card! focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50;
+    }
+
+    .epr-emoji-category-label {
+        @apply bg-card!;
+    }
+
+    .epr-main,
+    .epr-main > :nth-child(3) {
+        @apply border-accent! bg-card!;
+    }
+}

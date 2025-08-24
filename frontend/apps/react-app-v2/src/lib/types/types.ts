@@ -106,6 +106,7 @@ export type GuildChannelType =
     | (Omit<Extract<APIGuildChannelType, { channelType: 1 }>, "roleIds"> & { roleIds: Normalize<boolean> })
     | (Omit<Extract<APIGuildChannelType, { channelType: 2 }>, "roleIds"> & { roleIds: Normalize<boolean> });
 
+export type ChannelType = GuildChannelType | PrivateChannelType;
 export type PrivateChannelType =
     | Extract<APIPrivateChannelType, { channelType: 3 }>
     | Extract<APIPrivateChannelType, { channelType: 4 }>;

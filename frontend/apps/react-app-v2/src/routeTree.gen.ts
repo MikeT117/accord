@@ -14,6 +14,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthAppRouteRouteImport } from './routes/_auth/app/route'
 import { Route as AuthAppGuildIdRouteRouteImport } from './routes/_auth/app/$guildId/route'
 import { Route as AuthAppHomeIndexRouteImport } from './routes/_auth/app/home/index'
+import { Route as AuthAppGuildIdIndexRouteImport } from './routes/_auth/app/$guildId/index'
+import { Route as AuthAppGuildIdChannelIdRouteRouteImport } from './routes/_auth/app/$guildId/$channelId/route'
+import { Route as AuthAppGuildIdChannelIdIndexRouteImport } from './routes/_auth/app/$guildId/$channelId/index'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -40,41 +43,82 @@ const AuthAppHomeIndexRoute = AuthAppHomeIndexRouteImport.update({
   path: '/home/',
   getParentRoute: () => AuthAppRouteRoute,
 } as any)
+const AuthAppGuildIdIndexRoute = AuthAppGuildIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthAppGuildIdRouteRoute,
+} as any)
+const AuthAppGuildIdChannelIdRouteRoute =
+  AuthAppGuildIdChannelIdRouteRouteImport.update({
+    id: '/$channelId',
+    path: '/$channelId',
+    getParentRoute: () => AuthAppGuildIdRouteRoute,
+  } as any)
+const AuthAppGuildIdChannelIdIndexRoute =
+  AuthAppGuildIdChannelIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthAppGuildIdChannelIdRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app': typeof AuthAppRouteRouteWithChildren
-  '/app/$guildId': typeof AuthAppGuildIdRouteRoute
+  '/app/$guildId': typeof AuthAppGuildIdRouteRouteWithChildren
+  '/app/$guildId/$channelId': typeof AuthAppGuildIdChannelIdRouteRouteWithChildren
+  '/app/$guildId/': typeof AuthAppGuildIdIndexRoute
   '/app/home': typeof AuthAppHomeIndexRoute
+  '/app/$guildId/$channelId/': typeof AuthAppGuildIdChannelIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app': typeof AuthAppRouteRouteWithChildren
-  '/app/$guildId': typeof AuthAppGuildIdRouteRoute
+  '/app/$guildId': typeof AuthAppGuildIdIndexRoute
   '/app/home': typeof AuthAppHomeIndexRoute
+  '/app/$guildId/$channelId': typeof AuthAppGuildIdChannelIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/_auth/app': typeof AuthAppRouteRouteWithChildren
-  '/_auth/app/$guildId': typeof AuthAppGuildIdRouteRoute
+  '/_auth/app/$guildId': typeof AuthAppGuildIdRouteRouteWithChildren
+  '/_auth/app/$guildId/$channelId': typeof AuthAppGuildIdChannelIdRouteRouteWithChildren
+  '/_auth/app/$guildId/': typeof AuthAppGuildIdIndexRoute
   '/_auth/app/home/': typeof AuthAppHomeIndexRoute
+  '/_auth/app/$guildId/$channelId/': typeof AuthAppGuildIdChannelIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/app' | '/app/$guildId' | '/app/home'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/app'
+    | '/app/$guildId'
+    | '/app/$guildId/$channelId'
+    | '/app/$guildId/'
+    | '/app/home'
+    | '/app/$guildId/$channelId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/app' | '/app/$guildId' | '/app/home'
+  to:
+    | '/'
+    | '/auth'
+    | '/app'
+    | '/app/$guildId'
+    | '/app/home'
+    | '/app/$guildId/$channelId'
   id:
     | '__root__'
     | '/'
     | '/auth'
     | '/_auth/app'
     | '/_auth/app/$guildId'
+    | '/_auth/app/$guildId/$channelId'
+    | '/_auth/app/$guildId/'
     | '/_auth/app/home/'
+    | '/_auth/app/$guildId/$channelId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -120,16 +164,65 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAppHomeIndexRouteImport
       parentRoute: typeof AuthAppRouteRoute
     }
+    '/_auth/app/$guildId/': {
+      id: '/_auth/app/$guildId/'
+      path: '/'
+      fullPath: '/app/$guildId/'
+      preLoaderRoute: typeof AuthAppGuildIdIndexRouteImport
+      parentRoute: typeof AuthAppGuildIdRouteRoute
+    }
+    '/_auth/app/$guildId/$channelId': {
+      id: '/_auth/app/$guildId/$channelId'
+      path: '/$channelId'
+      fullPath: '/app/$guildId/$channelId'
+      preLoaderRoute: typeof AuthAppGuildIdChannelIdRouteRouteImport
+      parentRoute: typeof AuthAppGuildIdRouteRoute
+    }
+    '/_auth/app/$guildId/$channelId/': {
+      id: '/_auth/app/$guildId/$channelId/'
+      path: '/'
+      fullPath: '/app/$guildId/$channelId/'
+      preLoaderRoute: typeof AuthAppGuildIdChannelIdIndexRouteImport
+      parentRoute: typeof AuthAppGuildIdChannelIdRouteRoute
+    }
   }
 }
 
+interface AuthAppGuildIdChannelIdRouteRouteChildren {
+  AuthAppGuildIdChannelIdIndexRoute: typeof AuthAppGuildIdChannelIdIndexRoute
+}
+
+const AuthAppGuildIdChannelIdRouteRouteChildren: AuthAppGuildIdChannelIdRouteRouteChildren =
+  {
+    AuthAppGuildIdChannelIdIndexRoute: AuthAppGuildIdChannelIdIndexRoute,
+  }
+
+const AuthAppGuildIdChannelIdRouteRouteWithChildren =
+  AuthAppGuildIdChannelIdRouteRoute._addFileChildren(
+    AuthAppGuildIdChannelIdRouteRouteChildren,
+  )
+
+interface AuthAppGuildIdRouteRouteChildren {
+  AuthAppGuildIdChannelIdRouteRoute: typeof AuthAppGuildIdChannelIdRouteRouteWithChildren
+  AuthAppGuildIdIndexRoute: typeof AuthAppGuildIdIndexRoute
+}
+
+const AuthAppGuildIdRouteRouteChildren: AuthAppGuildIdRouteRouteChildren = {
+  AuthAppGuildIdChannelIdRouteRoute:
+    AuthAppGuildIdChannelIdRouteRouteWithChildren,
+  AuthAppGuildIdIndexRoute: AuthAppGuildIdIndexRoute,
+}
+
+const AuthAppGuildIdRouteRouteWithChildren =
+  AuthAppGuildIdRouteRoute._addFileChildren(AuthAppGuildIdRouteRouteChildren)
+
 interface AuthAppRouteRouteChildren {
-  AuthAppGuildIdRouteRoute: typeof AuthAppGuildIdRouteRoute
+  AuthAppGuildIdRouteRoute: typeof AuthAppGuildIdRouteRouteWithChildren
   AuthAppHomeIndexRoute: typeof AuthAppHomeIndexRoute
 }
 
 const AuthAppRouteRouteChildren: AuthAppRouteRouteChildren = {
-  AuthAppGuildIdRouteRoute: AuthAppGuildIdRouteRoute,
+  AuthAppGuildIdRouteRoute: AuthAppGuildIdRouteRouteWithChildren,
   AuthAppHomeIndexRoute: AuthAppHomeIndexRoute,
 }
 

@@ -10,7 +10,10 @@ export function ButtonWithTooltip({ side, tooltipText, children, ...buttonProps 
     return (
         <Tooltip>
             <TooltipTrigger asChild>
-                <Button {...buttonProps}>{children}</Button>
+                <Button {...buttonProps}>
+                    {children}
+                    <span className="sr-only">{tooltipText}</span>
+                </Button>
             </TooltipTrigger>
             <TooltipContent side={side}>
                 <p>{tooltipText}</p>

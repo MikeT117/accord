@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 type DestructiveIconButtonProps = {
@@ -5,12 +6,21 @@ type DestructiveIconButtonProps = {
 } & Pick<Parameters<typeof TooltipContent>[0], "side"> &
     React.ComponentProps<"button">;
 
-export function DestructiveIconButton({ side, tooltipText, children, ...buttonProps }: DestructiveIconButtonProps) {
+export function DestructiveIconButton({
+    side,
+    tooltipText,
+    className,
+    children,
+    ...buttonProps
+}: DestructiveIconButtonProps) {
     return (
         <Tooltip>
             <TooltipTrigger asChild>
                 <button
-                    className="flex size-9 shrink-0 items-center justify-center rounded-md border border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10 [&>svg]:size-4 [&>svg]:shrink-0"
+                    className={cn(
+                        "flex size-9 shrink-0 items-center justify-center rounded-md border border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive/10 [&>svg]:size-4 [&>svg]:shrink-0",
+                        className,
+                    )}
                     {...buttonProps}
                 >
                     {children}

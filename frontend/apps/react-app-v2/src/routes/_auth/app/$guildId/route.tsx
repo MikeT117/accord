@@ -3,7 +3,7 @@ import { GuildCategoryCreator } from "@/components/guild-category-creator/create
 import { GuildCategoryChannelSettings } from "@/components/guild-channel-category-settings/guild-channel-category-settings-dialog";
 import { GuildChannelCreator } from "@/components/guild-channel-creator/create-guild-channel-dialog";
 import { GuildChannelSettings } from "@/components/guild-channel-settings/guild-channel-settings-dialog";
-
+import { AttachmentGallery } from "@/components/attachment-gallery";
 import { GuildSidebar } from "@/components/guild-sidebar/guild-sidebar";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
@@ -20,6 +20,7 @@ function RouteComponent() {
             <GuildCategoryCreator />
             <GuildChannelSettings />
             <GuildCategoryChannelSettings />
+            <AttachmentGallery />
             <Outlet />
         </>
     );

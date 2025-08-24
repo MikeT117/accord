@@ -73,7 +73,7 @@ export const eventWebsocket = (() => {
     let conn: WebSocket;
     let retryInterval = 5 * 1000;
     let retryAttempts = 1;
-    let token = () => tokenStore.refreshtoken;
+    const token = () => tokenStore.refreshtoken;
     let log = true;
     let initialised: (() => void) | null = null;
 
@@ -149,7 +149,7 @@ export const eventWebsocket = (() => {
 
                 addEventListeners();
             },
-            Math.min(retryInterval, MAX_RETRY_INTERVAL)
+            Math.min(retryInterval, MAX_RETRY_INTERVAL),
         );
 
         retryInterval *= 2;
@@ -178,9 +178,9 @@ export const eventWebsocket = (() => {
                             refreshtoken: token(),
                             ver: 0,
                         }),
-                    })
+                    }),
                 )
-                .finish()
+                .finish(),
         );
     }
 
@@ -196,7 +196,7 @@ export const eventWebsocket = (() => {
         logEvents("Event", "Message", `op: ${payload.op}`);
 
         switch (payload.op) {
-            case root.pb.OpCode.INIT:
+            case root.pb.OpCode.INIT: {
                 const initialisation = initialisationSchema.parse(payload.initialisation);
                 handleGuildStoreInitialisation(initialisation.guilds);
                 handlePrivateChannelStoreInitialisation(initialisation.privateChannels);
@@ -207,31 +207,26 @@ export const eventWebsocket = (() => {
                     initialised = null;
                 }
                 break;
+            }
             case root.pb.OpCode.GUILD_CREATE_EVENT:
-                const guildCreated = guildSchema.parse(payload.guildCreated);
-                handleGuildCreated(guildCreated);
+                handleGuildCreated(guildSchema.parse(payload.guildCreated));
                 break;
             case root.pb.OpCode.GUILD_UPDATE_EVENT:
-                const guildUpdated = guildUpdatedSchema.parse(payload.guildUpdated);
-                handleGuildUpdated(guildUpdated);
+                handleGuildUpdated(guildUpdatedSchema.parse(payload.guildUpdated));
                 break;
             case root.pb.OpCode.GUILD_DELETE_EVENT:
-                const guildDeleted = guildDeletedSchema.parse(payload.guildDeleted);
-                handleGuildDeleted(guildDeleted);
+                handleGuildDeleted(guildDeletedSchema.parse(payload.guildDeleted));
                 break;
             case root.pb.OpCode.GUILD_ROLE_CREATE_EVENT:
-                const guildRoleCreated = guildRoleSchema.parse(payload.guildRoleCreated);
-                handleGuildRoleCreated(guildRoleCreated);
+                handleGuildRoleCreated(guildRoleSchema.parse(payload.guildRoleCreated));
                 break;
             case root.pb.OpCode.GUILD_ROLE_UPDATE_EVENT:
-                const guildRoleUpdated = guildRoleUpdatedSchema.parse(payload.guildRoleUpdated);
-                handleGuildRoleUpdated(guildRoleUpdated);
+                handleGuildRoleUpdated(guildRoleUpdatedSchema.parse(payload.guildRoleUpdated));
                 break;
             case root.pb.OpCode.GUILD_ROLE_DELETE_EVENT:
-                const guildRoleDeleted = guildRoleDeletedSchema.parse(payload.guildRoleDeleted);
-                handleGuildRoleDeleted(guildRoleDeleted);
+                handleGuildRoleDeleted(guildRoleDeletedSchema.parse(payload.guildRoleDeleted));
                 break;
-            case root.pb.OpCode.CHANNEL_CREATE_EVENT:
+            case root.pb.OpCode.CHANNEL_CREATE_EVENT: {
                 const channelCreated = channelSchema.parse(payload.channelCreated);
                 if (isAPIGuildChannel(channelCreated)) {
                     handleGuildChannelCreated(channelCreated);
@@ -239,64 +234,48 @@ export const eventWebsocket = (() => {
                     handlePrivateChannelCreated(channelCreated);
                 }
                 break;
+            }
             case root.pb.OpCode.CHANNEL_UPDATE_EVENT:
-                const channelUpdated = channelUpdatedSchema.parse(payload.channelUpdated);
-                handleGuildChannelUpdated(channelUpdated);
+                handleGuildChannelUpdated(channelUpdatedSchema.parse(payload.channelUpdated));
                 break;
             case root.pb.OpCode.CHANNEL_DELETE_EVENT:
-                const channelDeleted = channelDeletedSchema.parse(payload.channelDeleted);
-                handleGuildChannelDeleted(channelDeleted);
+                handleGuildChannelDeleted(channelDeletedSchema.parse(payload.channelDeleted));
                 break;
             case root.pb.OpCode.CHANNEL_MESSAGE_CREATE_EVENT:
-                const channelMessageCreated = channelMessageSchema.parse(payload.channelMessageCreated);
-                handleChannelMessageCreated(channelMessageCreated);
+                handleChannelMessageCreated(channelMessageSchema.parse(payload.channelMessageCreated));
                 break;
             case root.pb.OpCode.CHANNEL_MESSAGE_UPDATE_EVENT:
-                const channelMessageUpdated = channelMessageUpdatedSchema.parse(payload.channelMessageUpdated);
-                handleChannelMessageUpdated(channelMessageUpdated);
+                handleChannelMessageUpdated(channelMessageUpdatedSchema.parse(payload.channelMessageUpdated));
                 break;
             case root.pb.OpCode.CHANNEL_MESSAGE_DELETE_EVENT:
-                const channelMessageDeleted = channelMessageDeletedSchema.parse(payload.channelMessageDeleted);
-                handleChannelMessageDeleted(channelMessageDeleted);
+                handleChannelMessageDeleted(channelMessageDeletedSchema.parse(payload.channelMessageDeleted));
                 break;
-
             case root.pb.OpCode.RELATIONSHIP_CREATE_EVENT:
-                const relationshipCreated = relationshipSchema.parse(payload.relationshipCreated);
-                handleRelationshipCreated(relationshipCreated);
+                handleRelationshipCreated(relationshipSchema.parse(payload.relationshipCreated));
                 break;
             case root.pb.OpCode.RELATIONSHIP_UPDATE_EVENT:
-                const relationshipUpdated = relationshipUpdatedSchema.parse(payload.relationshipUpdated);
-                handleRelationshipUpdated(relationshipUpdated);
+                handleRelationshipUpdated(relationshipUpdatedSchema.parse(payload.relationshipUpdated));
                 break;
             case root.pb.OpCode.RELATIONSHIP_DELETE_EVENT:
-                const relationshipDeleted = relationshipDeletedSchema.parse(payload.relationshipDeleted);
-                handleRelationshipDeleted(relationshipDeleted);
+                handleRelationshipDeleted(relationshipDeletedSchema.parse(payload.relationshipDeleted));
                 break;
             case root.pb.OpCode.CHANNEL_ROLE_ASSOCIATE:
-                const channelRoleAssociated = channelRoleAssociationChangeSchema.parse(payload.channelRoleAssociated);
-                handleChannelRoleAdded(channelRoleAssociated);
+                handleChannelRoleAdded(channelRoleAssociationChangeSchema.parse(payload.channelRoleAssociated));
                 break;
             case root.pb.OpCode.CHANNEL_ROLE_DISASSOCIATE:
-                const channelRoleDisassociated = channelRoleAssociationChangeSchema.parse(
-                    payload.channelRoleDisassociated
-                );
-                handleChannelRoleRemoved(channelRoleDisassociated);
+                handleChannelRoleRemoved(channelRoleAssociationChangeSchema.parse(payload.channelRoleDisassociated));
                 break;
             case root.pb.OpCode.USER_ROLE_ASSOCIATE:
-                const userRoleAssociated = userRoleAssociationChangeSchema.parse(payload.userRoleAssociated);
-                handleUserRoleAdded(userRoleAssociated);
+                handleUserRoleAdded(userRoleAssociationChangeSchema.parse(payload.userRoleAssociated));
                 break;
             case root.pb.OpCode.USER_ROLE_DISASSOCIATE:
-                const userRoleDisassociated = userRoleAssociationChangeSchema.parse(payload.userRoleDisassociated);
-                handleUserRoleRemoved(userRoleDisassociated);
+                handleUserRoleRemoved(userRoleAssociationChangeSchema.parse(payload.userRoleDisassociated));
                 break;
             case root.pb.OpCode.CHANNEL_ROLES_SET:
-                const channelRolesSet = channelRoleAssociationsSetSchema.parse(payload.channelRolesSet);
-                handleChannelRolesSet(channelRolesSet);
+                handleChannelRolesSet(channelRoleAssociationsSetSchema.parse(payload.channelRolesSet));
                 break;
             case root.pb.OpCode.USER_UPDATED:
-                const userUpdated = userUpdatedSchema.parse(payload.userUpdated);
-                handleUserUpdated(userUpdated);
+                handleUserUpdated(userUpdatedSchema.parse(payload.userUpdated));
                 break;
             default:
                 console.error("unknown op code, ignoring");
