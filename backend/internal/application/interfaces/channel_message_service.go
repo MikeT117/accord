@@ -13,4 +13,6 @@ type ChannelMessageService interface {
 	Create(ctx context.Context, cmd *command.CreateChannelMessageCommand) error
 	Update(ctx context.Context, cmd *command.UpdateChannelMessageCommand) error
 	Delete(ctx context.Context, cmd *command.DeleteChannelMessageCommand) error
+	PinMessage(ctx context.Context, cmd *command.CreateChannelPinCommand) error
+	UnpinMessage(ctx context.Context, cmd *command.DeleteChannelPinCommand) error
 }

@@ -237,7 +237,7 @@ func (r *ChannelMessageRepository) Update(ctx context.Context, channelMessage *e
 			author_id = $5,
 			channel_id = $6,
 			created_at = $7,
-			updated_at = $8,
+			updated_at = $8
 		WHERE
 			id = $1;
 	`,

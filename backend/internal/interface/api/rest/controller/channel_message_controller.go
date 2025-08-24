@@ -24,11 +24,15 @@ func NewChannelMessageController(
 		channelMessageService: channelMessageService,
 	}
 
-	subGroup := baseGroup.Group("/channels/:channelID/messages")
-	subGroup.GET("", controller.getChannelMessages)
-	subGroup.POST("", controller.createChannelMessage)
-	subGroup.PATCH("/:messageID", controller.updateChannelMessage)
-	subGroup.DELETE("/:messageID", controller.deleteChannelMessage)
+	subGroup0 := baseGroup.Group("/channels/:channelID")
+	subGroup0.PUT("/pins/messages/:messageID", controller.pinChannelMessage)
+	subGroup0.DELETE("/pins/messages/:messageID", controller.unpinChannelMessage)
+
+	subGroup1 := baseGroup.Group("/channels/:channelID/messages")
+	subGroup1.GET("", controller.getChannelMessages)
+	subGroup1.POST("", controller.createChannelMessage)
+	subGroup1.PATCH("/:messageID", controller.updateChannelMessage)
+	subGroup1.DELETE("/:messageID", controller.deleteChannelMessage)
 	return controller
 }
 
@@ -50,6 +54,44 @@ func (c *ChannelMessageController) getChannelMessages(ctx echo.Context) error {
 	}
 
 	return response.JSONResponse(ctx, http.StatusOK, mapper.ToChannelMessagesResponse(channelMessages.Result))
+}
+
+func (c *ChannelMessageController) pinChannelMessage(ctx echo.Context) error {
+	var payload request.CreateChannelPinRequest
+	if err := ctx.Bind(&payload); err != nil {
+		return response.ErrorResponse(ctx, http.StatusBadRequest, nil)
+	}
+
+	requestorID, _ := authentication.GetRequestorDetails(ctx)
+	cmd, err := payload.ToCreateChannelPinCommand(requestorID)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	if err := c.channelMessageService.PinMessage(ctx.Request().Context(), cmd); err != nil {
+		return handleError(ctx, err)
+	}
+
+	return response.NoContentResponse(ctx)
+}
+
+func (c *ChannelMessageController) unpinChannelMessage(ctx echo.Context) error {
+	var payload request.DeleteChannelPinRequest
+	if err := ctx.Bind(&payload); err != nil {
+		return response.ErrorResponse(ctx, http.StatusBadRequest, nil)
+	}
+
+	requestorID, _ := authentication.GetRequestorDetails(ctx)
+	cmd, err := payload.ToDeleteChannelPinCommand(requestorID)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	if err := c.channelMessageService.UnpinMessage(ctx.Request().Context(), cmd); err != nil {
+		return handleError(ctx, err)
+	}
+
+	return response.NoContentResponse(ctx)
 }
 
 func (c *ChannelMessageController) createChannelMessage(ctx echo.Context) error {

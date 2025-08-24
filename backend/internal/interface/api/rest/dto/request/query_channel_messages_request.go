@@ -39,7 +39,7 @@ func (r *QueryChannelMessagesRequest) ToChannelMessagesQuery(requestorID uuid.UU
 		query.After = time.Unix(0, 0)
 	}
 
-	if r.Limit != nil && query.Limit <= 50 && query.Limit > 0 {
+	if r.Limit != nil && *r.Limit <= 50 && *r.Limit > 0 {
 		query.Limit = *r.Limit
 	} else {
 		query.Limit = 50

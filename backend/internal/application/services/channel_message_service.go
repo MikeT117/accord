@@ -216,6 +216,50 @@ func (s *ChannelMessageService) Update(ctx context.Context, cmd *command.UpdateC
 	return s.eventService.ChannelMessageUpdated(ctx, channelMessage.ID)
 }
 
+func (s *ChannelMessageService) PinMessage(ctx context.Context, cmd *command.CreateChannelPinCommand) error {
+	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_PIN_PERMISSION)
+	if err != nil {
+		return err
+	}
+
+	channelMessage, err := s.channelMessageRepository.GetByID(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+
+	if err := channelMessage.UpdatePinned(true); err != nil {
+		return err
+	}
+
+	if err := s.channelMessageRepository.Update(ctx, channelMessage); err != nil {
+		return err
+	}
+
+	return s.eventService.ChannelMessageUpdated(ctx, channelMessage.ID)
+}
+
+func (s *ChannelMessageService) UnpinMessage(ctx context.Context, cmd *command.DeleteChannelPinCommand) error {
+	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_PIN_PERMISSION)
+	if err != nil {
+		return err
+	}
+
+	channelMessage, err := s.channelMessageRepository.GetByID(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+
+	if err := channelMessage.UpdatePinned(false); err != nil {
+		return err
+	}
+
+	if err := s.channelMessageRepository.Update(ctx, channelMessage); err != nil {
+		return err
+	}
+
+	return s.eventService.ChannelMessageUpdated(ctx, channelMessage.ID)
+}
+
 func (s *ChannelMessageService) Delete(ctx context.Context, cmd *command.DeleteChannelMessageCommand) error {
 	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
 	if err != nil {
