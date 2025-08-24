@@ -10,6 +10,7 @@ import { getUnixTime } from "date-fns";
 import { MAX_INFINITE_PAGE_LEN } from "../query-constants";
 import { httpClient } from "@/lib/http-client";
 import { useInView } from "react-intersection-observer";
+import { useInfiniteScroll } from "../hooks/use-infinite-scroll";
 
 type PageParam = { before: string; after?: never } | { after: string; before?: never } | null | undefined;
 
@@ -63,54 +64,6 @@ export function channelMessageQueryOptions(args: ChannelMessageQueryArgs) {
     });
 }
 
-function useInfiniteLoad(
-    messages: ChannelMessageType[],
-    hasPreviousPage: boolean,
-    hasNextPage: boolean,
-    fetchPreviousPage: () => void,
-    fetchNextPage: () => void,
-) {
-    const [prevRef] = useInView({
-        threshold: 0.01,
-        onChange: (inView) => {
-            if (!hasPreviousPage || !inView) {
-                return;
-            }
-            fetchPreviousPage();
-        },
-    });
-
-    const [nextRef] = useInView({
-        threshold: 0.01,
-        onChange: (inView) => {
-            if (!hasNextPage || !inView) {
-                return;
-            }
-            fetchNextPage();
-        },
-    });
-
-    function infiniteScrollRef(index: number, elem: HTMLElement | null) {
-        if (!elem) {
-            return;
-        }
-
-        if (messages.length < 2) {
-            return;
-        }
-
-        if (index === 0) {
-            prevRef(elem);
-        }
-
-        if (index === messages.length - 1) {
-            nextRef(elem);
-        }
-    }
-
-    return { messages, infiniteScrollRef };
-}
-
 type ChannelMessageQueryHookArgs = {
     channelId: string;
     pinned?: boolean;
@@ -121,7 +74,7 @@ export function useSuspenseInfiniteChannelMessagesQuery({ channelId, pinned }: C
         channelMessageQueryOptions({ channelId, pinned }),
     );
 
-    return useInfiniteLoad(data.pages.flat() ?? [], hasPreviousPage, hasNextPage, fetchPreviousPage, fetchNextPage);
+    return useInfiniteScroll(data.pages.flat() ?? [], hasPreviousPage, hasNextPage, fetchPreviousPage, fetchNextPage);
 }
 
 export function useInfiniteChannelMessagesQuery({ channelId, pinned }: ChannelMessageQueryHookArgs) {
@@ -129,5 +82,5 @@ export function useInfiniteChannelMessagesQuery({ channelId, pinned }: ChannelMe
         channelMessageQueryOptions({ channelId, pinned }),
     );
 
-    return useInfiniteLoad(data?.pages.flat() ?? [], hasPreviousPage, hasNextPage, fetchPreviousPage, fetchNextPage);
+    return useInfiniteScroll(data?.pages.flat() ?? [], hasPreviousPage, hasNextPage, fetchPreviousPage, fetchNextPage);
 }
