@@ -2,7 +2,7 @@ import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Trash2Icon } from "lucide-react";
 import { DestructiveIconButton } from "../destructive-icon-button";
-import { useGuildInvitesQuery } from "@/lib/react-query/queries/guild-members-query-options";
+import { useGuildInvitesQuery } from "@/lib/react-query/queries/guild-member-query";
 import { UserAvatar } from "../user-avatar";
 
 type GuildSettingsMembersSectionProps = {

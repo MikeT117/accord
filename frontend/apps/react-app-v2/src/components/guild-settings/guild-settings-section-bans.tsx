@@ -2,7 +2,7 @@ import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { EyeIcon, LockKeyholeOpenIcon } from "lucide-react";
 import { DestructiveIconButton } from "../destructive-icon-button";
-import { useGuildBansQuery } from "@/lib/react-query/queries/guild-bans-query-options";
+import { useGuildBansQuery } from "@/lib/react-query/queries/guild-ban-query";
 import { UserAvatar } from "../user-avatar";
 
 type GuildSettingsBansSectionProps = {

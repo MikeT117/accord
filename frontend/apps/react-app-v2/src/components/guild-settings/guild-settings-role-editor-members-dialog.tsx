@@ -1,7 +1,7 @@
 import { useGuildRoleMembersState } from "@/lib/valtio/queries/guild-role-members-dialog-ui-store-queries";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../ui/dialog";
 import { closeGuildRoleMembersList } from "@/lib/valtio/mutations/guild-role-members-dialog-ui-store-mutations";
-import { useGuildRoleMembersQuery } from "@/lib/react-query/queries/guild-role-members-query-options";
+import { useGuildRoleMembersQuery } from "@/lib/react-query/queries/guild-role-member-query";
 import { UserAvatar } from "../user-avatar";
 import { Input } from "../ui/input";
 import { useState } from "react";

@@ -1,5 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useGuildCategoriesQuery } from "@/lib/react-query/queries/guild-category-query-options";
+import { useGuildCategoriesQuery } from "@/lib/react-query/queries/guild-category-query";
 import type { ComponentProps } from "react";
 
 type GuildCategorySelectProps = { className?: string } & ComponentProps<typeof Select>;

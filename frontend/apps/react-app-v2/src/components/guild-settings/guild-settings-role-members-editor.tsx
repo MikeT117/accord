@@ -1,4 +1,4 @@
-import { useGuildRoleMembersQuery } from "@/lib/react-query/queries/guild-role-members-query-options";
+import { useGuildRoleMembersQuery } from "@/lib/react-query/queries/guild-role-member-query";
 import { Trash2Icon } from "lucide-react";
 import { DestructiveIconButton } from "../destructive-icon-button";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "../ui/table";

@@ -2,7 +2,7 @@ import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { EyeIcon, LockKeyholeOpenIcon } from "lucide-react";
 import { DestructiveIconButton } from "../destructive-icon-button";
-import { useGuildInvitesQuery } from "@/lib/react-query/queries/guild-invites-query-options";
+import { useGuildInvitesQuery } from "@/lib/react-query/queries/guild-invite-query";
 import { GuildIcon } from "../guild-icon";
 import { formatDistanceToNow } from "date-fns";
 

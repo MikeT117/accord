@@ -10,7 +10,7 @@ import type { UpdateGuildFormType } from "./guild-settings-dialog-types";
 import { updateGuildFormSchema } from "./guild-settings-form-validation";
 import { Switch } from "../ui/switch";
 import { useCloudinary } from "@/hooks/use-cloudinary";
-import { useGuildCategoriesQuery } from "@/lib/react-query/queries/guild-category-query-options";
+import { useGuildCategoriesQuery } from "@/lib/react-query/queries/guild-category-query";
 import { GuildCategorySelect } from "./guild-category-select";
 import { GuildProfilePreview } from "./guild-profile-preview";
 import { Button } from "../ui/button";
