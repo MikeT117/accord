@@ -34,9 +34,9 @@ type PinnedMessagesPopoverContentProps = {
 };
 
 function PinnedMessagesPopoverContent({ channelId, canUnpinMessage }: PinnedMessagesPopoverContentProps) {
-    const { messages, infiniteScrollRef } = useInfiniteChannelMessagesQuery({ channelId, pinned: true });
+    const { data, infiniteScrollRef } = useInfiniteChannelMessagesQuery({ channelId, pinned: true });
 
-    if (!messages.length) {
+    if (!data.length) {
         return (
             <div className="flex min-h-[300px] grow items-center justify-center">
                 <p className="font-medium text-muted-foreground">This channel doesn't have any pinned messages.</p>
@@ -46,7 +46,7 @@ function PinnedMessagesPopoverContent({ channelId, canUnpinMessage }: PinnedMess
 
     return (
         <div className="mt-auto flex flex-col gap-2 p-2">
-            {messages.map((msg, i) => (
+            {data.map((msg, i) => (
                 <PinnedChannelMessage
                     key={msg.id}
                     message={msg}

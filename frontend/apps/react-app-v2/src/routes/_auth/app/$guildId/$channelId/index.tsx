@@ -36,7 +36,7 @@ function RouteComponent() {
     const user = useUser();
     const channel = useGuildTextChannel(guildId, channelId);
     const permissions = useUserGuildChannelPermissions(guildId, channelId);
-    const { messages, infiniteScrollRef } = useSuspenseInfiniteChannelMessagesQuery({ channelId });
+    const { data, infiniteScrollRef } = useSuspenseInfiniteChannelMessagesQuery({ channelId });
 
     const { mutate: pinMessage } = useCreateChannelPinMutation();
     const { mutate: unpinMessage } = useDeleteChannelPinMutation();
@@ -55,7 +55,7 @@ function RouteComponent() {
                     canCreateMessage={permissions.CreateChannelMessage}
                 />
             }
-            messages={messages.map((msg, i) => (
+            messages={data.map((msg, i) => (
                 <ChannelMessage
                     key={msg.id}
                     forwardedRef={(e) => infiniteScrollRef(i, e)}
