@@ -18,7 +18,7 @@ export function SettingsDialogSidebar<T extends number>({
     setActiveSection,
 }: SettingsDialogSidebarProps<T>) {
     return (
-        <nav className="space-y-2">
+        <nav className="w-[240px] space-y-2">
             {sidebarItems.map((item) => (
                 <SettingsDialogSidebarItem
                     key={item.id}
