@@ -65,6 +65,52 @@ func (r *UserRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.U
 	return user, nil
 }
 
+func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*entities.User, error) {
+	row := r.db(ctx).QueryRow(ctx, `
+		SELECT
+			id,
+			account_id,
+			username,
+			display_name,
+			email,
+			email_verified,
+			public_flags,
+			relationship_count,
+			avatar_id,
+			banner_id,
+			created_at,
+			updated_at
+		FROM
+			"user"
+		WHERE
+			username = $1;
+	`, username)
+
+	user := &entities.User{}
+
+	if err := row.Scan(
+		&user.ID,
+		&user.AccountID,
+		&user.Username,
+		&user.DisplayName,
+		&user.Email,
+		&user.EmailVerified,
+		&user.PublicFlags,
+		&user.RelationshipCount,
+		&user.AvatarID,
+		&user.BannerID,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrEntityNotFound
+		}
+		return nil, wrapUnknownErr("select user by username failed", err)
+	}
+
+	return user, nil
+}
+
 func (r *UserRepository) GetByAccountID(ctx context.Context, accountID uuid.UUID) (*entities.User, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT

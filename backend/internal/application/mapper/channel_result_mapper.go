@@ -80,8 +80,8 @@ func NewChannelProtoResultFromChannel(channel *entities.Channel, roleIDs []uuid.
 func NewChannelListProtoResultFromChannel(channels []*entities.Channel, roleIDs map[uuid.UUID][]uuid.UUID, users map[uuid.UUID][]*entities.User) []*pb.Channel {
 	tempChannels := make([]*pb.Channel, len(channels))
 
-	for i := 0; i < len(channels); i++ {
-		tempChannels = append(tempChannels, NewChannelProtoResultFromChannel(channels[i], roleIDs[channels[i].ID], users[channels[i].ID]))
+	for i := 0; i < len(tempChannels); i++ {
+		tempChannels[i] = NewChannelProtoResultFromChannel(channels[i], roleIDs[channels[i].ID], users[channels[i].ID])
 	}
 
 	return tempChannels

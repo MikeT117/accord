@@ -6,6 +6,7 @@ option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
 import "guild.proto";
 import "user.proto";
 import "channel.proto";
+import "relationship.proto";
 
 message Initialisation {
     int32 ver = 1;
@@ -13,4 +14,5 @@ message Initialisation {
     repeated string role_ids = 3;
     repeated Guild guilds = 4;
     repeated Channel private_channels = 5;
+    repeated Relationship relationships = 6;
 }

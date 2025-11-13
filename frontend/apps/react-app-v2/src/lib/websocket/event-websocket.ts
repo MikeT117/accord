@@ -58,6 +58,7 @@ import {
 import { isAPIGuildChannel } from "../types/guards";
 import { handleResetTokenStore } from "../valtio/mutations/token-store-mutations";
 import { userRoleAssociationChangeSchema, userUpdatedSchema } from "../zod-validation/user-schema";
+import { handleRelationshipStoreInitialisation } from "../valtio/mutations/relationship-store-mutations";
 
 const MAX_RETRY_INTERVAL = 30000;
 const CONNECTION_TIMEOUT = 5000;
@@ -197,11 +198,14 @@ export const eventWebsocket = (() => {
 
         switch (payload.op) {
             case root.pb.OpCode.INIT: {
+                console.log(payload.initialisation);
                 const initialisation = initialisationSchema.parse(payload.initialisation);
                 handleGuildStoreInitialisation(initialisation.guilds);
                 handlePrivateChannelStoreInitialisation(initialisation.privateChannels);
                 handleUserRoleStoreInitialisation(initialisation.roleIds);
                 handleUserStoreInitialisation(initialisation.user);
+                handleRelationshipStoreInitialisation(initialisation.relationships);
+
                 if (retryAttempts === 1 && initialised) {
                     initialised();
                     initialised = null;

@@ -1,4 +1,6 @@
 import { httpClient } from "@/lib/http-client";
+import { handleGuildChannelCreated } from "@/lib/valtio/mutations/guild-store-mutations";
+import { guildChannelSchema } from "@/lib/zod-validation/channel-schema";
 import { useMutation } from "@tanstack/react-query";
 
 type mutationFnArgsType = {
@@ -9,7 +11,11 @@ type mutationFnArgsType = {
 };
 
 const mutationFn = async (payload: mutationFnArgsType) => {
-    return httpClient.post(`/channels`, payload);
+    return httpClient.post(`/channels`, payload).then((r) => {
+        const channel = guildChannelSchema.parse(r.data);
+        handleGuildChannelCreated(channel);
+        return channel;
+    });
 };
 
 type MutationHookArgs = {

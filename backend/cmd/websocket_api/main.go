@@ -42,9 +42,10 @@ func main() {
 	guildRoleRepository := db.CreateGuildRoleRepository(dbGetter)
 	sessionRepository := db.CreateSessionRepository(dbGetter)
 	userRepository := db.CreateUserRepository(dbGetter)
+	relationshipRepository := db.CreateRelationshipRepository(dbGetter)
 
 	// Services
-	websocketService := services.CreateWebsocketService(userRepository, sessionRepository, guildRepository, guildMemberRepository, guildRoleRepository, channelRepository)
+	websocketService := services.CreateWebsocketService(userRepository, sessionRepository, guildRepository, guildMemberRepository, guildRoleRepository, channelRepository, relationshipRepository)
 
 	// Event Subscriber
 	eventSubscriber := pubsub.MustCreateEventSubscriber(config)

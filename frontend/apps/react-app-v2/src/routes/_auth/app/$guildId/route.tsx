@@ -6,6 +6,7 @@ import { GuildChannelSettings } from "@/components/guild-channel-settings/guild-
 import { AttachmentGallery } from "@/components/attachment-gallery";
 import { GuildSidebar } from "@/components/guild-sidebar/guild-sidebar";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { GuildSettings } from "@/components/guild-settings/guild-settings-dialog";
 
 export const Route = createFileRoute("/_auth/app/$guildId")({
     component: RouteComponent,
@@ -16,6 +17,7 @@ function RouteComponent() {
     return (
         <>
             <GuildSidebar />
+            <GuildSettings />
             <GuildChannelCreator />
             <GuildCategoryCreator />
             <GuildChannelSettings />

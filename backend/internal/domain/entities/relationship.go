@@ -3,14 +3,9 @@ package entities
 import (
 	"time"
 
+	"github.com/MikeT117/accord/backend/internal/constants"
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/google/uuid"
-)
-
-const (
-	PENDING = iota
-	FRIEND
-	BLOCKED
 )
 
 type Relationship struct {
@@ -32,13 +27,13 @@ func (u *Relationship) validate(isNew bool) error {
 	if u.RecipientID == uuid.Nil {
 		return domain.NewDomainValidationError("recipient id must not be empty")
 	}
-	if u.Status != PENDING && u.Status != FRIEND && u.Status != BLOCKED {
+	if u.Status != constants.PENDING_RELATIONSHIP && u.Status != constants.FRIEND_RELATIONSHIP && u.Status != constants.BLOCKED_RELATIONSHIP {
 		return domain.NewDomainValidationError("invalid relationship status")
 	}
-	if isNew && u.Status != PENDING && u.Status != BLOCKED {
+	if isNew && u.Status != constants.PENDING_RELATIONSHIP && u.Status != constants.BLOCKED_RELATIONSHIP {
 		return domain.NewDomainValidationError("invalid relationship status")
 	}
-	if !isNew && u.Status != FRIEND && u.Status != BLOCKED {
+	if !isNew && u.Status != constants.FRIEND_RELATIONSHIP && u.Status != constants.BLOCKED_RELATIONSHIP {
 		return domain.NewDomainValidationError("invalid relationship status")
 	}
 
@@ -46,15 +41,15 @@ func (u *Relationship) validate(isNew bool) error {
 }
 
 func (r *Relationship) IsBlocked() bool {
-	return r.Status == BLOCKED
+	return r.Status == constants.BLOCKED_RELATIONSHIP
 }
 
 func (r *Relationship) IsPending() bool {
-	return r.Status == PENDING
+	return r.Status == constants.PENDING_RELATIONSHIP
 }
 
 func (r *Relationship) IsFriend() bool {
-	return r.Status == FRIEND
+	return r.Status == constants.FRIEND_RELATIONSHIP
 }
 
 func (r *Relationship) IsCreator(creatorID uuid.UUID) bool {

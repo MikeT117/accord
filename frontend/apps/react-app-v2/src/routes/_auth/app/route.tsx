@@ -6,7 +6,6 @@ import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import { GuildCreator } from "@/components/guild-creator/create-guild-dialog";
 import { AppInitialisingLoader } from "@/components/app-initialising-loader";
 import { UserSettings } from "@/components/user-settings/user-settings-dialog";
-import { GuildSettings } from "@/components/guild-settings/guild-settings-dialog";
 import { Toaster } from "sonner";
 
 export const Route = createFileRoute("/_auth/app")({
@@ -28,7 +27,6 @@ function RouteComponent() {
             <ConfirmActionDialog />
             <GuildCreator />
             <UserSettings />
-            <GuildSettings />
             <Toaster />
         </div>
     );

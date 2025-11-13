@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/application/mapper"
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/MikeT117/accord/backend/internal/constants"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
@@ -62,37 +63,15 @@ func (s *RelationshipService) GetByID(ctx context.Context, ID uuid.UUID, userID 
 	}, nil
 }
 
-func (s *RelationshipService) GetByUserID(ctx context.Context, qry *query.RelatationshipsQuery) (*query.RelationshipQueryListResult, error) {
-	relationship, userIDs, err := s.relationshipRepository.GetByUserID(ctx, qry.RequestorID, qry.Status, qry.Before, 50)
-	if err != nil {
-		return nil, err
-	}
-
-	usersMap, err := s.userRepository.GetMapByIDs(ctx, userIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	return &query.RelationshipQueryListResult{
-		Result: mapper.NewRelationshipListResultFromRelationship(
-			relationship,
-			usersMap,
-			qry.RequestorID,
-		),
-	}, nil
-}
-
 func (s *RelationshipService) Create(ctx context.Context, cmd *command.CreateRelationshipCommand) error {
-	relationship, err := entities.NewRelationship(cmd.CreatorID, cmd.Status, cmd.RecipientID)
-	if err != nil {
-		return err
+	switch cmd.Status {
+	case constants.BLOCKED_RELATIONSHIP:
+		return s.createBlockedRelationship(ctx, cmd.CreatorID, cmd.Username)
+	case constants.PENDING_RELATIONSHIP:
+		return s.createPendingRelationship(ctx, cmd.CreatorID, cmd.Username)
+	default:
+		return ErrNotAuthorised
 	}
-
-	if err := s.relationshipRepository.Create(ctx, relationship); err != nil {
-		return err
-	}
-
-	return s.eventService.RelationshipCreated(ctx, relationship.ID)
 }
 
 func (s *RelationshipService) Update(ctx context.Context, cmd *command.UpdateRelationshipCommand) error {
@@ -117,14 +96,112 @@ func (s *RelationshipService) Update(ctx context.Context, cmd *command.UpdateRel
 }
 
 func (s *RelationshipService) Delete(ctx context.Context, cmd *command.DeleteRelationshipCommand) error {
+	relationship, err := s.relationshipRepository.GetByID(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+
+	if (relationship.CreatorID != cmd.RequestorID && relationship.RecipientID != cmd.RequestorID) || (relationship.RecipientID == cmd.RequestorID && relationship.IsBlocked()) {
+		return ErrNotAuthorised
+	}
+
 	userIDs, err := s.relationshipRepository.GetUserIDsByID(ctx, cmd.ID)
 	if err != nil {
 		return err
 	}
 
-	if err := s.relationshipRepository.Delete(ctx, cmd.ID, cmd.RequestorID); err != nil {
+	if err := s.relationshipRepository.Delete(ctx, cmd.ID); err != nil {
 		return err
 	}
 
 	return s.eventService.RelationshipDeleted(ctx, cmd.ID, userIDs)
+}
+
+func (s *RelationshipService) createBlockedRelationship(ctx context.Context, creatorID uuid.UUID, username string) error {
+	user, err := s.userRepository.GetByUsername(ctx, username)
+	if err != nil {
+		return err
+	}
+
+	existingRelationships, err := s.relationshipRepository.GetByUserIDAndUserIDs(ctx, creatorID, []uuid.UUID{user.ID})
+	if err != nil {
+		return err
+	}
+
+	if len(existingRelationships) == 0 {
+		relationship, err := entities.NewRelationship(creatorID, constants.BLOCKED_RELATIONSHIP, user.ID)
+		if err != nil {
+			return err
+		}
+
+		if err := s.relationshipRepository.Create(ctx, relationship); err != nil {
+			return err
+		}
+
+		return s.eventService.RelationshipCreated(ctx, relationship.ID)
+	}
+
+	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+		for i := 0; i < len(existingRelationships); i++ {
+
+			if !existingRelationships[i].IsBlocked() {
+				if err := s.relationshipRepository.Delete(ctx, existingRelationships[0].ID); err != nil {
+					return err
+				}
+			} else if existingRelationships[i].IsCreator(creatorID) {
+				return nil
+			}
+
+		}
+
+		relationship, err := entities.NewRelationship(creatorID, constants.BLOCKED_RELATIONSHIP, user.ID)
+		if err != nil {
+			return err
+		}
+
+		if err := s.relationshipRepository.Create(ctx, relationship); err != nil {
+			return err
+		}
+
+		return s.eventService.RelationshipCreated(ctx, relationship.ID)
+
+	})
+
+}
+
+func (s *RelationshipService) createPendingRelationship(ctx context.Context, creatorID uuid.UUID, username string) error {
+	user, err := s.userRepository.GetByUsername(ctx, username)
+	if err != nil {
+		return err
+	}
+
+	if !user.AllowsFriendRequests() {
+		return ErrNotAuthorised
+	}
+
+	existingRelationships, err := s.relationshipRepository.GetByUserIDAndUserIDs(ctx, creatorID, []uuid.UUID{user.ID})
+	if err != nil {
+		return err
+	}
+
+	if len(existingRelationships) == 0 {
+		relationship, err := entities.NewRelationship(creatorID, constants.PENDING_RELATIONSHIP, user.ID)
+		if err != nil {
+			return err
+		}
+
+		if err := s.relationshipRepository.Create(ctx, relationship); err != nil {
+			return err
+		}
+
+		return s.eventService.RelationshipCreated(ctx, relationship.ID)
+	}
+
+	for i := 0; i < len(existingRelationships); i++ {
+		if existingRelationships[i].IsBlocked() {
+			return ErrNotAuthorised
+		}
+	}
+
+	return nil
 }

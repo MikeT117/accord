@@ -3,6 +3,7 @@ package entities
 import (
 	"time"
 
+	"github.com/MikeT117/accord/backend/internal/constants"
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/google/uuid"
 )
@@ -72,6 +73,14 @@ func NewUser(username string, accountID uuid.UUID, email string, avatarID *uuid.
 	}
 
 	return user, nil
+}
+
+func (u *User) AllowsFriendRequests() bool {
+	return u.PublicFlags&(1<<constants.ALLOW_FRIEND_REQUEST) != 0
+}
+
+func (u *User) AllowsGuildMemberMessages() bool {
+	return u.PublicFlags&(1<<constants.ALLOW_GUILD_MEMBER_DM) != 0
 }
 
 func (u *User) UpdateUsername(username string) error {

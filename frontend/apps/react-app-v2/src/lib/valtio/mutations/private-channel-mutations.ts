@@ -20,6 +20,8 @@ export function handlePrivateChannelStoreInitialisation(channels: PrivateChannel
 }
 
 export function handlePrivateChannelCreated(channel: PrivateChannelType) {
-    privateChannelStore.keys.push(channel.id);
+    if (!privateChannelStore.keys.includes(channel.id)) {
+        privateChannelStore.keys.push(channel.id);
+    }
     privateChannelStore.values[channel.id] = channel;
 }

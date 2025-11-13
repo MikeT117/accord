@@ -7,7 +7,7 @@ import (
 )
 
 type AuthorisationService interface {
-	VerifyRelationships(ctx context.Context, requestorID uuid.UUID, userIDs []uuid.UUID, isBlocked bool, isFriend bool, isPending bool) error
+	VerifyUserRelationship(ctx context.Context, requestorID uuid.UUID, userIDs []uuid.UUID, isBlocked bool, isFriend bool, isPending bool) error
 	VerifyRelationship(ctx context.Context, requestorID uuid.UUID, userID uuid.UUID, isBlocked bool, isFriend bool, isPending bool) error
 	VerifyGuildMember(ctx context.Context, guildID uuid.UUID, requestorID uuid.UUID) error
 	VerifyUserGuildPermission(ctx context.Context, guildID uuid.UUID, requestorID uuid.UUID, permission int) error

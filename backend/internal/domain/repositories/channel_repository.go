@@ -14,6 +14,7 @@ type ChannelRepository interface {
 	GetByGuildID(ctx context.Context, guildID uuid.UUID) ([]*entities.Channel, []uuid.UUID, error)
 	GetMapByGuildIDs(ctx context.Context, guildIDs []uuid.UUID) (map[uuid.UUID][]*entities.Channel, []uuid.UUID, error)
 	GetByUserID(ctx context.Context, userID uuid.UUID) ([]*entities.Channel, []uuid.UUID, error)
+	GetByUserIDs(ctx context.Context, userIDs []uuid.UUID) (*entities.Channel, error)
 
 	Create(ctx context.Context, channel *entities.Channel) error
 	Update(ctx context.Context, channel *entities.Channel) error
@@ -21,6 +22,7 @@ type ChannelRepository interface {
 
 	GetUsersByChannelID(ctx context.Context, channelID uuid.UUID) ([]*entities.User, error)
 	GetUserIDsByChannelID(ctx context.Context, channelID uuid.UUID) ([]uuid.UUID, error)
+	GetMapUsersByChannelID(ctx context.Context, channelID uuid.UUID) (map[uuid.UUID]*entities.User, error)
 	GetMapUsersByChannelIDs(ctx context.Context, channelIDs []uuid.UUID) (map[uuid.UUID][]*entities.User, error)
 	VerifyUserChannelMembership(ctx context.Context, userID uuid.UUID, channelID uuid.UUID) error
 	AssociateUser(ctx context.Context, channelID uuid.UUID, userID uuid.UUID) error

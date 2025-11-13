@@ -75,47 +75,103 @@ func (s *ChannelService) GetByUserID(ctx context.Context, userID uuid.UUID) (*qu
 	}, nil
 }
 
-func (s *ChannelService) Create(ctx context.Context, cmd *command.CreateChannelCommand) error {
-	channel, err := entities.NewChannel(cmd.ChannelType, cmd.GuildID, cmd.CreatorID, *cmd.Name, cmd.Topic)
+func (s *ChannelService) Create(ctx context.Context, cmd *command.CreateChannelCommand) (*command.CreateChannelCommandResult, error) {
+	channel, err := entities.NewChannel(cmd.ChannelType, cmd.GuildID, cmd.CreatorID, cmd.Name, cmd.Topic)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if !channel.IsGuildChannel() {
-		if err := s.createUserChannel(ctx, channel, cmd.UserIDs, cmd.CreatorID); err != nil {
-			return err
+		channelMemberIDs := append(cmd.UserIDs, cmd.CreatorID)
+		existingChannel, err := s.channelRepository.GetByUserIDs(ctx, channelMemberIDs)
+		if err != nil && !domain.IsDomainNotFoundErr(err) {
+			return nil, err
 		}
 
-		return s.eventService.ChannelCreated(ctx, channel.ID)
-	}
+		if existingChannel != nil {
+			users, err := s.userRepository.GetByIDs(ctx, channelMemberIDs)
+			if err != nil {
+				return nil, err
+			}
 
-	if err := s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
-		guild, err := s.guildRepository.GetByID(ctx, *channel.GuildID)
+			return &command.CreateChannelCommandResult{
+				Result: mapper.NewChannelResultFromChannel(existingChannel, nil, users),
+			}, nil
+		}
+
+		if err := s.authorisationService.VerifyUserRelationship(ctx, cmd.CreatorID, cmd.UserIDs, false, true, false); err != nil {
+			return nil, err
+		}
+
+		users, err := s.userRepository.GetByIDs(ctx, channelMemberIDs)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		guild.IncrementChannelCount()
-
-		if err := s.guildRepository.Update(ctx, guild); err != nil {
-			return err
+		if err := s.createUserChannel(ctx, channel, channelMemberIDs); err != nil {
+			return nil, err
 		}
 
-		if err := s.createGuildChannel(ctx, channel, cmd.IsPrivate, cmd.RoleIDs, cmd.CreatorID); err != nil {
-			return err
-		}
+		s.eventService.ChannelCreated(ctx, channel.ID)
 
-		return nil
+		return &command.CreateChannelCommandResult{
+			Result: mapper.NewChannelResultFromChannel(channel, nil, users),
+		}, nil
 
-	}); err != nil {
-		return err
 	}
 
-	if err := s.eventService.GuildUpdated(ctx, *cmd.GuildID); err != nil {
-		return err
+	err = s.authorisationService.VerifyUserGuildPermission(ctx, *channel.GuildID, cmd.CreatorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
+	if err != nil {
+		return nil, err
 	}
 
-	return s.eventService.ChannelCreated(ctx, channel.ID)
+	var roleIDsToAssign []uuid.UUID
+
+	if len(cmd.RoleIDs) != 0 {
+		roles, err := s.guildRoleRepository.GetByIDs(ctx, cmd.RoleIDs, *channel.GuildID)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(roles) != len(cmd.RoleIDs) {
+			return nil, domain.ErrEntityNotFound
+		}
+
+		for _, role := range roles {
+			roleIDsToAssign = append(roleIDsToAssign, role.ID)
+		}
+	}
+
+	if !cmd.IsPrivate {
+		defaultRootRole, err := s.guildRoleRepository.GetByNameAndGuildID(ctx, entities.DefaultRootRoleName, *channel.GuildID)
+		if err != nil {
+			return nil, err
+		}
+
+		roleIDsToAssign = append(roleIDsToAssign, defaultRootRole.ID)
+	}
+
+	ownerRootRole, err := s.guildRoleRepository.GetByNameAndGuildID(ctx, entities.OwnerRootRoleName, *channel.GuildID)
+	if err != nil {
+		return nil, err
+	}
+
+	roleIDsToAssign = append(roleIDsToAssign, ownerRootRole.ID)
+
+	if err := s.createGuildChannel(ctx, channel, cmd.IsPrivate, roleIDsToAssign); err != nil {
+		return nil, err
+	}
+
+	if err := s.eventService.GuildUpdated(ctx, *channel.GuildID); err != nil {
+		return nil, err
+	}
+
+	s.eventService.ChannelCreated(ctx, channel.ID)
+
+	return &command.CreateChannelCommandResult{
+		Result: mapper.NewChannelResultFromChannel(channel, roleIDsToAssign, nil),
+	}, nil
+
 }
 
 func (s *ChannelService) Update(ctx context.Context, cmd *command.UpdateChannelCommand) error {
@@ -184,7 +240,7 @@ func (s *ChannelService) CreateUserAssoc(ctx context.Context, cmd *command.Creat
 		return err
 	}
 
-	if err := s.authorisationService.VerifyRelationships(ctx, cmd.RequestorID, []uuid.UUID{cmd.UserID}, false, true, false); err != nil {
+	if err := s.authorisationService.VerifyUserRelationship(ctx, cmd.RequestorID, []uuid.UUID{cmd.UserID}, false, true, false); err != nil {
 		return err
 	}
 
@@ -208,50 +264,25 @@ func (s *ChannelService) DeleteUserAssoc(ctx context.Context, cmd *command.Delet
 	return nil
 }
 
-func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entities.Channel, isPrivate bool, roleIDs []uuid.UUID, requestorID uuid.UUID) error {
+func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entities.Channel, isPrivate bool, roleIDs []uuid.UUID) error {
 	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
-		err := s.authorisationService.VerifyUserGuildPermission(ctx, *channel.GuildID, requestorID, constants.MANAGE_GUILD_CHANNELS_PERMISSION)
+		guild, err := s.guildRepository.GetByID(ctx, *channel.GuildID)
 		if err != nil {
 			return err
 		}
 
-		var rolesToAssign []*entities.GuildRole
+		guild.IncrementChannelCount()
 
-		if len(roleIDs) != 0 {
-			roles, err := s.guildRoleRepository.GetByIDs(ctx, roleIDs, *channel.GuildID)
-			if err != nil {
-				return err
-			}
-
-			if len(roles) != len(roleIDs) {
-				return domain.ErrEntityNotFound
-			}
-
-			rolesToAssign = append(rolesToAssign, roles...)
-		}
-
-		if !isPrivate {
-			role, err := s.guildRoleRepository.GetByNameAndGuildID(ctx, entities.DefaultRootRoleName, *channel.GuildID)
-			if err != nil {
-				return err
-			}
-
-			rolesToAssign = append(rolesToAssign, role)
-		}
-
-		role, err := s.guildRoleRepository.GetByNameAndGuildID(ctx, entities.OwnerRootRoleName, *channel.GuildID)
-		if err != nil {
+		if err := s.guildRepository.Update(ctx, guild); err != nil {
 			return err
 		}
-
-		rolesToAssign = append(rolesToAssign, role)
 
 		if err := s.channelRepository.Create(ctx, channel); err != nil {
 			return err
 		}
 
-		for _, role := range rolesToAssign {
-			if err := s.guildRoleRepository.AssociateChannel(ctx, role.ID, channel.ID); err != nil {
+		for _, roleID := range roleIDs {
+			if err := s.guildRoleRepository.AssociateChannel(ctx, roleID, channel.ID); err != nil {
 				return err
 			}
 		}
@@ -260,27 +291,14 @@ func (s *ChannelService) createGuildChannel(ctx context.Context, channel *entiti
 	})
 }
 
-func (s *ChannelService) createUserChannel(ctx context.Context, channel *entities.Channel, userIDs []uuid.UUID, requestorID uuid.UUID) error {
+func (s *ChannelService) createUserChannel(ctx context.Context, channel *entities.Channel, userIDs []uuid.UUID) error {
 	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
-		if err := s.authorisationService.VerifyRelationships(ctx, requestorID, userIDs, false, true, false); err != nil {
-			return err
-		}
-
-		users, err := s.userRepository.GetByIDs(ctx, userIDs)
-		if err != nil {
-			return err
-		}
-
-		if len(users) != len(userIDs) {
-			return domain.ErrEntityNotFound
-		}
-
 		if err := s.channelRepository.Create(ctx, channel); err != nil {
 			return err
 		}
 
-		for _, user := range users {
-			if err := s.channelRepository.AssociateUser(ctx, user.ID, channel.ID); err != nil {
+		for _, userID := range userIDs {
+			if err := s.channelRepository.AssociateUser(ctx, channel.ID, userID); err != nil {
 				return err
 			}
 		}

@@ -6,8 +6,8 @@ import (
 )
 
 type CreateRelationshipRequest struct {
-	Status      int8      `json:"status"`
-	RecipientID uuid.UUID `json:"recipientID"`
+	Status   int8   `json:"status"`
+	Username string `json:"username"`
 }
 
 func (r *CreateRelationshipRequest) ToCreateRelationshipCommand(requestorID uuid.UUID) (*command.CreateRelationshipCommand, error) {
@@ -16,8 +16,8 @@ func (r *CreateRelationshipRequest) ToCreateRelationshipCommand(requestorID uuid
 	}
 
 	return &command.CreateRelationshipCommand{
-		CreatorID:   requestorID,
-		RecipientID: r.RecipientID,
-		Status:      r.Status,
+		CreatorID: requestorID,
+		Username:  r.Username,
+		Status:    r.Status,
 	}, nil
 }

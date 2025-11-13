@@ -145,9 +145,22 @@ func (s *ChannelMessageService) GetByChannelID(ctx context.Context, qry *query.C
 }
 
 func (s *ChannelMessageService) Create(ctx context.Context, cmd *command.CreateChannelMessageCommand) error {
-	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
+
+	channel, err := s.channelRepository.GetByID(ctx, cmd.ChannelID)
 	if err != nil {
 		return err
+	}
+
+	if channel.IsGuildChannel() {
+		err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := s.authorisationService.VerifyPrivateChannelMember(ctx, cmd.ChannelID, cmd.RequestorID)
+		if err != nil {
+			return err
+		}
 	}
 
 	if len(cmd.AttachmentIDs) != 0 {
@@ -191,9 +204,21 @@ func (s *ChannelMessageService) Create(ctx context.Context, cmd *command.CreateC
 }
 
 func (s *ChannelMessageService) Update(ctx context.Context, cmd *command.UpdateChannelMessageCommand) error {
-	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
+	channel, err := s.channelRepository.GetByID(ctx, cmd.ChannelID)
 	if err != nil {
 		return err
+	}
+
+	if channel.IsGuildChannel() {
+		err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := s.authorisationService.VerifyPrivateChannelMember(ctx, cmd.ChannelID, cmd.RequestorID)
+		if err != nil {
+			return err
+		}
 	}
 
 	channelMessage, err := s.channelMessageRepository.GetByID(ctx, cmd.ID)
@@ -217,9 +242,21 @@ func (s *ChannelMessageService) Update(ctx context.Context, cmd *command.UpdateC
 }
 
 func (s *ChannelMessageService) PinMessage(ctx context.Context, cmd *command.CreateChannelPinCommand) error {
-	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_PIN_PERMISSION)
+	channel, err := s.channelRepository.GetByID(ctx, cmd.ChannelID)
 	if err != nil {
 		return err
+	}
+
+	if channel.IsGuildChannel() {
+		err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_PIN_PERMISSION)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := s.authorisationService.VerifyPrivateChannelMember(ctx, cmd.ChannelID, cmd.RequestorID)
+		if err != nil {
+			return err
+		}
 	}
 
 	channelMessage, err := s.channelMessageRepository.GetByID(ctx, cmd.ID)
@@ -239,9 +276,21 @@ func (s *ChannelMessageService) PinMessage(ctx context.Context, cmd *command.Cre
 }
 
 func (s *ChannelMessageService) UnpinMessage(ctx context.Context, cmd *command.DeleteChannelPinCommand) error {
-	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_PIN_PERMISSION)
+	channel, err := s.channelRepository.GetByID(ctx, cmd.ChannelID)
 	if err != nil {
 		return err
+	}
+
+	if channel.IsGuildChannel() {
+		err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_PIN_PERMISSION)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := s.authorisationService.VerifyPrivateChannelMember(ctx, cmd.ChannelID, cmd.RequestorID)
+		if err != nil {
+			return err
+		}
 	}
 
 	channelMessage, err := s.channelMessageRepository.GetByID(ctx, cmd.ID)
@@ -261,9 +310,21 @@ func (s *ChannelMessageService) UnpinMessage(ctx context.Context, cmd *command.D
 }
 
 func (s *ChannelMessageService) Delete(ctx context.Context, cmd *command.DeleteChannelMessageCommand) error {
-	err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
+	channel, err := s.channelRepository.GetByID(ctx, cmd.ChannelID)
 	if err != nil {
 		return err
+	}
+
+	if channel.IsGuildChannel() {
+		err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_PIN_PERMISSION)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := s.authorisationService.VerifyPrivateChannelMember(ctx, cmd.ChannelID, cmd.RequestorID)
+		if err != nil {
+			return err
+		}
 	}
 
 	channelMessage, err := s.channelMessageRepository.GetByID(ctx, cmd.ID)

@@ -16,6 +16,13 @@ const (
 
 // User PublicFlags
 const (
-	ALLOW_GUILD_MEMBER_DM = iota
-	ALLOW_FRIEND_REQUEST
+	ALLOW_FRIEND_REQUEST = iota
+	ALLOW_GUILD_MEMBER_DM
+)
+
+// Relationship Status
+const (
+	PENDING_RELATIONSHIP = iota
+	FRIEND_RELATIONSHIP
+	BLOCKED_RELATIONSHIP
 )

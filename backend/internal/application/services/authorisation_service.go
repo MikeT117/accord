@@ -25,7 +25,7 @@ func CreateAuthorisationService(guildRoleRepository repositories.GuildRoleReposi
 	}
 }
 
-func (s *AuthorisationService) VerifyRelationships(ctx context.Context, requestorID uuid.UUID, userIDs []uuid.UUID, isBlocked bool, isFriend bool, isPending bool) error {
+func (s *AuthorisationService) VerifyUserRelationship(ctx context.Context, requestorID uuid.UUID, userIDs []uuid.UUID, isBlocked bool, isFriend bool, isPending bool) error {
 	relationships, err := s.RelationshipRepository.GetByUserIDAndUserIDs(ctx, requestorID, userIDs)
 
 	if len(relationships) != len(userIDs) {
@@ -90,7 +90,7 @@ func (s *AuthorisationService) VerifyGuildMember(ctx context.Context, guildID uu
 }
 
 func (s *AuthorisationService) VerifyPrivateChannelMember(ctx context.Context, channelID uuid.UUID, requestorID uuid.UUID) error {
-	err := s.channelRepository.VerifyUserChannelMembership(ctx, channelID, requestorID)
+	err := s.channelRepository.VerifyUserChannelMembership(ctx, requestorID, channelID)
 	if err == nil {
 		return nil
 	}

@@ -12,9 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthAppRouteRouteImport } from './routes/_auth/app/route'
+import { Route as AuthAppDashboardRouteRouteImport } from './routes/_auth/app/dashboard/route'
 import { Route as AuthAppGuildIdRouteRouteImport } from './routes/_auth/app/$guildId/route'
-import { Route as AuthAppHomeIndexRouteImport } from './routes/_auth/app/home/index'
+import { Route as AuthAppDashboardIndexRouteImport } from './routes/_auth/app/dashboard/index'
 import { Route as AuthAppGuildIdIndexRouteImport } from './routes/_auth/app/$guildId/index'
+import { Route as AuthAppDashboardRequestsRouteImport } from './routes/_auth/app/dashboard/requests'
+import { Route as AuthAppDashboardRelationshipsRouteImport } from './routes/_auth/app/dashboard/relationships'
+import { Route as AuthAppDashboardBlockedRouteImport } from './routes/_auth/app/dashboard/blocked'
+import { Route as AuthAppDashboardChannelIdRouteImport } from './routes/_auth/app/dashboard/$channelId'
 import { Route as AuthAppGuildIdChannelIdRouteRouteImport } from './routes/_auth/app/$guildId/$channelId/route'
 import { Route as AuthAppGuildIdChannelIdIndexRouteImport } from './routes/_auth/app/$guildId/$channelId/index'
 
@@ -33,21 +38,49 @@ const AuthAppRouteRoute = AuthAppRouteRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthAppDashboardRouteRoute = AuthAppDashboardRouteRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthAppRouteRoute,
+} as any)
 const AuthAppGuildIdRouteRoute = AuthAppGuildIdRouteRouteImport.update({
   id: '/$guildId',
   path: '/$guildId',
   getParentRoute: () => AuthAppRouteRoute,
 } as any)
-const AuthAppHomeIndexRoute = AuthAppHomeIndexRouteImport.update({
-  id: '/home/',
-  path: '/home/',
-  getParentRoute: () => AuthAppRouteRoute,
+const AuthAppDashboardIndexRoute = AuthAppDashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthAppDashboardRouteRoute,
 } as any)
 const AuthAppGuildIdIndexRoute = AuthAppGuildIdIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthAppGuildIdRouteRoute,
 } as any)
+const AuthAppDashboardRequestsRoute =
+  AuthAppDashboardRequestsRouteImport.update({
+    id: '/requests',
+    path: '/requests',
+    getParentRoute: () => AuthAppDashboardRouteRoute,
+  } as any)
+const AuthAppDashboardRelationshipsRoute =
+  AuthAppDashboardRelationshipsRouteImport.update({
+    id: '/relationships',
+    path: '/relationships',
+    getParentRoute: () => AuthAppDashboardRouteRoute,
+  } as any)
+const AuthAppDashboardBlockedRoute = AuthAppDashboardBlockedRouteImport.update({
+  id: '/blocked',
+  path: '/blocked',
+  getParentRoute: () => AuthAppDashboardRouteRoute,
+} as any)
+const AuthAppDashboardChannelIdRoute =
+  AuthAppDashboardChannelIdRouteImport.update({
+    id: '/$channelId',
+    path: '/$channelId',
+    getParentRoute: () => AuthAppDashboardRouteRoute,
+  } as any)
 const AuthAppGuildIdChannelIdRouteRoute =
   AuthAppGuildIdChannelIdRouteRouteImport.update({
     id: '/$channelId',
@@ -66,17 +99,26 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/app': typeof AuthAppRouteRouteWithChildren
   '/app/$guildId': typeof AuthAppGuildIdRouteRouteWithChildren
+  '/app/dashboard': typeof AuthAppDashboardRouteRouteWithChildren
   '/app/$guildId/$channelId': typeof AuthAppGuildIdChannelIdRouteRouteWithChildren
+  '/app/dashboard/$channelId': typeof AuthAppDashboardChannelIdRoute
+  '/app/dashboard/blocked': typeof AuthAppDashboardBlockedRoute
+  '/app/dashboard/relationships': typeof AuthAppDashboardRelationshipsRoute
+  '/app/dashboard/requests': typeof AuthAppDashboardRequestsRoute
   '/app/$guildId/': typeof AuthAppGuildIdIndexRoute
-  '/app/home': typeof AuthAppHomeIndexRoute
+  '/app/dashboard/': typeof AuthAppDashboardIndexRoute
   '/app/$guildId/$channelId/': typeof AuthAppGuildIdChannelIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/app': typeof AuthAppRouteRouteWithChildren
+  '/app/dashboard/$channelId': typeof AuthAppDashboardChannelIdRoute
+  '/app/dashboard/blocked': typeof AuthAppDashboardBlockedRoute
+  '/app/dashboard/relationships': typeof AuthAppDashboardRelationshipsRoute
+  '/app/dashboard/requests': typeof AuthAppDashboardRequestsRoute
   '/app/$guildId': typeof AuthAppGuildIdIndexRoute
-  '/app/home': typeof AuthAppHomeIndexRoute
+  '/app/dashboard': typeof AuthAppDashboardIndexRoute
   '/app/$guildId/$channelId': typeof AuthAppGuildIdChannelIdIndexRoute
 }
 export interface FileRoutesById {
@@ -85,9 +127,14 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_auth/app': typeof AuthAppRouteRouteWithChildren
   '/_auth/app/$guildId': typeof AuthAppGuildIdRouteRouteWithChildren
+  '/_auth/app/dashboard': typeof AuthAppDashboardRouteRouteWithChildren
   '/_auth/app/$guildId/$channelId': typeof AuthAppGuildIdChannelIdRouteRouteWithChildren
+  '/_auth/app/dashboard/$channelId': typeof AuthAppDashboardChannelIdRoute
+  '/_auth/app/dashboard/blocked': typeof AuthAppDashboardBlockedRoute
+  '/_auth/app/dashboard/relationships': typeof AuthAppDashboardRelationshipsRoute
+  '/_auth/app/dashboard/requests': typeof AuthAppDashboardRequestsRoute
   '/_auth/app/$guildId/': typeof AuthAppGuildIdIndexRoute
-  '/_auth/app/home/': typeof AuthAppHomeIndexRoute
+  '/_auth/app/dashboard/': typeof AuthAppDashboardIndexRoute
   '/_auth/app/$guildId/$channelId/': typeof AuthAppGuildIdChannelIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -97,17 +144,26 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app'
     | '/app/$guildId'
+    | '/app/dashboard'
     | '/app/$guildId/$channelId'
+    | '/app/dashboard/$channelId'
+    | '/app/dashboard/blocked'
+    | '/app/dashboard/relationships'
+    | '/app/dashboard/requests'
     | '/app/$guildId/'
-    | '/app/home'
+    | '/app/dashboard/'
     | '/app/$guildId/$channelId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/app'
+    | '/app/dashboard/$channelId'
+    | '/app/dashboard/blocked'
+    | '/app/dashboard/relationships'
+    | '/app/dashboard/requests'
     | '/app/$guildId'
-    | '/app/home'
+    | '/app/dashboard'
     | '/app/$guildId/$channelId'
   id:
     | '__root__'
@@ -115,9 +171,14 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_auth/app'
     | '/_auth/app/$guildId'
+    | '/_auth/app/dashboard'
     | '/_auth/app/$guildId/$channelId'
+    | '/_auth/app/dashboard/$channelId'
+    | '/_auth/app/dashboard/blocked'
+    | '/_auth/app/dashboard/relationships'
+    | '/_auth/app/dashboard/requests'
     | '/_auth/app/$guildId/'
-    | '/_auth/app/home/'
+    | '/_auth/app/dashboard/'
     | '/_auth/app/$guildId/$channelId/'
   fileRoutesById: FileRoutesById
 }
@@ -150,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAppRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_auth/app/dashboard': {
+      id: '/_auth/app/dashboard'
+      path: '/dashboard'
+      fullPath: '/app/dashboard'
+      preLoaderRoute: typeof AuthAppDashboardRouteRouteImport
+      parentRoute: typeof AuthAppRouteRoute
+    }
     '/_auth/app/$guildId': {
       id: '/_auth/app/$guildId'
       path: '/$guildId'
@@ -157,12 +225,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAppGuildIdRouteRouteImport
       parentRoute: typeof AuthAppRouteRoute
     }
-    '/_auth/app/home/': {
-      id: '/_auth/app/home/'
-      path: '/home'
-      fullPath: '/app/home'
-      preLoaderRoute: typeof AuthAppHomeIndexRouteImport
-      parentRoute: typeof AuthAppRouteRoute
+    '/_auth/app/dashboard/': {
+      id: '/_auth/app/dashboard/'
+      path: '/'
+      fullPath: '/app/dashboard/'
+      preLoaderRoute: typeof AuthAppDashboardIndexRouteImport
+      parentRoute: typeof AuthAppDashboardRouteRoute
     }
     '/_auth/app/$guildId/': {
       id: '/_auth/app/$guildId/'
@@ -170,6 +238,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/$guildId/'
       preLoaderRoute: typeof AuthAppGuildIdIndexRouteImport
       parentRoute: typeof AuthAppGuildIdRouteRoute
+    }
+    '/_auth/app/dashboard/requests': {
+      id: '/_auth/app/dashboard/requests'
+      path: '/requests'
+      fullPath: '/app/dashboard/requests'
+      preLoaderRoute: typeof AuthAppDashboardRequestsRouteImport
+      parentRoute: typeof AuthAppDashboardRouteRoute
+    }
+    '/_auth/app/dashboard/relationships': {
+      id: '/_auth/app/dashboard/relationships'
+      path: '/relationships'
+      fullPath: '/app/dashboard/relationships'
+      preLoaderRoute: typeof AuthAppDashboardRelationshipsRouteImport
+      parentRoute: typeof AuthAppDashboardRouteRoute
+    }
+    '/_auth/app/dashboard/blocked': {
+      id: '/_auth/app/dashboard/blocked'
+      path: '/blocked'
+      fullPath: '/app/dashboard/blocked'
+      preLoaderRoute: typeof AuthAppDashboardBlockedRouteImport
+      parentRoute: typeof AuthAppDashboardRouteRoute
+    }
+    '/_auth/app/dashboard/$channelId': {
+      id: '/_auth/app/dashboard/$channelId'
+      path: '/$channelId'
+      fullPath: '/app/dashboard/$channelId'
+      preLoaderRoute: typeof AuthAppDashboardChannelIdRouteImport
+      parentRoute: typeof AuthAppDashboardRouteRoute
     }
     '/_auth/app/$guildId/$channelId': {
       id: '/_auth/app/$guildId/$channelId'
@@ -216,14 +312,35 @@ const AuthAppGuildIdRouteRouteChildren: AuthAppGuildIdRouteRouteChildren = {
 const AuthAppGuildIdRouteRouteWithChildren =
   AuthAppGuildIdRouteRoute._addFileChildren(AuthAppGuildIdRouteRouteChildren)
 
+interface AuthAppDashboardRouteRouteChildren {
+  AuthAppDashboardChannelIdRoute: typeof AuthAppDashboardChannelIdRoute
+  AuthAppDashboardBlockedRoute: typeof AuthAppDashboardBlockedRoute
+  AuthAppDashboardRelationshipsRoute: typeof AuthAppDashboardRelationshipsRoute
+  AuthAppDashboardRequestsRoute: typeof AuthAppDashboardRequestsRoute
+  AuthAppDashboardIndexRoute: typeof AuthAppDashboardIndexRoute
+}
+
+const AuthAppDashboardRouteRouteChildren: AuthAppDashboardRouteRouteChildren = {
+  AuthAppDashboardChannelIdRoute: AuthAppDashboardChannelIdRoute,
+  AuthAppDashboardBlockedRoute: AuthAppDashboardBlockedRoute,
+  AuthAppDashboardRelationshipsRoute: AuthAppDashboardRelationshipsRoute,
+  AuthAppDashboardRequestsRoute: AuthAppDashboardRequestsRoute,
+  AuthAppDashboardIndexRoute: AuthAppDashboardIndexRoute,
+}
+
+const AuthAppDashboardRouteRouteWithChildren =
+  AuthAppDashboardRouteRoute._addFileChildren(
+    AuthAppDashboardRouteRouteChildren,
+  )
+
 interface AuthAppRouteRouteChildren {
   AuthAppGuildIdRouteRoute: typeof AuthAppGuildIdRouteRouteWithChildren
-  AuthAppHomeIndexRoute: typeof AuthAppHomeIndexRoute
+  AuthAppDashboardRouteRoute: typeof AuthAppDashboardRouteRouteWithChildren
 }
 
 const AuthAppRouteRouteChildren: AuthAppRouteRouteChildren = {
   AuthAppGuildIdRouteRoute: AuthAppGuildIdRouteRouteWithChildren,
-  AuthAppHomeIndexRoute: AuthAppHomeIndexRoute,
+  AuthAppDashboardRouteRoute: AuthAppDashboardRouteRouteWithChildren,
 }
 
 const AuthAppRouteRouteWithChildren = AuthAppRouteRoute._addFileChildren(

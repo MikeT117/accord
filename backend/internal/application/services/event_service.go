@@ -214,7 +214,6 @@ func (s *EventService) ChannelDeleted(ctx context.Context, ID uuid.UUID, guildID
 }
 
 func (s *EventService) RelationshipCreated(ctx context.Context, ID uuid.UUID) error {
-
 	relationship, err := s.relationshipRepository.GetByID(ctx, ID)
 	if err != nil {
 		return err

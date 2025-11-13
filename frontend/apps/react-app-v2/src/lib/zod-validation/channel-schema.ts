@@ -27,14 +27,14 @@ const privateChannelType = z.literal([
 const baseChannelSchema = z.object({
     id: z.string(),
     creatorId: z.string(),
-    topic: z.string(),
+    topic: z.nullable(z.string()),
     createdAt: z.pipe(
         z.number(),
-        z.transform((num) => fromUnixTime(num))
+        z.transform((num) => fromUnixTime(num)),
     ),
     updatedAt: z.pipe(
         z.number(),
-        z.transform((num) => fromUnixTime(num))
+        z.transform((num) => fromUnixTime(num)),
     ),
 });
 
@@ -85,7 +85,7 @@ export const channelUpdatedSchema = z.object({
     topic: z.string(),
     updatedAt: z.pipe(
         z.number(),
-        z.transform((num) => fromUnixTime(num))
+        z.transform((num) => fromUnixTime(num)),
     ),
 });
 

@@ -67,7 +67,9 @@ export function handleGuildChannelCreated(channel: APIGuildChannelType) {
         return;
     }
 
-    guild.channels.keys.push(channel.id);
+    if (!guild.channels.keys.includes(channel.id)) {
+        guild.channels.keys.push(channel.id);
+    }
     guild.channels.values[channel.id] = apiGuildChannelToGuildChannel(channel);
 }
 

@@ -9,7 +9,6 @@ import { channelMessagesSchema } from "@/lib/zod-validation/channel-mesage-schem
 import { getUnixTime } from "date-fns";
 import { MAX_INFINITE_PAGE_LEN } from "../query-constants";
 import { httpClient } from "@/lib/http-client";
-import { useInView } from "react-intersection-observer";
 import { useInfiniteScroll } from "../hooks/use-infinite-scroll";
 
 type PageParam = { before: string; after?: never } | { after: string; before?: never } | null | undefined;

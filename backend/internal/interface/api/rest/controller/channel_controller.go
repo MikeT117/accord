@@ -5,6 +5,7 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/interface/api/authentication"
+	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/mapper"
 	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/request"
 	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/response"
 
@@ -45,11 +46,12 @@ func (c *ChannelController) createChannel(ctx echo.Context) error {
 		return handleError(ctx, err)
 	}
 
-	if err := c.channelService.Create(ctx.Request().Context(), cmd); err != nil {
+	channel, err := c.channelService.Create(ctx.Request().Context(), cmd)
+	if err != nil {
 		return handleError(ctx, err)
 	}
 
-	return response.NoContentResponse(ctx)
+	return response.JSONResponse(ctx, http.StatusOK, mapper.ToChannelResponse(channel.Result))
 }
 
 func (c *ChannelController) updateChannel(ctx echo.Context) error {

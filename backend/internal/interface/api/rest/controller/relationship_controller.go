@@ -5,7 +5,6 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/interface/api/authentication"
-	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/mapper"
 	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/request"
 	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/response"
 
@@ -25,31 +24,10 @@ func NewRelationshipController(
 	}
 
 	subGroup := baseGroup.Group("/relationships")
-	subGroup.GET("", controller.getRelationships)
 	subGroup.POST("", controller.createRelationship)
-	subGroup.PATCH("/:v", controller.updateRelationship)
+	subGroup.PATCH("/:relationshipID", controller.updateRelationship)
 	subGroup.DELETE("/:relationshipID", controller.deleteRelationship)
 	return controller
-}
-
-func (c *RelationshipController) getRelationships(ctx echo.Context) error {
-	var payload request.QueryRelationshipsRequest
-	if err := ctx.Bind(&payload); err != nil {
-		return response.ErrorResponse(ctx, http.StatusBadRequest, nil)
-	}
-
-	requestorID, _ := authentication.GetRequestorDetails(ctx)
-	query, err := payload.ToRelationshipsQuery(requestorID)
-	if err != nil {
-		return handleError(ctx, err)
-	}
-
-	relationships, err := c.relationshipService.GetByUserID(ctx.Request().Context(), query)
-	if err != nil {
-		return handleError(ctx, err)
-	}
-
-	return response.JSONResponse(ctx, http.StatusOK, mapper.ToRelationshipsResponse(relationships.Result))
 }
 
 func (c *RelationshipController) createRelationship(ctx echo.Context) error {

@@ -37,6 +37,12 @@ export function AppSidebar() {
         });
     }
 
+    function handleUserDashboardClick() {
+        navigate({
+            to: "/app/dashboard",
+        });
+    }
+
     return (
         <div className="flex w-[72px] flex-col items-center space-y-3 bg-background py-4">
             <div className="flex flex-col gap-1.5">
@@ -44,6 +50,7 @@ export function AppSidebar() {
                     tooltipText="User Dashboard"
                     side="right"
                     className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-foreground text-accent"
+                    onClick={handleUserDashboardClick}
                 >
                     <AccordLogo />
                 </ButtonWithTooltip>

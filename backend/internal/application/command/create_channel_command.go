@@ -1,6 +1,9 @@
 package command
 
-import "github.com/google/uuid"
+import (
+	"github.com/MikeT117/accord/backend/internal/application/common"
+	"github.com/google/uuid"
+)
 
 type CreateChannelCommand struct {
 	ChannelType int8
@@ -11,4 +14,8 @@ type CreateChannelCommand struct {
 	Topic       *string
 	RoleIDs     []uuid.UUID
 	UserIDs     []uuid.UUID
+}
+
+type CreateChannelCommandResult struct {
+	Result *common.ChannelResult
 }

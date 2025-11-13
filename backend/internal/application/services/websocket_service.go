@@ -12,12 +12,13 @@ import (
 )
 
 type WebsocketService struct {
-	userRepository        repositories.UserRepository
-	sessionRepository     repositories.SessionRepository
-	guildRepository       repositories.GuildRepository
-	guildMemberRepository repositories.GuildMemberRepository
-	guildRoleRepository   repositories.GuildRoleRepository
-	channelRepository     repositories.ChannelRepository
+	userRepository         repositories.UserRepository
+	sessionRepository      repositories.SessionRepository
+	guildRepository        repositories.GuildRepository
+	guildMemberRepository  repositories.GuildMemberRepository
+	guildRoleRepository    repositories.GuildRoleRepository
+	channelRepository      repositories.ChannelRepository
+	relationshipRepository repositories.RelationshipRepository
 }
 
 func CreateWebsocketService(
@@ -27,14 +28,16 @@ func CreateWebsocketService(
 	guildMemberRepository repositories.GuildMemberRepository,
 	guildRoleRepository repositories.GuildRoleRepository,
 	channelRepository repositories.ChannelRepository,
+	relationshipRepository repositories.RelationshipRepository,
 ) interfaces.WebsocketService {
 	return &WebsocketService{
-		userRepository:        userRepository,
-		sessionRepository:     sessionRepository,
-		guildRepository:       guildRepository,
-		guildMemberRepository: guildMemberRepository,
-		guildRoleRepository:   guildRoleRepository,
-		channelRepository:     channelRepository,
+		userRepository:         userRepository,
+		sessionRepository:      sessionRepository,
+		guildRepository:        guildRepository,
+		guildMemberRepository:  guildMemberRepository,
+		guildRoleRepository:    guildRoleRepository,
+		channelRepository:      channelRepository,
+		relationshipRepository: relationshipRepository,
 	}
 }
 
@@ -61,6 +64,16 @@ func (s *WebsocketService) GetInitialisationPayload(ctx context.Context, userID 
 	}
 
 	privateChannelUsers, err := s.channelRepository.GetMapUsersByChannelIDs(ctx, privateChannelIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	relationships, relationshipUserIDs, err := s.relationshipRepository.GetByUserID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	relationshipUsers, err := s.userRepository.GetMapByIDs(ctx, relationshipUserIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +119,7 @@ func (s *WebsocketService) GetInitialisationPayload(ctx context.Context, userID 
 			nil,
 			privateChannelUsers,
 		),
+		Relationships: mapper.NewRelationshipListProtoResultFromRelationship(relationships, relationshipUsers),
 	}, nil
 }
 

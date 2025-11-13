@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"errors"
-	"time"
 
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
@@ -40,7 +39,7 @@ func (r *RelationshipRepository) GetByID(ctx context.Context, ID uuid.UUID) (*en
 	relationship := &entities.Relationship{}
 	if err := row.Scan(
 		&relationship.ID,
-		&relationship.CreatedAt,
+		&relationship.CreatorID,
 		&relationship.RecipientID,
 		&relationship.Status,
 		&relationship.CreatedAt,
@@ -55,7 +54,7 @@ func (r *RelationshipRepository) GetByID(ctx context.Context, ID uuid.UUID) (*en
 	return relationship, nil
 }
 
-func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID uuid.UUID, status int8, before time.Time, limit int8) ([]*entities.Relationship, []uuid.UUID, error) {
+func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*entities.Relationship, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
@@ -77,15 +76,8 @@ func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID uuid.UU
 				)
 			)
 		OR
-			creator_id = $1
-		AND
-			status = $2
-		AND
-			created_at::timestamp(0) < $3
-		ORDER BY
-			created_at ASC
-		LIMIT $4;
-	`, userID, status, before, limit)
+			creator_id = $1;
+	`, userID)
 
 	if err != nil {
 		return nil, nil, wrapUnknownErr("select relationships by user id failed", err)
@@ -98,7 +90,7 @@ func (r *RelationshipRepository) GetByUserID(ctx context.Context, userID uuid.UU
 		relationship := &entities.Relationship{}
 		if err := rows.Scan(
 			&relationship.ID,
-			&relationship.CreatedAt,
+			&relationship.CreatorID,
 			&relationship.RecipientID,
 			&relationship.Status,
 			&relationship.CreatedAt,
@@ -141,7 +133,7 @@ func (r *RelationshipRepository) GetByUserIDAndUserIDs(ctx context.Context, user
 			AND
 				recipient_id = $1
 		);
-	`, userID)
+	`, userID, userIDs)
 
 	if err != nil {
 		return nil, wrapUnknownErr("select relationships by user id and user ids failed", err)
@@ -153,7 +145,7 @@ func (r *RelationshipRepository) GetByUserIDAndUserIDs(ctx context.Context, user
 		relationship := &entities.Relationship{}
 		if err := rows.Scan(
 			&relationship.ID,
-			&relationship.CreatedAt,
+			&relationship.CreatorID,
 			&relationship.RecipientID,
 			&relationship.Status,
 			&relationship.CreatedAt,
@@ -171,9 +163,8 @@ func (r *RelationshipRepository) GetByUserIDAndUserIDs(ctx context.Context, user
 func (r *RelationshipRepository) GetUserIDsByID(ctx context.Context, ID uuid.UUID) ([]uuid.UUID, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
-			id,
 			creator_id,
-			recipient_id,
+			recipient_id
 		FROM
 			user_relationship
 		WHERE
@@ -229,7 +220,7 @@ func (r *RelationshipRepository) Update(ctx context.Context, relationship *entit
 		user_relationship
 	SET
 		status = $2,
-		updated_at = $3,
+		updated_at = $3
 	WHERE
 		id =  $1;
 `,
@@ -249,15 +240,13 @@ func (r *RelationshipRepository) Update(ctx context.Context, relationship *entit
 	return err
 }
 
-func (r *RelationshipRepository) Delete(ctx context.Context, ID uuid.UUID, creatorID uuid.UUID) error {
+func (r *RelationshipRepository) Delete(ctx context.Context, ID uuid.UUID) error {
 	result, err := r.db(ctx).Exec(ctx, `
 			DELETE FROM
 				user_relationship
 			WHERE
-				id = $1
-			AND
-				creator_id = $2;
-		`, ID, creatorID)
+				id = $1;
+		`, ID)
 
 	if err != nil {
 		return wrapUnknownErr("delete relationship failed", err)

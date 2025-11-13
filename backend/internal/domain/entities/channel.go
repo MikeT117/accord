@@ -60,7 +60,7 @@ func (u *Channel) validate() error {
 	return nil
 }
 
-func NewChannel(channelType int8, guildID *uuid.UUID, creatorID uuid.UUID, name string, topic *string) (*Channel, error) {
+func NewChannel(channelType int8, guildID *uuid.UUID, creatorID uuid.UUID, name *string, topic *string) (*Channel, error) {
 	id, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -72,7 +72,7 @@ func NewChannel(channelType int8, guildID *uuid.UUID, creatorID uuid.UUID, name 
 		CreatorID:   creatorID,
 		GuildID:     guildID,
 		ParentID:    nil,
-		Name:        &name,
+		Name:        name,
 		Topic:       nil,
 		ChannelType: channelType,
 		CreatedAt:   timestamp,

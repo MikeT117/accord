@@ -349,6 +349,61 @@ func (r *ChannelRepository) GetByUserID(ctx context.Context, userID uuid.UUID) (
 	return channels, channelIDs, nil
 }
 
+func (r *ChannelRepository) GetByUserIDs(ctx context.Context, userIDs []uuid.UUID) (*entities.Channel, error) {
+	row := r.db(ctx).QueryRow(ctx, `
+		WITH input_users AS (
+			SELECT UNNEST($1::uuid[]) AS user_id
+		)
+
+		SELECT
+			c.*
+		FROM
+			channel c
+		JOIN
+			channel_user cu ON c.id = cu.channel_id
+		RIGHT JOIN
+			input_users iu ON cu.user_id = iu.user_id
+		GROUP BY
+			c.id
+		HAVING
+			COUNT(DISTINCT cu.user_id) = (
+				SELECT
+					COUNT(*)
+				FROM
+				input_users
+			)
+		AND
+			COUNT(DISTINCT cu.user_id) = (
+			SELECT
+				COUNT(*)
+			FROM
+				channel_user
+			WHERE
+				channel_id = c.id
+			);
+	`, userIDs)
+
+	channel := &entities.Channel{}
+	if err := row.Scan(
+		&channel.ID,
+		&channel.CreatorID,
+		&channel.GuildID,
+		&channel.ParentID,
+		&channel.Name,
+		&channel.Topic,
+		&channel.ChannelType,
+		&channel.CreatedAt,
+		&channel.UpdatedAt,
+	); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrEntityNotFound
+		}
+		return nil, wrapUnknownErr("select channel by id, guild id and parent id failed", err)
+	}
+
+	return channel, nil
+}
+
 func (r *ChannelRepository) Create(ctx context.Context, channel *entities.Channel) error {
 
 	_, err := r.db(ctx).Exec(ctx, `
@@ -458,7 +513,7 @@ func (r *ChannelRepository) GetUsersByChannelID(ctx context.Context, channelID u
 			u.created_at,
 			u.updated_at
 		FROM
-			user u
+			"user" u
 		INNER JOIN
 			channel_user cu ON u.id = cu.user_id
 		WHERE
@@ -601,7 +656,58 @@ func (r *ChannelRepository) GetMapUsersByChannelIDs(ctx context.Context, channel
 	}
 
 	return users, nil
+}
 
+func (r *ChannelRepository) GetMapUsersByChannelID(ctx context.Context, channelID uuid.UUID) (map[uuid.UUID]*entities.User, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			u.id,
+			u.username,
+			u.display_name,
+			u.email,
+			u.email_verified,
+			u.public_flags,
+			u.relationship_count,
+			u.avatar_id,
+			u.banner_id,
+			u.created_at,
+			u.updated_at
+		FROM
+			"user" u
+		INNER JOIN
+			channel_user cu ON u.id = cu.user_id
+		WHERE
+			cu.channel_id = $1;
+	`, channelID)
+
+	if err != nil {
+		return nil, wrapUnknownErr("select users by channel ids failed", err)
+	}
+
+	defer rows.Close()
+
+	users := make(map[uuid.UUID]*entities.User)
+	for rows.Next() {
+		user := &entities.User{}
+		if err := rows.Scan(
+			&user.ID,
+			&user.Username,
+			&user.DisplayName,
+			&user.Email,
+			&user.EmailVerified,
+			&user.PublicFlags,
+			&user.RelationshipCount,
+			&user.AvatarID,
+			&user.BannerID,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		); err != nil {
+			return nil, wrapUnknownErr("map over select users by channel ids failed", err)
+		}
+		users[user.ID] = user
+	}
+
+	return users, nil
 }
 
 func (r *ChannelRepository) AssociateUser(ctx context.Context, channelID uuid.UUID, userID uuid.UUID) error {
@@ -612,7 +718,7 @@ func (r *ChannelRepository) AssociateUser(ctx context.Context, channelID uuid.UU
 				channel_id
 			)
 		VALUES ($1, $2);
-	`)
+	`, userID, channelID)
 
 	if err != nil {
 		return wrapUnknownErr("insert channel user association failed", err)
@@ -633,7 +739,7 @@ func (r *ChannelRepository) DisassociateUser(ctx context.Context, channelID uuid
 			channel_id = $1
 		AND
 			user_ud = $2;
-	`)
+	`, channelID, userID)
 
 	if err != nil {
 		return wrapUnknownErr("delete channel user association failed", err)

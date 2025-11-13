@@ -9,6 +9,7 @@ import (
 
 type UserRepository interface {
 	GetByID(ctx context.Context, ID uuid.UUID) (*entities.User, error)
+	GetByUsername(ctx context.Context, username string) (*entities.User, error)
 	GetByAccountID(ctx context.Context, accountID uuid.UUID) (*entities.User, error)
 	GetMapByIDs(ctx context.Context, IDs []uuid.UUID) (map[uuid.UUID]*entities.User, error)
 	GetByIDs(ctx context.Context, IDs []uuid.UUID) ([]*entities.User, error)

@@ -10,7 +10,6 @@ import (
 
 type RelationshipService interface {
 	GetByID(ctx context.Context, ID uuid.UUID, userID uuid.UUID) (*query.RelationshipQueryResult, error)
-	GetByUserID(ctx context.Context, qry *query.RelatationshipsQuery) (*query.RelationshipQueryListResult, error)
 	Create(ctx context.Context, cmd *command.CreateRelationshipCommand) error
 	Update(ctx context.Context, cmd *command.UpdateRelationshipCommand) error
 	Delete(ctx context.Context, cmd *command.DeleteRelationshipCommand) error

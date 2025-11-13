@@ -20,14 +20,14 @@ func NewRelationshipResultFromRelationship(relationship *entities.Relationship, 
 	}
 }
 
-func NewRelationshipListResultFromRelationship(relationships []*entities.Relationship, users map[uuid.UUID]*entities.User, userID uuid.UUID) []*common.RelationshipResult {
+func NewRelationshipListResultFromRelationship(relationships []*entities.Relationship, users map[uuid.UUID]*entities.User) []*common.RelationshipResult {
 	relationshipsResult := make([]*common.RelationshipResult, len(relationships))
 
 	for i := 0; i < len(relationships); i++ {
-		if relationships[i].CreatorID != userID && users[relationships[i].CreatorID] != nil {
+		if users[relationships[i].CreatorID] != nil {
 			relationshipsResult[i] = NewRelationshipResultFromRelationship(relationships[i], users[relationships[i].CreatorID])
-		} else if relationships[i].RecipientID != userID && users[relationships[i].RecipientID] != nil {
-			relationshipsResult[i] = NewRelationshipResultFromRelationship(relationships[i], users[relationships[i].CreatorID])
+		} else if users[relationships[i].RecipientID] != nil {
+			relationshipsResult[i] = NewRelationshipResultFromRelationship(relationships[i], users[relationships[i].RecipientID])
 		}
 	}
 
@@ -49,6 +49,20 @@ func NewRelationshipProtoResultFromRelationship(relationship *entities.Relations
 		UpdatedAt:   &updatedAt,
 		User:        NewUserProtoResultFromUser(user),
 	}
+}
+
+func NewRelationshipListProtoResultFromRelationship(relationships []*entities.Relationship, users map[uuid.UUID]*entities.User) []*pb.Relationship {
+	tempRelationships := make([]*pb.Relationship, len(relationships))
+
+	for i := 0; i < len(relationships); i++ {
+		if users[relationships[i].CreatorID] != nil {
+			tempRelationships[i] = NewRelationshipProtoResultFromRelationship(relationships[i], users[relationships[i].CreatorID])
+		} else if users[relationships[i].RecipientID] != nil {
+			tempRelationships[i] = NewRelationshipProtoResultFromRelationship(relationships[i], users[relationships[i].RecipientID])
+		}
+	}
+
+	return tempRelationships
 }
 
 func NewRelationshipCreatedProtoEvent(relationship *entities.Relationship, user *entities.User) *pb.EventPayload {

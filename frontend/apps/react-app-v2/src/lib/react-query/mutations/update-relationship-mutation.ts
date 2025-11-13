@@ -1,0 +1,24 @@
+import { httpClient } from "@/lib/http-client";
+import { useMutation } from "@tanstack/react-query";
+import { RELATIONSHIP_STATUS } from "@/lib/zod-validation/relationship-schema";
+import type { ValueOf } from "@/lib/types/types";
+
+type DeleteRelationshipMutationArgs = {
+    id: string;
+    status: ValueOf<typeof RELATIONSHIP_STATUS>;
+};
+
+const mutationFn = async ({ id, status }: DeleteRelationshipMutationArgs) => {
+    return httpClient.patch(`/relationships/${id}`, { status });
+};
+
+type MutationHookArgs = {
+    onSuccess?: () => void;
+};
+
+// OnError Will be handled globally with notifications, success will be handled by the component if needed.
+export const useUpdateRelationshipMutation = (args?: MutationHookArgs) =>
+    useMutation({
+        mutationFn,
+        onSuccess: () => (typeof args?.onSuccess === "function" ? args.onSuccess() : void 0),
+    });
