@@ -2,16 +2,17 @@ package services
 
 import (
 	"context"
-	"errors"
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/application/mapper"
+	"github.com/MikeT117/accord/backend/internal/constants"
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
 	"github.com/MikeT117/accord/backend/internal/infra/oauth"
+	"github.com/google/uuid"
 )
 
 type AuthenticationService struct {
@@ -35,61 +36,74 @@ func CreateAuthenticationService(
 	}
 }
 
-func (s *AuthenticationService) GetGithubAuthCodeURL() string {
-	return s.oAuth.GetGithubAuthCodeURL()
+func (s *AuthenticationService) GetUniqueUsername(ctx context.Context, username string) (bool, error) {
+	_, err := s.userRepository.GetByUsername(ctx, username)
+	if err != nil {
+		if domain.IsDomainNotFoundErr(err) {
+			return true, nil
+		}
+
+		return false, err
+	}
+
+	return false, nil
 }
 
-func (s *AuthenticationService) GetOrCreateGithubAccountUser(
+func (s *AuthenticationService) GetOAuthCodeURL(provider string) (string, error) {
+	if provider == constants.PROVIDER_OAUTH_GITHUB {
+		return s.oAuth.GetGithubAuthCodeURL()
+	}
+
+	return s.oAuth.GetGitlabAuthCodeURL()
+}
+
+func (s *AuthenticationService) GetOAuthProfile(
 	ctx context.Context,
 	code string,
 	state string,
-) (*command.CreateUserAccountIfNewCommandResult, error) {
+	provider string,
+) (*oauth.OAuthUser, error) {
 	if err := s.oAuth.ValidateNonce(state); err != nil {
 		return nil, err
 	}
 
-	githubUser, err := s.oAuth.GetGithubUser(ctx, code)
-	if err != nil {
-		return nil, err
+	if provider == constants.PROVIDER_OAUTH_GITHUB {
+		return s.oAuth.GetGithubUser(ctx, code)
 	}
 
-	user, err := s.getUserFromGithub(ctx, githubUser.ID)
-	if err == nil {
-		return &command.CreateUserAccountIfNewCommandResult{
-			Result: mapper.NewUserResultFromUser(user),
-		}, nil
-	}
-
-	if !errors.Is(err, domain.ErrEntityNotFound) {
-		return nil, err
-	}
-
-	user, err = s.createUserFromGithub(ctx, githubUser)
-	if err != nil {
-		return nil, err
-	}
-
-	return &command.CreateUserAccountIfNewCommandResult{
-		Result: mapper.NewUserResultFromUser(user),
-	}, nil
+	return s.oAuth.GetGitlabUser(ctx, code)
 }
 
-func (s *AuthenticationService) getUserFromGithub(ctx context.Context, ID string) (*entities.User, error) {
-	account, err := s.accountRepository.GetByProviderID(ctx, ID)
+func (s *AuthenticationService) GetUserIDByProviderID(ctx context.Context, providerID string, provider string) (uuid.UUID, error) {
+	account, err := s.accountRepository.GetByProviderID(ctx, providerID, provider)
 	if err != nil {
-		return nil, err
+		return uuid.UUID{}, err
 	}
 
-	return s.userRepository.GetByAccountID(ctx, account.ID)
+	user, err := s.userRepository.GetByAccountID(ctx, account.ID)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+
+	return user.ID, nil
+
 }
 
-func (s *AuthenticationService) createUserFromGithub(ctx context.Context, githubUser *oauth.GithubUser) (*entities.User, error) {
-	account, err := entities.NewOAuthAccount(githubUser.ID, nil, nil, nil, nil, nil, nil)
+func (s *AuthenticationService) CreateOAuthAccountUser(
+	ctx context.Context,
+	providerID string,
+	provider string,
+	email string,
+	username string,
+	displayname string,
+) (*command.CreateUserAccountIfNewCommandResult, error) {
+
+	account, err := entities.NewOAuthAccount(provider, providerID, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := entities.NewUser(githubUser.Name, account.ID, githubUser.Email, nil, nil)
+	user, err := entities.NewUser(username, displayname, account.ID, email, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -104,5 +118,7 @@ func (s *AuthenticationService) createUserFromGithub(ctx context.Context, github
 		return nil, err
 	}
 
-	return user, nil
+	return &command.CreateUserAccountIfNewCommandResult{
+		Result: mapper.NewUserResultFromUser(user),
+	}, nil
 }

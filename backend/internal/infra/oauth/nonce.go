@@ -9,13 +9,15 @@ import (
 	"time"
 )
 
-func (o *OAuth) generateNonce() string {
+func (o *OAuth) generateNonce() (string, error) {
 	timestamp := strconv.FormatInt(time.Now().UTC().Unix(), 10)
 
 	hash := hmac.New(sha256.New, []byte(o.nonceKey))
-	hash.Write([]byte(timestamp))
+	if _, err := hash.Write([]byte(timestamp)); err != nil {
+		return "", err
+	}
 
-	return timestamp + "." + hex.EncodeToString(hash.Sum(nil))
+	return timestamp + "." + hex.EncodeToString(hash.Sum(nil)), nil
 }
 
 func (o *OAuth) ValidateNonce(nonce string) error {

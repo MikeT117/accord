@@ -4,6 +4,7 @@ SELECT "up SQL query";
 
 CREATE TABLE IF NOT EXISTS "account" (
     "id" UUID PRIMARY KEY NOT NULL,
+    "provider" TEXT NOT NULL,
     "provider_id" TEXT,
     "access_token" TEXT,
     "refresh_token" TEXT,

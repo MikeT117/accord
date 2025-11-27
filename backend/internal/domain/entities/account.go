@@ -3,20 +3,16 @@ package entities
 import (
 	"time"
 
+	"github.com/MikeT117/accord/backend/internal/constants"
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	PROVIDER_OAUTH       = "GITHUB"
-	PROVIDER_CREDENTIALS = "CREDENTIALS"
-)
-
 type Account struct {
 	ID                    uuid.UUID
 	Provider              string
-	ProviderID            *string
+	ProviderID            string
 	Accesstoken           *string
 	Refreshtoken          *string
 	AccesstokenExpiresAt  *time.Time
@@ -32,11 +28,14 @@ func (a *Account) validate() error {
 	if a.ID == uuid.Nil {
 		return domain.NewDomainValidationError("id must not be empty")
 	}
-	if a.Provider != PROVIDER_CREDENTIALS && a.Provider != PROVIDER_OAUTH {
+	if a.Provider != constants.PROVIDER_CREDENTIALS && a.Provider != constants.PROVIDER_OAUTH_GITHUB && a.Provider != constants.PROVIDER_OAUTH_GITLAB {
 		return domain.NewDomainValidationError("invalid provider")
 	}
-	if a.Provider == PROVIDER_CREDENTIALS && (a.Password == nil || *a.Password == "") {
+	if a.Provider == constants.PROVIDER_CREDENTIALS && (a.Password == nil || *a.Password == "") {
 		return domain.NewDomainValidationError("password must not be empty for this provider")
+	}
+	if a.ProviderID == "" {
+		return domain.NewDomainValidationError("invalid provider id")
 	}
 
 	return nil
@@ -64,10 +63,10 @@ func (a *Account) hashPassword() error {
 }
 
 func (a *Account) IsOAuthProvider() bool {
-	return a.Provider == PROVIDER_OAUTH
+	return a.Provider == constants.PROVIDER_OAUTH_GITHUB || a.Provider == constants.PROVIDER_OAUTH_GITLAB
 }
 
-func NewOAuthAccount(providerID string, accesstoken *string, refreshtoken *string, accesstokenExpiresAt *time.Time, refreshtokenExpiresAt *time.Time, scope *string, IDToken *string) (*Account, error) {
+func NewOAuthAccount(provider string, providerID string, accesstoken *string, refreshtoken *string, accesstokenExpiresAt *time.Time, refreshtokenExpiresAt *time.Time, scope *string, IDToken *string) (*Account, error) {
 	id, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -77,8 +76,8 @@ func NewOAuthAccount(providerID string, accesstoken *string, refreshtoken *strin
 
 	account := &Account{
 		ID:                    id,
-		Provider:              PROVIDER_OAUTH,
-		ProviderID:            &providerID,
+		Provider:              provider,
+		ProviderID:            providerID,
 		Accesstoken:           accesstoken,
 		Refreshtoken:          refreshtoken,
 		AccesstokenExpiresAt:  accesstokenExpiresAt,
@@ -107,8 +106,8 @@ func NewCredentialsAccount(password *string) (*Account, error) {
 
 	account := &Account{
 		ID:                    id,
-		Provider:              PROVIDER_CREDENTIALS,
-		ProviderID:            nil,
+		Provider:              constants.PROVIDER_CREDENTIALS,
+		ProviderID:            id.String(),
 		Accesstoken:           nil,
 		Refreshtoken:          nil,
 		AccesstokenExpiresAt:  nil,

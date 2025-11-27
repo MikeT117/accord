@@ -23,6 +23,7 @@ func (r *AccountRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entitie
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
 			id,
+			provider,
 			provider_id,
 			access_token,
 			refresh_token,
@@ -42,6 +43,7 @@ func (r *AccountRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entitie
 	account := &entities.Account{}
 	if err := row.Scan(
 		&account.ID,
+		&account.Provider,
 		&account.ProviderID,
 		&account.Accesstoken,
 		&account.Refreshtoken,
@@ -104,10 +106,11 @@ func (r *AccountRepository) GetByUserID(ctx context.Context, userID uuid.UUID) (
 	return account, nil
 }
 
-func (r *AccountRepository) GetByProviderID(ctx context.Context, ID string) (*entities.Account, error) {
+func (r *AccountRepository) GetByProviderID(ctx context.Context, ID string, provider string) (*entities.Account, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 	SELECT
 		id,
+		provider,
 		provider_id,
 		access_token,
 		refresh_token,
@@ -121,12 +124,15 @@ func (r *AccountRepository) GetByProviderID(ctx context.Context, ID string) (*en
 	FROM
 		account
 	WHERE
-		provider_id = $1;
-`, ID)
+		provider_id = $1
+	AND
+		provider = $2;
+`, ID, provider)
 
 	account := &entities.Account{}
 	if err := row.Scan(
 		&account.ID,
+		&account.Provider,
 		&account.ProviderID,
 		&account.Accesstoken,
 		&account.Refreshtoken,
@@ -151,6 +157,7 @@ func (r *AccountRepository) Create(ctx context.Context, validatedAccount *entiti
 		INSERT INTO
 			account (
 				id,
+				provider,
 				provider_id,
 				access_token,
 				refresh_token,
@@ -162,9 +169,10 @@ func (r *AccountRepository) Create(ctx context.Context, validatedAccount *entiti
 				created_at,
 				updated_at
 			)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
 	`,
 		&validatedAccount.ID,
+		validatedAccount.Provider,
 		validatedAccount.ProviderID,
 		validatedAccount.Accesstoken,
 		validatedAccount.Refreshtoken,
@@ -189,19 +197,21 @@ func (r *AccountRepository) Update(ctx context.Context, validatedAccount *entiti
 			account
 		SET
 			provider_id = $2,
-			access_token = $3,
-			refresh_token = $4,
-			access_token_expires_at = $5,
-			refresh_token_expires_at = $6,
-			scope = $7,
-			id_token = $8,
-			password = $9,
-			created_at = $10,
-			updated_at = $11,
+			provider = $3,
+			access_token = $4,
+			refresh_token = $5,
+			access_token_expires_at = $6,
+			refresh_token_expires_at = $7,
+			scope = $8,
+			id_token = $9,
+			password = $10,
+			created_at = $11,
+			updated_at = $12,
 		WHERE
 			id =  $1;
 	`,
 		&validatedAccount.ID,
+		validatedAccount.Provider,
 		validatedAccount.ProviderID,
 		validatedAccount.Accesstoken,
 		validatedAccount.Refreshtoken,

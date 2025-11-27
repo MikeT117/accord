@@ -9,7 +9,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/github"
 )
 
 var (
@@ -17,34 +16,17 @@ var (
 	GuthubEmailURL   = "https://api.github.com/user/emails"
 )
 
-type OAuth struct {
-	nonceKey string
-	Github   oauth2.Config
-}
+func (o *OAuth) GetGithubAuthCodeURL() (string, error) {
+	nonce, err := o.generateNonce()
 
-func NewGithubOAuthConfig(
-	githubKey string,
-	githubSecret string,
-	githubRedirectURL string,
-	nonceKey string,
-) *OAuth {
-	return &OAuth{
-		nonceKey: nonceKey,
-		Github: oauth2.Config{
-			ClientID:     githubKey,
-			ClientSecret: githubSecret,
-			RedirectURL:  githubRedirectURL,
-			Scopes:       []string{"user:email"},
-			Endpoint:     github.Endpoint,
-		},
+	if err != nil {
+		return "", nil
 	}
+
+	return o.Github.AuthCodeURL(nonce, oauth2.AccessTypeOffline), nil
 }
 
-func (o *OAuth) GetGithubAuthCodeURL() string {
-	return o.Github.AuthCodeURL(o.generateNonce(), oauth2.AccessTypeOffline)
-}
-
-func (o *OAuth) GetGithubUser(ctx context.Context, code string) (*GithubUser, error) {
+func (o *OAuth) GetGithubUser(ctx context.Context, code string) (*OAuthUser, error) {
 	token, err := o.Github.Exchange(ctx, code)
 	if err != nil {
 		return nil, ErrTokenExchange
@@ -60,7 +42,7 @@ func (o *OAuth) GetGithubUser(ctx context.Context, code string) (*GithubUser, er
 		return nil, ErrEmailRetrieval
 	}
 
-	return &GithubUser{
+	return &OAuthUser{
 		ID:    strconv.FormatInt(int64(profile.ID), 10),
 		Email: emails[0].Email,
 		Name:  profile.Name,

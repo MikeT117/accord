@@ -62,14 +62,14 @@ func main() {
 	voiceStateRepository := db.CreateVoiceStateRepository(dbGetter)
 
 	// OAuth
-	githubOAuth := oauth.NewGithubOAuthConfig(config.GithubKey, config.GithubSecret, config.GithubRedirectURL, config.OAuthNonceSecret)
+	oAuth := oauth.NewOAuthConfig(config.GithubKey, config.GithubSecret, config.GithubRedirectURL, config.GitlabKey, config.GitlabSecret, config.GitlabRedirectURL, config.OAuthNonceSecret)
 
 	// Cloudinary
 	cloudinaryUpload := cloudinary.NewCloudinaryUpload(config.CloudinaryEnv, config.CloudinaryAPIKey, config.CloudinarySecret)
 
 	// Auth Services
 	authorisationService := services.CreateAuthorisationService(guildRoleRepository, channelRepository, guildMemberRepository, relationshipRepository)
-	authenticationService := services.CreateAuthenticationService(transactor, githubOAuth, userRepository, accountRepository)
+	authenticationService := services.CreateAuthenticationService(transactor, oAuth, userRepository, accountRepository)
 
 	// Event Service
 	eventService := services.CreateEventService(eventPublisher, channelMessageRepository, channelRepository, userRepository, guildRepository, guildMemberRepository, attachmentRepository, guildRoleRepository, relationshipRepository)

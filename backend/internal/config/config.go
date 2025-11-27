@@ -15,9 +15,15 @@ type Config struct {
 	GithubSecret      string
 	GithubRedirectURL string
 
+	GitlabKey         string
+	GitlabSecret      string
+	GitlabRedirectURL string
+
 	JWTIssuer          string
 	JWTAccesstokenKey  []byte
 	JWTRefreshtokenKey []byte
+
+	JWTTempTokenKey []byte
 
 	CloudinaryURL    string
 	CloudinaryResURL string
@@ -67,9 +73,14 @@ func MustLoadConfig() *Config {
 		GithubSecret:      mustGetEnv("GITHUB_SECRET", true),
 		GithubRedirectURL: mustGetEnv("GITHUB_REDIRECT_URL", true),
 
+		GitlabKey:         mustGetEnv("GITLAB_KEY", true),
+		GitlabSecret:      mustGetEnv("GITLAB_SECRET", true),
+		GitlabRedirectURL: mustGetEnv("GITLAB_REDIRECT_URL", true),
+
 		JWTIssuer:          mustGetEnv("JWT_ISSUER", true),
 		JWTAccesstokenKey:  []byte(mustGetEnv("JWT_ACCESSTOKEN_KEY", true)),
 		JWTRefreshtokenKey: []byte(mustGetEnv("JWT_REFRESHTOKEN_KEY", true)),
+		JWTTempTokenKey:    []byte(mustGetEnv("JWT_TEMPTOKEN_KEY", true)),
 
 		CloudinaryURL:    mustGetEnv("CLOUDINARY_URL", false),
 		CloudinaryResURL: mustGetEnv("CLOUDINARY_RES_URL", false),

@@ -10,7 +10,7 @@ import (
 type AccountRepository interface {
 	GetByID(ctx context.Context, ID uuid.UUID) (*entities.Account, error)
 	GetByUserID(ctx context.Context, ID uuid.UUID) (*entities.Account, error)
-	GetByProviderID(ctx context.Context, ID string) (*entities.Account, error)
+	GetByProviderID(ctx context.Context, ID string, provider string) (*entities.Account, error)
 	Create(ctx context.Context, account *entities.Account) error
 	Update(ctx context.Context, account *entities.Account) error
 	Delete(ctx context.Context, ID uuid.UUID) error

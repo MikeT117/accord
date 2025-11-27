@@ -46,7 +46,7 @@ func (u *User) validate() error {
 	return nil
 }
 
-func NewUser(username string, accountID uuid.UUID, email string, avatarID *uuid.UUID, bannerID *uuid.UUID) (*User, error) {
+func NewUser(username string, displayName string, accountID uuid.UUID, email string, avatarID *uuid.UUID, bannerID *uuid.UUID) (*User, error) {
 	ID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func NewUser(username string, accountID uuid.UUID, email string, avatarID *uuid.
 		ID:                ID,
 		AccountID:         accountID,
 		Username:          username,
-		DisplayName:       username,
+		DisplayName:       displayName,
 		Email:             email,
 		EmailVerified:     false,
 		PublicFlags:       0,
