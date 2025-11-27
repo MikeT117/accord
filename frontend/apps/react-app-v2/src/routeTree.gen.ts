@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthAppRouteRouteImport } from './routes/_auth/app/route'
@@ -23,6 +24,11 @@ import { Route as AuthAppDashboardChannelIdRouteImport } from './routes/_auth/ap
 import { Route as AuthAppGuildIdChannelIdRouteRouteImport } from './routes/_auth/app/$guildId/$channelId/route'
 import { Route as AuthAppGuildIdChannelIdIndexRouteImport } from './routes/_auth/app/$guildId/$channelId/index'
 
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -97,6 +103,7 @@ const AuthAppGuildIdChannelIdIndexRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
   '/app': typeof AuthAppRouteRouteWithChildren
   '/app/$guildId': typeof AuthAppGuildIdRouteRouteWithChildren
   '/app/dashboard': typeof AuthAppDashboardRouteRouteWithChildren
@@ -112,6 +119,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
   '/app': typeof AuthAppRouteRouteWithChildren
   '/app/dashboard/$channelId': typeof AuthAppDashboardChannelIdRoute
   '/app/dashboard/blocked': typeof AuthAppDashboardBlockedRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/onboarding': typeof OnboardingRoute
   '/_auth/app': typeof AuthAppRouteRouteWithChildren
   '/_auth/app/$guildId': typeof AuthAppGuildIdRouteRouteWithChildren
   '/_auth/app/dashboard': typeof AuthAppDashboardRouteRouteWithChildren
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/onboarding'
     | '/app'
     | '/app/$guildId'
     | '/app/dashboard'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/onboarding'
     | '/app'
     | '/app/dashboard/$channelId'
     | '/app/dashboard/blocked'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/onboarding'
     | '/_auth/app'
     | '/_auth/app/$guildId'
     | '/_auth/app/dashboard'
@@ -185,11 +197,19 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  OnboardingRoute: typeof OnboardingRoute
   AuthAppRouteRoute: typeof AuthAppRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -350,6 +370,7 @@ const AuthAppRouteRouteWithChildren = AuthAppRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  OnboardingRoute: OnboardingRoute,
   AuthAppRouteRoute: AuthAppRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport

@@ -24,3 +24,8 @@ export const USER_FLAG = {
 } as const;
 
 export const emojiRegExp = emojiRegex();
+
+export const OAUTH_PROVIDER = {
+    GITHUB: "GITHUB",
+    GITLAB: "GITLAB",
+} as const;
