@@ -12,25 +12,8 @@ func NewGuildMemberUserResultFromGuildMember(guildMember *entities.GuildMember, 
 	}
 
 	return &common.GuildMemberUserResult{
-		GuildMember: &common.GuildMemberResult{
-			GuildID:   guildMember.GuildID,
-			Nickname:  guildMember.Nickname,
-			CreatedAt: guildMember.CreatedAt,
-			UpdatedAt: guildMember.UpdatedAt,
-			AvatarID:  guildMember.AvatarID,
-			BannerID:  guildMember.BannerID,
-			RoleIDs:   roleIDs,
-		},
-		User: &common.UserResult{
-			ID:          user.ID,
-			AccountID:   user.AccountID,
-			Username:    user.Username,
-			DisplayName: user.DisplayName,
-			Email:       user.Email,
-			PublicFlags: user.PublicFlags,
-			AvatarID:    user.AvatarID,
-			BannerID:    user.BannerID,
-		},
+		GuildMember: NewGuildMemberResultFromGuildMember(guildMember, roleIDs),
+		User:        NewUserResultFromUser(user),
 	}
 
 }

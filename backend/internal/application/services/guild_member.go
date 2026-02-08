@@ -21,9 +21,10 @@ type GuildMemberService struct {
 	guildMemberRepository repositories.GuildMemberRepository
 	guildRoleRepository   repositories.GuildRoleRepository
 	guildInviteRepository repositories.GuildInviteRepository
+	eventService          interfaces.EventService
 }
 
-func CreateGuildMemberService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, userRepository repositories.UserRepository, guildMemberRepository repositories.GuildMemberRepository, guildRoleRepository repositories.GuildRoleRepository, guildRepository repositories.GuildRepository, guildInviteRepository repositories.GuildInviteRepository) interfaces.GuildMemberService {
+func CreateGuildMemberService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, userRepository repositories.UserRepository, guildMemberRepository repositories.GuildMemberRepository, guildRoleRepository repositories.GuildRoleRepository, guildRepository repositories.GuildRepository, guildInviteRepository repositories.GuildInviteRepository, eventService interfaces.EventService) interfaces.GuildMemberService {
 	return &GuildMemberService{
 		transactor:            transactor,
 		authorisationService:  authorisationService,
@@ -32,6 +33,7 @@ func CreateGuildMemberService(transactor *db.Transactor, authorisationService in
 		guildMemberRepository: guildMemberRepository,
 		guildRoleRepository:   guildRoleRepository,
 		guildInviteRepository: guildInviteRepository,
+		eventService:          eventService,
 	}
 }
 
@@ -98,7 +100,7 @@ func (s *GuildMemberService) Create(ctx context.Context, cmd *command.CreateGuil
 			return ErrNotAuthorised
 		}
 
-		invite, err := s.guildInviteRepository.GetByID(ctx, cmd.GuildID)
+		invite, err := s.guildInviteRepository.GetByID(ctx, *cmd.InviteID)
 		if err != nil {
 			return err
 		}
@@ -130,9 +132,8 @@ func (s *GuildMemberService) Create(ctx context.Context, cmd *command.CreateGuil
 			return err
 		}
 
-		return nil
+		return s.eventService.GuildCreated(ctx, guild.ID, cmd.UserID)
 	})
-
 }
 
 func (s *GuildMemberService) Update(ctx context.Context, cmd *command.UpdateGuildMemberCommand) error {

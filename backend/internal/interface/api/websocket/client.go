@@ -32,7 +32,7 @@ type Client struct {
 	done         context.CancelFunc
 	conn         *websocket.Conn
 	userID       uuid.UUID
-	roleIDs      SafeRWMutexMap[map[string]bool]
+	roleIDs      SafeRWMutex[map[string]bool]
 	token        string
 	authDeadline *time.Timer
 }
@@ -53,7 +53,7 @@ func (h *Hub) HandleNewClient(conn *websocket.Conn, hub *Hub) {
 		send: make(chan []byte),
 		done: done,
 		conn: conn,
-		roleIDs: SafeRWMutexMap[map[string]bool]{
+		roleIDs: SafeRWMutex[map[string]bool]{
 			Mutex: sync.RWMutex{},
 			Data:  make(map[string]bool),
 		},

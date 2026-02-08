@@ -23,6 +23,7 @@ type EventService struct {
 	attachmentRepository     repositories.AttachmentRepository
 	guildRoleRepository      repositories.GuildRoleRepository
 	relationshipRepository   repositories.RelationshipRepository
+	voiceStateRepository     repositories.VoiceStateRepository
 }
 
 func CreateEventService(
@@ -35,6 +36,7 @@ func CreateEventService(
 	attachmentRepository repositories.AttachmentRepository,
 	guildRoleRepository repositories.GuildRoleRepository,
 	relationshipRepository repositories.RelationshipRepository,
+	voiceStateRepository repositories.VoiceStateRepository,
 ) interfaces.EventService {
 	return &EventService{
 		eventPublisher:           eventPublisher,
@@ -46,10 +48,11 @@ func CreateEventService(
 		attachmentRepository:     attachmentRepository,
 		guildRoleRepository:      guildRoleRepository,
 		relationshipRepository:   relationshipRepository,
+		voiceStateRepository:     voiceStateRepository,
 	}
 }
 
-func (s *EventService) GuildCreated(ctx context.Context, ID uuid.UUID) error {
+func (s *EventService) GuildCreated(ctx context.Context, ID uuid.UUID, userID uuid.UUID) error {
 	guild, err := s.guildRepository.GetByID(ctx, ID)
 	if err != nil {
 		return err
@@ -71,14 +74,14 @@ func (s *EventService) GuildCreated(ctx context.Context, ID uuid.UUID) error {
 	}
 
 	if err := s.eventPublisher.PublishUserEvent(
-		[]uuid.UUID{guild.CreatorID},
+		[]uuid.UUID{userID},
 		mapper.NewGuildCreatedProtoEvent(guild, channels, channelRoles, roles),
 	); err != nil {
 		return err
 	}
 
 	for _, role := range roles {
-		if err := s.UserRoleAssociated(ctx, guild.CreatorID, role.ID); err != nil {
+		if err := s.UserRoleAssociated(ctx, userID, role.ID); err != nil {
 			return err
 		}
 	}
@@ -499,4 +502,51 @@ func (s *EventService) ChannelRoleDisassociated(ctx context.Context, ID uuid.UUI
 			},
 		},
 	})
+}
+
+func (s *EventService) VoiceStateCreated(ctx context.Context, ID uuid.UUID) error {
+	voiceState, err := s.voiceStateRepository.GetByID(ctx, ID)
+	if err != nil {
+		return err
+	}
+
+	roleIDs, err := s.guildRoleRepository.GetRoleIDsByChannelID(ctx, voiceState.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	user, err := s.userRepository.GetByID(ctx, voiceState.ID)
+	if err != nil {
+		return err
+	}
+
+	guildMember, err := s.guildMemberRepository.GetByID(ctx, user.ID, *voiceState.GuildID)
+	if err != nil {
+		return err
+	}
+
+	return s.eventPublisher.PublishRoleEvent(roleIDs, mapper.NewVoiceStateCreatedProtoEvent(voiceState, user, guildMember))
+}
+
+func (s *EventService) VoiceStateUpdated(ctx context.Context, ID uuid.UUID) error {
+	voiceState, err := s.voiceStateRepository.GetByID(ctx, ID)
+	if err != nil {
+		return err
+	}
+
+	roleIDs, err := s.guildRoleRepository.GetRoleIDsByChannelID(ctx, voiceState.ChannelID)
+	if err != nil {
+		return err
+	}
+
+	return s.eventPublisher.PublishRoleEvent(roleIDs, mapper.NewVoiceStateUpdatedProtoEvent(voiceState))
+}
+
+func (s *EventService) VoiceStateDeleted(ctx context.Context, ID uuid.UUID, guildID uuid.UUID, channelID uuid.UUID) error {
+	roleIDs, err := s.guildRoleRepository.GetRoleIDsByChannelID(ctx, channelID)
+	if err != nil {
+		return err
+	}
+
+	return s.eventPublisher.PublishRoleEvent(roleIDs, mapper.NewVoiceStateDeletedProtoEvent(ID, guildID, channelID))
 }

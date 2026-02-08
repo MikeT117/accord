@@ -7,7 +7,7 @@ import (
 )
 
 type EventService interface {
-	GuildCreated(ctx context.Context, ID uuid.UUID) error
+	GuildCreated(ctx context.Context, ID uuid.UUID, userID uuid.UUID) error
 	GuildUpdated(ctx context.Context, ID uuid.UUID) error
 	GuildDeleted(ctx context.Context, ID uuid.UUID, roleID uuid.UUID) error
 
@@ -38,4 +38,8 @@ type EventService interface {
 	ChannelRolesSet(ctx context.Context, ID uuid.UUID, guildID uuid.UUID, roleIDs []uuid.UUID) error
 
 	UserUpdated(ctx context.Context, ID uuid.UUID) error
+
+	VoiceStateCreated(ctx context.Context, ID uuid.UUID) error
+	VoiceStateUpdated(ctx context.Context, ID uuid.UUID) error
+	VoiceStateDeleted(ctx context.Context, ID uuid.UUID, guildID uuid.UUID, channelID uuid.UUID) error
 }

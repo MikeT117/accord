@@ -1,6 +1,8 @@
 package mapper
 
 import (
+	"log"
+
 	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	pb "github.com/MikeT117/accord/backend/internal/infra/pb/gen"
@@ -13,24 +15,45 @@ func NewGuildResultFromGuild(
 	channels []*entities.Channel,
 	channelRoles map[uuid.UUID][]uuid.UUID,
 	roles []*entities.GuildRole,
+	voiceStates []*entities.VoiceState,
+	voiceStateGuildMembers map[uuid.UUID]*entities.GuildMember,
+	voiceStateUsers map[uuid.UUID]*entities.User,
 ) *common.GuildResult {
 	tempChannels := make([]*common.ChannelResult, len(channels))
 	tempRoles := make([]*common.GuildRoleResult, len(roles))
+	tempVoiceStates := make([]*common.VoiceStateResult, len(voiceStates))
 
-	if len(channels) != 0 {
-		for i := 0; i < len(channels); i++ {
-			tempChannels[i] = NewChannelResultFromChannel(
-				channels[i],
-				channelRoles[channels[i].ID],
-				nil,
-			)
+	for i := 0; i < len(channels); i++ {
+		if channelRoles[channels[i].ID] == nil {
+			/*
+				This should never happen but we'll guard and log just in case.
+			*/
+
+			log.Printf("channel exists with no roles assigned - channel id: %s\n", channels[i].ID)
+			continue
 		}
+
+		tempChannels[i] = NewChannelResultFromChannel(
+			channels[i],
+			channelRoles[channels[i].ID],
+			nil,
+		)
 	}
 
-	if len(roles) != 0 {
-		for i := 0; i < len(roles); i++ {
-			tempRoles[i] = NewGuildRoleResultFromGuildRole(roles[i])
+	for i := 0; i < len(roles); i++ {
+		tempRoles[i] = NewGuildRoleResultFromGuildRole(roles[i])
+	}
+
+	for i := 0; i < len(voiceStates); i++ {
+		if voiceStateUsers[voiceStates[i].ID] == nil {
+			/*
+				This should never happen but we'll guard and log just in case.
+			*/
+
+			log.Printf("voice states exists with no associated user - voice state id: %s\n", voiceStates[i].ID)
+			continue
 		}
+		tempVoiceStates[i] = NewVoiceStateResultFromVoiceState(voiceStates[i], voiceStateGuildMembers[voiceStates[i].ID], voiceStateUsers[voiceStates[i].ID])
 	}
 
 	return &common.GuildResult{
@@ -48,6 +71,7 @@ func NewGuildResultFromGuild(
 		BannerID:        guild.BannerID,
 		Roles:           tempRoles,
 		Channels:        tempChannels,
+		VoiceStates:     tempVoiceStates,
 	}
 }
 
@@ -56,6 +80,9 @@ func NewGuildListResultFromGuild(
 	channelsMap map[uuid.UUID][]*entities.Channel,
 	channelRolesMap map[uuid.UUID][]uuid.UUID,
 	rolesMap map[uuid.UUID][]*entities.GuildRole,
+	voiceStatesMap map[uuid.UUID][]*entities.VoiceState,
+	voiceStateGuildMembers map[uuid.UUID]*entities.GuildMember,
+	voiceStateUsers map[uuid.UUID]*entities.User,
 ) []*common.GuildResult {
 	guildsResult := make([]*common.GuildResult, len(guilds))
 
@@ -65,6 +92,9 @@ func NewGuildListResultFromGuild(
 			channelsMap[guilds[i].ID],
 			channelRolesMap,
 			rolesMap[guilds[i].ID],
+			voiceStatesMap[guilds[i].ID],
+			voiceStateGuildMembers,
+			voiceStateUsers,
 		)
 	}
 
@@ -76,24 +106,28 @@ func NewGuildProtoResultFromGuild(
 	channels []*entities.Channel,
 	channelRoles map[uuid.UUID][]uuid.UUID,
 	roles []*entities.GuildRole,
+	voiceStates []*entities.VoiceState,
+	voiceStateGuildMembers map[uuid.UUID]*entities.GuildMember,
+	voiceStateUsers map[uuid.UUID]*entities.User,
 ) *pb.Guild {
 	tempChannels := make([]*pb.Channel, len(channels))
 	tempRoles := make([]*pb.GuildRole, len(roles))
+	tempVoiceStates := make([]*pb.VoiceState, len(voiceStates))
 
-	if len(channels) != 0 {
-		for i := 0; i < len(channels); i++ {
-			tempChannels[i] = NewChannelProtoResultFromChannel(
-				channels[i],
-				channelRoles[channels[i].ID],
-				nil,
-			)
-		}
+	for i := 0; i < len(channels); i++ {
+		tempChannels[i] = NewChannelProtoResultFromChannel(
+			channels[i],
+			channelRoles[channels[i].ID],
+			nil,
+		)
 	}
 
-	if len(roles) != 0 {
-		for i := 0; i < len(roles); i++ {
-			tempRoles[i] = NewGuildRoleProtoResultFromGuildRole(roles[i])
-		}
+	for i := 0; i < len(roles); i++ {
+		tempRoles[i] = NewGuildRoleProtoResultFromGuildRole(roles[i])
+	}
+
+	for i := 0; i < len(voiceStates); i++ {
+		tempVoiceStates[i] = NewVoiceStateProtoResultFromVoiceState(voiceStates[i], voiceStateUsers[voiceStates[i].ID], voiceStateGuildMembers[voiceStates[i].ID])
 	}
 
 	channelCount := int32(guild.ChannelCount)
@@ -118,6 +152,7 @@ func NewGuildProtoResultFromGuild(
 		Banner:          pointer.UUIDPtrToStringPtr(guild.BannerID),
 		Roles:           tempRoles,
 		Channels:        tempChannels,
+		VoiceStates:     tempVoiceStates,
 	}
 }
 
@@ -126,6 +161,9 @@ func NewGuildProtoListResultFromGuild(
 	channelsMap map[uuid.UUID][]*entities.Channel,
 	channelRolesMap map[uuid.UUID][]uuid.UUID,
 	rolesMap map[uuid.UUID][]*entities.GuildRole,
+	voiceStates map[uuid.UUID][]*entities.VoiceState,
+	voiceStateGuildMembers map[uuid.UUID]map[uuid.UUID]*entities.GuildMember,
+	voiceStateUsers map[uuid.UUID]*entities.User,
 ) []*pb.Guild {
 	guildsResult := make([]*pb.Guild, len(guilds))
 
@@ -135,6 +173,9 @@ func NewGuildProtoListResultFromGuild(
 			channelsMap[guilds[i].ID],
 			channelRolesMap,
 			rolesMap[guilds[i].ID],
+			voiceStates[guilds[i].ID],
+			voiceStateGuildMembers[guilds[i].ID],
+			voiceStateUsers,
 		)
 	}
 
@@ -152,7 +193,7 @@ func NewGuildCreatedProtoEvent(
 		Ver: &ver,
 		Op:  pb.OpCode_GUILD_CREATE_EVENT.Enum(),
 		Payload: &pb.EventPayload_GuildCreated{
-			GuildCreated: NewGuildProtoResultFromGuild(guild, channels, channelRoles, roles),
+			GuildCreated: NewGuildProtoResultFromGuild(guild, channels, channelRoles, roles, nil, nil, nil),
 		},
 	}
 }

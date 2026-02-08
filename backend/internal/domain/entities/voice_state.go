@@ -10,7 +10,6 @@ type VoiceState struct {
 	SelfMute  bool
 	SelfDeaf  bool
 	ChannelID uuid.UUID
-	UserID    uuid.UUID
 	GuildID   *uuid.UUID
 }
 
@@ -21,9 +20,6 @@ func (a *VoiceState) validate() error {
 	if a.ChannelID == uuid.Nil {
 		return domain.NewDomainValidationError("channel id must not be empty")
 	}
-	if a.UserID == uuid.Nil {
-		return domain.NewDomainValidationError("user id id must not be empty")
-	}
 	if a.GuildID != nil && *a.GuildID == uuid.Nil {
 		return domain.NewDomainValidationError("guild id must not be empty")
 	}
@@ -31,17 +27,11 @@ func (a *VoiceState) validate() error {
 }
 
 func NewVoiceState(userID uuid.UUID, channelID uuid.UUID, guildID *uuid.UUID) (*VoiceState, error) {
-	ID, err := uuid.NewV7()
-	if err != nil {
-		return nil, err
-	}
-
 	voiceState := &VoiceState{
-		ID:        ID,
+		ID:        userID,
 		SelfMute:  false,
 		SelfDeaf:  false,
 		ChannelID: channelID,
-		UserID:    userID,
 		GuildID:   guildID,
 	}
 
@@ -53,7 +43,7 @@ func NewVoiceState(userID uuid.UUID, channelID uuid.UUID, guildID *uuid.UUID) (*
 }
 
 func (v *VoiceState) IsOwner(userID uuid.UUID) bool {
-	return v.UserID == userID
+	return v.ID == userID
 }
 
 func (v *VoiceState) UpdateSelfMute(selfMute bool) error {

@@ -43,9 +43,10 @@ func main() {
 	sessionRepository := db.CreateSessionRepository(dbGetter)
 	userRepository := db.CreateUserRepository(dbGetter)
 	relationshipRepository := db.CreateRelationshipRepository(dbGetter)
+	voiceStateRepository := db.CreateVoiceStateRepository(dbGetter)
 
 	// Services
-	websocketService := services.CreateWebsocketService(userRepository, sessionRepository, guildRepository, guildMemberRepository, guildRoleRepository, channelRepository, relationshipRepository)
+	websocketService := services.CreateWebsocketService(userRepository, sessionRepository, guildRepository, guildMemberRepository, guildRoleRepository, channelRepository, relationshipRepository, voiceStateRepository)
 
 	// Event Subscriber
 	eventSubscriber := pubsub.MustCreateEventSubscriber(config)
@@ -53,7 +54,6 @@ func main() {
 
 	// Websocket Hub
 	hub := websocket_api.NewHub(ctx, config, eventSubscriber, websocketService)
-	go hub.Run()
 
 	// Websocket Handler
 	server := &http.Server{Addr: fmt.Sprintf(":%d", config.WebsocketPort)}

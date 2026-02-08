@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-type SafeRWMutexMap[T any] struct {
+type SafeRWMutex[T any] struct {
 	Mutex sync.RWMutex
 	Data  T
 }
@@ -23,35 +23,35 @@ type Hub struct {
 	config           *config.Config
 	eventSubscriber  *pubsub.EventSubscriber
 	websocketService interfaces.WebsocketService
-	clients          SafeRWMutexMap[map[uuid.UUID]*Client]
+	clients          SafeRWMutex[map[uuid.UUID]*Client]
 }
 
 func NewHub(ctx context.Context, config *config.Config, eventSubscriber *pubsub.EventSubscriber, websocketService interfaces.WebsocketService) *Hub {
-	return &Hub{
+	hub := &Hub{
 		ctx:              ctx,
 		config:           config,
 		eventSubscriber:  eventSubscriber,
 		websocketService: websocketService,
-		clients: SafeRWMutexMap[map[uuid.UUID]*Client]{
+		clients: SafeRWMutex[map[uuid.UUID]*Client]{
 			Mutex: sync.RWMutex{},
 			Data:  make(map[uuid.UUID]*Client),
 		},
 	}
 
-}
+	roleEventSubscription := hub.eventSubscriber.MustSubscribe("ACCORD.EVENTS.ROLE", hub.handleRoleEvent)
 
-func (h *Hub) Run() {
-	roleEventSubscription := h.eventSubscriber.MustSubscribe("ACCORD.EVENTS.ROLE", h.handleRoleEvent)
-	defer roleEventSubscription.Unsubscribe()
+	userEventSubscription := hub.eventSubscriber.MustSubscribe("ACCORD.EVENTS.USER", hub.handleUserEvent)
 
-	userEventSubscription := h.eventSubscriber.MustSubscribe("ACCORD.EVENTS.USER", h.handleUserEvent)
-	defer userEventSubscription.Unsubscribe()
+	providerEventSubscription := hub.eventSubscriber.MustSubscribe("ACCORD.EVENTS.PROVIDER", hub.handleProviderEvent)
 
-	providerEventSubscription := h.eventSubscriber.MustSubscribe("ACCORD.EVENTS.PROVIDER", h.handleProviderEvent)
-	defer providerEventSubscription.Unsubscribe()
+	go func() {
+		<-hub.ctx.Done()
+		roleEventSubscription.Unsubscribe()
+		userEventSubscription.Unsubscribe()
+		providerEventSubscription.Unsubscribe()
+	}()
 
-	<-h.ctx.Done()
-	log.Println("shutting down hub")
+	return hub
 }
 
 func (h *Hub) handleRoleEvent(event []byte) {

@@ -15,18 +15,21 @@ import (
 )
 
 type VoiceStateService struct {
-	transactor           *db.Transactor
-	authorisationService interfaces.AuthorisationService
-	voiceStateRepository repositories.VoiceStateRepository
-	userRepository       repositories.UserRepository
+	transactor            *db.Transactor
+	authorisationService  interfaces.AuthorisationService
+	voiceStateRepository  repositories.VoiceStateRepository
+	userRepository        repositories.UserRepository
+	eventService          interfaces.EventService
+	guildMemberRepository repositories.GuildMemberRepository
 }
 
-func CreateVoiceStateService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, voiceStateRepository repositories.VoiceStateRepository, userRepository repositories.UserRepository) interfaces.VoiceStateService {
+func CreateVoiceStateService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, voiceStateRepository repositories.VoiceStateRepository, userRepository repositories.UserRepository, eventService interfaces.EventService) interfaces.VoiceStateService {
 	return &VoiceStateService{
 		transactor:           transactor,
 		authorisationService: authorisationService,
 		voiceStateRepository: voiceStateRepository,
 		userRepository:       userRepository,
+		eventService:         eventService,
 	}
 }
 
@@ -46,8 +49,13 @@ func (s *VoiceStateService) GetByGuildID(ctx context.Context, guildID uuid.UUID,
 		return nil, err
 	}
 
+	guildMembers, err := s.guildMemberRepository.GetMapByIDs(ctx, userIDs, guildID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &query.VoiceStateQueryListResult{
-		Result: mapper.NewVoiceStateListResultFromVoiceState(voiceStates, usersMap),
+		Result: mapper.NewVoiceStateListResultFromVoiceState(voiceStates, guildMembers, usersMap),
 	}, nil
 
 }
@@ -66,7 +74,7 @@ func (s *VoiceStateService) Create(ctx context.Context, cmd *command.CreateVoice
 		return err
 	}
 
-	return nil
+	return s.eventService.VoiceStateCreated(ctx, voiceState.ID)
 }
 func (s *VoiceStateService) Update(ctx context.Context, cmd *command.UpdateVoiceStateCommand) error {
 	err := s.authorisationService.VerifyGuildMember(ctx, cmd.GuildID, cmd.RequestorID)
@@ -89,7 +97,7 @@ func (s *VoiceStateService) Update(ctx context.Context, cmd *command.UpdateVoice
 		return err
 	}
 
-	return nil
+	return s.eventService.VoiceStateUpdated(ctx, voiceState.ID)
 }
 func (s *VoiceStateService) Delete(ctx context.Context, cmd *command.DeleteVoiceStateCommand) error {
 	voiceState, err := s.voiceStateRepository.GetByID(ctx, cmd.ID)
@@ -108,5 +116,5 @@ func (s *VoiceStateService) Delete(ctx context.Context, cmd *command.DeleteVoice
 		return err
 	}
 
-	return nil
+	return s.eventService.VoiceStateDeleted(ctx, voiceState.ID, *voiceState.GuildID, voiceState.ChannelID)
 }

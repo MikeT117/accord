@@ -7,7 +7,6 @@ type VoiceStateResult struct {
 	SelfMute  bool
 	SelfDeaf  bool
 	ChannelID uuid.UUID
-	UserID    uuid.UUID
 	GuildID   *uuid.UUID
-	User      *UserResult
+	User      *VoiceStateUserResult
 }

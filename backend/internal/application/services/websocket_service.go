@@ -19,6 +19,7 @@ type WebsocketService struct {
 	guildRoleRepository    repositories.GuildRoleRepository
 	channelRepository      repositories.ChannelRepository
 	relationshipRepository repositories.RelationshipRepository
+	voiceStateRepository   repositories.VoiceStateRepository
 }
 
 func CreateWebsocketService(
@@ -29,6 +30,7 @@ func CreateWebsocketService(
 	guildRoleRepository repositories.GuildRoleRepository,
 	channelRepository repositories.ChannelRepository,
 	relationshipRepository repositories.RelationshipRepository,
+	voiceStateRepository repositories.VoiceStateRepository,
 ) interfaces.WebsocketService {
 	return &WebsocketService{
 		userRepository:         userRepository,
@@ -38,6 +40,7 @@ func CreateWebsocketService(
 		guildRoleRepository:    guildRoleRepository,
 		channelRepository:      channelRepository,
 		relationshipRepository: relationshipRepository,
+		voiceStateRepository:   voiceStateRepository,
 	}
 }
 
@@ -54,6 +57,21 @@ func (s *WebsocketService) GetInitialisationPayload(ctx context.Context, userID 
 	}
 
 	guildChannelsMap, channelIDs, err := s.channelRepository.GetMapByGuildIDs(ctx, guildIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	voiceStatesMap, voiceStateUserIDs, err := s.voiceStateRepository.GetMapByGuildIDs(ctx, guildIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	voiceStateUsers, err := s.userRepository.GetMapByIDs(ctx, voiceStateUserIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	voiceStateGuildMembers, err := s.guildMemberRepository.GetMapByIDsAndGuildIDs(ctx, voiceStateUserIDs, guildIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -113,6 +131,9 @@ func (s *WebsocketService) GetInitialisationPayload(ctx context.Context, userID 
 			guildChannelsMap,
 			guildChannelRolesMap,
 			rolesMap,
+			voiceStatesMap,
+			voiceStateGuildMembers,
+			voiceStateUsers,
 		),
 		PrivateChannels: mapper.NewChannelListProtoResultFromChannel(
 			privateChannels,

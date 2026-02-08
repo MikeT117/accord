@@ -21,4 +21,5 @@ type GuildResult struct {
 	BannerID        *uuid.UUID
 	Roles           []*GuildRoleResult
 	Channels        []*ChannelResult
+	VoiceStates     []*VoiceStateResult
 }

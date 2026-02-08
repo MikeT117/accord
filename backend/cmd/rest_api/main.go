@@ -72,7 +72,7 @@ func main() {
 	authenticationService := services.CreateAuthenticationService(transactor, oAuth, userRepository, accountRepository)
 
 	// Event Service
-	eventService := services.CreateEventService(eventPublisher, channelMessageRepository, channelRepository, userRepository, guildRepository, guildMemberRepository, attachmentRepository, guildRoleRepository, relationshipRepository)
+	eventService := services.CreateEventService(eventPublisher, channelMessageRepository, channelRepository, userRepository, guildRepository, guildMemberRepository, attachmentRepository, guildRoleRepository, relationshipRepository, voiceStateRepository)
 
 	// Services
 	attachmentService := services.CreateAttachmentService(transactor, cloudinaryUpload, attachmentRepository)
@@ -81,12 +81,12 @@ func main() {
 	guildBanService := services.CreateGuildBanService(transactor, authorisationService, guildMemberRepository, guildBanRepository, userRepository)
 	guildCategoryService := services.CreateGuildCategoryService(transactor, authorisationService, guildCategoryRepository)
 	guildInviteService := services.CreateGuildInviteService(transactor, authorisationService, guildInviteRepository, guildRepository)
-	guildMemberService := services.CreateGuildMemberService(transactor, authorisationService, userRepository, guildMemberRepository, guildRoleRepository, guildRepository, guildInviteRepository)
-	guildService := services.CreateGuildService(transactor, authorisationService, eventService, guildRepository, guildMemberRepository, guildRoleRepository, channelRepository)
+	guildMemberService := services.CreateGuildMemberService(transactor, authorisationService, userRepository, guildMemberRepository, guildRoleRepository, guildRepository, guildInviteRepository, eventService)
+	guildService := services.CreateGuildService(transactor, authorisationService, eventService, guildRepository, guildMemberRepository, guildRoleRepository, channelRepository, voiceStateRepository, userRepository)
 	guildRoleService := services.CreateGuildRoleService(transactor, authorisationService, eventService, guildRoleRepository, guildMemberRepository, channelRepository, userRepository)
 	relationshipService := services.CreateRelationshipService(transactor, authorisationService, eventService, relationshipRepository, userRepository)
 	sessionService := services.CreateSessionService(transactor, eventService, sessionRepository, userRepository)
-	voiceStateService := services.CreateVoiceStateService(transactor, authorisationService, voiceStateRepository, userRepository)
+	voiceStateService := services.CreateVoiceStateService(transactor, authorisationService, voiceStateRepository, userRepository, eventService)
 	channelMessageService := services.CreateChannelMessageService(transactor, authorisationService, eventService, channelMessageRepository, channelRepository, userRepository, guildMemberRepository, guildRoleRepository, attachmentRepository)
 
 	// Rest API

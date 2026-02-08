@@ -167,13 +167,11 @@ CREATE TABLE IF NOT EXISTS "attachment" (
 );
 
 CREATE TABLE IF NOT EXISTS "voice_state" (
-    "id" UUID NOT NULL PRIMARY KEY,
+    "id" UUID NOT NULL PRIMARY KEY REFERENCES "user" ("id"),
     "self_mute" boolean NOT NULL,
     "self_deaf" boolean NOT NULL,
     "channel_id" uuid NOT NULL REFERENCES "channel" ("id"),
-    "user_id" uuid NOT NULL REFERENCES "user" ("id"),
     "guild_id" uuid REFERENCES "guild" ("id"),
-    UNIQUE ("channel_id", "user_id")
 );
 
 -- Join Tables Begin --

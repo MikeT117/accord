@@ -4,15 +4,11 @@ import (
 	"context"
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
-	"github.com/MikeT117/accord/backend/internal/application/common"
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
-	"github.com/MikeT117/accord/backend/internal/application/mapper"
-	"github.com/MikeT117/accord/backend/internal/application/query"
 	"github.com/MikeT117/accord/backend/internal/constants"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
-	"github.com/google/uuid"
 )
 
 type GuildService struct {
@@ -23,9 +19,11 @@ type GuildService struct {
 	guildMemberRepository repositories.GuildMemberRepository
 	guildRoleRepository   repositories.GuildRoleRepository
 	channelRepository     repositories.ChannelRepository
+	voiceStateRepository  repositories.VoiceStateRepository
+	userRepository        repositories.UserRepository
 }
 
-func CreateGuildService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, guildRepository repositories.GuildRepository, guildMemberRepository repositories.GuildMemberRepository, guildRoleRepository repositories.GuildRoleRepository, channelRepository repositories.ChannelRepository) interfaces.GuildService {
+func CreateGuildService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, eventService interfaces.EventService, guildRepository repositories.GuildRepository, guildMemberRepository repositories.GuildMemberRepository, guildRoleRepository repositories.GuildRoleRepository, channelRepository repositories.ChannelRepository, voiceStateRepository repositories.VoiceStateRepository, userRepository repositories.UserRepository) interfaces.GuildService {
 	return &GuildService{
 		transactor:            transactor,
 		authorisationService:  authorisationService,
@@ -34,48 +32,9 @@ func CreateGuildService(transactor *db.Transactor, authorisationService interfac
 		guildMemberRepository: guildMemberRepository,
 		guildRoleRepository:   guildRoleRepository,
 		channelRepository:     channelRepository,
+		voiceStateRepository:  voiceStateRepository,
+		userRepository:        userRepository,
 	}
-}
-
-func (s *GuildService) GetByUserID(ctx context.Context, userID uuid.UUID) (*query.GuildQueryListResult, error) {
-
-	guildIDs, err := s.guildMemberRepository.GetGuildIDsByUserID(ctx, userID)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(guildIDs) == 0 {
-		return &query.GuildQueryListResult{Result: []*common.GuildResult{}}, nil
-	}
-
-	guilds, err := s.guildRepository.GetByGuildIDs(ctx, guildIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	guildChannelsMap, channelIDs, err := s.channelRepository.GetMapByGuildIDs(ctx, guildIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	guildChannelRolesMap, err := s.guildRoleRepository.GetMapRoleIDsByChannelIDs(ctx, channelIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	rolesMap, _, err := s.guildRoleRepository.GetMapByGuildIDs(ctx, guildIDs)
-	if err != nil {
-		return nil, err
-	}
-
-	return &query.GuildQueryListResult{
-		Result: mapper.NewGuildListResultFromGuild(
-			guilds,
-			guildChannelsMap,
-			guildChannelRolesMap,
-			rolesMap,
-		),
-	}, nil
 }
 
 func (s *GuildService) Create(ctx context.Context, cmd *command.CreateGuildCommand) error {
@@ -99,7 +58,7 @@ func (s *GuildService) Create(ctx context.Context, cmd *command.CreateGuildComma
 		return err
 	}
 
-	if err := s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
+	return s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
 
 		err = s.guildRepository.Create(ctx, guild)
 		if err != nil {
@@ -129,12 +88,8 @@ func (s *GuildService) Create(ctx context.Context, cmd *command.CreateGuildComma
 			return err
 		}
 
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	return s.eventService.GuildCreated(ctx, guild.ID)
+		return s.eventService.GuildCreated(ctx, guild.ID, cmd.CreatorID)
+	})
 }
 
 func (s *GuildService) Update(ctx context.Context, cmd *command.UpdateGuildCommand) error {

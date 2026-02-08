@@ -22,11 +22,11 @@ func CreateVoiceStateRepository(db DBGetter) repositories.VoiceStateRepository {
 func (r *VoiceStateRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.VoiceState, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT
-			self_mute,
-			self_deaf,
-			channel_id,
-			user_id,
+			id,
 			guild_id,
+			channel_id,
+			self_mute,
+			self_deaf
 		FROM
 			voice_state
 		WHERE
@@ -35,11 +35,11 @@ func (r *VoiceStateRepository) GetByID(ctx context.Context, ID uuid.UUID) (*enti
 
 	voiceState := &entities.VoiceState{}
 	if err := row.Scan(
+		&voiceState.ID,
+		&voiceState.GuildID,
+		&voiceState.ChannelID,
 		&voiceState.SelfMute,
 		&voiceState.SelfDeaf,
-		&voiceState.ChannelID,
-		&voiceState.UserID,
-		&voiceState.GuildID,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrEntityNotFound
@@ -50,45 +50,13 @@ func (r *VoiceStateRepository) GetByID(ctx context.Context, ID uuid.UUID) (*enti
 	return voiceState, nil
 }
 
-func (r *VoiceStateRepository) GetByUserID(ctx context.Context, userID uuid.UUID) (*entities.VoiceState, error) {
-	row := r.db(ctx).QueryRow(ctx, `
-		SELECT
-			self_mute,
-			self_deaf,
-			channel_id,
-			user_id,
-			guild_id,
-		FROM
-			voice_state
-		WHERE
-			user_id = $1;
-	`, userID)
-
-	voiceState := &entities.VoiceState{}
-	if err := row.Scan(
-		&voiceState.SelfMute,
-		&voiceState.SelfDeaf,
-		&voiceState.ChannelID,
-		&voiceState.UserID,
-		&voiceState.GuildID,
-	); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, domain.ErrEntityNotFound
-		}
-		return nil, wrapUnknownErr("select voice state by user id failed", err)
-	}
-
-	return voiceState, nil
-}
-
 func (r *VoiceStateRepository) GetByChannelID(ctx context.Context, channelID uuid.UUID) ([]*entities.VoiceState, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
-			self_mute,
-			self_deaf,
-			channel_id,
-			user_id,
 			guild_id,
+			channel_id,
+			self_mute,
+			self_deaf
 		FROM
 			voice_state
 		WHERE
@@ -106,11 +74,10 @@ func (r *VoiceStateRepository) GetByChannelID(ctx context.Context, channelID uui
 	for rows.Next() {
 		voiceState := &entities.VoiceState{}
 		if err := rows.Scan(
+			&voiceState.GuildID,
+			&voiceState.ChannelID,
 			&voiceState.SelfMute,
 			&voiceState.SelfDeaf,
-			&voiceState.ChannelID,
-			&voiceState.UserID,
-			&voiceState.GuildID,
 		); err != nil {
 			return nil, wrapUnknownErr("map over select voice state by channel id failed", err)
 		}
@@ -124,11 +91,10 @@ func (r *VoiceStateRepository) GetByChannelID(ctx context.Context, channelID uui
 func (r *VoiceStateRepository) GetByGuildID(ctx context.Context, guildID uuid.UUID) ([]*entities.VoiceState, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
-			self_mute,
-			self_deaf,
-			channel_id,
-			user_id,
 			guild_id,
+			channel_id,
+			self_mute,
+			self_deaf
 		FROM
 			voice_state
 		WHERE
@@ -146,38 +112,79 @@ func (r *VoiceStateRepository) GetByGuildID(ctx context.Context, guildID uuid.UU
 	for rows.Next() {
 		voiceState := &entities.VoiceState{}
 		if err := rows.Scan(
+			&voiceState.GuildID,
+			&voiceState.ChannelID,
 			&voiceState.SelfMute,
 			&voiceState.SelfDeaf,
-			&voiceState.ChannelID,
-			&voiceState.UserID,
-			&voiceState.GuildID,
 		); err != nil {
 			return nil, nil, wrapUnknownErr("map over select voice state by guild id failed", err)
 		}
 
 		voiceStates = append(voiceStates, voiceState)
-		userIDs = append(userIDs, voiceState.UserID)
+		userIDs = append(userIDs, voiceState.ID)
 	}
 
 	return voiceStates, userIDs, nil
 }
+
+func (r *VoiceStateRepository) GetMapByGuildIDs(ctx context.Context, guildIDs []uuid.UUID) (map[uuid.UUID][]*entities.VoiceState, []uuid.UUID, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			id,
+			guild_id,
+			channel_id,
+			self_mute,
+			self_deaf
+		FROM
+			voice_state
+		WHERE
+			guild_id = ANY($1);
+	`, guildIDs)
+
+	if err != nil {
+		return nil, nil, wrapUnknownErr("select voice state by guild ids failed", err)
+	}
+
+	defer rows.Close()
+
+	voiceStatesMap := make(map[uuid.UUID][]*entities.VoiceState)
+	userIDs := []uuid.UUID{}
+	for rows.Next() {
+		voiceState := &entities.VoiceState{}
+		if err := rows.Scan(
+			&voiceState.ID,
+			&voiceState.GuildID,
+			&voiceState.ChannelID,
+			&voiceState.SelfMute,
+			&voiceState.SelfDeaf,
+		); err != nil {
+			return nil, nil, wrapUnknownErr("map over select voice state by guild ids failed", err)
+		}
+
+		voiceStatesMap[*voiceState.GuildID] = append(voiceStatesMap[*voiceState.GuildID], voiceState)
+		userIDs = append(userIDs, voiceState.ID)
+	}
+
+	return voiceStatesMap, userIDs, nil
+}
+
 func (r *VoiceStateRepository) Create(ctx context.Context, voiceState *entities.VoiceState) error {
 	_, err := r.db(ctx).Exec(ctx, `
 		INSERT INTO
 			voice_state (
-				self_mute,
-				self_deaf,
-				channel_id,
-				user_id,
+				id,
 				guild_id,
+				channel_id,
+				self_mute,
+				self_deaf
 			)
 		VALUES ($1, $2, $3, $4, $5);
 	`,
+		&voiceState.ID,
+		voiceState.GuildID,
+		&voiceState.ChannelID,
 		&voiceState.SelfMute,
 		&voiceState.SelfDeaf,
-		&voiceState.ChannelID,
-		&voiceState.UserID,
-		voiceState.GuildID,
 	)
 
 	if err != nil {
@@ -190,23 +197,16 @@ func (r *VoiceStateRepository) Create(ctx context.Context, voiceState *entities.
 func (r *VoiceStateRepository) Update(ctx context.Context, voiceState *entities.VoiceState) error {
 	result, err := r.db(ctx).Exec(ctx, `
 		UPDATE
-			guild_member
+			voice_state
 		SET
-			self_mute = $1,
-			self_deaf = $2,
-			channel_id = $3,
-			user_id = $4,
-			guild_id = $5,
+			self_mute = $2,
+			self_deaf = $3
 		WHERE
-			user_id = $4
-		AND
-			channel_id = $3;
+			id = $1;
 	`,
+		&voiceState.ID,
 		&voiceState.SelfMute,
 		&voiceState.SelfDeaf,
-		&voiceState.ChannelID,
-		&voiceState.UserID,
-		voiceState.GuildID,
 	)
 
 	if err != nil {
