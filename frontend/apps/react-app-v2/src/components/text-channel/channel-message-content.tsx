@@ -1,5 +1,7 @@
 import { emojiRegExp } from "@/lib/constants";
 import { useMemo } from "react";
+import { useExtractedInvites } from "./hooks/use-invite-link";
+import { GuildInviteInline } from "./guild-invite-inline";
 
 type ChannelMessageContentProps = {
     content: string;
@@ -29,6 +31,7 @@ function parseContent(content: string): ParsedContent[] {
 }
 
 export function ChannelMessageContent({ content }: ChannelMessageContentProps) {
+    const inviteIds = useExtractedInvites(content);
     const parsedContent = useMemo(() => parseContent(content.trim()), [content]);
 
     if (parsedContent.length === 1 && parsedContent[0].emoji) {
@@ -36,18 +39,23 @@ export function ChannelMessageContent({ content }: ChannelMessageContentProps) {
     }
 
     return (
-        <div className="flex items-center">
-            {parsedContent.map((value, idx) => (
-                <span
-                    key={idx}
-                    className={
-                        value.emoji
-                            ? "flex w-[20px] justify-center text-lg leading-none"
-                            : "text-sm leading-relaxed whitespace-pre-wrap text-foreground"
-                    }
-                >
-                    {value.emoji ?? value.str}
-                </span>
+        <div className="flex flex-col">
+            <div className="flex items-center">
+                {parsedContent.map((value, idx) => (
+                    <span
+                        key={idx}
+                        className={
+                            value.emoji
+                                ? "flex w-[20px] justify-center text-lg leading-none"
+                                : "text-sm leading-relaxed whitespace-pre-wrap text-foreground"
+                        }
+                    >
+                        {value.emoji ?? value.str}
+                    </span>
+                ))}
+            </div>
+            {inviteIds.map((inviteId) => (
+                <GuildInviteInline key={inviteId} inviteId={inviteId} />
             ))}
         </div>
     );

@@ -1,8 +1,8 @@
-import { infiniteQueryOptions, useInfiniteQuery } from "@tanstack/react-query";
+import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { getUnixTime } from "date-fns";
 import { MAX_INFINITE_PAGE_LEN } from "../query-constants";
 import { httpClient } from "@/lib/http-client";
-import { guildInvitesSchema } from "@/lib/zod-validation/guild-invite-schema";
+import { guildInviteSchema, guildInvitesSchema } from "@/lib/zod-validation/guild-invite-schema";
 import { toast } from "sonner";
 
 type GuildInvitesQueryArgs = {
@@ -40,4 +40,23 @@ export function useGuildInvitesQuery(args: GuildInvitesQueryArgs) {
         toast("An error occured while fetching server invites, please try again later.");
     }
     return data;
+}
+
+type GuildInviteQueryArgs = {
+    id: string;
+    enabled: boolean;
+};
+
+function guildInviteQueryOptions({ id, enabled }: GuildInviteQueryArgs) {
+    return queryOptions({
+        queryKey: ["invite", id],
+        queryFn: () => httpClient.get(`/invite/${id}`).then((r) => guildInviteSchema.parse(r.data)),
+        enabled: enabled,
+        retry: false,
+        staleTime: Infinity,
+    });
+}
+
+export function useGuildInviteQuery(args: GuildInviteQueryArgs) {
+    return useQuery(guildInviteQueryOptions(args));
 }

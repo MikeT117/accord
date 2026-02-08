@@ -11,6 +11,9 @@ import { GuildSettings } from "@/components/guild-settings/guild-settings-dialog
 export const Route = createFileRoute("/_auth/app/$guildId")({
     component: RouteComponent,
     errorComponent: (errProps) => <RootErrorComponent {...errProps} />,
+    onEnter: (match) => {
+        localStorage.setItem("lastVisitedGuild", match.params.guildId);
+    },
 });
 
 function RouteComponent() {

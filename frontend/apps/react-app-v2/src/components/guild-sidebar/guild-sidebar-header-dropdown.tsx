@@ -9,6 +9,7 @@ import { useUserGuildPermissions } from "@/lib/authorisation/permissions";
 import { cn } from "@/lib/utils";
 import { openCreateGuildCategoryDialog } from "@/lib/valtio/mutations/create-guild-category-dialog-ui-store-mutations";
 import { openCreateGuildChannelDialog } from "@/lib/valtio/mutations/create-guild-channel-dialog-ui-store-mutations";
+import { openCreateGuildInviteDialog } from "@/lib/valtio/mutations/create-guild-invite-dialog-ui-store-mutations";
 import { openGuildSettings } from "@/lib/valtio/mutations/guild-settings-ui-store-mutations";
 
 import { CogIcon, DoorOpenIcon, FolderPlusIcon, PlusCircleIcon, UserPlusIcon } from "lucide-react";
@@ -39,7 +40,7 @@ export function GuildSidebarHeaderDropdown({ id, children, className }: GuildSid
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="justify-between">
+                <DropdownMenuItem className="justify-between" onClick={openCreateGuildInviteDialog}>
                     Invite People
                     <UserPlusIcon />
                 </DropdownMenuItem>
