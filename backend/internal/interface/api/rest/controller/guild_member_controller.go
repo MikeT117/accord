@@ -26,9 +26,30 @@ func NewGuildMemberController(
 
 	subGroup := baseGroup.Group("/guilds/:guildID/members")
 	subGroup.GET("", controller.getMembers)
+	subGroup.POST("/join", controller.createMember)
 	subGroup.PATCH("/:userID", controller.updateMember)
 	subGroup.DELETE("/:userID", controller.deleteMember)
+
 	return controller
+}
+
+func (c *GuildMemberController) createMember(ctx echo.Context) error {
+	var payload request.CreateGuildMemberRequest
+	if err := ctx.Bind(&payload); err != nil {
+		return handleError(ctx, err)
+	}
+
+	requestorID, _ := authentication.GetRequestorDetails(ctx)
+	cmd, err := payload.ToCreateGuildMemberCommand(requestorID)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	if err := c.guildMemberService.Create(ctx.Request().Context(), cmd); err != nil {
+		return handleError(ctx, err)
+	}
+
+	return response.NoContentResponse(ctx)
 }
 
 func (c *GuildMemberController) getMembers(ctx echo.Context) error {

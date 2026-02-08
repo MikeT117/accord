@@ -100,6 +100,53 @@ func (r *GuildMemberRepository) GetMapByIDs(ctx context.Context, IDs []uuid.UUID
 	return guildMembersMap, nil
 }
 
+func (r *GuildMemberRepository) GetMapByIDsAndGuildIDs(ctx context.Context, IDs []uuid.UUID, guildIDs []uuid.UUID) (map[uuid.UUID]map[uuid.UUID]*entities.GuildMember, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+		SELECT
+			user_id,
+			guild_id,
+			nickname,
+			avatar_id,
+			banner_id,
+			created_at,
+			updated_at
+		FROM
+			guild_member
+		WHERE
+			user_id = ANY($1)
+		AND
+			guild_id = ANY($2);
+	`, IDs, guildIDs)
+
+	if err != nil {
+		return nil, wrapUnknownErr("select guild members by ids failed", err)
+	}
+
+	guildMembersMap := make(map[uuid.UUID]map[uuid.UUID]*entities.GuildMember)
+	for rows.Next() {
+		guildMember := &entities.GuildMember{}
+		if err := rows.Scan(
+			&guildMember.UserID,
+			&guildMember.GuildID,
+			&guildMember.Nickname,
+			&guildMember.AvatarID,
+			&guildMember.BannerID,
+			&guildMember.CreatedAt,
+			&guildMember.UpdatedAt,
+		); err != nil {
+			return nil, wrapUnknownErr("map over select guild members by ids failed", err)
+		}
+
+		if guildMembersMap[guildMember.GuildID] == nil {
+			guildMembersMap[guildMember.GuildID] = make(map[uuid.UUID]*entities.GuildMember)
+		}
+
+		guildMembersMap[guildMember.GuildID][guildMember.UserID] = guildMember
+	}
+
+	return guildMembersMap, nil
+}
+
 func (r *GuildMemberRepository) GetByGuildID(ctx context.Context, guildID uuid.UUID, before time.Time, limit int) ([]*entities.GuildMember, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT

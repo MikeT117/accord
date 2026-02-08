@@ -1,11 +1,8 @@
 package controller
 
 import (
-	"net/http"
-
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/interface/api/authentication"
-	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/mapper"
 	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/request"
 	"github.com/MikeT117/accord/backend/internal/interface/api/rest/dto/response"
 
@@ -26,21 +23,9 @@ func NewGuildController(
 
 	subGroup := baseGroup.Group("/guilds")
 	subGroup.POST("", controller.createGuild)
-	subGroup.GET("", controller.getGuilds)
 	subGroup.PATCH("/:guildID", controller.updateGuild)
 	subGroup.DELETE("/:guildID", controller.deleteGuild)
 	return controller
-}
-
-func (c *GuildController) getGuilds(ctx echo.Context) error {
-	requestorID, _ := authentication.GetRequestorDetails(ctx)
-	guilds, err := c.guildService.GetByUserID(ctx.Request().Context(), requestorID)
-	if err != nil {
-		handleError(ctx, err)
-	}
-
-	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildsResponse(guilds.Result))
-
 }
 
 func (c *GuildController) createGuild(ctx echo.Context) error {

@@ -66,22 +66,29 @@ func (s *GuildInviteService) GetByGuildID(ctx context.Context, qry *query.GuildI
 	}, nil
 }
 
-func (s *GuildInviteService) Create(ctx context.Context, cmd *command.CreateGuildInviteCommand) error {
+func (s *GuildInviteService) Create(ctx context.Context, cmd *command.CreateGuildInviteCommand) (*command.CreateGuildInviteCommandResult, error) {
 	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	guildInvite, err := entities.NewGuildInvite(cmd.GuildID, cmd.ExpiresAt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := s.guildInviteRepository.Create(ctx, guildInvite); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	guild, err := s.guildRepository.GetByID(ctx, cmd.GuildID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &command.CreateGuildInviteCommandResult{
+		Result: mapper.NewGuildInviteResultFromGuildInvite(guildInvite, guild),
+	}, nil
 }
 func (s *GuildInviteService) Delete(ctx context.Context, cmd *command.DeleteGuildInviteCommand) error {
 	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)

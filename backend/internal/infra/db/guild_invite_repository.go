@@ -99,14 +99,16 @@ func (r *GuildInviteRepository) Create(ctx context.Context, guildInvite *entitie
 					used_count,
 					guild_id,
 					created_at,
+					updated_at,
 					expires_at
 				)
-			VALUES ($1, $2, $3, $4, $5);
+			VALUES ($1, $2, $3, $4, $5, $6);
 		`,
 		&guildInvite.ID,
 		&guildInvite.UsedCount,
 		&guildInvite.GuildID,
 		&guildInvite.CreatedAt,
+		&guildInvite.UpdatedAt,
 		&guildInvite.ExpiresAt,
 	)
 

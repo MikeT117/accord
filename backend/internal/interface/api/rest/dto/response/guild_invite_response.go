@@ -1,8 +1,6 @@
 package response
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 )
 
@@ -15,5 +13,5 @@ type GuildInviteResponse struct {
 	MemberCount  int64      `json:"memberCount"`
 	Icon         *uuid.UUID `json:"icon"`
 	Banner       *uuid.UUID `json:"banner"`
-	CreatedAt    time.Time  `json:"createdAt"`
+	CreatedAt    int64      `json:"createdAt"`
 }

@@ -24,7 +24,7 @@ func NewGuildInviteController(
 		guildInviteService: guildInviteService,
 	}
 
-	baseGroup.GET("/invites/:inviteID", controller.getInvite)
+	baseGroup.GET("/invite/:inviteID", controller.getInvite)
 
 	subGroup := baseGroup.Group("/guilds/:guildID/invites")
 	subGroup.GET("", controller.getInvites)
@@ -86,11 +86,13 @@ func (c *GuildInviteController) createInvite(ctx echo.Context) error {
 		return handleError(ctx, err)
 	}
 
-	if err := c.guildInviteService.Create(ctx.Request().Context(), cmd); err != nil {
+	guildInvite, err := c.guildInviteService.Create(ctx.Request().Context(), cmd)
+
+	if err != nil {
 		return handleError(ctx, err)
 	}
 
-	return response.NoContentResponse(ctx)
+	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildInviteResponse(guildInvite.Result))
 }
 
 func (c *GuildInviteController) deleteInvite(ctx echo.Context) error {
