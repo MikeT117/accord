@@ -5,8 +5,8 @@ import { tokensSchema } from "@/lib/zod-validation/localstorage-schema";
 
 export const Route = createFileRoute("/")({
     beforeLoad: () => {
-        const { success: validTokensExist } = tokensSchema.safeParse(tokenStore);
-        if (validTokensExist) throw redirect({ to: "/app/home" });
+        const { success } = tokensSchema.safeParse(tokenStore);
+        if (success) throw redirect({ to: "/app" });
     },
     component: OnboardingProviderSelect,
 });

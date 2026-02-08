@@ -1,5 +1,3 @@
-import { getValidatedStateFromLocalStorage } from "@/lib/utils";
-import { tokensSchema } from "@/lib/zod-validation/localstorage-schema";
 import { proxy, subscribe } from "valtio";
 import { devtools } from "valtio/utils";
 
@@ -11,5 +9,15 @@ subscribe(tokenStore, () => {
 });
 
 function loadInitialState() {
-    return getValidatedStateFromLocalStorage("session", tokensSchema.parse);
+    const localStorageState = localStorage.getItem("session");
+
+    if (!localStorageState) {
+        return { accesstoken: "", refreshtoken: "" };
+    }
+
+    try {
+        return JSON.parse(localStorageState);
+    } catch {}
+
+    return { accesstoken: "", refreshtoken: "" };
 }

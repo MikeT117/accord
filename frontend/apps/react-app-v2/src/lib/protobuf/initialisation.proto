@@ -1,18 +1,19 @@
 edition = "2023";
 
 package pb;
+
+import "channel.proto";
+import "guild.proto";
+import "relationship.proto";
+import "user.proto";
+
 option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
 
-import "guild.proto";
-import "user.proto";
-import "channel.proto";
-import "relationship.proto";
-
 message Initialisation {
-    int32 ver = 1;
-    User user = 2;
-    repeated string role_ids = 3;
-    repeated Guild guilds = 4;
-    repeated Channel private_channels = 5;
-    repeated Relationship relationships = 6;
+  int32 ver = 1;
+  User user = 2;
+  repeated string role_ids = 3;
+  repeated Guild guilds = 4;
+  repeated Channel private_channels = 5;
+  repeated Relationship relationships = 6;
 }

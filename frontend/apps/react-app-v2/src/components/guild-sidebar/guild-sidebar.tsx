@@ -21,7 +21,7 @@ export function GuildSidebar() {
 
     return (
         <SidebarProvider>
-            <Sidebar collapsible="none" className="flex border-r max-w-[250px] bg-background border-l">
+            <Sidebar collapsible="none" className="flex max-w-[250px] border-r border-l bg-background">
                 <GuildSidebarHeader id={guild.id} name={guild.name} />
                 <SidebarContent>
                     <DnDProvider>
@@ -38,7 +38,7 @@ export function GuildSidebar() {
                                                             channel={child}
                                                             sub={true}
                                                         />
-                                                    )
+                                                    ),
                                             )}
                                         </GuildSidebarCategoryChannel>
                                     ))}

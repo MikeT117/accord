@@ -23,6 +23,11 @@ export const USER_FLAG = {
     ALLOW_GUILD_MEMBER_DMS: 1,
 } as const;
 
+export const WEBRTC_SDP_TYPE = {
+    OFFER: "offer",
+    ANSWER: "answer",
+} as const;
+
 export const emojiRegExp = emojiRegex();
 
 export const OAUTH_PROVIDER = {

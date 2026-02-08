@@ -11,6 +11,9 @@ import type {
     APIChannelRoleAssociationChangeType,
     Normalize,
     APIChannelRoleAssociationsSetType,
+    APIVoiceStateType,
+    APIVoiceStateUpdatedType,
+    APIVoiceStateDeletedType,
 } from "@/lib/types/types";
 import { apiGuildChannelToGuildChannel } from "../mapper/api-guild-channel-mapper";
 import { apiGuildToGuild } from "../mapper/api-guild-mapper";
@@ -212,4 +215,52 @@ export function handleGuildRoleDeleted(roleDelete: APIChannelDeletedType) {
 
     guild.roles.keys.splice(index, 1);
     delete guild.roles.values[roleDelete.id];
+}
+
+export function handleVoiceStateCreated(voiceState: APIVoiceStateType) {
+    const guild = guildStore.values[voiceState.guildId];
+    if (!guild) {
+        return;
+    }
+
+    if (!guild.voiceStates.keys.includes(voiceState.id)) {
+        guild.voiceStates.keys.push(voiceState.id);
+    }
+
+    guild.voiceStates.values[voiceState.id] = voiceState;
+}
+
+export function handleVoiceStateUpdated(updatedVoiceState: APIVoiceStateUpdatedType) {
+    const guild = guildStore.values[updatedVoiceState.guildId];
+    if (!guild) {
+        return;
+    }
+
+    if (!guild.voiceStates.keys.includes(updatedVoiceState.id)) {
+        return;
+    }
+
+    const voiceState = guild.voiceStates.values[updatedVoiceState.id];
+
+    if (!voiceState) {
+        return;
+    }
+
+    voiceState.selfDeaf = updatedVoiceState.selfDeaf;
+    voiceState.selfMute = updatedVoiceState.selfMute;
+}
+export function handleVoiceStateDeleted(voiceStateDelete: APIVoiceStateDeletedType) {
+    const guild = guildStore.values[voiceStateDelete.guildId];
+
+    if (!guild) {
+        return;
+    }
+
+    const index = guild.voiceStates.keys.findIndex((c) => c === voiceStateDelete.id);
+    if (index === -1) {
+        return;
+    }
+
+    guild.voiceStates.keys.splice(index, 1);
+    delete guild.voiceStates.values[voiceStateDelete.id];
 }

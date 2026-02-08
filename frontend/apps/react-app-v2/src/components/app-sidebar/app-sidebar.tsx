@@ -20,6 +20,7 @@ import { useTheme } from "@/lib/valtio/queries/theme-store-queries";
 import { useUser } from "@/lib/valtio/queries/user-store-queries";
 import { openUserSettings } from "@/lib/valtio/mutations/user-settings-ui-store-mutations";
 import { GuildIcon } from "../guild-icon";
+import { AppSidebarActiveVoice } from "./app-sidebar-active-voice";
 
 export function AppSidebar() {
     const { guildId } = useParams({ strict: false });
@@ -49,7 +50,7 @@ export function AppSidebar() {
                 <ButtonWithTooltip
                     tooltipText="User Dashboard"
                     side="right"
-                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-foreground text-accent"
+                    className="flex size-10 items-center justify-center rounded-lg bg-accent-foreground text-accent"
                     onClick={handleUserDashboardClick}
                 >
                     <AccordLogo />
@@ -59,7 +60,7 @@ export function AppSidebar() {
                     side="right"
                     size="lg"
                     onClick={() => void 0}
-                    className="flex h-10 w-10 items-center justify-center rounded-lg p-0"
+                    className="flex size-10 items-center justify-center rounded-lg p-0"
                     variant="secondary"
                 >
                     <GlobeIcon />
@@ -70,7 +71,7 @@ export function AppSidebar() {
                     side="right"
                     size="lg"
                     onClick={openCreateGuildDialog}
-                    className="flex h-10 w-10 items-center justify-center rounded-lg p-0"
+                    className="flex size-10 items-center justify-center rounded-lg p-0"
                     variant="secondary"
                 >
                     <PlusIcon />
@@ -84,7 +85,7 @@ export function AppSidebar() {
                         side="right"
                         size="icon"
                         variant="link"
-                        className="group relative h-10 w-10 rounded-lg p-0"
+                        className="group relative size-10 rounded-lg p-0"
                         data-state={g.id === guildId ? "active" : "inactive"}
                         onClick={() => handleGuildClick(g.id)}
                     >
@@ -93,7 +94,7 @@ export function AppSidebar() {
                     </ButtonWithTooltip>
                 ))}
             </div>
-            <div className="mt-auto">
+            <div className="mt-auto flex flex-col items-center space-y-3">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <ButtonWithTooltip
@@ -102,7 +103,7 @@ export function AppSidebar() {
                             tooltipText="Settings"
                             side="right"
                         >
-                            <Avatar className="h-full w-full items-center justify-center rounded-none">
+                            <Avatar className="items-center justify-center rounded-none">
                                 <AvatarImage src={user.avatar ?? ""} alt={user.displayName} />
                                 <AvatarFallback className="pointer-events-none rounded-none bg-transparent">
                                     MT
@@ -113,7 +114,7 @@ export function AppSidebar() {
                     <DropdownMenuContent className="min-w-56 rounded-lg" align="end" sideOffset={8} side="right">
                         <DropdownMenuLabel className="p-0 font-normal">
                             <div className="flex items-center  gap-2 px-1 py-1.5 text-sm">
-                                <Avatar className="flex h-8 w-8 items-center justify-center rounded-lg">
+                                <Avatar className="flex items-center justify-center rounded-lg">
                                     <AvatarImage src={user.avatar ?? ""} alt={user.displayName} />
                                     <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                                 </Avatar>
@@ -151,6 +152,7 @@ export function AppSidebar() {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
+            <AppSidebarActiveVoice />
         </div>
     );
 }

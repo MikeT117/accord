@@ -28,6 +28,11 @@ import { sessionSchema } from "../zod-validation/session-schema";
 import { userSchema, userRoleAssociationChangeSchema, userUpdatedSchema } from "../zod-validation/user-schema";
 import type { envSchema } from "../zod-validation/env-schema";
 import type { useSnapshot } from "valtio";
+import type {
+    voiceStateDeletedSchema,
+    voiceStateSchema,
+    voiceStateUpdatedSchema,
+} from "../zod-validation/voice-state-schema";
 
 // Utility Types
 export type Snapshot<T extends object> = ReturnType<typeof useSnapshot<T>>;
@@ -65,6 +70,7 @@ export type APIGuildType = z.infer<typeof guildSchema>;
 export type APIRelationshipType = z.infer<typeof relationshipSchema>;
 export type APISessionType = z.infer<typeof sessionSchema>;
 export type APIUserType = z.infer<typeof userSchema>;
+export type APIVoiceStateType = z.infer<typeof voiceStateSchema>;
 
 // Narrowed Base API Types
 export type APIGuildTextChannelType = Extract<APIGuildChannelType, { channelType: 0 }>;
@@ -89,13 +95,16 @@ export type APIChannelRoleAssociationChangeType = z.infer<typeof channelRoleAsso
 export type APIUserRoleAssociationChangeType = z.infer<typeof userRoleAssociationChangeSchema>;
 export type APIChannelRoleAssociationsSetType = z.infer<typeof channelRoleAssociationsSetSchema>;
 export type APIUserUpdatedType = z.infer<typeof userUpdatedSchema>;
+export type APIVoiceStateUpdatedType = z.infer<typeof voiceStateUpdatedSchema>;
+export type APIVoiceStateDeletedType = z.infer<typeof voiceStateDeletedSchema>;
 
 // Client Types
 export type AttachmentType = APIAttachmentType;
 export type ChannelMessageType = APIChannelMessageType;
-export type GuildType = Omit<APIGuildType, "channels" | "roles"> & {
+export type GuildType = Omit<APIGuildType, "channels" | "roles" | "voiceStates"> & {
     channels: Normalize<GuildChannelType>;
     roles: Normalize<GuildRoleType>;
+    voiceStates: Normalize<VoiceStateType>;
 };
 export type GuildInviteType = APIGuildMemberType;
 export type GuildMemberType = APIGuildMemberType;
@@ -114,6 +123,7 @@ export type PrivateChannelType =
 export type RelationshipType = APIRelationshipType;
 export type SessionType = APISessionType;
 export type UserType = APIUserType;
+export type VoiceStateType = APIVoiceStateType;
 
 // Narrowed Client Types
 export type GuildTextChannelType = Extract<GuildChannelType, { channelType: 0 }>;

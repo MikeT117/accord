@@ -1,10 +1,9 @@
 import { isGuildTextChannel } from "@/lib/types/guards";
 import type { GuildTextChannelType, GuildVoiceChannelType, Snapshot } from "@/lib/types/types";
-import { GuildSidebarTextChannel } from "./guild-sidebar-text-channel";
 import { GuildSidebarVoiceChannel } from "./guild-sidebar-voice-channel";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { GuildSidebarChannelContextMenu } from "./guild-sidebar-channel-context-menu";
 import { useDraggable } from "@dnd-kit/react";
+import { GuildSidebarTextChannel } from "./guild-sidebar-text-channel";
 
 type GuildSidebarChannelProps = {
     channel: Snapshot<GuildTextChannelType | GuildVoiceChannelType>;
@@ -30,30 +29,16 @@ export function GuildSidebarChannel({ channel, sub = false }: GuildSidebarChanne
         });
     }
 
-    return (
-        <GuildSidebarChannelContextMenu
-            channelType={channel.channelType}
-            guildId={channel.guildId}
-            id={channel.id}
-            name={channel.name}
-        >
-            {isGuildTextChannel(channel) ? (
-                <GuildSidebarTextChannel
-                    channel={channel}
-                    onClick={handleChannelClick}
-                    isActive={channel.id === params?.channelId}
-                    sub={sub}
-                    ref={ref}
-                />
-            ) : (
-                <GuildSidebarVoiceChannel
-                    channel={channel}
-                    onClick={handleChannelClick}
-                    isActive={channel.id === params?.channelId}
-                    sub={sub}
-                    ref={ref}
-                />
-            )}
-        </GuildSidebarChannelContextMenu>
-    );
+    if (isGuildTextChannel(channel)) {
+        return (
+            <GuildSidebarTextChannel
+                channel={channel}
+                onClick={handleChannelClick}
+                isActive={channel.id === params?.channelId}
+                ref={ref}
+            />
+        );
+    }
+
+    return <GuildSidebarVoiceChannel channel={channel} sub={sub} ref={ref} />;
 }

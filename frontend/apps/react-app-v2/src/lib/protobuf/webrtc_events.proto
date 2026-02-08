@@ -1,0 +1,31 @@
+edition = "2023";
+
+package pb;
+option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
+
+message WebRTCIdentify {
+    int32 ver = 1;
+    string token = 2;
+    string guild_id = 3;
+    string channel_id = 4;
+}
+
+message WebRTCICECandidate {
+    int32 ver = 1;
+    string candidate = 2;
+    string sdp_mid = 3;
+    int32 sdp_m_line_index = 4;
+    string username_fragment = 5;
+}
+
+message WebRTCSessionDescription {
+    int32 ver = 1;
+    string type = 2;
+    string sdp = 3;
+}
+
+message WebRTCSelfUpdate {
+    int32 ver = 1;
+    bool self_mute = 2;
+    bool self_deaf = 3;
+}

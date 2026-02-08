@@ -2,6 +2,7 @@ import { fromUnixTime } from "date-fns";
 import * as z from "zod/v4-mini";
 import { guildRoleSchema } from "./guild-role";
 import { guildChannelSchema } from "./channel-schema";
+import { voiceStateSchema } from "./voice-state-schema";
 
 export const guildSchema = z.object({
     id: z.string(),
@@ -14,22 +15,23 @@ export const guildSchema = z.object({
     memberCount: z.number(),
     icon: z.pipe(
         z.optional(z.nullable(z.string())),
-        z.transform((a) => (!a || a.trim() === "" ? null : a))
+        z.transform((a) => (!a || a.trim() === "" ? null : a)),
     ),
     banner: z.pipe(
         z.optional(z.nullable(z.string())),
-        z.transform((a) => (!a || a.trim() === "" ? null : a))
+        z.transform((a) => (!a || a.trim() === "" ? null : a)),
     ),
     createdAt: z.pipe(
         z.number(),
-        z.transform((num) => fromUnixTime(num))
+        z.transform((num) => fromUnixTime(num)),
     ),
     updatedAt: z.pipe(
         z.number(),
-        z.transform((num) => fromUnixTime(num))
+        z.transform((num) => fromUnixTime(num)),
     ),
     roles: z.array(guildRoleSchema),
     channels: z.array(guildChannelSchema),
+    voiceStates: z.array(voiceStateSchema),
 });
 
 export const guildUpdatedSchema = z.pick(guildSchema, {

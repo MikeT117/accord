@@ -1,4 +1,11 @@
-import type { APIGuildType, GuildType, Normalize, GuildChannelType, GuildRoleType } from "@/lib/types/types";
+import type {
+    APIGuildType,
+    GuildType,
+    Normalize,
+    GuildChannelType,
+    GuildRoleType,
+    VoiceStateType,
+} from "@/lib/types/types";
 import { apiGuildChannelToGuildChannel } from "./api-guild-channel-mapper";
 
 export function apiGuildToGuild(guild: APIGuildType): GuildType {
@@ -22,5 +29,15 @@ export function apiGuildToGuild(guild: APIGuildType): GuildType {
         roles.values[r.id] = r;
     });
 
-    return { ...guild, channels, roles };
+    const voiceStates: Normalize<VoiceStateType> = {
+        keys: [],
+        values: {},
+    };
+
+    guild.voiceStates.forEach((v) => {
+        voiceStates.keys.push(v.id);
+        voiceStates.values[v.id] = v;
+    });
+
+    return { ...guild, channels, roles, voiceStates };
 }

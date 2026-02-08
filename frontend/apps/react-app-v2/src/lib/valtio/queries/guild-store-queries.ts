@@ -5,12 +5,14 @@ import type {
     GuildTextChannelType,
     GuildVoiceChannelType,
     Snapshot,
+    VoiceStateType,
 } from "@/lib/types/types";
 import { useSnapshot } from "valtio";
 import { guildStore } from "../stores/guild-store";
 import { userRoleStore } from "../stores/user-roles-store";
 import { isChannelViewable } from "@/lib/authorisation/permissions";
 import { ErrChannelNotFound, ErrRoleNotFound, ErrServerNotFound } from "@/lib/error";
+import { userStore } from "../stores/user-store";
 
 export function useGuild(guildId: string) {
     const guildStoreSnapshot = useSnapshot(guildStore);
@@ -43,6 +45,54 @@ export function useGuildVoiceChannel(guildId: string, channelId: string) {
     const channel = useViewableGuildChannel(guildId, channelId);
     if (!isGuildVoiceChannel(channel)) throw new ErrChannelNotFound();
     return channel;
+}
+
+export function useVoiceStates(guildId: string, channelId: string) {
+    const channel = useViewableGuildChannel(guildId, channelId);
+    if (!isGuildVoiceChannel(channel)) throw new ErrChannelNotFound();
+    const guildSnapshot = useGuild(guildId);
+
+    const voiceStates: VoiceStateType[] = [];
+    for (const key of guildSnapshot.voiceStates.keys) {
+        if (!guildSnapshot.voiceStates.values[key]) {
+            continue;
+        }
+
+        // Non-null assertion based on above check
+        if (guildSnapshot.voiceStates.values[key]!.channelId !== channelId) {
+            continue;
+        }
+
+        // Non-null assertion based on first check
+        voiceStates.push(guildSnapshot.voiceStates.values[key]!);
+    }
+    return voiceStates;
+}
+
+export function useCurrentUserVoiceState() {
+    const guildsSnapshot = useGuildsArray();
+    const userStoreSnapshot = useSnapshot(userStore);
+
+    if (!userStoreSnapshot.initialised) {
+        return null;
+    }
+
+    for (const guild of guildsSnapshot) {
+        for (const key of guild.voiceStates.keys) {
+            if (guild.voiceStates.values[key]?.user.id === userStoreSnapshot.user?.id) {
+                const voiceState = guild.voiceStates.values[key];
+                const channel = guild.channels.values[voiceState.channelId];
+
+                if (!channel) {
+                    return null;
+                }
+
+                return { voiceState, channel, guild };
+            }
+        }
+    }
+
+    return null;
 }
 
 export function useGuildRolesArray(guildId: string) {
