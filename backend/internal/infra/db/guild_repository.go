@@ -19,6 +19,57 @@ func CreateGuildRepository(db DBGetter) repositories.GuildRepository {
 	return &GuildRepository{db: db}
 }
 
+func (r *GuildRepository) GetDiscoverable(ctx context.Context) ([]*entities.Guild, error) {
+	rows, err := r.db(ctx).Query(ctx, `
+               SELECT
+                       id,
+                       creator_id,
+                       guild_category_id,
+                       name,
+                       description,
+                       discoverable,
+                       channel_count,
+                       member_count,
+                       icon_id,
+                       banner_id,
+                       created_at,
+                       updated_at
+               FROM
+                       guild
+               WHERE
+                       discoverable;
+       `)
+
+	if err != nil {
+		return nil, wrapUnknownErr("select discoverable  by guild idsfailed", err)
+	}
+	defer rows.Close()
+
+	guilds := []*entities.Guild{}
+	for rows.Next() {
+		guild := &entities.Guild{}
+		if err := rows.Scan(
+			&guild.ID,
+			&guild.CreatorID,
+			&guild.GuildCategoryID,
+			&guild.Name,
+			&guild.Description,
+			&guild.Discoverable,
+			&guild.ChannelCount,
+			&guild.MemberCount,
+			&guild.IconID,
+			&guild.BannerID,
+			&guild.CreatedAt,
+			&guild.UpdatedAt,
+		); err != nil {
+			return nil, wrapUnknownErr("map over select discoverable guilds by guild idsfailed", err)
+		}
+		guilds = append(guilds, guild)
+	}
+
+	return guilds, nil
+}
+
 func (r *GuildRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.Guild, error) {
 	row := r.db(ctx).QueryRow(ctx, `
 		SELECT

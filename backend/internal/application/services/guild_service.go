@@ -5,6 +5,8 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
+	"github.com/MikeT117/accord/backend/internal/application/mapper"
+	"github.com/MikeT117/accord/backend/internal/application/query"
 	"github.com/MikeT117/accord/backend/internal/constants"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
@@ -35,6 +37,18 @@ func CreateGuildService(transactor *db.Transactor, authorisationService interfac
 		voiceStateRepository:  voiceStateRepository,
 		userRepository:        userRepository,
 	}
+}
+
+func (s *GuildService) GetDiscoverableGuilds(ctx context.Context, qry *query.DiscoverableGuildsQuery) (*query.DiscoverableGuildsQueryResult, error) {
+	guilds, err := s.guildRepository.GetDiscoverable(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &query.DiscoverableGuildsQueryResult{
+		Result: mapper.NewDiscoverableGuildListResultFromGuild(guilds),
+	}, nil
+
 }
 
 func (s *GuildService) Create(ctx context.Context, cmd *command.CreateGuildCommand) error {

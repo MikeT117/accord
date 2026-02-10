@@ -239,3 +239,31 @@ func NewGuildDeletedProtoEvent(ID uuid.UUID) *pb.EventPayload {
 		},
 	}
 }
+
+func NewDiscoverableGuildResultFromGuild(guild *entities.Guild) *common.GuildResult {
+	return &common.GuildResult{
+		ID:              guild.ID,
+		CreatorID:       guild.CreatorID,
+		GuildCategoryID: guild.GuildCategoryID,
+		Name:            guild.Name,
+		Description:     guild.Description,
+		Discoverable:    guild.Discoverable,
+		ChannelCount:    guild.ChannelCount,
+		MemberCount:     guild.MemberCount,
+		CreatedAt:       guild.CreatedAt,
+		UpdatedAt:       guild.UpdatedAt,
+		IconID:          guild.IconID,
+		BannerID:        guild.BannerID,
+	}
+}
+
+func NewDiscoverableGuildListResultFromGuild(guilds []*entities.Guild) []*common.GuildResult {
+	guildsResult := make([]*common.GuildResult, len(guilds))
+
+	for i := 0; i < len(guilds); i++ {
+		guildsResult[i] = NewDiscoverableGuildResultFromGuild(guilds[i])
+	}
+
+	return guildsResult
+
+}

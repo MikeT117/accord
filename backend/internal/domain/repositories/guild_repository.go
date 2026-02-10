@@ -9,6 +9,7 @@ import (
 
 type GuildRepository interface {
 	GetByID(ctx context.Context, ID uuid.UUID) (*entities.Guild, error)
+	GetDiscoverable(ctx context.Context) ([]*entities.Guild, error)
 	GetByGuildIDs(ctx context.Context, guildIDs []uuid.UUID) ([]*entities.Guild, error)
 	Create(ctx context.Context, validatedGuild *entities.Guild) error
 	Update(ctx context.Context, validatedGuild *entities.Guild) error
