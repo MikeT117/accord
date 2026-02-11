@@ -34,6 +34,23 @@ export const guildSchema = z.object({
     voiceStates: z.array(voiceStateSchema),
 });
 
+export const discoverableGuildSchema = z.pick(guildSchema, {
+    id: true,
+    creatorId: true,
+    guildCategoryId: true,
+    name: true,
+    description: true,
+    discoverable: true,
+    channelCount: true,
+    memberCount: true,
+    icon: true,
+    banner: true,
+    createdAt: true,
+    updatedAt: true,
+});
+
+export const discoverableGuildsSchema = z.array(discoverableGuildSchema);
+
 export const guildUpdatedSchema = z.pick(guildSchema, {
     id: true,
     guildCategoryId: true,

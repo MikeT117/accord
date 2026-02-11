@@ -3,11 +3,14 @@ import { useMutation } from "@tanstack/react-query";
 
 type mutationFnArgsType = {
     guildId: string;
-    inviteId: string;
+    inviteId?: string;
 };
 
-const mutationFn = async ({ guildId, inviteId }: mutationFnArgsType) => {
-    return httpClient.post(`/guilds/${guildId}/members/join`, { inviteId });
+const mutationFn = async (args: mutationFnArgsType) => {
+    return httpClient.post(
+        `/guilds/${args.guildId}/members/join`,
+        args?.inviteId ? { inviteId: args.inviteId } : undefined,
+    );
 };
 
 type MutationHookArgs = {
@@ -15,5 +18,5 @@ type MutationHookArgs = {
 };
 
 // OnError Will be handled globally with notifications, success will be handled by the component if needed.
-export const useCreateGuildMemberFromInviteMutation = (args?: MutationHookArgs) =>
+export const useCreateGuildMember = (args?: MutationHookArgs) =>
     useMutation({ mutationFn, onSuccess: () => (typeof args?.onSuccess === "function" ? args.onSuccess() : void 0) });

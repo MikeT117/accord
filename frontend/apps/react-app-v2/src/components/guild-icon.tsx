@@ -1,7 +1,5 @@
 import { CameraIcon } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Button } from "./ui/button";
-import { cn } from "@/lib/utils";
+import { Avatar, AvatarBadge, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { env } from "@/lib/constants";
 
 type GuildIconProps = {
@@ -10,9 +8,9 @@ type GuildIconProps = {
     preview?: string | null;
     onMutate?: () => void;
     className?: string;
-};
+} & React.ComponentProps<typeof Avatar>;
 
-export function GuildIcon({ name, icon, preview, onMutate, className }: GuildIconProps) {
+export function GuildIcon({ name, icon, preview, onMutate, size = "lg", className }: GuildIconProps) {
     const initials = name
         .split(" ")
         .map((n) => n[0])
@@ -23,6 +21,7 @@ export function GuildIcon({ name, icon, preview, onMutate, className }: GuildIco
         if (preview) {
             return preview;
         }
+
         if (icon) {
             return `${env.CLOUDINARY_RES_URL}/${icon}`;
         }
@@ -33,22 +32,14 @@ export function GuildIcon({ name, icon, preview, onMutate, className }: GuildIco
     const isMutable = typeof onMutate === "function";
 
     return (
-        <div className="relative">
-            <Avatar
-                className={cn(
-                    "flex items-center justify-center overflow-hidden rounded-3xl border-4 border-background bg-accent",
-                    "size-16",
-                    className,
-                )}
-            >
-                <AvatarImage src={imageSrc} alt={name} />
-                <AvatarFallback>{initials}</AvatarFallback>
-            </Avatar>
+        <Avatar size={size} className={className}>
+            <AvatarImage src={imageSrc} alt={name} />
+            <AvatarFallback>{initials}</AvatarFallback>
             {isMutable && (
-                <Button size="sm" className="absolute -right-2 -bottom-2 h-8 w-8 rounded-full p-0" onClick={onMutate}>
-                    <CameraIcon className="h-3 w-3" />
-                </Button>
+                <AvatarBadge onClick={onMutate}>
+                    <CameraIcon />
+                </AvatarBadge>
             )}
-        </div>
+        </Avatar>
     );
 }

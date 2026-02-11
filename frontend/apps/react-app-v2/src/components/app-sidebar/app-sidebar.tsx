@@ -1,8 +1,7 @@
 import { CogIcon, GlobeIcon, LogOut, MoonIcon, PlusIcon, SunIcon, SunMoonIcon, UserRoundCogIcon } from "lucide-react";
 import { AccordLogo } from "../accord-logo";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { Avatar, AvatarImage } from "../ui/avatar";
-import { AvatarFallback } from "@radix-ui/react-avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { useGuildsArray } from "@/lib/valtio/queries/guild-store-queries";
 import { openCreateGuildDialog } from "@/lib/valtio/mutations/create-guild-dialog-ui-store-mutations";
 import { ButtonWithTooltip } from "../button-with-tooltip";
@@ -44,6 +43,12 @@ export function AppSidebar() {
         });
     }
 
+    function handleDiscoveravleGuildsClick() {
+        navigate({
+            to: "/app/guild-browser",
+        });
+    }
+
     return (
         <div className="flex w-[72px] flex-col items-center space-y-3 bg-background py-4">
             <div className="flex flex-col gap-1.5">
@@ -59,7 +64,7 @@ export function AppSidebar() {
                     tooltipText="Public Servers"
                     side="right"
                     size="lg"
-                    onClick={() => void 0}
+                    onClick={handleDiscoveravleGuildsClick}
                     className="flex size-10 items-center justify-center rounded-lg p-0"
                     variant="secondary"
                 >

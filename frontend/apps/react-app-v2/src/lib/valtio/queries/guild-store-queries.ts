@@ -263,7 +263,7 @@ function useViewableGuildChannel(guildId: string, channelId: string) {
     return channel;
 }
 
-export function useGuildMemberCheck(guildId: string) {
+export function useIsGuildMember(guildId: string) {
     const guildStoreSnapshot = useSnapshot(guildStore);
     return !!guildStoreSnapshot.values[guildId];
 }

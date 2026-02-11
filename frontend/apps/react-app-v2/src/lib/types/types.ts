@@ -17,7 +17,12 @@ import { guildInviteSchema } from "../zod-validation/guild-invite-schema";
 import { guildMemberSchema } from "../zod-validation/guild-member-schema";
 import { guildMemberUserSchema } from "../zod-validation/guild-member-user-schema";
 import { guildRoleDeletedSchema, guildRoleSchema, guildRoleUpdatedSchema } from "../zod-validation/guild-role";
-import { guildSchema, guildUpdatedSchema, guildDeletedSchema } from "../zod-validation/guild-schema";
+import {
+    guildSchema,
+    guildUpdatedSchema,
+    guildDeletedSchema,
+    discoverableGuildsSchema,
+} from "../zod-validation/guild-schema";
 import { initialisationSchema } from "../zod-validation/initialisation-schema";
 import {
     relationshipSchema,
@@ -67,6 +72,7 @@ export type APIGuildMemberType = z.infer<typeof guildMemberSchema>;
 export type APIGuildMemberUserType = z.infer<typeof guildMemberUserSchema>;
 export type APIGuildRoleType = z.infer<typeof guildRoleSchema>;
 export type APIGuildType = z.infer<typeof guildSchema>;
+export type APIDiscoverableGuildType = z.infer<typeof discoverableGuildSchema>;
 export type APIRelationshipType = z.infer<typeof relationshipSchema>;
 export type APISessionType = z.infer<typeof sessionSchema>;
 export type APIUserType = z.infer<typeof userSchema>;
@@ -106,6 +112,7 @@ export type GuildType = Omit<APIGuildType, "channels" | "roles" | "voiceStates">
     roles: Normalize<GuildRoleType>;
     voiceStates: Normalize<VoiceStateType>;
 };
+export type DiscoverableGuildType = APIDiscoverableGuildType;
 export type GuildInviteType = APIGuildMemberType;
 export type GuildMemberType = APIGuildMemberType;
 export type GuildMemberUserType = APIGuildMemberUserType;
