@@ -10,11 +10,14 @@ import (
 type GuildInvitesQuery struct {
 	GuildID     uuid.UUID
 	Before      time.Time
+	After       time.Time
 	RequestorID uuid.UUID
+	Limit       int
 }
 
 type GuildInviteQuery struct {
 	ID          uuid.UUID
+	GuildID     uuid.UUID
 	RequestorID uuid.UUID
 }
 

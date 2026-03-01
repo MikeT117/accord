@@ -53,8 +53,8 @@ func ValidateToken(token string, rawKey []byte) (jwt.Token, uuid.UUID, error) {
 	return parsedToken, idUUID, nil
 }
 
-func CreateAndSignTempToken(issuer string, ID string, email string, provider string, rawKey []byte, requestID string, expiresAt time.Time) (jwt.Token, []byte, error) {
-	token, err := jwt.NewBuilder().Issuer(issuer).IssuedAt(time.Now()).Expiration(expiresAt).Claim("id", ID).Claim("email", email).Claim("provider", provider).Claim("requestId", requestID).Build()
+func CreateAndSignRegistrationToken(issuer string, ID uuid.UUID, provider string, rawKey []byte, requestID string, expiresAt time.Time) (jwt.Token, []byte, error) {
+	token, err := jwt.NewBuilder().Issuer(issuer).IssuedAt(time.Now()).Expiration(expiresAt).Claim("id", ID).Claim("provider", provider).Claim("requestId", requestID).Build()
 	if err != nil {
 		return nil, nil, wrapUnknownErr("create temp token failed", err)
 	}
@@ -72,46 +72,41 @@ func CreateAndSignTempToken(issuer string, ID string, email string, provider str
 	return token, serialized, nil
 }
 
-func ValidateTempToken(token string, rawKey []byte) (jwt.Token, string, string, string, error) {
+func ValidateRegistrationToken(token string, rawKey []byte) (jwt.Token, uuid.UUID, string, error) {
 	jwkKey, err := jwk.FromRaw(rawKey)
 	if err != nil {
-		return nil, "", "", "", wrapUnknownErr("create jwk key failed", err)
+		return nil, uuid.UUID{}, "", wrapUnknownErr("create jwk key failed", err)
 	}
 
 	parsedToken, err := jwt.ParseString(token, jwt.WithKey(jwa.HS256, jwkKey))
 	if err != nil {
-		return nil, "", "", "", wrapUnknownErr("parse token failed", err)
+		return nil, uuid.UUID{}, "", wrapUnknownErr("parse token failed", err)
 	}
 
 	idFromToken, found := parsedToken.Get("id")
 	if !found {
-		return nil, "", "", "", ErrInvalidTokens
-	}
-
-	emailFromToken, found := parsedToken.Get("email")
-	if !found {
-		return nil, "", "", "", ErrInvalidTokens
+		return nil, uuid.UUID{}, "", ErrInvalidTokens
 	}
 
 	providerFromToken, found := parsedToken.Get("provider")
 	if !found {
-		return nil, "", "", "", ErrInvalidTokens
+		return nil, uuid.UUID{}, "", ErrInvalidTokens
 	}
 
 	idStr, ok := idFromToken.(string)
 	if !ok {
-		return nil, "", "", "", ErrInvalidTokens
-	}
-
-	emailStr, ok := emailFromToken.(string)
-	if !ok {
-		return nil, "", "", "", ErrInvalidTokens
+		return nil, uuid.UUID{}, "", ErrInvalidTokens
 	}
 
 	providerStr, ok := providerFromToken.(string)
 	if !ok {
-		return nil, "", "", "", ErrInvalidTokens
+		return nil, uuid.UUID{}, "", ErrInvalidTokens
 	}
 
-	return parsedToken, idStr, emailStr, providerStr, nil
+	parsed, err := uuid.Parse(idStr)
+	if err != nil {
+		return nil, uuid.UUID{}, "", ErrInvalidTokens
+	}
+
+	return parsedToken, parsed, providerStr, nil
 }

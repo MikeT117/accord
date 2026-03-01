@@ -59,7 +59,7 @@ func (s *GuildMemberService) GetByID(ctx context.Context, qry *query.GuildMember
 	}
 
 	return &query.GuildMemberQueryResult{
-		Result: mapper.NewGuildMemberUserResultFromGuildMember(guildMember, guildMemberRoles, user),
+		Result: mapper.NewGuildMemberResultFromGuildMember(guildMember, guildMemberRoles, user),
 	}, nil
 }
 
@@ -85,7 +85,7 @@ func (s *GuildMemberService) GetByGuildID(ctx context.Context, qry *query.GuildM
 	}
 
 	return &query.GuildMemberQueryListResult{
-		Result: mapper.NewGuildMemberUserListResultFromGuildMember(guildMembers, guildMembersRolesMap, usersMap),
+		Result: mapper.NewGuildMemberListResultFromGuildMember(guildMembers, guildMembersRolesMap, usersMap),
 	}, nil
 }
 

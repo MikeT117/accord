@@ -5,13 +5,12 @@ import (
 )
 
 type GuildInviteResponse struct {
-	ID           uuid.UUID  `json:"id"`
-	GuildID      uuid.UUID  `json:"guildId"`
-	Name         string     `json:"name"`
-	Description  string     `json:"description"`
-	ChannelCount int64      `json:"channelCount"`
-	MemberCount  int64      `json:"memberCount"`
-	Icon         *uuid.UUID `json:"icon"`
-	Banner       *uuid.UUID `json:"banner"`
-	CreatedAt    int64      `json:"createdAt"`
+	ID          uuid.UUID  `json:"id"`
+	CreatedAt   int64      `json:"createdAt"`
+	ExpiresAt   int64      `json:"expiresAt"`
+	UsedCount   int64      `json:"usedCount"`
+	CreatorId   uuid.UUID  `json:"creatorId"`
+	DisplayName string     `json:"displayName"`
+	Username    string     `json:"username"`
+	Avatar      *uuid.UUID `json:"avatar"`
 }

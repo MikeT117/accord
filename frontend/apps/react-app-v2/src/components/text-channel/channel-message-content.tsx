@@ -47,7 +47,7 @@ export function ChannelMessageContent({ content }: ChannelMessageContentProps) {
                         className={
                             value.emoji
                                 ? "flex w-[20px] justify-center text-lg leading-none"
-                                : "text-sm leading-relaxed whitespace-pre-wrap text-foreground"
+                                : "text-sm leading-relaxed wrap-anywhere whitespace-pre-wrap"
                         }
                     >
                         {value.emoji ?? value.str}

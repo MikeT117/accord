@@ -8,26 +8,28 @@ import {
     AlertDialogDescription,
     AlertDialogCancel,
     AlertDialogAction,
+    AlertDialogMedia,
 } from "./ui/alert-dialog";
 import { useConfirmActionDialogUIStore } from "@/lib/valtio/queries/confirm-action-dialog-ui-store-queries";
+import { Trash2Icon } from "lucide-react";
 
 export function ConfirmActionDialog() {
     const { description, isOpen, title, actionFn } = useConfirmActionDialogUIStore();
 
     return (
         <AlertDialog open={isOpen} onOpenChange={closeConfirmActionDialog}>
-            <AlertDialogContent>
+            <AlertDialogContent size="sm">
                 <AlertDialogHeader>
+                    <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
+                        <Trash2Icon />
+                    </AlertDialogMedia>
                     <AlertDialogTitle>{title}</AlertDialogTitle>
-                    <AlertDialogDescription className="font-medium">{description}</AlertDialogDescription>
+                    <AlertDialogDescription>{description}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={actionFn}
-                        className="bg-destructive hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 text-white shadow-xs"
-                    >
-                        Confirm
+                    <AlertDialogCancel variant="outline">Cancel</AlertDialogCancel>
+                    <AlertDialogAction variant="destructive" onClick={actionFn}>
+                        Delete
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

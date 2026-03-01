@@ -4,6 +4,8 @@ import { useUpdateChannelMessageMutation } from "@/lib/react-query/mutations/upd
 import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 import { ChannelMessageCreatorInput } from "./channel-message-creator-input";
 import { useState } from "react";
+import { InputGroup, InputGroupAddon } from "../ui/input-group";
+import { Button } from "../ui/button";
 
 type ChannelMessageInlineEditorProps = {
     message: ChannelMessageType;
@@ -34,35 +36,27 @@ export function ChannelMessageInlineEditor({ message, onClose }: ChannelMessageI
 
     return (
         <div className="flex w-full flex-col space-y-1">
-            <div className="flex grow flex-col space-x-3 overflow-hidden rounded-md border border-input bg-transparent px-3 shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 dark:bg-input/15">
-                <div className="flex items-center space-x-3">
-                    <ChannelMessageCreatorInput
-                        onChange={handleChange}
-                        onSubmit={submitMessage}
-                        value={content}
-                        isDisabled={false}
-                    />
+            <InputGroup>
+                <ChannelMessageCreatorInput
+                    onChange={handleChange}
+                    value={content}
+                    onSubmit={submitMessage}
+                    isDisabled={false}
+                />
+                <InputGroupAddon align="inline-end">
                     <ChannelMessageEmojiPicker onEmojiSelect={handleEmojiSelect} isDisabled={false} />
-                </div>
-            </div>
-            <div className="flex w-full items-center space-x-1 text-muted-foreground">
-                <span className="text-gray-11 text-xs font-light">escape to</span>
-                <button
-                    className="text-indigo-11 text-xs font-medium hover:underline"
-                    onClick={onClose}
-                    aria-label="Cancel Edit"
-                >
+                </InputGroupAddon>
+            </InputGroup>
+            <div className="flex items-center gap-1">
+                <span className="text-xs text-muted-foreground">escape to</span>
+                <Button onClick={onClose} aria-label="Cancel Edit" variant="link" className="m-0 p-0 text-xs">
                     cancel
-                </button>
-                <span className="text-gray-11 text-xs">|</span>
-                <span className="text-gray-11 text-xs font-light">enter to</span>
-                <button
-                    className="text-indigo-11 text-xs font-medium hover:underline"
-                    onClick={submitMessage}
-                    aria-label="Save Edits"
-                >
+                </Button>
+                <span className="text-xs text-muted-foreground">|</span>
+                <span className="text-xs text-muted-foreground">enter to</span>
+                <Button onClick={submitMessage} aria-label="Save Edits" variant="link" className="m-0 p-0 text-xs">
                     save
-                </button>
+                </Button>
             </div>
         </div>
     );

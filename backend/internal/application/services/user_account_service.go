@@ -7,6 +7,7 @@ import (
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
 	"github.com/MikeT117/accord/backend/internal/application/mapper"
 	"github.com/MikeT117/accord/backend/internal/application/query"
+	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
 	"github.com/google/uuid"
@@ -33,6 +34,19 @@ func CreateUserAccountService(
 	}
 }
 
+func (s *UserAccountService) GetUniqueUsername(ctx context.Context, username string) (bool, error) {
+	_, err := s.userRepository.GetByUsername(ctx, username)
+	if err != nil {
+		if domain.IsDomainNotFoundErr(err) {
+			return true, nil
+		}
+
+		return false, err
+	}
+
+	return false, nil
+}
+
 func (s *UserAccountService) GetByID(ctx context.Context, ID uuid.UUID) (*query.UserQueryResult, error) {
 	user, err := s.userRepository.GetByID(ctx, ID)
 	if err != nil {
@@ -44,7 +58,27 @@ func (s *UserAccountService) GetByID(ctx context.Context, ID uuid.UUID) (*query.
 	}, nil
 }
 
+func (s *UserAccountService) GetUserByProviderID(ctx context.Context, providerID string, provider string) (*query.UserQueryResult, error) {
+	account, err := s.accountRepository.GetByProviderID(ctx, providerID, provider)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := s.userRepository.GetByAccountID(ctx, account.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &query.UserQueryResult{
+		Result: mapper.NewUserResultFromUser(user),
+	}, nil
+}
+
 func (s *UserAccountService) UpdateUserAccount(ctx context.Context, cmd *command.UpdateUserCommand) error {
+	if cmd.ID != cmd.RequestorID {
+		return ErrNotAuthorised
+	}
+
 	user, err := s.userRepository.GetByID(ctx, cmd.ID)
 	if err != nil {
 		return err

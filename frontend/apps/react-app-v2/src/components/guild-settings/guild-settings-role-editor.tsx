@@ -1,17 +1,20 @@
 import { Switch } from "../ui/switch";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { SettingsDialogUnsavedChanges } from "../settings-dialog/settings-dialog-unsaved-changes";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "../ui/form";
 import type { GuildRoleType, Snapshot } from "@/lib/types/types";
 import { useUpdateGuildRoleMutation } from "@/lib/react-query/mutations/update-role-mutation";
 import { generateRolePermissionsNumber, generateRolePermissionsObj } from "@/lib/authorisation/permissions";
-import type { UpdateGuildRoleFormType } from "./guild-settings-dialog-types";
 import { Input } from "../ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { updateGuildRoleFormSchema } from "./guild-settings-form-validation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { GuildSettingsRoleMembersEditor } from "./guild-settings-role-members-editor";
 import { Button } from "../ui/button";
+import { RotateCcwKeyIcon } from "lucide-react";
+import { Field, FieldError, FieldLabel } from "../ui/field";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "../ui/item";
+import { ScrollArea } from "../ui/scroll-area";
+import { UpdateGuildRoleFormType } from "./types/guild-settings-dialog-types";
+import { updateGuildRoleFormSchema } from "./zod-validation/guild-settings-form-validation";
 
 const permissionsConfig = [
     {
@@ -26,8 +29,8 @@ const permissionsConfig = [
     },
     {
         name: "GuildAdmin",
-        label: "Server Admin",
-        description: "Grants members server admin rights.",
+        label: "Guild Admin",
+        description: "Grants members guiild admin rights.",
     },
     {
         name: "ManageChannelMessage",
@@ -37,9 +40,9 @@ const permissionsConfig = [
     },
     {
         name: "ManageGuild",
-        label: "Manage Server",
+        label: "Manage Guild",
         description:
-            " Grants members the ability to manage this server, allowing them to create & modify channels, roles, role assignments, modify server info etc.",
+            "Grants members the ability to manage this guild, allowing them to create & modify channels, roles, role assignments, modify server info etc.",
     },
     {
         name: "ManageGuildChannel",
@@ -54,8 +57,8 @@ const permissionsConfig = [
     },
     {
         name: "ViewGuildMember",
-        label: "View Server Members",
-        description: "Grants members the ability to view server members list.",
+        label: "View Guild Members",
+        description: "Grants members the ability to view guild members list.",
     },
 ] as const;
 
@@ -84,7 +87,6 @@ export function GuildSettingsRoleEditor({ role }: GuildSettingsRolesEditorProps)
 
     async function handleSaveChanges() {
         form.handleSubmit(({ name, ...permissions }) => {
-            console.log({ name, permissions });
             updateGuildRole({
                 ...role,
                 name,
@@ -108,77 +110,94 @@ export function GuildSettingsRoleEditor({ role }: GuildSettingsRolesEditorProps)
     }
 
     return (
-        <div className="relative h-full w-full space-y-3 p-6">
-            <Tabs defaultValue={defaultTab} className="space-y-1.5 ">
-                <div className="flex flex-col space-y-1">
-                    <h2 className="text-2xl font-semibold">Role Editor - {role.name}</h2>
-                    <p className="text-sm text-muted-foreground">
-                        Edit role detail such as permissions, member assignments and name.
-                    </p>
-                </div>
-                <TabsList className="w-full">
-                    <TabsTrigger value="display" disabled={isRootRole}>
-                        Display
-                    </TabsTrigger>
-                    <TabsTrigger value="permissions">Permissions</TabsTrigger>
-                    <TabsTrigger value="members" disabled={isRootRole}>
-                        Members
-                    </TabsTrigger>
-                </TabsList>
-
-                <Form {...form}>
-                    <TabsContent value="display">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Role Name</FormLabel>
-                                    <FormControl>
-                                        <Input {...field} />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
+        <ScrollArea className="">
+            <div className="relative h-svh w-full space-y-3 py-6 pr-20 pl-6">
+                <Tabs defaultValue={defaultTab} className="space-y-1.5">
+                    <div className="flex flex-col space-y-1">
+                        <h2 className="text-2xl font-semibold">Role Editor - {role.name}</h2>
+                        <p className="text-sm text-muted-foreground">Edit role details, permissions and assignments.</p>
+                    </div>
+                    <TabsList className="w-full">
+                        <TabsTrigger value="display" disabled={isRootRole}>
+                            Display
+                        </TabsTrigger>
+                        <TabsTrigger value="permissions">Permissions</TabsTrigger>
+                        <TabsTrigger value="members" disabled={isRootRole}>
+                            Members
+                        </TabsTrigger>
+                    </TabsList>
+                    <form id="role-editor-form">
+                        <TabsContent value="display">
+                            <Controller
+                                control={form.control}
+                                name="name"
+                                render={({ field, fieldState }) => (
+                                    <Field aria-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="guild-settings-role-editor-field-name">
+                                            Role Name
+                                        </FieldLabel>
+                                        <Input
+                                            id="guild-settings-role-editor-field-name"
+                                            aria-invalid={fieldState.invalid}
+                                            autoComplete="off"
+                                            placeholder="Role-Name"
+                                            {...field}
+                                        />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                        </TabsContent>
+                        <TabsContent value="permissions" className="flex flex-col space-y-6 overflow-auto">
+                            <div className="flex items-center justify-between">
+                                <h1>General Guild Permissions</h1>
+                                <Button onClick={clearPermissions} variant="outline" size="sm">
+                                    <RotateCcwKeyIcon />
+                                    Clear Permissions
+                                </Button>
+                            </div>
+                            <div className="h-full flex-col space-y-3 overflow-auto">
+                                {permissionsConfig.map((pc) => (
+                                    <Controller
+                                        key={pc.name}
+                                        control={form.control}
+                                        name={pc.name}
+                                        render={({ field, fieldState }) => (
+                                            <Field aria-invalid={fieldState.invalid}>
+                                                <Item
+                                                    size="xs"
+                                                    variant="outline"
+                                                    className="border-2 has-[[aria-checked=true]]:bg-input/30"
+                                                >
+                                                    <ItemContent>
+                                                        <ItemTitle>{pc.label}</ItemTitle>
+                                                        <ItemDescription>{pc.description}</ItemDescription>
+                                                    </ItemContent>
+                                                    <ItemActions>
+                                                        <Switch
+                                                            checked={field.value}
+                                                            onCheckedChange={field.onChange}
+                                                        />
+                                                    </ItemActions>
+                                                </Item>
+                                                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                            </Field>
+                                        )}
+                                    />
+                                ))}
+                            </div>
+                        </TabsContent>
+                    </form>
+                    <TabsContent value="members">
+                        <GuildSettingsRoleMembersEditor roleId={role.id} guildId={role.guildId} />
                     </TabsContent>
-                    <TabsContent value="permissions" className="flex flex-col space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h1>General Server Permissions</h1>
-                            <Button onClick={clearPermissions} variant="link" size="sm" className="px-0">
-                                Clear Permissions
-                            </Button>
-                        </div>
-                        <div className="space-y-3">
-                            {permissionsConfig.map((pc) => (
-                                <FormField
-                                    key={pc.name}
-                                    control={form.control}
-                                    name={pc.name}
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 has-[[aria-checked=true]]:bg-muted">
-                                            <div className="space-y-0.5">
-                                                <FormLabel>{pc.label}</FormLabel>
-                                                <FormDescription className="text-xs">{pc.description}</FormDescription>
-                                            </div>
-                                            <FormControl>
-                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                            </FormControl>
-                                        </FormItem>
-                                    )}
-                                />
-                            ))}
-                        </div>
-                    </TabsContent>
-                </Form>
-                <TabsContent value="members">
-                    <GuildSettingsRoleMembersEditor roleId={role.id} guildId={role.guildId} />
-                </TabsContent>
-            </Tabs>
-            <SettingsDialogUnsavedChanges
-                isVisible={form.formState.isDirty}
-                onDiscard={resetForm}
-                onSave={handleSaveChanges}
-            />
-        </div>
+                </Tabs>
+                <SettingsDialogUnsavedChanges
+                    isVisible={form.formState.isDirty}
+                    onDiscard={resetForm}
+                    onSave={handleSaveChanges}
+                />
+            </div>
+        </ScrollArea>
     );
 }

@@ -2,6 +2,7 @@ import { DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog
 import { Button } from "../ui/button";
 import type { ReactNode } from "react";
 import { XIcon } from "lucide-react";
+import { ScrollArea } from "../ui/scroll-area";
 
 type SettingsDialogContentProps = {
     title: string;
@@ -13,25 +14,29 @@ type SettingsDialogContentProps = {
 export function SettingsDialogContent({ title, sidebar, children, onClose }: SettingsDialogContentProps) {
     return (
         <DialogContent
-            className="h-screen w-screen max-w-none! justify-center gap-0 rounded-none p-0"
+            className="flex h-svh w-svw max-w-none! justify-center gap-0 rounded-none bg-sidebar p-0"
             showCloseButton={false}
         >
-            <div className="flex min-w-7xl">
-                <div className="flex grow basis-[180px] justify-end border-r">
-                    <div className="flex flex-col space-y-6 p-6">
-                        <DialogHeader>
-                            <DialogTitle className="text-xl">{title}</DialogTitle>
-                        </DialogHeader>
-                        {sidebar}
-                    </div>
-                </div>
-                <div className="relative flex grow basis-[760px] overflow-auto">
-                    <div className="flex h-full grow flex-col">{children}</div>
-                    <Button variant="outline" size="icon" className="sticky top-6 right-20 ml-6" onClick={onClose}>
-                        <XIcon />
-                    </Button>
+            <div className="flex grow basis-[180px] justify-end">
+                <div className="flex flex-col space-y-6 p-6">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl">{title}</DialogTitle>
+                    </DialogHeader>
+                    {sidebar}
                 </div>
             </div>
+            <ScrollArea className="relative flex h-svh w-full grow basis-[760px] flex-col bg-background">
+                <div className="max-w-[1116px]">{children}</div>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="absolute top-6 right-6"
+                    onClick={onClose}
+                >
+                    <XIcon />
+                </Button>
+            </ScrollArea>
         </DialogContent>
     );
 }

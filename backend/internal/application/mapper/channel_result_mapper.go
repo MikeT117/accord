@@ -43,38 +43,62 @@ func NewChannelListResultFromChannel(channels []*entities.Channel, roleIDs map[u
 }
 
 func NewChannelProtoResultFromChannel(channel *entities.Channel, roleIDs []uuid.UUID, users []*entities.User) *pb.Channel {
-	tempUsers := make([]*pb.User, len(users))
+	version := new(int32(0))
+	timestamp := new(channel.UpdatedAt.Unix())
+	channelType := new(int32(channel.ChannelType))
 
-	if len(tempUsers) != 0 {
+	if !channel.IsGuildChannel() {
+		tempUsers := make([]*pb.User, len(users))
 		for i := 0; i < len(users); i++ {
 			tempUsers[i] = NewUserProtoResultFromUser(users[i])
 		}
+
+		return &pb.Channel{
+			Ver:         new(int32(0)),
+			Id:          pointer.UUIDToStringPtr(channel.ID),
+			CreatorId:   pointer.UUIDToStringPtr(channel.CreatorID),
+			GuildId:     pointer.UUIDPtrToStringPtr(channel.GuildID),
+			Name:        channel.Name,
+			ChannelType: channelType,
+			CreatedAt:   timestamp,
+			UpdatedAt:   timestamp,
+			Users:       tempUsers,
+		}
 	}
 
-	var ver int32 = 0
-	channelType := int32(channel.ChannelType)
-	createdAt := channel.CreatedAt.Unix()
-	updatedAt := channel.UpdatedAt.Unix()
-
 	var roleIDstrs []string
-	for _, roleID := range roleIDs {
-		roleIDstrs = append(roleIDstrs, roleID.String())
+	for i := 0; i < len(roleIDs); i++ {
+		roleIDstrs = append(roleIDstrs, roleIDs[i].String())
+	}
+
+	if !channel.IsGuildCategoryChannel() {
+		return &pb.Channel{
+			Ver:         version,
+			Id:          pointer.UUIDToStringPtr(channel.ID),
+			CreatorId:   pointer.UUIDToStringPtr(channel.CreatorID),
+			GuildId:     pointer.UUIDPtrToStringPtr(channel.GuildID),
+			ParentId:    pointer.UUIDPtrToStringPtr(channel.ParentID),
+			Name:        channel.Name,
+			Topic:       channel.Topic,
+			ChannelType: channelType,
+			CreatedAt:   timestamp,
+			UpdatedAt:   timestamp,
+			RoleIds:     roleIDstrs,
+		}
 	}
 
 	return &pb.Channel{
-		Ver:         &ver,
+		Ver:         version,
 		Id:          pointer.UUIDToStringPtr(channel.ID),
 		CreatorId:   pointer.UUIDToStringPtr(channel.CreatorID),
 		GuildId:     pointer.UUIDPtrToStringPtr(channel.GuildID),
-		ParentId:    pointer.UUIDPtrToStringPtr(channel.ParentID),
 		Name:        channel.Name,
-		Topic:       channel.Topic,
-		ChannelType: &channelType,
-		CreatedAt:   &createdAt,
-		UpdatedAt:   &updatedAt,
-		Users:       tempUsers,
+		ChannelType: channelType,
+		CreatedAt:   timestamp,
+		UpdatedAt:   timestamp,
 		RoleIds:     roleIDstrs,
 	}
+
 }
 
 func NewChannelListProtoResultFromChannel(channels []*entities.Channel, roleIDs map[uuid.UUID][]uuid.UUID, users map[uuid.UUID][]*entities.User) []*pb.Channel {

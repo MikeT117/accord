@@ -1,18 +1,17 @@
 import type { GuildVoiceChannelType, Snapshot } from "@/lib/types/types";
 import { Volume2Icon } from "lucide-react";
-import { SidebarMenuSubItem, SidebarMenuSub, SidebarMenuSubButton } from "../ui/sidebar";
+import { SidebarMenuButton, SidebarMenuSub, SidebarMenuItem } from "../ui/sidebar";
 import { useVoiceStates } from "@/lib/valtio/queries/guild-store-queries";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
 import { useAccordVoiceController } from "@/hooks/use-accord-voice";
 import { GuildSidebarChannelContextMenu } from "./guild-sidebar-channel-context-menu";
-
 import { useUser } from "@/lib/valtio/queries/user-store-queries";
 import { GuildSidebarVoiceChannelVoiceState } from "./guild-sidebar-voice-channel-voice-state";
 
 type GuildSidebarVoiceChannelProps = {
     channel: Snapshot<GuildVoiceChannelType>;
     sub?: boolean;
-} & Pick<React.ComponentProps<"li">, "ref">;
+} & Pick<React.ComponentProps<"button">, "ref">;
 
 export function GuildSidebarVoiceChannel({ channel, ref }: GuildSidebarVoiceChannelProps) {
     const { joinVoiceChannel, toggleNonSelfMute, toggleSelfMute } = useAccordVoiceController();
@@ -25,7 +24,6 @@ export function GuildSidebarVoiceChannel({ channel, ref }: GuildSidebarVoiceChan
             className="group/collapsible"
             open={voiceStates.length !== 0}
             onOpenChange={void 0}
-            onClick={() => joinVoiceChannel(channel.guildId, channel.id)}
         >
             <GuildSidebarChannelContextMenu
                 channelType={channel.channelType}
@@ -34,17 +32,23 @@ export function GuildSidebarVoiceChannel({ channel, ref }: GuildSidebarVoiceChan
                 name={channel.name}
             >
                 <CollapsibleTrigger asChild>
-                    <SidebarMenuSubItem ref={ref}>
-                        <SidebarMenuSubButton className="cursor-pointer select-none">
-                            <Volume2Icon /> {channel.name}
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton
+                            className="cursor-pointer select-none"
+                            ref={ref}
+                            onClick={() => joinVoiceChannel(channel.guildId, channel.id)}
+                        >
+                            <Volume2Icon />
+                            {channel.name}
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                 </CollapsibleTrigger>
             </GuildSidebarChannelContextMenu>
-            <CollapsibleContent>
+            <CollapsibleContent className="mb-2">
                 <SidebarMenuSub>
                     {voiceStates.map((v) => (
                         <GuildSidebarVoiceChannelVoiceState
+                            key={v.id}
                             voiceState={v}
                             onMute={() => (v.user.id === user.id ? toggleSelfMute() : toggleNonSelfMute(v.id))}
                         />

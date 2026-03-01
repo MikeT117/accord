@@ -29,3 +29,7 @@ export function getPrivateDirectChannelIdByUserId(userId: string) {
         }
     }
 }
+
+export function doesPrivateChannelExist(channelId: string) {
+    return !!privateChannelStore.values[channelId];
+}

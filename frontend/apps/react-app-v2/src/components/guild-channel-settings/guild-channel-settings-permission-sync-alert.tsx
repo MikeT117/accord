@@ -1,5 +1,5 @@
 import { RefreshCwOffIcon } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
+import { Alert, AlertTitle, AlertDescription, AlertAction } from "../ui/alert";
 import { Button } from "../ui/button";
 
 type GuildChannelSettingsPermissionSyncAlertProps = { onSync: () => void; isVisible: boolean };
@@ -12,19 +12,15 @@ export function GuildChannelSettingsPermissionSyncAlert({
         return null;
     }
     return (
-        <Alert variant="warning">
+        <Alert className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-50">
             <RefreshCwOffIcon />
-            <div className="flex justify-between items-center">
-                <div className="flex flex-col">
-                    <AlertTitle>{`Permissions not synced with category`}</AlertTitle>
-                    <AlertDescription>
-                        <p>Click 'Sync Now' to mirror the permissions of this channel's parent category.</p>
-                    </AlertDescription>
-                </div>
-                <div className="flex space-x-2">
-                    <Button onClick={onSync}>Sync Now</Button>
-                </div>
-            </div>
+            <AlertTitle>Permissions mismatch with parent!</AlertTitle>
+            <AlertDescription>Click 'Sync Now' to resync permissions.</AlertDescription>
+            <AlertAction>
+                <Button className="cursor-pointer" onClick={onSync}>
+                    Sync Now
+                </Button>
+            </AlertAction>
         </Alert>
     );
 }

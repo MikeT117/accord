@@ -1,11 +1,19 @@
-import type { GuildRoleType, Snapshot } from "@/lib/types/types";
+import type { GuildRoleType } from "@/lib/types/types";
 import { ArrowLeft, PlusIcon } from "lucide-react";
 import { ButtonWithTooltip } from "../button-with-tooltip";
 import { Button } from "../ui/button";
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarHeader,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarProvider,
+} from "../ui/sidebar";
 
 type GuildSettingsRoleEditorSidebarProps = {
     roleId: string;
-    roles: Snapshot<GuildRoleType[]>;
+    roles: GuildRoleType[];
     onCreateRole: () => void;
     onRoleChange: (roleId: string | null) => void;
 };
@@ -17,34 +25,33 @@ export function GuildSettingsRoleEditorSidebar({
     onRoleChange,
 }: GuildSettingsRoleEditorSidebarProps) {
     return (
-        <div className="flex w-full max-w-[220px] flex-col space-y-3 border-r p-6">
-            <div className="flex items-center justify-between py-2">
-                <Button variant="link" className="h-min w-min p-0!" onClick={() => onRoleChange(null)}>
-                    <ArrowLeft className="size-5" /> Back
-                </Button>
-                <ButtonWithTooltip
-                    tooltipText="Create Role"
-                    size="icon"
-                    variant="link"
-                    className="h-min w-min p-0!"
-                    onClick={onCreateRole}
-                >
-                    <PlusIcon className="size-5" />
-                </ButtonWithTooltip>
-            </div>
-            <nav className="flex flex-col space-y-0.5">
-                {roles.map((r) => (
-                    <button
-                        key={r.id}
-                        onClick={() => onRoleChange(r.id)}
-                        className={`rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
-                            roleId === r.id ? "bg-muted text-accent-foreground" : "text-muted-foreground hover:bg-muted"
-                        }`}
-                    >
-                        {r.name}
-                    </button>
-                ))}
-            </nav>
-        </div>
+        <SidebarProvider className="max-w-[240px]">
+            <Sidebar collapsible="none" className="border-r bg-transparent">
+                <SidebarHeader className="mt-6 px-4">
+                    <div className="flex items-center justify-between">
+                        <Button variant="outline" size="sm" onClick={() => onRoleChange(null)}>
+                            <ArrowLeft /> <span className="text-xs">Back</span>
+                        </Button>
+                        <ButtonWithTooltip
+                            tooltipText="Create Role"
+                            size="icon-sm"
+                            variant="outline"
+                            onClick={onCreateRole}
+                        >
+                            <PlusIcon />
+                        </ButtonWithTooltip>
+                    </div>
+                </SidebarHeader>
+                <SidebarContent className="mt-2 gap-1 px-4">
+                    {roles.map((r) => (
+                        <SidebarMenuItem className="list-none" key={r.id}>
+                            <SidebarMenuButton isActive={roleId === r.id} onClick={() => onRoleChange(r.id)}>
+                                {r.name}
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    ))}
+                </SidebarContent>
+            </Sidebar>
+        </SidebarProvider>
     );
 }

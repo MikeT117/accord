@@ -1,51 +1,69 @@
 import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog-content-section";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Trash2Icon } from "lucide-react";
-import { DestructiveIconButton } from "../destructive-icon-button";
-import { useGuildInvitesQuery } from "@/lib/react-query/queries/guild-member-query";
-import { UserAvatar } from "../user-avatar";
+import { AvatarWithFallback } from "../avatar-with-fallback";
+import { ButtonWithTooltip } from "../button-with-tooltip";
+import { formatDistanceToNow } from "date-fns";
+import { GuildRoleBadges } from "../guild-role-badges";
+import { useInfiniteGuildMembersQuery } from "@/lib/react-query/queries/guild-member-query";
+import { Card, CardContent } from "../ui/card";
 
 type GuildSettingsMembersSectionProps = {
     guildId: string;
 };
 
 export function GuildSettingsMembersSection({ guildId }: GuildSettingsMembersSectionProps) {
-    const guildMembers = useGuildInvitesQuery({ guildId });
-
-    const flatData = guildMembers?.pages.flat() ?? [];
-    const memberCount = flatData.length;
+    const guildMembers = useInfiniteGuildMembersQuery({ guildId });
+    const flattendGuildMembers = guildMembers?.pages.flat() ?? [];
 
     return (
-        <SettingsDialogContentSection title="Server Members" description="View and manage members of this server.">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Members - {memberCount}</TableHead>
-                        <TableHead>Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {flatData.map((m) => (
-                        <TableRow key={m.user.id}>
-                            <TableCell className="w-full font-medium">
-                                <div className="flex items-center space-x-2">
-                                    <UserAvatar
-                                        className="size-6 border-none"
-                                        displayName={m.guildMember.nickname ?? m.user.displayName}
-                                        avatar={m.guildMember.avatar ?? m.user.avatar ?? ""}
-                                    />
-                                    <p> {m.guildMember.nickname ?? m.user.displayName}</p>
-                                </div>
-                            </TableCell>
-                            <TableCell className="flex space-x-2">
-                                <DestructiveIconButton onClick={() => void 0} tooltipText="Kick User">
-                                    <Trash2Icon />
-                                </DestructiveIconButton>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+        <SettingsDialogContentSection title="Guild Members" description="View and manage members of this guild.">
+            <Card className="bg-transparent p-0">
+                <CardContent className="p-0">
+                    <Table className="overflow-hidden rounded-md">
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Member</TableHead>
+                                <TableHead>Roles</TableHead>
+                                <TableHead>Member Since</TableHead>
+                                <TableHead className="text-center">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {flattendGuildMembers.map((m) => (
+                                <TableRow key={m.id}>
+                                    <TableCell>
+                                        <div className="flex items-center space-x-4">
+                                            <AvatarWithFallback
+                                                size="default"
+                                                fallback={m.displayName}
+                                                src={m.avatar}
+                                            />
+                                            <div className="flex flex-col">
+                                                <span className="text-xs">{m.displayName}</span>
+                                                <span className="text-xs text-muted-foreground">{m.username}</span>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <GuildRoleBadges guildId={guildId} roleIDs={m.roles} />
+                                    </TableCell>
+                                    <TableCell>
+                                        <span className="text-xs">
+                                            {formatDistanceToNow(m.createdAt, { addSuffix: true })}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                        <ButtonWithTooltip size="icon" variant="destructive" tooltipText="Kick Member">
+                                            <Trash2Icon />
+                                        </ButtonWithTooltip>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </SettingsDialogContentSection>
     );
 }

@@ -1,4 +1,4 @@
-import { ServerIcon, LockKeyholeIcon, UsersIcon, MailOpenIcon, BanIcon } from "lucide-react";
+import { UsersIcon, MailOpenIcon, CircleOffIcon, Trash2Icon, ShieldIcon, LayoutDashboardIcon } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import type { ValueOf } from "@/lib/types/types";
 import { useGuild } from "@/lib/valtio/queries/guild-store-queries";
@@ -37,39 +37,33 @@ const GUILD_SETTINGS_SECTION = {
 const sidebarItems = [
     {
         id: GUILD_SETTINGS_SECTION.GUILD_OVERVIEW,
-        label: "Server Overview",
-        icon: <ServerIcon />,
-        description: "View/Edit Server information",
+        label: "Overview",
+        icon: <LayoutDashboardIcon />,
     },
     {
         id: GUILD_SETTINGS_SECTION.GUILD_ROLES,
-        label: "Server Roles",
-        icon: <LockKeyholeIcon />,
-        description: "Manage server roles",
+        label: "Roles",
+        icon: <ShieldIcon />,
     },
     {
         id: GUILD_SETTINGS_SECTION.GUILD_MEMBERS,
-        label: "Server Members",
+        label: "Members",
         icon: <UsersIcon />,
-        description: "Manage server members",
     },
     {
         id: GUILD_SETTINGS_SECTION.GUILD_INVITES,
-        label: "Server Invites",
+        label: "Invites",
         icon: <MailOpenIcon />,
-        description: "Manage server invites",
     },
     {
         id: GUILD_SETTINGS_SECTION.GUILD_BANS,
-        label: "Server Bans",
-        icon: <BanIcon />,
-        description: "Manage server bans",
+        label: "Bans",
+        icon: <CircleOffIcon />,
     },
     {
         id: GUILD_SETTINGS_SECTION.GUILD_DELETION,
-        label: "Delete Server",
-        icon: <BanIcon />,
-        description: "Manage server bans",
+        label: "Delete",
+        icon: <Trash2Icon />,
     },
 ] as const;
 

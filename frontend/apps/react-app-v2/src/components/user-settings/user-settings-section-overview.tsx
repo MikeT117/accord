@@ -1,18 +1,19 @@
 import { Input } from "../ui/input";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 import { SettingsDialogUnsavedChanges } from "../settings-dialog/settings-dialog-unsaved-changes";
 import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog-content-section";
-import { updateUserFormSchema } from "./user-settings-form-validation";
-import type { UpdateUserFormType } from "./user-settings-dialog-types";
+import { updateUserFormSchema } from "./zod-validation/user-settings-form-validation";
+import type { UpdateUserFormType } from "./types/user-settings-dialog-types";
 import { useUpdateUserMutation } from "@/lib/react-query/mutations/update-user-mutation";
 import { useCloudinary } from "@/hooks/use-cloudinary";
 import { UploadIcon } from "lucide-react";
-import { UserProfilePreview } from "./user-settings-profile-preview";
+import { UserCard } from "@/components/user-card";
 import { Button } from "../ui/button";
+import { Field, FieldDescription, FieldError, FieldSet, FieldLabel, FieldGroup } from "../ui/field";
 
 type UserSettingsOverviewSectionProps = {
+    userId: string;
     avatar?: string | null;
     banner?: string | null;
     displayName: string;
@@ -20,6 +21,7 @@ type UserSettingsOverviewSectionProps = {
 };
 
 export function UserSettingsOverviewSection({
+    userId,
     avatar,
     banner,
     displayName,
@@ -41,7 +43,7 @@ export function UserSettingsOverviewSection({
 
     function handleSaveChanges() {
         form.handleSubmit((values: UpdateUserFormType) => {
-            const payload = { ...values, avatarId: avatar, bannerId: banner };
+            const payload = { ...values, id: userId, avatarId: avatar, bannerId: banner };
             if (avatarCloudinary.attachments.length) {
                 payload.avatarId = avatarCloudinary.attachments[0].id;
             }
@@ -61,48 +63,58 @@ export function UserSettingsOverviewSection({
     return (
         <SettingsDialogContentSection title="Account Overview" description="Manage account properties.">
             <div className="flex space-x-6">
-                <Form {...form}>
-                    <div className="flex w-full flex-col space-y-6">
-                        <FormField
-                            control={form.control}
-                            name="displayName"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Display Name</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Display name" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormItem>
-                            <FormLabel>Avatar</FormLabel>
-                            <div className="flex items-center space-x-3">
-                                <Button onClick={avatarCloudinary.onFileUploadClick}>
-                                    <UploadIcon />
-                                    Change Avatar
-                                </Button>
-                                <Button variant="outline">Remove Avatar</Button>
-                            </div>
-                            <FormDescription>
-                                Recommended: Square image, at least 128x128 pixels. Max file size: 8MB.
-                            </FormDescription>
-                        </FormItem>
-                        <FormItem>
-                            <FormLabel>Banner Image</FormLabel>
-                            <div className="flex space-x-3">
-                                <Button onClick={bannerCloudinary.onFileUploadClick}>
-                                    <UploadIcon />
-                                    Change Banner
-                                </Button>
-                                <Button variant="outline">Remove Banner</Button>
-                            </div>
-                            <FormDescription>Recommended: 600x200 pixels. Max file size: 8MB.</FormDescription>
-                        </FormItem>
-                    </div>
-                </Form>
-                <UserProfilePreview
+                <form className="w-full" id="user-settings-form">
+                    <FieldSet>
+                        <FieldGroup>
+                            <Controller
+                                control={form.control}
+                                name="displayName"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="user-settings-field-display-name">Display Name</FieldLabel>
+                                        <Input
+                                            id="user-settings-field-display-name"
+                                            placeholder="Display name"
+                                            autoComplete="off"
+                                            aria-invalid={fieldState.invalid}
+                                            {...field}
+                                        />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                            <Field>
+                                <FieldLabel>Avatar</FieldLabel>
+                                <div className="flex items-center space-x-3">
+                                    <Button onClick={avatarCloudinary.onFileUploadClick} type="button" size="sm">
+                                        <UploadIcon />
+                                        Change Avatar
+                                    </Button>
+                                    <Button variant="outline" size="sm">
+                                        Remove Avatar
+                                    </Button>
+                                </div>
+                                <FieldDescription>
+                                    Recommended: Square image, at least 128x128 pixels. Max file size: 8MB.
+                                </FieldDescription>
+                            </Field>
+                            <Field>
+                                <FieldLabel>Banner</FieldLabel>
+                                <div className="flex space-x-3">
+                                    <Button onClick={bannerCloudinary.onFileUploadClick} type="button" size="sm">
+                                        <UploadIcon />
+                                        Change Banner
+                                    </Button>
+                                    <Button variant="outline" size="sm">
+                                        Remove Banner
+                                    </Button>
+                                </div>
+                                <FieldDescription>Recommended: 600x200 pixels. Max file size: 8MB.</FieldDescription>
+                            </Field>
+                        </FieldGroup>
+                    </FieldSet>
+                </form>
+                <UserCard
                     displayName={displayName}
                     avatar={avatar}
                     banner={banner}

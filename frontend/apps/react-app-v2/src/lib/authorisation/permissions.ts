@@ -4,6 +4,7 @@ import { GUILD_PERMISSION, USER_FLAG } from "../constants";
 import type { OptionalReadonly, Dictionary, GuildRoleType, ValueOf } from "../types/types";
 import { useGuild } from "../valtio/queries/guild-store-queries";
 import { ErrChannelNotFound } from "../error";
+import { useUserRoles } from "../valtio/queries/user-role-store-queries";
 
 function hasRolePermission(permission: number, flag: ValueOf<typeof GUILD_PERMISSION>) {
     return (permission & (1 << flag)) !== 0;
@@ -95,12 +96,16 @@ export function generateRolePermissionsNumber(permissionsObj: ReturnType<typeof 
 
 export const useUserGuildChannelPermissions = (guildId: string, channelId: string) => {
     const guild = useGuild(guildId);
+    const userRoles = useUserRoles();
     const channel = guild.channels.values[channelId];
-    if (!channel) throw new ErrChannelNotFound();
+
+    if (!channel) {
+        throw new ErrChannelNotFound();
+    }
 
     let permission = 0;
     channel.roleIds.keys.forEach((cr) => {
-        if (guild.roles.values[cr] && userRoleStore.values[cr]) {
+        if (guild.roles.values[cr] && userRoles.values[cr]) {
             permission = permission | guild.roles.values[cr].permissions;
         }
     });
@@ -110,9 +115,10 @@ export const useUserGuildChannelPermissions = (guildId: string, channelId: strin
 
 export const useUserGuildPermissions = (guildId: string) => {
     const guild = useGuild(guildId);
+    const userRoles = useUserRoles();
 
     let permission = 0;
-    userRoleStore.keys.forEach((ur) => {
+    userRoles.keys.forEach((ur) => {
         if (guild.roles.values[ur]) {
             permission = permission | guild.roles.values[ur].permissions;
         }
@@ -124,7 +130,7 @@ export const useUserGuildPermissions = (guildId: string) => {
 export function isChannelViewable(
     channelRoleIds: OptionalReadonly<string[]>,
     userRoleIds: OptionalReadonly<Dictionary<boolean>>,
-    guildRoles: OptionalReadonly<Dictionary<GuildRoleType>>
+    guildRoles: OptionalReadonly<Dictionary<GuildRoleType>>,
 ) {
     for (const channelRoleId of channelRoleIds) {
         if (!userRoleIds[channelRoleId] || !guildRoles[channelRoleId]) {

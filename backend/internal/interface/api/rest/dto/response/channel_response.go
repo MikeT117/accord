@@ -12,6 +12,6 @@ type ChannelResponse struct {
 	ChannelType int8            `json:"channelType"`
 	CreatedAt   int64           `json:"createdAt"`
 	UpdatedAt   int64           `json:"updatedAt"`
-	Roles       []uuid.UUID     `json:"roles,omitempty"`
+	Roles       []uuid.UUID     `json:"roleIds,omitempty"`
 	Users       []*UserResponse `json:"users,omitempty"`
 }

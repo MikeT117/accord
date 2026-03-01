@@ -60,7 +60,7 @@ func (u *Channel) validate() error {
 	return nil
 }
 
-func NewChannel(channelType int8, guildID *uuid.UUID, creatorID uuid.UUID, name *string, topic *string) (*Channel, error) {
+func NewChannel(channelType int8, guildID *uuid.UUID, creatorID uuid.UUID, name *string) (*Channel, error) {
 	id, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -79,6 +79,10 @@ func NewChannel(channelType int8, guildID *uuid.UUID, creatorID uuid.UUID, name 
 		UpdatedAt:   timestamp,
 	}
 
+	if channel.ChannelType != GuildCategoryChannel {
+		channel.Topic = new("")
+	}
+
 	if err := channel.validate(); err != nil {
 		return nil, err
 	}
@@ -87,7 +91,7 @@ func NewChannel(channelType int8, guildID *uuid.UUID, creatorID uuid.UUID, name 
 }
 
 func (u *Channel) IsGuildChannel() bool {
-	return u.ChannelType < DMChannel && u.GuildID != nil
+	return u.GuildID != nil
 }
 
 func (u *Channel) IsGuildCategoryChannel() bool {

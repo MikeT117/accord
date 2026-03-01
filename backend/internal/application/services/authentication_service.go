@@ -12,7 +12,6 @@ import (
 	"github.com/MikeT117/accord/backend/internal/domain/repositories"
 	"github.com/MikeT117/accord/backend/internal/infra/db"
 	"github.com/MikeT117/accord/backend/internal/infra/oauth"
-	"github.com/google/uuid"
 )
 
 type AuthenticationService struct {
@@ -34,19 +33,6 @@ func CreateAuthenticationService(
 		userRepository:    userRepository,
 		accountRepository: accountRepository,
 	}
-}
-
-func (s *AuthenticationService) GetUniqueUsername(ctx context.Context, username string) (bool, error) {
-	_, err := s.userRepository.GetByUsername(ctx, username)
-	if err != nil {
-		if domain.IsDomainNotFoundErr(err) {
-			return true, nil
-		}
-
-		return false, err
-	}
-
-	return false, nil
 }
 
 func (s *AuthenticationService) GetOAuthCodeURL(provider string) (string, error) {
@@ -74,38 +60,39 @@ func (s *AuthenticationService) GetOAuthProfile(
 	return s.oAuth.GetGitlabUser(ctx, code)
 }
 
-func (s *AuthenticationService) GetUserIDByProviderID(ctx context.Context, providerID string, provider string) (uuid.UUID, error) {
-	account, err := s.accountRepository.GetByProviderID(ctx, providerID, provider)
-	if err != nil {
-		return uuid.UUID{}, err
-	}
-
-	user, err := s.userRepository.GetByAccountID(ctx, account.ID)
-	if err != nil {
-		return uuid.UUID{}, err
-	}
-
-	return user.ID, nil
-
-}
-
-func (s *AuthenticationService) CreateOAuthAccountUser(
+func (s *AuthenticationService) CreateOrGetOAuthAccountUser(
 	ctx context.Context,
 	providerID string,
 	provider string,
 	email string,
 	username string,
 	displayname string,
-) (*command.CreateUserAccountIfNewCommandResult, error) {
+) (*command.CreateUserAccountCommandResult, bool, error) {
+	existingAccount, err := s.accountRepository.GetByProviderID(ctx, providerID, provider)
+
+	if err == nil {
+		existingUser, err := s.userRepository.GetByAccountID(ctx, existingAccount.ID)
+		if err != nil {
+			return nil, false, err
+		}
+
+		return &command.CreateUserAccountCommandResult{
+			Result: mapper.NewUserResultFromUser(existingUser),
+		}, existingUser.IsRegistrationComplete(), nil
+	}
+
+	if !domain.IsDomainNotFoundErr(err) {
+		return nil, false, err
+	}
 
 	account, err := entities.NewOAuthAccount(provider, providerID, nil, nil, nil, nil, nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	user, err := entities.NewUser(username, displayname, account.ID, email, nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if err := s.transactor.WithinTransaction(ctx, func(ctx context.Context) error {
@@ -115,10 +102,33 @@ func (s *AuthenticationService) CreateOAuthAccountUser(
 
 		return s.userRepository.Create(ctx, user)
 	}); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return &command.CreateUserAccountIfNewCommandResult{
+	return &command.CreateUserAccountCommandResult{
 		Result: mapper.NewUserResultFromUser(user),
-	}, nil
+	}, user.IsRegistrationComplete(), nil
+}
+
+func (s *AuthenticationService) CompleteUserRegistration(ctx context.Context, cmd *command.CompleteUserRegistrationCommand) error {
+	user, err := s.userRepository.GetByID(ctx, cmd.ID)
+	if err != nil {
+		return err
+	}
+
+	if err := user.UpdateDisplayName(cmd.DisplayName); err != nil {
+		return err
+	}
+	if err := user.UpdateUsername(cmd.Username); err != nil {
+		return err
+	}
+	if err := user.UpdateRegistrationStatus(); err != nil {
+		return err
+	}
+
+	if err := s.userRepository.Update(ctx, user); err != nil {
+		return err
+	}
+
+	return nil
 }

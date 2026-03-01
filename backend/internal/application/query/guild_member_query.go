@@ -20,9 +20,9 @@ type GuildMemberQuery struct {
 }
 
 type GuildMemberQueryResult struct {
-	Result *common.GuildMemberUserResult
+	Result *common.GuildMemberResult
 }
 
 type GuildMemberQueryListResult struct {
-	Result []*common.GuildMemberUserResult
+	Result []*common.GuildMemberResult
 }

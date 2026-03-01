@@ -1,5 +1,4 @@
 import { proxy } from "valtio";
-import { devtools } from "valtio/utils";
 
 type GuildChannelSettingsUIStoreType =
     | {
@@ -18,4 +17,3 @@ export const guildChannelSettingsUIStore = proxy<GuildChannelSettingsUIStoreType
     guildId: null,
     channelId: null,
 });
-devtools(guildChannelSettingsUIStore, { name: "guild channel settings ui store", enabled: true });

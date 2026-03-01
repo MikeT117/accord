@@ -15,13 +15,12 @@ import {
 } from "../zod-validation/channel-schema";
 import { guildInviteSchema } from "../zod-validation/guild-invite-schema";
 import { guildMemberSchema } from "../zod-validation/guild-member-schema";
-import { guildMemberUserSchema } from "../zod-validation/guild-member-user-schema";
 import { guildRoleDeletedSchema, guildRoleSchema, guildRoleUpdatedSchema } from "../zod-validation/guild-role";
 import {
     guildSchema,
     guildUpdatedSchema,
     guildDeletedSchema,
-    discoverableGuildsSchema,
+    discoverableGuildSchema,
 } from "../zod-validation/guild-schema";
 import { initialisationSchema } from "../zod-validation/initialisation-schema";
 import {
@@ -38,6 +37,7 @@ import type {
     voiceStateSchema,
     voiceStateUpdatedSchema,
 } from "../zod-validation/voice-state-schema";
+import type { publicInvitesSchema } from "../zod-validation/public-invite-schema";
 
 // Utility Types
 export type Snapshot<T extends object> = ReturnType<typeof useSnapshot<T>>;
@@ -68,8 +68,8 @@ export type APIChannelMessageType = z.infer<typeof channelMessageSchema>;
 export type APIGuildChannelType = z.infer<typeof guildChannelSchema>;
 export type APIPrivateChannelType = z.infer<typeof privateChannelSchema>;
 export type APIGuildInviteType = z.infer<typeof guildInviteSchema>;
+export type APIPublicInviteType = z.infer<typeof publicInvitesSchema>;
 export type APIGuildMemberType = z.infer<typeof guildMemberSchema>;
-export type APIGuildMemberUserType = z.infer<typeof guildMemberUserSchema>;
 export type APIGuildRoleType = z.infer<typeof guildRoleSchema>;
 export type APIGuildType = z.infer<typeof guildSchema>;
 export type APIDiscoverableGuildType = z.infer<typeof discoverableGuildSchema>;
@@ -104,6 +104,8 @@ export type APIUserUpdatedType = z.infer<typeof userUpdatedSchema>;
 export type APIVoiceStateUpdatedType = z.infer<typeof voiceStateUpdatedSchema>;
 export type APIVoiceStateDeletedType = z.infer<typeof voiceStateDeletedSchema>;
 
+// RW
+
 // Client Types
 export type AttachmentType = APIAttachmentType;
 export type ChannelMessageType = APIChannelMessageType;
@@ -112,10 +114,11 @@ export type GuildType = Omit<APIGuildType, "channels" | "roles" | "voiceStates">
     roles: Normalize<GuildRoleType>;
     voiceStates: Normalize<VoiceStateType>;
 };
+
 export type DiscoverableGuildType = APIDiscoverableGuildType;
 export type GuildInviteType = APIGuildMemberType;
+export type PublicInviteType = APIPublicInviteType;
 export type GuildMemberType = APIGuildMemberType;
-export type GuildMemberUserType = APIGuildMemberUserType;
 export type GuildRoleType = APIGuildRoleType;
 export type GuildChannelType =
     | (Omit<Extract<APIGuildChannelType, { channelType: 0 }>, "roleIds"> & { roleIds: Normalize<boolean> })

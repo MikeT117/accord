@@ -13,8 +13,8 @@ type UpdateGuildRequest struct {
 	Name            string     `json:"name"`
 	Description     string     `json:"description"`
 	Discoverable    bool       `json:"discoverable"`
-	IconID          *uuid.UUID `json:"iconID"`
-	BannerID        *uuid.UUID `json:"bannerID"`
+	IconID          *uuid.UUID `json:"iconId"`
+	BannerID        *uuid.UUID `json:"bannerId"`
 }
 
 func (r *UpdateGuildRequest) ToUpdateGuildCommand(requestorID uuid.UUID) (*command.UpdateGuildCommand, error) {

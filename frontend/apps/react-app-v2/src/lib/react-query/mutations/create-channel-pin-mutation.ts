@@ -9,14 +9,13 @@ type mutationFnArgsType = {
 };
 
 const mutationFn = async (message: mutationFnArgsType) => {
-    return httpClient.put(`/channels/${message.channelId}/pins/messages/${message.id}`);
+    return httpClient.put(`/channels/${message.channelId}/pins/${message.id}`);
 };
 
 type MutationHookArgs = {
     onSuccess?: () => void;
 };
 
-// OnError Will be handled globally with notifications, success will be handled by the component if needed.
 export const useCreateChannelPinMutation = (hookArgs?: MutationHookArgs) =>
     useMutation({
         mutationFn,

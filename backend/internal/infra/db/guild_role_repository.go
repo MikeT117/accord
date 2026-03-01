@@ -487,7 +487,7 @@ func (r *GuildRoleRepository) GetRoleIDsByUserIDAndGuildID(ctx context.Context, 
 		FROM
 			guild_role_user gru
 		INNER JOIN
-			guild_role gr
+			guild_role gr on gr.id = gru.role_id
 		WHERE
 			gru.user_id = $1
 		AND

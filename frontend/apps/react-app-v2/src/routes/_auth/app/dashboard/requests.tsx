@@ -2,9 +2,5 @@ import { UserDashboardRequests } from "@/components/user-dashboard/user-dashboar
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_auth/app/dashboard/requests")({
-    component: RouteComponent,
+    component: UserDashboardRequests,
 });
-
-function RouteComponent() {
-    return <UserDashboardRequests />;
-}

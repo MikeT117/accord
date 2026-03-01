@@ -1,5 +1,5 @@
 import { fromUnixTime } from "date-fns";
-import * as z from "zod/v4-mini";
+import * as z from "zod/mini";
 import { userSchema } from "./user-schema";
 
 export const GUILD_CHANNEL_TYPE = {
@@ -27,7 +27,6 @@ const privateChannelType = z.literal([
 const baseChannelSchema = z.object({
     id: z.string(),
     creatorId: z.string(),
-    topic: z.nullable(z.string()),
     createdAt: z.pipe(
         z.number(),
         z.transform((num) => fromUnixTime(num)),
@@ -48,11 +47,13 @@ const baseGuildChannelSchema = z.extend(baseChannelSchema, {
 export const guildChannelSchema = z.discriminatedUnion("channelType", [
     z.extend(baseGuildChannelSchema, {
         channelType: z.literal(GUILD_CHANNEL_TYPE.GUILD_TEXT_CHANNEL),
-        parentId: z.nullable(z.string()),
+        parentId: z.nullish(z._default(z.nullable(z.string()), null)),
+        topic: z.string(),
     }),
     z.extend(baseGuildChannelSchema, {
         channelType: z.literal(GUILD_CHANNEL_TYPE.GUILD_VOICE_CHANNEL),
-        parentId: z.nullable(z.string()),
+        parentId: z.nullish(z._default(z.nullable(z.string()), null)),
+        topic: z.string(),
     }),
     z.extend(baseGuildChannelSchema, {
         channelType: z.literal(GUILD_CHANNEL_TYPE.GUILD_CATEGORY_CHANNEL),
@@ -80,8 +81,8 @@ export const channelSchema = z.discriminatedUnion("channelType", [guildChannelSc
 export const channelUpdatedSchema = z.object({
     id: z.string(),
     guildId: z.string(),
-    parentId: z.nullable(z.string()),
     name: z.string(),
+    parentId: z.nullish(z._default(z.nullable(z.string()), null)),
     topic: z.string(),
     updatedAt: z.pipe(
         z.number(),

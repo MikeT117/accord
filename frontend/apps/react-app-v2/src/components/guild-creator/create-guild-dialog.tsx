@@ -1,23 +1,23 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
+import { Controller, useForm } from "react-hook-form";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { useCloudinary } from "@/hooks/use-cloudinary";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { CameraIcon } from "lucide-react";
 import { useCreateGuildMutation } from "@/lib/react-query/mutations/create-guild-mutation";
 import { useCreateGuildDialogUIStore } from "@/lib/valtio/queries/create-guild-dialog-ui-store-queries";
 import { closeCreateGuildDialog } from "@/lib/valtio/mutations/create-guild-dialog-ui-store-mutations";
-import type { CreateGuildFormType } from "./create-guild-dialog-types";
-import { createGuildFormSchema } from "./guild-creator-form-validation";
+
+import { AvatarWithFallback } from "../avatar-with-fallback";
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldSet } from "../ui/field";
+import { createGuildFormSchema } from "./zod-validation/guild-creator-form-validation";
+import { CreateGuildFormType } from "./types/create-guild-dialog-types";
 
 export function GuildCreator() {
     const isOpen = useCreateGuildDialogUIStore();
     return (
         <Dialog open={isOpen} onOpenChange={closeCreateGuildDialog} modal>
-            <DialogContent className="w-96 gap-4">
+            <DialogContent>
                 <GuildCreatorContent />
             </DialogContent>
         </Dialog>
@@ -54,45 +54,51 @@ function GuildCreatorContent() {
     return (
         <>
             <DialogHeader className="items-center">
-                <DialogTitle>Create a Server</DialogTitle>
+                <DialogTitle>Create a Guild</DialogTitle>
                 <DialogDescription className="text-center">
-                    Give your new server a name and an icon, these can be changed anytime later.
+                    Give your guild a name and an icon, these can be changed anytime later.
                 </DialogDescription>
+                <AvatarWithFallback
+                    size="xxxl"
+                    onMutate={onFileUploadClick}
+                    preview={attachments.length !== 0 ? attachments[0].preview : null}
+                    fallback="Guild Icon"
+                />
             </DialogHeader>
-            <div className="flex w-full justify-center">
-                <Avatar className="h-28 w-28" onClick={onFileUploadClick}>
-                    {attachments.length !== 0 && <AvatarImage src={attachments[0].preview} />}
-                    <AvatarFallback className="flex flex-col space-y-1">
-                        <CameraIcon size={26} />
-                        <p className="text-xs font-medium">Upload</p>
-                    </AvatarFallback>
-                </Avatar>
-            </div>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Server Name</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Give your server a name" {...field} />
-                                </FormControl>
-                                <FormDescription>This is how people will find your server.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <UploadWrapper id="guild-creator" />
-                    <DialogFooter>
-                        <Button onClick={closeCreateGuildDialog} variant="secondary">
-                            Cancel
-                        </Button>
-                        <Button type="submit">Create</Button>
-                    </DialogFooter>
-                </form>
-            </Form>
+            <form id="create-guild-form" onSubmit={form.handleSubmit(onSubmit)}>
+                <FieldSet>
+                    <FieldGroup>
+                        <Controller
+                            control={form.control}
+                            name="name"
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor="create-guild-field-name">Name</FieldLabel>
+                                    <Input
+                                        id="create-guild-field-name"
+                                        aria-invalid={fieldState.invalid}
+                                        placeholder="Give your guild a name"
+                                        autoComplete="off"
+                                        {...field}
+                                    />
+                                    <FieldDescription>This is how people will find your guild.</FieldDescription>
+                                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                        <UploadWrapper id="guild-creator" />
+                    </FieldGroup>
+                </FieldSet>
+
+                <DialogFooter>
+                    <Button onClick={closeCreateGuildDialog} variant="outline">
+                        Cancel
+                    </Button>
+                    <Button type="submit" form="create-guild-form">
+                        Create
+                    </Button>
+                </DialogFooter>
+            </form>
         </>
     );
 }

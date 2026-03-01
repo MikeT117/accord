@@ -1,23 +1,19 @@
-import { BanIcon, HandshakeIcon, HeartHandshakeIcon } from "lucide-react";
+import { BanIcon, HeartHandshakeIcon } from "lucide-react";
 import { RELATIONSHIP_STATUS } from "@/lib/zod-validation/relationship-schema";
-import { UserAvatar } from "../user-avatar";
-import { ButtonWithTooltip } from "../button-with-tooltip";
-import { Input } from "../ui/input";
+import { AvatarWithFallback } from "../avatar-with-fallback";
 import { useFilteredRelationships } from "./hooks/use-filtered-relationships";
 import { useDeleteRelationshipMutation } from "@/lib/react-query/mutations/delete-relationship-mutation";
 import { useUpdateRelationshipMutation } from "@/lib/react-query/mutations/update-relationship-mutation";
 import { useUser } from "@/lib/valtio/queries/user-store-queries";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "../ui/item";
+import { Button } from "../ui/button";
+import { FilterInput } from "../filter-input";
 
 export function UserDashboardRequests() {
     const { filteredRelationships, filter, setFilter } = useFilteredRelationships(RELATIONSHIP_STATUS.PENDING);
     const user = useUser();
-
     const { mutate: deleteRelationship } = useDeleteRelationshipMutation();
     const { mutate: updateRelationship } = useUpdateRelationshipMutation();
-
-    function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-        setFilter(e.currentTarget.value);
-    }
 
     function handleDeclineRelationship(relationshipId: string) {
         deleteRelationship({ id: relationshipId });
@@ -28,52 +24,36 @@ export function UserDashboardRequests() {
     }
 
     return (
-        <div className="flex w-full flex-col overflow-hidden">
-            <div className="flex space-x-2 border-b px-4 py-3.5">
-                <div className="flex items-center space-x-2">
-                    <HandshakeIcon className="size-5 text-muted-foreground" />
-                    <h1 className="font-medium">Requests</h1>
-                </div>
+        <div className="grid grid-cols-1 grid-rows-[50px_1fr_min-content] overflow-hidden">
+            <div className="flex items-center space-x-1 border-b px-4">
+                <HeartHandshakeIcon className="size-5 text-muted-foreground" />
+                <h1 className="font-medium">Friends</h1>
             </div>
             <div className="space-y-3 p-3">
-                <Input placeholder="Search" onChange={handleInputChange} value={filter} />
+                <FilterInput filterValue={filter} onChange={setFilter} resultsCount={filteredRelationships.length} />
                 <div className="flex flex-col overflow-auto">
                     {filteredRelationships.map((r) => (
-                        <div
-                            key={r.id}
-                            className="flex items-center justify-between rounded-lg p-1.5 hover:bg-accent/50"
-                        >
-                            <div className="flex items-center space-x-1.5">
-                                <UserAvatar
-                                    avatar={r.user.avatar}
-                                    displayName={r.user.displayName}
-                                    className="size-6 border-none"
-                                />
-                                <span className="font-medium">{r.user.displayName}</span>
-                            </div>
-                            <div className="flex space-x-1.5">
-                                {user.id !== r.creatorId && (
-                                    <ButtonWithTooltip
-                                        size="icon"
-                                        tooltipText="Accept Request"
-                                        className="size-8"
-                                        variant="outline"
-                                        onClick={() => handleAcceptRelationship(r.id)}
-                                    >
-                                        <HeartHandshakeIcon />
-                                    </ButtonWithTooltip>
-                                )}
-                                <ButtonWithTooltip
-                                    size="icon"
-                                    tooltipText={user.id === r.creatorId ? "Cancel Request" : "Decline Request"}
-                                    className="size-8"
-                                    variant="outline"
-                                    onClick={() => handleDeclineRelationship(r.id)}
-                                >
+                        <Item variant="outline">
+                            <ItemMedia>
+                                <AvatarWithFallback src={r.user.avatar} fallback={r.user.displayName} size="lg" />
+                            </ItemMedia>
+                            <ItemContent>
+                                <ItemTitle>{r.user.displayName}</ItemTitle>
+                                <ItemDescription>{r.user.username}</ItemDescription>
+                            </ItemContent>
+                            <ItemActions>
+                                <Button size="sm" variant="destructive" onClick={() => handleDeclineRelationship(r.id)}>
                                     <BanIcon />
-                                </ButtonWithTooltip>
-                            </div>
-                        </div>
+                                    <span>{user.id === r.creatorId ? "Cancel" : "Decline"}</span>
+                                </Button>
+                                {user.id !== r.creatorId && (
+                                    <Button size="sm" onClick={() => handleAcceptRelationship(r.id)}>
+                                        <HeartHandshakeIcon />
+                                        <span>Accept</span>
+                                    </Button>
+                                )}
+                            </ItemActions>
+                        </Item>
                     ))}
                 </div>
             </div>

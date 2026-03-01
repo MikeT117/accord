@@ -1,13 +1,17 @@
 import type { ChannelMessageType } from "@/lib/types/types";
 import { formatDistanceToNow } from "date-fns";
 import { ChannelMessageContent } from "./channel-message-content";
-import { ChannelMessageAttachment } from "./channel-message-attachment";
-import { UserAvatar } from "../user-avatar";
+import { AvatarWithFallback } from "../avatar-with-fallback";
 import { useState } from "react";
 import { openAttachmentGallery } from "@/lib/valtio/mutations/attachment-gallery-ui-store-mutations";
 import { ChannelMessageInlineEditor } from "./channel-message-inline-editor";
 import { ButtonWithTooltip } from "../button-with-tooltip";
-import { PencilIcon, MoreHorizontalIcon, PinIcon, PinOffIcon, Trash2Icon } from "lucide-react";
+import { MoreHorizontalIcon, PinIcon, EditIcon, Trash2Icon } from "lucide-react";
+import { Image } from "@/components/image";
+import clsx from "clsx";
+import { ButtonGroup } from "../ui/button-group";
+import { useParams } from "@tanstack/react-router";
+import { ProfilePopover } from "../profile-popover";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -37,6 +41,8 @@ export function ChannelMessage({
     onPinMessage,
     onUnpinMessage,
 }: ChannelMessageProps) {
+    const { guildId } = useParams({ strict: false });
+
     const [isEditing, setIsEditing] = useState(false);
     const [isMouseOver, setMouseOver] = useState(false);
     const [isDropdownOpen, setDropdownOpen] = useState(false);
@@ -90,16 +96,14 @@ export function ChannelMessage({
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
         >
-            <UserAvatar
-                className="size-10 border-none"
-                displayName={message.author.displayName}
-                avatar={message.author.avatar}
-            />
+            <AvatarWithFallback fallback={message.author.displayName} src={message.author.avatar} />
             <div className="flex w-full flex-col items-start space-y-2">
                 <div className="mb-1 flex items-baseline gap-2">
-                    <span className="cursor-pointer font-medium text-foreground hover:underline">
-                        {message.author.displayName}
-                    </span>
+                    <ProfilePopover userId={message.author.id} guildId={guildId}>
+                        <a className="cursor-pointer text-sm font-medium text-foreground hover:underline">
+                            {message.author.displayName}
+                        </a>
+                    </ProfilePopover>
                     <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(message.createdAt, {
                             addSuffix: true,
@@ -112,59 +116,58 @@ export function ChannelMessage({
                     <ChannelMessageContent content={message.content} />
                 )}
                 {message.attachments.map((attachment, i) => (
-                    <ChannelMessageAttachment
+                    <Image
+                        className="max-h-[200px]"
                         key={attachment.id}
-                        attachment={attachment}
+                        src={attachment.id}
                         onClick={() => handleOpenAttachmentsGallery(i)}
+                        alt={attachment.filename}
                     />
                 ))}
             </div>
             {optionsVisible && (
-                <div className="absolute top-0 right-4 flex rounded-lg border bg-background p-0.5 shadow-sm">
+                <ButtonGroup className="absolute top-0 right-4">
                     <ButtonWithTooltip
+                        variant="outline"
+                        size="icon"
                         aria-label={message.pinned ? "Unpin Message" : "Pin Message"}
-                        variant="ghost"
-                        size="sm"
-                        className="size-8"
                         tooltipText={message.pinned ? "Unpin Message" : "Pin Message"}
                         onClick={handlePinUnpinMessage}
                     >
-                        {message.pinned ? <PinOffIcon /> : <PinIcon />}
+                        <PinIcon className={clsx("rotate-45", message.pinned && "fill-black dark:fill-white")} />
                     </ButtonWithTooltip>
-                    {canEditMessage && (
-                        <ButtonWithTooltip
-                            aria-label="Edit Message"
-                            variant="ghost"
-                            size="sm"
-                            className="size-8"
-                            tooltipText="Edit Message"
-                            onClick={toggleEditor}
-                        >
-                            <PencilIcon />
-                        </ButtonWithTooltip>
-                    )}
+                    <ButtonWithTooltip
+                        variant="outline"
+                        size="icon"
+                        tooltipText="Edit Message"
+                        aria-label="Edit Message"
+                        onClick={toggleEditor}
+                    >
+                        <EditIcon />
+                    </ButtonWithTooltip>
                     <DropdownMenu open={isDropdownOpen} onOpenChange={setDropdownOpen}>
                         <DropdownMenuTrigger asChild>
                             <ButtonWithTooltip
                                 aria-label="More Options"
-                                variant="ghost"
-                                size="sm"
-                                className="size-8 data-[state=open]:bg-accent dark:data-[state=open]:bg-accent/50"
+                                variant="outline"
+                                size="icon"
                                 tooltipText="More Options"
                             >
                                 <MoreHorizontalIcon />
                             </ButtonWithTooltip>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-48" align="end" sideOffset={8} side="bottom">
+                        <DropdownMenuContent className="w-42" align="end" sideOffset={8} side="bottom">
                             <DropdownMenuItem className="justify-between" onClick={toggleEditor}>
-                                Edit Message
-                                <PencilIcon />
+                                <span>Edit Message</span>
+                                <EditIcon />
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {canPinMessage && (
                                 <DropdownMenuItem className="justify-between" onClick={handlePinUnpinMessage}>
-                                    {message.pinned ? "Unpin Message" : "Pin Message"}
-                                    {message.pinned ? <PinOffIcon /> : <PinIcon />}
+                                    <span>{message.pinned ? "Unpin" : "Pin"} Message</span>
+                                    <PinIcon
+                                        className={clsx("rotate-45", message.pinned && "fill-black dark:fill-white")}
+                                    />
                                 </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
@@ -174,13 +177,13 @@ export function ChannelMessage({
                                     className="justify-between"
                                     onClick={handleDeleteMessage}
                                 >
-                                    Delete Message
+                                    <span>Delete Message</span>
                                     <Trash2Icon />
                                 </DropdownMenuItem>
                             )}
                         </DropdownMenuContent>
                     </DropdownMenu>
-                </div>
+                </ButtonGroup>
             )}
         </div>
     );

@@ -32,18 +32,18 @@ export function GuildSettingsDestructionSection({ guildId, name }: GuildSettings
 
     return (
         <SettingsDialogContentSection
-            title="Delete Server"
-            description="Permanently delete this server and all its content."
+            title="Delete Guild"
+            description="Permanently delete this guild and all its content."
         >
-            <Card className="border-destructive/20">
+            <Card className="border-2 border-destructive/25 bg-destructive/5 ring-0">
                 <CardHeader>
                     <CardTitle className="text-destructive">Danger Zone</CardTitle>
                     <CardDescription>
-                        Once you delete a server, there is no going back. Please be certain.
+                        Once you delete a guild, there is no going back. Please be certain.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
+                    <div className="rounded-md border-2 border-destructive/25 p-4 ring-0">
                         <h4 className="mb-2 font-semibold text-destructive">This action will:</h4>
                         <ul className="ml-4 list-inside list-disc space-y-0.5 text-sm text-muted-foreground">
                             <li>Permanently delete all members</li>
@@ -75,7 +75,7 @@ export function GuildSettingsDestructionSection({ guildId, name }: GuildSettings
                             onClick={handleDeleteGuildClick}
                         >
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Server Permanently
+                            Delete Guild Permanently
                         </Button>
                     </div>
                 </CardContent>

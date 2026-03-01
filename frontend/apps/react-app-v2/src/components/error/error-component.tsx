@@ -1,12 +1,12 @@
 import type { ErrorComponentProps } from "@tanstack/react-router";
-import { ServerNotFound } from "./server-not-found";
+import { GuildNotFound } from "./guild-not-found";
 import { ChannelNotFound } from "./channel-not-found";
 import { ChannelMessagesLoadingFailed } from "./channel-messages-loading-failed";
 
 export function RootErrorComponent({ error }: ErrorComponentProps) {
     switch (error.name) {
-        case "ErrServerNotFound":
-            return <ServerNotFound />;
+        case "ErrGuildNotFound":
+            return <GuildNotFound />;
         case "ErrChannelNotFound":
             return <ChannelNotFound />;
         case "AxiosError":

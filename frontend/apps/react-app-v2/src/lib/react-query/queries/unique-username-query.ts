@@ -1,24 +1,28 @@
 import { httpClient } from "@/lib/http-client";
 import { uniqueUsernameSchema } from "@/lib/zod-validation/unique-username-schema";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
-type UniqueUsernameQueryArgs = {
+type UsernameUniqueQueryArgs = {
     username: string;
+    token: string;
 };
 
-function uniqueUsernameQueryOptions({ username }: UniqueUsernameQueryArgs) {
-    return queryOptions({
-        queryKey: ["unique-username", username],
-        queryFn: () =>
-            httpClient
-                .get(`/auth/register/unique-username?username=${username}`)
-                .then((r) => uniqueUsernameSchema.parse(r.data)),
-        enabled: false,
-        retry: false,
-        staleTime: Infinity,
-    });
-}
+const mutationFn = async (payload: UsernameUniqueQueryArgs) => {
+    return httpClient
+        .post(`/auth/registration/username-unique`, payload)
+        .then((r) => uniqueUsernameSchema.parse(r.data));
+};
 
-export function useUniqueUsernameQuery(args: UniqueUsernameQueryArgs) {
-    return useQuery(uniqueUsernameQueryOptions(args));
-}
+type MutationHookArgs = {
+    onSuccess?: () => void;
+};
+
+export const useUniqueUsernameCheck = (args?: MutationHookArgs) =>
+    useMutation({
+        mutationFn,
+        onSuccess: () => (typeof args?.onSuccess === "function" ? args.onSuccess() : void 0),
+        onError: () => {
+            toast("Unable to validate username, please try again later.");
+        },
+    });

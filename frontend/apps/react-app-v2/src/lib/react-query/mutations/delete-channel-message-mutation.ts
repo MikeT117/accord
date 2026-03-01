@@ -15,7 +15,6 @@ type MutationHookArgs = {
     onSuccess?: () => void;
 };
 
-// OnError Will be handled globally with notifications, success will be handled by the component if needed.
 export const useDeleteChannelMessageMutation = (args?: MutationHookArgs) =>
     useMutation({
         mutationFn,

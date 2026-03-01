@@ -6,6 +6,7 @@ import (
 )
 
 type UpdateUserRequest struct {
+	UserID      uuid.UUID  `param:"userID"`
 	DisplayName string     `json:"displayName"`
 	PublicFlags int8       `json:"publicFlags"`
 	AvatarID    *uuid.UUID `json:"AvatarID"`
@@ -17,7 +18,8 @@ func (r *UpdateUserRequest) ToUpdateUserCommand(requestorID uuid.UUID) (*command
 		return nil, NewRequestValidationError("invalid display name and/or public flags")
 	}
 	return &command.UpdateUserCommand{
-		ID:          requestorID,
+		ID:          r.UserID,
+		RequestorID: requestorID,
 		DisplayName: r.DisplayName,
 		PublicFlags: r.PublicFlags,
 		AvatarID:    r.AvatarID,

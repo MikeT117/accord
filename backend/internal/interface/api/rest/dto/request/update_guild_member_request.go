@@ -8,7 +8,7 @@ import (
 )
 
 type UpdateGuildMemberRequest struct {
-	UserID   uuid.UUID  `param:"roleID"`
+	UserID   uuid.UUID  `param:"userID"`
 	GuildID  uuid.UUID  `param:"guildID"`
 	Nickname *string    `json:"nickname"`
 	AvatarID *uuid.UUID `json:"avatar"`

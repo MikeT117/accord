@@ -1,6 +1,5 @@
 import type { AttachmentType, UserType } from "@/lib/types/types";
 import { proxy } from "valtio";
-import { devtools } from "valtio/utils";
 
 type AttachmentGalleryUIStore =
     | {
@@ -22,4 +21,3 @@ export const attachmentGalleryUIStore = proxy<AttachmentGalleryUIStore>({
     author: null,
     attachments: [],
 });
-devtools(attachmentGalleryUIStore, { name: "attachment gallery ui store", enabled: true });

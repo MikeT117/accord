@@ -20,21 +20,30 @@ export type WebSocketConfig = {
 
 export type AccordWebsocket = ReturnType<typeof websocket>;
 
-export function websocket(config: WebSocketConfig) {
+export function websocket() {
     let retries = 1;
     let retryInterval = 5 * 1000;
     let log = true;
     let connectionTimeout: number;
-
     let conn: WebSocket;
+    let config: WebSocketConfig;
+
+    function loadConfig(cfg: WebSocketConfig) {
+        config = cfg;
+    }
 
     function connect() {
+        if (!config) {
+            return;
+        }
+
         logEvents("Event", "Connecting", `Attempts: ${retries}`);
 
         conn = new WebSocket(config.endpoint);
         conn.binaryType = "arraybuffer";
 
-        connectionTimeout = setTimeout(() => {
+        // Using window due to typescript assuming we're in a NodeJS environment.
+        connectionTimeout = window.setTimeout(() => {
             if (conn.readyState === WebSocket.CONNECTING) {
                 logEvents("Event", "Connection", "Timeout", `Attempts: ${retries}`);
                 shutdown();
@@ -142,5 +151,5 @@ export function websocket(config: WebSocketConfig) {
         conn.send(payload);
     }
 
-    return { connect, shutdown, send };
+    return { connect, shutdown, send, loadConfig };
 }

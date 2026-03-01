@@ -1,6 +1,7 @@
 import { httpClient } from "@/lib/http-client";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "../query-client";
+import { toast } from "sonner";
 
 type mutationFnArgsType = {
     roleId: string;
@@ -16,7 +17,6 @@ type MutationHookArgs = {
     onSuccess?: () => void;
 };
 
-// OnError Will be handled globally with notifications, success will be handled by the component if needed.
 export const useDeleteGuildRoleUserMutation = (hookArgs?: MutationHookArgs) =>
     useMutation({
         mutationFn,
@@ -25,5 +25,8 @@ export const useDeleteGuildRoleUserMutation = (hookArgs?: MutationHookArgs) =>
             if (typeof hookArgs?.onSuccess === "function") {
                 hookArgs.onSuccess();
             }
+        },
+        onError: () => {
+            toast("An error occurred deleting role association, please try again later.");
         },
     });

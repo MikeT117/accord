@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { InputGroupTextarea } from "../ui/input-group";
 
 type ChannelMessageCreatorInputProps = {
     value: string;
@@ -37,18 +38,16 @@ export function ChannelMessageCreatorInput({
     };
 
     return (
-        <div className="flex flex-1 items-center">
-            <textarea
-                ref={textareaRef}
-                className="w-full resize-none overflow-hidden py-2 text-sm leading-relaxed whitespace-pre-wrap text-foreground transition-[color] outline-none selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder={placeholder}
-                aria-placeholder={placeholder}
-                value={value}
-                disabled={isDisabled}
-                onChange={(e) => onChange(e.target.value)}
-                onKeyDown={handleKeyDown}
-                rows={1}
-            />
-        </div>
+        <InputGroupTextarea
+            className="min-h-[36px]"
+            ref={textareaRef}
+            placeholder={placeholder}
+            aria-placeholder={placeholder}
+            value={value}
+            disabled={isDisabled}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={1}
+        />
     );
 }

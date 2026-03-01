@@ -27,13 +27,13 @@ httpClient.defaults.validateStatus = (status) => {
 httpClient.interceptors.response.use(
     (response) => response,
     (error: AxiosError<APIErrorResponse>) => {
-        console.log(error.response);
+        console.error(error.response);
         if (error.response?.status === 401 && error.response?.data?.detail === "invalid tokens") {
             handleResetTokenStore();
         }
 
         throw error;
-    }
+    },
 );
 
 export { httpClient };

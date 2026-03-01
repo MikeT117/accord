@@ -3,17 +3,19 @@ import { useUser } from "@/lib/valtio/queries/user-store-queries";
 import { useState } from "react";
 
 export function useFilteredPrivateChannels() {
-    const [filter, setFilter] = useState("");
+    const [channelFilter, setChannelFilter] = useState("");
     const user = useUser();
     const channels = usePrivateChannelsArray();
 
+    const filteredChannels = channelFilter.trim().length
+        ? channels.filter((c) =>
+              c.users.some((u) => u.id !== user.id && u.username.toLowerCase().includes(channelFilter.toLowerCase())),
+          )
+        : channels;
+
     return {
-        privateChannels: filter.trim().length
-            ? channels.filter((c) =>
-                  c.users.some((u) => u.id !== user.id && u.username.toLowerCase().includes(filter.toLowerCase())),
-              )
-            : channels,
-        filter,
-        setFilter,
+        channelFilter,
+        setChannelFilter,
+        filteredChannels,
     };
 }

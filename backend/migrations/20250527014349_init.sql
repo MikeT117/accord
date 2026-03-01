@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS "user" (
     "updated_at" TIMESTAMPTZ NOT NULL,
     "avatar_id" UUID,
     "banner_id" UUID,
+    "flags" INT NOT NULL,
     UNIQUE ("username")
 );
 
@@ -114,6 +115,7 @@ CREATE TABLE IF NOT EXISTS "guild_invite" (
     "id" UUID PRIMARY KEY,
     "used_count" int NOT NULL,
     "guild_id" uuid NOT NULL REFERENCES "guild" (id) ON DELETE CASCADE,
+    "creator_id" uuid NOT NULL REFERENCES "user" (id) ON DELETE CASCADE,
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL,
     "expires_at" TIMESTAMPTZ NOT NULL

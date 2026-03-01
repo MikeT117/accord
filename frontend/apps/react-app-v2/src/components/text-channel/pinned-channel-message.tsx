@@ -1,12 +1,12 @@
 import type { ChannelMessageType } from "@/lib/types/types";
 import { formatDistanceToNow } from "date-fns";
 import { ChannelMessageContent } from "./channel-message-content";
-import { ChannelMessageAttachment } from "./channel-message-attachment";
-import { UserAvatar } from "../user-avatar";
+import { Image } from "@/components/image";
+import { AvatarWithFallback } from "../avatar-with-fallback";
 import { openAttachmentGallery } from "@/lib/valtio/mutations/attachment-gallery-ui-store-mutations";
 import { useDeleteChannelPinMutation } from "@/lib/react-query/mutations/delete-channel-pin-mutation";
-import { XIcon } from "lucide-react";
-import { DestructiveIconButton } from "../destructive-icon-button";
+import { PinIcon } from "lucide-react";
+import { ButtonWithTooltip } from "../button-with-tooltip";
 
 type PinnedChannelMessageProps = {
     message: ChannelMessageType;
@@ -30,17 +30,14 @@ export function PinnedChannelMessage({ ref, message, canUnpinMessage }: PinnedCh
     }
 
     return (
-        <div className="group/pinned-message relative flex gap-4 rounded-md border px-4 py-2" ref={ref}>
-            <UserAvatar
-                className="size-10 border-none"
-                displayName={message.author.displayName}
-                avatar={message.author.avatar}
-            />
-            <div className="flex w-full flex-col items-start space-y-2">
-                <div className="mb-1 flex items-baseline gap-2">
-                    <span className="cursor-pointer font-medium text-foreground hover:underline">
-                        {message.author.displayName}
-                    </span>
+        <div
+            className="group/pinned-message relative flex gap-4 rounded-md border border-border bg-background px-4 py-2 transition-all hover:bg-muted hover:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50"
+            ref={ref}
+        >
+            <AvatarWithFallback fallback={message.author.displayName} src={message.author.avatar} />
+            <div className="flex w-full flex-col items-start gap-y-2">
+                <div className="mb-1 flex items-baseline gap-x-2">
+                    <span className="cursor-pointer font-medium text-foreground">{message.author.displayName}</span>
                     <span className="text-xs text-muted-foreground">
                         {formatDistanceToNow(message.createdAt, {
                             addSuffix: true,
@@ -49,20 +46,23 @@ export function PinnedChannelMessage({ ref, message, canUnpinMessage }: PinnedCh
                 </div>
                 <ChannelMessageContent content={message.content} />
                 {message.attachments.map((attachment, i) => (
-                    <ChannelMessageAttachment
-                        key={attachment.id}
-                        attachment={attachment}
+                    <Image
+                        className="max-h-[80px]"
+                        src={attachment.id}
                         onClick={() => handleOpenAttachmentsGallery(i)}
+                        alt={attachment.filename}
                     />
                 ))}
-                <DestructiveIconButton
+                <ButtonWithTooltip
+                    variant="destructive"
+                    size="icon-sm"
                     tooltipText="Unpin Message"
-                    className="invisible absolute top-2 right-2 size-8 transition-all group-hover/pinned-message:visible"
+                    className="invisible absolute top-2 right-2 transition-all group-hover/pinned-message:visible"
                     onClick={handlePinMessage}
                     aria-label="Unpin Message"
                 >
-                    <XIcon />
-                </DestructiveIconButton>
+                    <PinIcon className="rotate-45" />
+                </ButtonWithTooltip>
             </div>
         </div>
     );

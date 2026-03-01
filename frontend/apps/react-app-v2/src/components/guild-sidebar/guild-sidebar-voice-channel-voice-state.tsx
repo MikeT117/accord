@@ -1,7 +1,7 @@
 import type { VoiceStateType } from "@/lib/types/types";
 import { MicIcon, MicOffIcon } from "lucide-react";
 import { SidebarMenuSubItem } from "../ui/sidebar";
-import { UserAvatar } from "../user-avatar";
+import { AvatarWithFallback } from "../avatar-with-fallback";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "../ui/context-menu";
 
 export function GuildSidebarVoiceChannelVoiceState({
@@ -14,12 +14,8 @@ export function GuildSidebarVoiceChannelVoiceState({
     return (
         <ContextMenu>
             <ContextMenuTrigger>
-                <SidebarMenuSubItem className="flex items-center space-x-2 rounded-md bg-accent px-2 py-1">
-                    <UserAvatar
-                        displayName={voiceState.user.displayName}
-                        avatar={voiceState.user.avatar}
-                        className="size-6"
-                    />
+                <SidebarMenuSubItem className="flex items-center space-x-2 rounded-md border bg-white/5 px-2 py-1">
+                    <AvatarWithFallback fallback={voiceState.user.displayName} src={voiceState.user.avatar} size="sm" />
                     <span className="font-medium">{voiceState.user.displayName}</span>
                     <div className="ml-auto flex items-center">
                         {voiceState.selfMute ? (

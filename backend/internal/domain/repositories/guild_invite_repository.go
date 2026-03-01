@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"time"
 
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
 	"github.com/google/uuid"
@@ -9,7 +10,7 @@ import (
 
 type GuildInviteRepository interface {
 	GetByID(ctx context.Context, ID uuid.UUID) (*entities.GuildInvite, error)
-	GetByGuildID(ctx context.Context, guildID uuid.UUID) ([]*entities.GuildInvite, error)
+	GetByGuildID(ctx context.Context, guildID uuid.UUID, before time.Time, after time.Time, limit int) ([]*entities.GuildInvite, []uuid.UUID, error)
 	Create(ctx context.Context, validatedGuildInvite *entities.GuildInvite) error
 	Delete(ctx context.Context, ID uuid.UUID) error
 }

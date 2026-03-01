@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/MikeT117/accord/backend/internal/domain"
 	"github.com/MikeT117/accord/backend/internal/domain/entities"
@@ -24,6 +25,7 @@ func (r *GuildInviteRepository) GetByID(ctx context.Context, ID uuid.UUID) (*ent
 		SELECT
 			id,
 			used_count,
+			creator_id,
 			guild_id,
 			created_at,
 			expires_at
@@ -37,6 +39,7 @@ func (r *GuildInviteRepository) GetByID(ctx context.Context, ID uuid.UUID) (*ent
 	if err := row.Scan(
 		&guildInvite.ID,
 		&guildInvite.UsedCount,
+		&guildInvite.CreatorID,
 		&guildInvite.GuildID,
 		&guildInvite.CreatedAt,
 		&guildInvite.ExpiresAt,
@@ -51,27 +54,37 @@ func (r *GuildInviteRepository) GetByID(ctx context.Context, ID uuid.UUID) (*ent
 	return guildInvite, nil
 }
 
-func (r *GuildInviteRepository) GetByGuildID(ctx context.Context, guildID uuid.UUID) ([]*entities.GuildInvite, error) {
+func (r *GuildInviteRepository) GetByGuildID(ctx context.Context, guildID uuid.UUID, before time.Time, after time.Time, limit int) ([]*entities.GuildInvite, []uuid.UUID, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
 			id,
 			used_count,
 			guild_id,
+			creator_id,
 			created_at,
 			expires_at
 		FROM
 			guild_invite
 		WHERE
-			id = $1;
-	`, guildID)
+			guild_id = $1
+		AND
+			created_at < $2
+		AND
+			created_at::timestamp(0) > $3
+		ORDER BY
+			created_at DESC
+		LIMIT
+			$4;
+	`, guildID, before, after, limit)
 
 	if err != nil {
-		return nil, wrapUnknownErr("select guild invites by guild id failed", err)
+		return nil, nil, wrapUnknownErr("select guild invites by guild id failed", err)
 	}
 
 	defer rows.Close()
 
 	guildInvites := []*entities.GuildInvite{}
+	creatorIDs := []uuid.UUID{}
 
 	for rows.Next() {
 		guildInvite := &entities.GuildInvite{}
@@ -79,16 +92,18 @@ func (r *GuildInviteRepository) GetByGuildID(ctx context.Context, guildID uuid.U
 			&guildInvite.ID,
 			&guildInvite.UsedCount,
 			&guildInvite.GuildID,
+			&guildInvite.CreatorID,
 			&guildInvite.CreatedAt,
 			&guildInvite.ExpiresAt,
 		); err != nil {
-			return nil, wrapUnknownErr("map over select guild invites by guild id failed", err)
+			return nil, nil, wrapUnknownErr("map over select guild invites by guild id failed", err)
 		}
 
 		guildInvites = append(guildInvites, guildInvite)
+		creatorIDs = append(creatorIDs, guildInvite.CreatorID)
 	}
 
-	return guildInvites, nil
+	return guildInvites, creatorIDs, nil
 }
 
 func (r *GuildInviteRepository) Create(ctx context.Context, guildInvite *entities.GuildInvite) error {
@@ -97,15 +112,17 @@ func (r *GuildInviteRepository) Create(ctx context.Context, guildInvite *entitie
 				guild_invite(
 					id,
 					used_count,
+					creator_id,
 					guild_id,
 					created_at,
 					updated_at,
 					expires_at
 				)
-			VALUES ($1, $2, $3, $4, $5, $6);
+			VALUES ($1, $2, $3, $4, $5, $6, $7);
 		`,
 		&guildInvite.ID,
 		&guildInvite.UsedCount,
+		&guildInvite.CreatorID,
 		&guildInvite.GuildID,
 		&guildInvite.CreatedAt,
 		&guildInvite.UpdatedAt,

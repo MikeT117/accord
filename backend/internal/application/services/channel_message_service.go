@@ -316,7 +316,7 @@ func (s *ChannelMessageService) Delete(ctx context.Context, cmd *command.DeleteC
 	}
 
 	if channel.IsGuildChannel() {
-		err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_PIN_PERMISSION)
+		err := s.authorisationService.VerifyGuildChannelPermission(ctx, cmd.ChannelID, cmd.RequestorID, constants.CREATE_CHANNEL_MESSAGE_PERMISSION)
 		if err != nil {
 			return err
 		}

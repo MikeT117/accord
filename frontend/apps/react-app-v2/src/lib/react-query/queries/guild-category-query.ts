@@ -19,7 +19,7 @@ export const guildCategoryQueryOptions = queryOptions({
 export function useGuildCategoriesQuery() {
     const { data, isError } = useQuery(guildCategoryQueryOptions);
     if (isError) {
-        toast("An error occured while fetching server categories, please try again later.");
+        toast("An error occured while fetching guild categories, please try again later.");
     }
     return data;
 }

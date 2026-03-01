@@ -13,10 +13,9 @@ import { useDeleteChannelMutation } from "@/lib/react-query/mutations/delete-cha
 import { useClipboard } from "@/hooks/use-clipboard";
 import {
     closeConfirmActionDialog,
-    openConfirmDeleteChannelActionDialog,
+    openConfirmDeleteGuildChannelActionDialog,
 } from "@/lib/valtio/mutations/confirm-action-dialog-ui-store-mutations";
 import { openGuildChannelSettings } from "@/lib/valtio/mutations/guild-channel-settings-ui-store-mutations";
-import { openGuildCategoryChannelSettings } from "@/lib/valtio/mutations/guild-category-channel-settings-ui-store-mutations";
 
 type ChannelSidebarChannelContextMenuProps = {
     children: ReactNode;
@@ -36,7 +35,7 @@ export function GuildSidebarChannelContextMenu({
     const isGuildCategoryChannel = channelType === GUILD_CHANNEL_TYPE.GUILD_CATEGORY_CHANNEL;
 
     function handleDeleteClick() {
-        openConfirmDeleteChannelActionDialog(name, () => deleteChannel({ id }));
+        openConfirmDeleteGuildChannelActionDialog(name, channelType, () => deleteChannel({ id }));
     }
 
     function handleCopyLinkClick() {
@@ -44,16 +43,16 @@ export function GuildSidebarChannelContextMenu({
     }
 
     function handleEditClick() {
-        if (isGuildCategoryChannel) {
-            openGuildCategoryChannelSettings(guildId, id);
-        } else {
-            openGuildChannelSettings(guildId, id);
-        }
+        // if (isGuildCategoryChannel) {
+        //     openGuildCategoryChannelSettings(guildId, id);
+        // } else {
+        openGuildChannelSettings(guildId, id);
+        // }
     }
 
     return (
         <ContextMenu>
-            <ContextMenuTrigger>{children}</ContextMenuTrigger>
+            <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
             <ContextMenuContent className="w-40">
                 {!isGuildCategoryChannel && (
                     <>

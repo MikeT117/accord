@@ -2,6 +2,7 @@ import { env } from "@/lib/constants";
 import { httpClient } from "@/lib/http-client";
 import { uploadAttachmentMutationResponseSchema } from "@/lib/zod-validation/cloudinary-schema";
 import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 type UploadAttachmentMutationArgs = {
     id: string;
@@ -21,4 +22,10 @@ const uploadAttachmentRequest = async (args: UploadAttachmentMutationArgs) => {
     return uploadAttachmentMutationResponseSchema.parse(resp.data);
 };
 
-export const useUploadAttachmentMutation = () => useMutation({ mutationFn: uploadAttachmentRequest });
+export const useUploadAttachmentMutation = () =>
+    useMutation({
+        mutationFn: uploadAttachmentRequest,
+        onError: () => {
+            toast("Unable to upload attachment, please try again later.");
+        },
+    });

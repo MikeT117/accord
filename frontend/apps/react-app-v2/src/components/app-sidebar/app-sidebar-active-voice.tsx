@@ -3,7 +3,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/h
 import { ButtonWithTooltip } from "../button-with-tooltip";
 import { AudioWaveformIcon, MicIcon, MicOffIcon, PhoneOffIcon } from "lucide-react";
 import { useAccordVoiceController } from "@/hooks/use-accord-voice";
-import { GuildIcon } from "../guild-icon";
+import { AvatarWithFallback } from "../avatar-with-fallback";
 
 export function AppSidebarActiveVoice() {
     const { leaveVoiceChannel, toggleSelfMute, connectionState } = useAccordVoiceController();
@@ -15,7 +15,7 @@ export function AppSidebarActiveVoice() {
     }
 
     return (
-        <div className="flex flex-col space-y-1.5 rounded-md border p-1">
+        <div className="flex flex-col items-center gap-1 bg-linear-to-t from-green-950 to-background p-1">
             <HoverCard openDelay={5} closeDelay={50}>
                 <HoverCardTrigger className="inline-flex size-8 items-center justify-center gap-2 rounded-md bg-green-400/20">
                     <AudioWaveformIcon className="size-4 shrink-0 text-green-400/75" />
@@ -27,9 +27,9 @@ export function AppSidebarActiveVoice() {
                     alignOffset={-4}
                     sideOffset={12}
                 >
-                    <GuildIcon
-                        name={currentUserVoiceState.guild.name}
-                        icon={currentUserVoiceState.guild.icon}
+                    <AvatarWithFallback
+                        fallback={currentUserVoiceState.guild.name}
+                        src={currentUserVoiceState.guild.icon}
                         className="size-8 border-none"
                     />
                     <div className="flex flex-col space-y-1">
@@ -47,7 +47,6 @@ export function AppSidebarActiveVoice() {
             >
                 {currentUserVoiceState.voiceState.selfMute ? <MicOffIcon /> : <MicIcon />}
             </ButtonWithTooltip>
-
             <ButtonWithTooltip
                 aria-label="Disconnect Voice"
                 variant="outline"

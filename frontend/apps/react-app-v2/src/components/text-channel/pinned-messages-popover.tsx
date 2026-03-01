@@ -2,6 +2,8 @@ import { useInfiniteChannelMessagesQuery } from "@/lib/react-query/queries/chann
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { PinnedChannelMessage } from "./pinned-channel-message";
 import { PinIcon } from "lucide-react";
+import { ButtonWithTooltip } from "../button-with-tooltip";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
 
 type PinnedMessagesPopoverProps = {
     channelId: string;
@@ -11,18 +13,23 @@ type PinnedMessagesPopoverProps = {
 export function PinnedMessagesPopover({ canUnpinMessage, channelId }: PinnedMessagesPopoverProps) {
     return (
         <Popover>
-            <PopoverTrigger className="text-muted-foreground hover:text-white data-[state=open]:text-white">
-                <PinIcon className="size-5" />
+            <PopoverTrigger asChild>
+                <ButtonWithTooltip variant="outline" tooltipText="Pinned Messages" size="icon">
+                    <PinIcon className="rotate-45" />
+                </ButtonWithTooltip>
             </PopoverTrigger>
             <PopoverContent
-                className="flex max-h-[80svh] w-[420px] flex-col overflow-auto p-0"
+                className="max-h-[80svh] min-h-80 w-sm gap-0 overflow-auto bg-card p-0"
                 align="end"
                 sideOffset={8}
             >
-                <div className="border-b p-4">
-                    <h1 className="font-semibold">Pinned Messages</h1>
+                <div className="flex items-center gap-3 border-b p-4">
+                    <PinIcon className="size-5 rotate-45" />
+                    <h1 className="text-lg font-medium">Pinned Messages</h1>
                 </div>
-                <PinnedMessagesPopoverContent canUnpinMessage={canUnpinMessage} channelId={channelId} />
+                <div className="flex flex-col gap-3 p-3">
+                    <PinnedMessagesPopoverContent canUnpinMessage={canUnpinMessage} channelId={channelId} />
+                </div>
             </PopoverContent>
         </Popover>
     );
@@ -38,22 +45,26 @@ function PinnedMessagesPopoverContent({ channelId, canUnpinMessage }: PinnedMess
 
     if (!data.length) {
         return (
-            <div className="flex min-h-[300px] grow items-center justify-center">
-                <p className="font-medium text-muted-foreground">This channel doesn't have any pinned messages.</p>
-            </div>
+            <Empty>
+                <EmptyHeader>
+                    <EmptyMedia variant="icon">
+                        <PinIcon className="rotate-45" />
+                    </EmptyMedia>
+                    <EmptyTitle>No Pins yet</EmptyTitle>
+                    <EmptyDescription>
+                        You can pin messages by clicking the pin icon when hovering over a message.
+                    </EmptyDescription>
+                </EmptyHeader>
+            </Empty>
         );
     }
 
-    return (
-        <div className="mt-auto flex flex-col gap-2 p-2">
-            {data.map((msg, i) => (
-                <PinnedChannelMessage
-                    key={msg.id}
-                    message={msg}
-                    canUnpinMessage={canUnpinMessage}
-                    ref={(e) => infiniteScrollRef(i, e)}
-                />
-            ))}
-        </div>
-    );
+    return data.map((msg, i) => (
+        <PinnedChannelMessage
+            key={msg.id}
+            message={msg}
+            canUnpinMessage={canUnpinMessage}
+            ref={(e) => infiniteScrollRef(i, e)}
+        />
+    ));
 }

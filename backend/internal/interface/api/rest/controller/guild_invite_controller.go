@@ -24,34 +24,34 @@ func NewGuildInviteController(
 		guildInviteService: guildInviteService,
 	}
 
-	baseGroup.GET("/invite/:inviteID", controller.getInvite)
+	baseGroup.GET("/invite/:inviteID", controller.getPublicInvite)
 
 	subGroup := baseGroup.Group("/guilds/:guildID/invites")
 	subGroup.GET("", controller.getInvites)
 	subGroup.POST("", controller.createInvite)
-	subGroup.DELETE("/:guildID", controller.deleteInvite)
+	subGroup.DELETE("/:inviteID", controller.deleteInvite)
 
 	return controller
 }
 
-func (c *GuildInviteController) getInvite(ctx echo.Context) error {
-	var payload request.QueryGuildInviteRequest
+func (c *GuildInviteController) getPublicInvite(ctx echo.Context) error {
+	var payload request.QueryPublicInviteRequest
 	if err := ctx.Bind(&payload); err != nil {
 		return response.ErrorResponse(ctx, http.StatusBadRequest, nil)
 	}
 
 	requestorID, _ := authentication.GetRequestorDetails(ctx)
-	qry, err := payload.ToGuildInviteQuery(requestorID)
+	qry, err := payload.ToPublicInviteQuery(requestorID)
 	if err != nil {
 		return handleError(ctx, err)
 	}
 
-	guildInvite, err := c.guildInviteService.GetByID(ctx.Request().Context(), qry)
+	publicInvite, err := c.guildInviteService.GetPublicByID(ctx.Request().Context(), qry)
 	if err != nil {
 		return handleError(ctx, err)
 	}
 
-	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildInviteResponse(guildInvite.Result))
+	return response.JSONResponse(ctx, http.StatusOK, mapper.ToPublicInviteResponse(publicInvite.Result))
 }
 
 func (c *GuildInviteController) getInvites(ctx echo.Context) error {

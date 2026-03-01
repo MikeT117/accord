@@ -1,7 +1,6 @@
 import { httpClient } from "@/lib/http-client";
-import { handleGuildChannelCreated } from "@/lib/valtio/mutations/guild-store-mutations";
-import { guildChannelSchema } from "@/lib/zod-validation/channel-schema";
 import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 type mutationFnArgsType = {
     name: string;
@@ -11,17 +10,18 @@ type mutationFnArgsType = {
 };
 
 const mutationFn = async (payload: mutationFnArgsType) => {
-    return httpClient.post(`/channels`, payload).then((r) => {
-        const channel = guildChannelSchema.parse(r.data);
-        handleGuildChannelCreated(channel);
-        return channel;
-    });
+    return httpClient.post(`/channels`, payload);
 };
 
 type MutationHookArgs = {
     onSuccess?: () => void;
 };
 
-// OnError Will be handled globally with notifications, success will be handled by the component if needed.
 export const useCreateGuildChannelMutation = (args?: MutationHookArgs) =>
-    useMutation({ mutationFn, onSuccess: () => (typeof args?.onSuccess === "function" ? args.onSuccess() : void 0) });
+    useMutation({
+        mutationFn,
+        onSuccess: () => (typeof args?.onSuccess === "function" ? args.onSuccess() : void 0),
+        onError: () => {
+            toast("An error occurred while creating channel, please try again later.");
+        },
+    });

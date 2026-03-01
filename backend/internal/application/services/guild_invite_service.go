@@ -18,18 +18,22 @@ type GuildInviteService struct {
 	authorisationService  interfaces.AuthorisationService
 	guildInviteRepository repositories.GuildInviteRepository
 	guildRepository       repositories.GuildRepository
+	guildMemberRepository repositories.GuildMemberRepository
+	userRepository        repositories.UserRepository
 }
 
-func CreateGuildInviteService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, guildInviteRepository repositories.GuildInviteRepository, guildRepository repositories.GuildRepository) interfaces.GuildInviteService {
+func CreateGuildInviteService(transactor *db.Transactor, authorisationService interfaces.AuthorisationService, guildInviteRepository repositories.GuildInviteRepository, guildRepository repositories.GuildRepository, guildMemberRepository repositories.GuildMemberRepository, userRepository repositories.UserRepository) interfaces.GuildInviteService {
 	return &GuildInviteService{
 		transactor:            transactor,
 		authorisationService:  authorisationService,
 		guildInviteRepository: guildInviteRepository,
 		guildRepository:       guildRepository,
+		guildMemberRepository: guildMemberRepository,
+		userRepository:        userRepository,
 	}
 }
 
-func (s *GuildInviteService) GetByID(ctx context.Context, qry *query.GuildInviteQuery) (*query.GuildInviteQueryResult, error) {
+func (s *GuildInviteService) GetPublicByID(ctx context.Context, qry *query.PublicInviteQuery) (*query.PublicInviteQueryResult, error) {
 	guildInvite, err := s.guildInviteRepository.GetByID(ctx, qry.ID)
 	if err != nil {
 		return nil, err
@@ -40,8 +44,8 @@ func (s *GuildInviteService) GetByID(ctx context.Context, qry *query.GuildInvite
 		return nil, err
 	}
 
-	return &query.GuildInviteQueryResult{
-		Result: mapper.NewGuildInviteResultFromGuildInvite(guildInvite, guild),
+	return &query.PublicInviteQueryResult{
+		Result: mapper.NewPublicInviteResultFromGuildInvite(guildInvite, guild),
 	}, nil
 }
 
@@ -51,18 +55,23 @@ func (s *GuildInviteService) GetByGuildID(ctx context.Context, qry *query.GuildI
 		return nil, err
 	}
 
-	guildInvites, err := s.guildInviteRepository.GetByGuildID(ctx, qry.GuildID)
+	guildInvites, creatorIDs, err := s.guildInviteRepository.GetByGuildID(ctx, qry.GuildID, qry.Before, qry.After, qry.Limit)
 	if err != nil {
 		return nil, err
 	}
 
-	guild, err := s.guildRepository.GetByID(ctx, qry.GuildID)
+	guildMembersMap, err := s.guildMemberRepository.GetMapByIDs(ctx, creatorIDs, qry.GuildID)
+	if err != nil {
+		return nil, err
+	}
+
+	usersMap, err := s.userRepository.GetMapByIDs(ctx, creatorIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	return &query.GuildInviteQueryListResult{
-		Result: mapper.NewGuildInviteListResultFromGuildInvite(guildInvites, guild),
+		Result: mapper.NewGuildInviteListResultFromGuildInvite(guildInvites, usersMap, guildMembersMap),
 	}, nil
 }
 
@@ -72,7 +81,7 @@ func (s *GuildInviteService) Create(ctx context.Context, cmd *command.CreateGuil
 		return nil, err
 	}
 
-	guildInvite, err := entities.NewGuildInvite(cmd.GuildID, cmd.ExpiresAt)
+	guildInvite, err := entities.NewGuildInvite(cmd.GuildID, cmd.ExpiresAt, cmd.RequestorID)
 	if err != nil {
 		return nil, err
 	}
@@ -81,15 +90,21 @@ func (s *GuildInviteService) Create(ctx context.Context, cmd *command.CreateGuil
 		return nil, err
 	}
 
-	guild, err := s.guildRepository.GetByID(ctx, cmd.GuildID)
+	user, err := s.userRepository.GetByID(ctx, cmd.RequestorID)
+	if err != nil {
+		return nil, err
+	}
+
+	guildMember, err := s.guildMemberRepository.GetByID(ctx, cmd.RequestorID, cmd.GuildID)
 	if err != nil {
 		return nil, err
 	}
 
 	return &command.CreateGuildInviteCommandResult{
-		Result: mapper.NewGuildInviteResultFromGuildInvite(guildInvite, guild),
+		Result: mapper.NewGuildInviteResultFromGuildInvite(guildInvite, user, guildMember),
 	}, nil
 }
+
 func (s *GuildInviteService) Delete(ctx context.Context, cmd *command.DeleteGuildInviteCommand) error {
 	err := s.authorisationService.VerifyUserGuildPermission(ctx, cmd.GuildID, cmd.RequestorID, constants.MANAGE_GUILD_PERMISSION)
 	if err != nil {

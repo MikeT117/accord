@@ -7,21 +7,11 @@ import (
 	"github.com/google/uuid"
 )
 
-type QueryGuildInviteRequest struct {
-	ID uuid.UUID `param:"inviteID"`
-}
-
-func (r *QueryGuildInviteRequest) ToGuildInviteQuery(requestorID uuid.UUID) (*query.GuildInviteQuery, error) {
-	return &query.GuildInviteQuery{
-		ID:          r.ID,
-		RequestorID: requestorID,
-	}, nil
-
-}
-
 type QueryGuildInvitesRequest struct {
-	GuildID uuid.UUID  `param:"guildID"`
-	Before  *time.Time `query:"before"`
+	GuildID uuid.UUID `param:"guildID"`
+	Before  *int64    `query:"before"`
+	After   *int64    `query:"after"`
+	Limit   *int      `query:"limit"`
 }
 
 func (r *QueryGuildInvitesRequest) ToGuildInvitesQuery(requestorID uuid.UUID) (*query.GuildInvitesQuery, error) {
@@ -31,9 +21,21 @@ func (r *QueryGuildInvitesRequest) ToGuildInvitesQuery(requestorID uuid.UUID) (*
 	}
 
 	if r.Before != nil {
-		query.Before = *r.Before
+		query.Before = time.Unix(*r.Before, 0)
 	} else {
 		query.Before = time.Now().UTC()
+	}
+
+	if r.After != nil {
+		query.After = time.Unix(*r.After, 0)
+	} else {
+		query.After = time.Unix(0, 0)
+	}
+
+	if r.Limit != nil && *r.Limit <= 50 && *r.Limit > 0 {
+		query.Limit = *r.Limit
+	} else {
+		query.Limit = 50
 	}
 
 	return query, nil

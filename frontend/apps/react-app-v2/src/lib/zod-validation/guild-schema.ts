@@ -7,7 +7,7 @@ import { voiceStateSchema } from "./voice-state-schema";
 export const guildSchema = z.object({
     id: z.string(),
     creatorId: z.string(),
-    guildCategoryId: z.string(),
+    guildCategoryId: z.nullable(z.string()),
     name: z.string(),
     description: z.string(),
     discoverable: z.boolean(),

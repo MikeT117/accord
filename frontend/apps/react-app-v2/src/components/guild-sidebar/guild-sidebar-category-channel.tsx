@@ -19,6 +19,7 @@ export function GuildSidebarCategoryChannel({ channel, children }: GuildSidebarC
         id: channel.id,
         data: { parentId: channel.id },
     });
+
     function handleCollapsibleChange(state: boolean) {
         setCollapsedCategoryUIStore(channel.id, state);
     }
@@ -39,7 +40,7 @@ export function GuildSidebarCategoryChannel({ channel, children }: GuildSidebarC
                 >
                     <CollapsibleTrigger asChild>
                         <SidebarMenuButton
-                            className="cursor-pointer select-none font-medium"
+                            className="cursor-pointer font-medium select-none"
                             ref={ref}
                             isActive={isDropTarget}
                         >

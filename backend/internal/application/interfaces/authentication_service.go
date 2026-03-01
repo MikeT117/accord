@@ -5,7 +5,6 @@ import (
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
 	"github.com/MikeT117/accord/backend/internal/infra/oauth"
-	"github.com/google/uuid"
 )
 
 type AuthenticationService interface {
@@ -16,14 +15,13 @@ type AuthenticationService interface {
 		state string,
 		provider string,
 	) (*oauth.OAuthUser, error)
-	GetUserIDByProviderID(ctx context.Context, providerID string, provider string) (uuid.UUID, error)
-	GetUniqueUsername(ctx context.Context, username string) (bool, error)
-	CreateOAuthAccountUser(
+	CreateOrGetOAuthAccountUser(
 		ctx context.Context,
 		providerID string,
 		provider string,
 		email string,
 		username string,
 		displayname string,
-	) (*command.CreateUserAccountIfNewCommandResult, error)
+	) (*command.CreateUserAccountCommandResult, bool, error)
+	CompleteUserRegistration(ctx context.Context, cmd *command.CompleteUserRegistrationCommand) error
 }

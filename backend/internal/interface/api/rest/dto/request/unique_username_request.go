@@ -1,5 +1,6 @@
 package request
 
 type UniqueUsernameRequest struct {
-	Username string `query:"username"`
+	Username string `json:"username"`
+	Token    string `json:"token"`
 }

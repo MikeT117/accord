@@ -14,7 +14,5 @@ export function handleRefreshtokenUpdated(refreshtoken: string) {
 }
 
 export function handleResetTokenStore() {
-    tokenStore.refreshtoken = "";
-    tokenStore.accesstoken = "";
     localStorage.removeItem("session");
 }

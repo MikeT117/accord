@@ -21,23 +21,23 @@ func CreateGuildRepository(db DBGetter) repositories.GuildRepository {
 
 func (r *GuildRepository) GetDiscoverable(ctx context.Context) ([]*entities.Guild, error) {
 	rows, err := r.db(ctx).Query(ctx, `
-               SELECT
-                       id,
-                       creator_id,
-                       guild_category_id,
-                       name,
-                       description,
-                       discoverable,
-                       channel_count,
-                       member_count,
-                       icon_id,
-                       banner_id,
-                       created_at,
-                       updated_at
-               FROM
-                       guild
-               WHERE
-                       discoverable;
+        SELECT
+                id,
+                creator_id,
+                guild_category_id,
+                name,
+                description,
+                discoverable,
+                channel_count,
+                member_count,
+                icon_id,
+                banner_id,
+                created_at,
+                updated_at
+        FROM
+                guild
+        WHERE
+                discoverable;
        `)
 
 	if err != nil {

@@ -205,7 +205,8 @@ export const accordVoiceController = (() => {
             return;
         }
 
-        ws = websocket({
+        ws = websocket();
+        ws.loadConfig({
             endpoint: "wss://accord.razor116.com/rtc",
             log: true,
             retries: 5,

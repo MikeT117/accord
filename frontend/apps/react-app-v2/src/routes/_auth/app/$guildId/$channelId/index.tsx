@@ -1,4 +1,3 @@
-import { RootErrorComponent } from "@/components/error/error-component";
 import { ChannelMessage } from "@/components/text-channel/channel-message";
 import { ChannelMessageCreator } from "@/components/text-channel/channel-message-creator";
 import { PinnedMessagesPopover } from "@/components/text-channel/pinned-messages-popover";
@@ -27,7 +26,7 @@ export const Route = createFileRoute("/_auth/app/$guildId/$channelId/")({
     loader: ({ context: { queryClient }, params: { channelId } }) => {
         return queryClient.ensureInfiniteQueryData(channelMessageQueryOptions({ channelId }));
     },
-    errorComponent: (errProps) => <RootErrorComponent {...errProps} />,
+    errorComponent: () => <span>ERROR</span>,
     component: RouteComponent,
 });
 

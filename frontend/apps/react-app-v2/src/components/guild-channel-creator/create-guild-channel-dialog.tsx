@@ -1,11 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
+import { Controller, useForm } from "react-hook-form";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
-import type { CreateGuildChannelFormType } from "./create-guild-channel-dialog-types";
-import { createGuildChannelFormSchema } from "./guild-channel-creator-form-validation";
 import { closeCreateGuildChannelDialog } from "@/lib/valtio/mutations/create-guild-channel-dialog-ui-store-mutations";
 import { useCreateGuildChannelDialogUIStore } from "@/lib/valtio/queries/create-guild-channel-dialog-ui-store-queries";
 import { useCreateGuildChannelMutation } from "@/lib/react-query/mutations/create-guild-channel-mutation";
@@ -15,20 +12,49 @@ import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Switch } from "../ui/switch";
 import { useGuildRolesArray } from "@/lib/valtio/queries/guild-store-queries";
 import { Checkbox } from "../ui/checkbox";
-import { ShieldCheckIcon } from "lucide-react";
+import { BrickWallShieldIcon, CogIcon, ShieldCheckIcon, ShieldIcon } from "lucide-react";
 import { useParams } from "@tanstack/react-router";
 import type { ValueOf } from "@/lib/types/types";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "../ui/item";
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+    FieldTitle,
+} from "../ui/field";
+import { openGuildSettings } from "@/lib/valtio/mutations/guild-settings-ui-store-mutations";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "../ui/empty";
+import { CreateGuildChannelFormType } from "./types/create-guild-channel-dialog-types";
+import { createGuildChannelFormSchema } from "./zod-validation/guild-channel-creator-form-validation";
 
 const FORM_STAGE = {
     CHANNEL_DETAILS: 0,
     CHANNEL_ROLES: 1,
 } as const;
 
+const channelTypes = [
+    {
+        id: "GUILD_TEXT_CHANNEL",
+        title: "Text Channel",
+        description: "Send messages, images, emoji etc.",
+    },
+    {
+        id: "GUILD_VOICE_CHANNEL",
+        title: "Voice Channel",
+        description: "Voice chat with friends.",
+    },
+];
+
 export function GuildChannelCreator() {
     const { isOpen } = useCreateGuildChannelDialogUIStore();
     return (
         <Dialog open={isOpen} onOpenChange={closeCreateGuildChannelDialog} modal>
-            <DialogContent className="w-[440px] gap-4">
+            <DialogContent>
                 <GuildChannelCreatorContent />
             </DialogContent>
         </Dialog>
@@ -39,7 +65,7 @@ function GuildChannelCreatorContent() {
     const { guildId } = useParams({ from: "/_auth/app/$guildId" });
     const [formStage, setFormStage] = useState<ValueOf<typeof FORM_STAGE>>(FORM_STAGE.CHANNEL_DETAILS);
     const { custom: customRoles } = useGuildRolesArray(guildId);
-    const { mutate: createGuildChannel } = useCreateGuildChannelMutation({ onSuccess: handleSuccess });
+    const { mutate: createGuildChannel } = useCreateGuildChannelMutation();
 
     const form = useForm<CreateGuildChannelFormType>({
         resolver: zodResolver(createGuildChannelFormSchema),
@@ -51,136 +77,153 @@ function GuildChannelCreatorContent() {
         },
     });
 
-    function handleNextSubmitClick() {
-        if (formStage === 0 && form.watch("isPrivate")) {
-            setFormStage(FORM_STAGE.CHANNEL_ROLES);
-        } else {
-            form.handleSubmit(onSubmit)();
-        }
-    }
-
     function handlePrevCancelClick() {
-        if (formStage !== 0) {
+        if (formStage !== FORM_STAGE.CHANNEL_DETAILS) {
             setFormStage(FORM_STAGE.CHANNEL_DETAILS);
         } else {
             closeCreateGuildChannelDialog();
         }
     }
 
-    function handleSuccess() {
-        closeCreateGuildChannelDialog();
-    }
-
     function onSubmit(values: CreateGuildChannelFormType) {
-        createGuildChannel({
-            ...values,
-            guildId,
-            channelType: GUILD_CHANNEL_TYPE[values.channelType],
-        });
+        if (formStage === FORM_STAGE.CHANNEL_DETAILS && form.getValues("isPrivate").valueOf()) {
+            setFormStage(FORM_STAGE.CHANNEL_ROLES);
+        } else {
+            createGuildChannel(
+                {
+                    ...values,
+                    guildId,
+                    channelType: GUILD_CHANNEL_TYPE[values.channelType],
+                },
+                {
+                    onSuccess: closeCreateGuildChannelDialog,
+                },
+            );
+        }
     }
 
     const nextButtonLabel = formStage === FORM_STAGE.CHANNEL_DETAILS && form.watch("isPrivate") ? "Next" : "Create";
-    const prevButtonLabel = formStage === FORM_STAGE.CHANNEL_ROLES ? "Prev" : "Cancel";
+    const prevButtonLabel = formStage === FORM_STAGE.CHANNEL_ROLES ? "Back" : "Cancel";
 
     return (
         <>
             <DialogHeader className="items-center">
                 <DialogTitle>Create a Channel</DialogTitle>
             </DialogHeader>
-            <Form {...form}>
-                <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
-                    {formStage === FORM_STAGE.CHANNEL_DETAILS ? (
-                        <>
-                            <FormField
-                                control={form.control}
+            <form id="create-guild-channel-form" onSubmit={form.handleSubmit(onSubmit)}>
+                {formStage === FORM_STAGE.CHANNEL_DETAILS ? (
+                    <FieldGroup>
+                        <FieldSet>
+                            <FieldLegend>Channel Type</FieldLegend>
+                            <Controller
                                 name="channelType"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Channel Type</FormLabel>
-                                        <FormControl className="gap-1">
-                                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormItem>
-                                                    <FormLabel className="flex items-center border rounded-md p-3 space-x-2 cursor-pointer has-[[aria-checked=true]]:bg-muted">
-                                                        <FormControl>
-                                                            <RadioGroupItem value="GUILD_TEXT_CHANNEL" />
-                                                        </FormControl>
-                                                        <div className="space-y-0.5">
-                                                            <p>Text Channel</p>
-                                                            <FormDescription className="text-xs">
-                                                                Send messages, images, emoji etc.
-                                                            </FormDescription>
-                                                        </div>
-                                                    </FormLabel>
-                                                </FormItem>
-                                                <FormItem>
-                                                    <FormLabel className="flex items-center border rounded-md p-3 space-x-2 cursor-pointer has-[[aria-checked=true]]:bg-muted">
-                                                        <FormControl>
-                                                            <RadioGroupItem value="GUILD_VOICE_CHANNEL" />
-                                                        </FormControl>
-                                                        <div className="space-y-0.5">
-                                                            <p>Voice Channel</p>
-                                                            <FormDescription className="text-xs">
-                                                                Voice chat with friends.
-                                                            </FormDescription>
-                                                        </div>
-                                                    </FormLabel>
-                                                </FormItem>
-                                            </RadioGroup>
-                                        </FormControl>
-                                    </FormItem>
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <RadioGroup
+                                            name={field.name}
+                                            value={field.value}
+                                            onValueChange={field.onChange}
+                                            aria-invalid={fieldState.invalid}
+                                            defaultValue="GUILD_TEXT_CHANNEL"
+                                        >
+                                            {channelTypes.map((channelType) => (
+                                                <FieldLabel
+                                                    key={channelType.id}
+                                                    htmlFor={`create-guild-channel-form-radiogroup-${channelType.id}`}
+                                                >
+                                                    <Field orientation="horizontal" data-invalid={fieldState.invalid}>
+                                                        <FieldContent>
+                                                            <FieldTitle>{channelType.title}</FieldTitle>
+                                                            <FieldDescription>
+                                                                {channelType.description}
+                                                            </FieldDescription>
+                                                        </FieldContent>
+                                                        <RadioGroupItem
+                                                            value={channelType.id}
+                                                            id={`create-guild-channel-radiogroup-${channelType.id}`}
+                                                            aria-invalid={fieldState.invalid}
+                                                        />
+                                                    </Field>
+                                                </FieldLabel>
+                                            ))}
+                                        </RadioGroup>
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
                                 )}
                             />
-                            <FormField
-                                control={form.control}
+                            <Controller
                                 name="name"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Channel Name</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Give your channel a name" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
                                 control={form.control}
-                                name="isPrivate"
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 has-[[aria-checked=true]]:bg-muted">
-                                        <div className="space-y-0.5">
-                                            <FormLabel>Private Channel</FormLabel>
-                                            <FormDescription className="text-xs">
-                                                Only members within selected roles will be able to view the channel.
-                                            </FormDescription>
-                                        </div>
-                                        <FormControl>
-                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                        </FormControl>
-                                    </FormItem>
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLabel htmlFor="create-guild-channel-field-name">Channel Name</FieldLabel>
+                                        <Input
+                                            id="create-guild-channel-field-name"
+                                            placeholder="Enter a channel name"
+                                            aria-invalid={fieldState.invalid}
+                                            autoComplete="off"
+                                            {...field}
+                                        />
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
                                 )}
                             />
-                        </>
-                    ) : (
-                        <FormField
-                            control={form.control}
-                            name="roleIds"
-                            render={() => (
-                                <FormItem>
-                                    <FormLabel className="text-base">Roles</FormLabel>
-                                    <FormDescription>
-                                        Select the roles you wish to assign to this channel.
-                                    </FormDescription>
-                                    <div className="flex flex-col grow-0 h-72 overflow-y-auto w-full gap-1 pr-1">
-                                        {customRoles.map((role) => (
-                                            <FormField
-                                                key={role.id}
-                                                control={form.control}
-                                                name="roleIds"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex items-center gap-2">
-                                                        <FormLabel className="hover:bg-accent/50 cursor-pointer flex gap-3 rounded-lg border p-3 has-[[aria-checked=true]]:bg-muted w-full">
-                                                            <FormControl>
+                            <Controller
+                                name="isPrivate"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <Item
+                                            size="xs"
+                                            variant="outline"
+                                            className="border-2 has-[[aria-checked=true]]:bg-input/30"
+                                        >
+                                            <ItemMedia variant="icon">
+                                                <BrickWallShieldIcon />
+                                            </ItemMedia>
+                                            <ItemContent>
+                                                <ItemTitle>Private Channel</ItemTitle>
+                                                <ItemDescription>
+                                                    Only members within selected roles will be able to view the channel.
+                                                </ItemDescription>
+                                            </ItemContent>
+                                            <ItemActions>
+                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                            </ItemActions>
+                                        </Item>
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                        </FieldSet>
+                    </FieldGroup>
+                ) : (
+                    <FieldSet>
+                        <FieldGroup>
+                            <Controller
+                                control={form.control}
+                                name="roleIds"
+                                render={({ field, fieldState }) => (
+                                    <Field data-invalid={fieldState.invalid}>
+                                        <FieldLegend>Private Category</FieldLegend>
+                                        <FieldDescription>
+                                            Select the roles you wish to assign to this channel.
+                                        </FieldDescription>
+                                        <div className="flex h-72 w-full grow-0 flex-col gap-1 overflow-y-auto pr-1">
+                                            {customRoles.length ? (
+                                                customRoles.map((role) => (
+                                                    <Field>
+                                                        <Item variant="outline">
+                                                            <ItemMedia>
+                                                                <ShieldCheckIcon className="size-5" />
+                                                            </ItemMedia>
+                                                            <ItemContent>
+                                                                <FieldLabel>
+                                                                    <ItemTitle>{role.name}</ItemTitle>
+                                                                </FieldLabel>
+                                                            </ItemContent>
+                                                            <ItemActions>
                                                                 <Checkbox
                                                                     checked={field.value?.includes(role.id)}
                                                                     onCheckedChange={(checked) => {
@@ -188,35 +231,49 @@ function GuildChannelCreatorContent() {
                                                                             ? field.onChange([...field.value, role.id])
                                                                             : field.onChange(
                                                                                   field.value?.filter(
-                                                                                      (value) => value !== role.id
-                                                                                  )
+                                                                                      (value) => value !== role.id,
+                                                                                  ),
                                                                               );
                                                                     }}
                                                                 />
-                                                            </FormControl>
-                                                            <div className="flex justify-center items-center space-x-2">
-                                                                <ShieldCheckIcon size={20} />
-                                                                <p className="text-sm leading-none font-medium">
-                                                                    {role.name}
-                                                                </p>
-                                                            </div>
-                                                        </FormLabel>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        ))}
-                                    </div>
-                                </FormItem>
-                            )}
-                        />
-                    )}
-                </form>
-            </Form>
+                                                            </ItemActions>
+                                                        </Item>
+                                                    </Field>
+                                                ))
+                                            ) : (
+                                                <Empty>
+                                                    <EmptyHeader>
+                                                        <EmptyMedia variant="icon">
+                                                            <ShieldIcon />
+                                                        </EmptyMedia>
+                                                        <EmptyTitle>No Roles available</EmptyTitle>
+                                                        <EmptyDescription>
+                                                            You can create roles in guild settings, they will then
+                                                            appear here.
+                                                        </EmptyDescription>
+                                                    </EmptyHeader>
+                                                    <EmptyContent className="flex-row justify-center gap-2">
+                                                        <Button variant="outline" onClick={openGuildSettings}>
+                                                            <CogIcon />
+                                                            <span>Guild Settings</span>
+                                                        </Button>
+                                                    </EmptyContent>
+                                                </Empty>
+                                            )}
+                                        </div>
+                                        {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                    </Field>
+                                )}
+                            />
+                        </FieldGroup>
+                    </FieldSet>
+                )}
+            </form>
             <DialogFooter>
-                <Button variant="secondary" className="cursor-pointer" onClick={handlePrevCancelClick}>
+                <Button variant="outline" className="cursor-pointer" onClick={handlePrevCancelClick}>
                     {prevButtonLabel}
                 </Button>
-                <Button className="cursor-pointer" onClick={handleNextSubmitClick}>
+                <Button form="create-guild-channel-form" className="cursor-pointer">
                     {nextButtonLabel}
                 </Button>
             </DialogFooter>

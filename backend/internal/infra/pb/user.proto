@@ -1,14 +1,17 @@
 edition = "2023";
 
 package pb;
+
 option go_package = "github.com/MikeT117/accord/backend/internal/infra/pb";
 
 message User {
-    int32 ver = 1;
-    string id = 2;
-    string username = 3;
-    string display_name = 4;
-    int32 public_flags = 5;
-    string avatar = 6;
-    string banner = 7;
+  int32 ver = 1;
+  string id = 2;
+  string username = 3;
+  string display_name = 4;
+  int32 public_flags = 5;
+  string avatar = 6;
+  string banner = 7;
+  int32 flags = 8;
 }
+

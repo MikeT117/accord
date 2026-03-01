@@ -24,15 +24,14 @@ func NewChannelMessageController(
 		channelMessageService: channelMessageService,
 	}
 
-	subGroup0 := baseGroup.Group("/channels/:channelID")
-	subGroup0.PUT("/pins/messages/:messageID", controller.pinChannelMessage)
-	subGroup0.DELETE("/pins/messages/:messageID", controller.unpinChannelMessage)
+	subGroup := baseGroup.Group("/channels/:channelID")
+	subGroup.PUT("/pins/:messageID", controller.pinChannelMessage)
+	subGroup.DELETE("/pins/:messageID", controller.unpinChannelMessage)
+	subGroup.GET("/messages", controller.getChannelMessages)
+	subGroup.POST("/messages", controller.createChannelMessage)
+	subGroup.PATCH("/messages/:messageID", controller.updateChannelMessage)
+	subGroup.DELETE("/messages/:messageID", controller.deleteChannelMessage)
 
-	subGroup1 := baseGroup.Group("/channels/:channelID/messages")
-	subGroup1.GET("", controller.getChannelMessages)
-	subGroup1.POST("", controller.createChannelMessage)
-	subGroup1.PATCH("/:messageID", controller.updateChannelMessage)
-	subGroup1.DELETE("/:messageID", controller.deleteChannelMessage)
 	return controller
 }
 

@@ -1,8 +1,8 @@
-export class ErrServerNotFound extends Error {
+export class ErrGuildNotFound extends Error {
     constructor() {
         super();
-        this.message = "Server Not Found";
-        this.name = "ErrServerNotFound";
+        this.message = "Guild Not Found";
+        this.name = "ErrGuildNotFound";
     }
 }
 

@@ -25,8 +25,9 @@ func NewGuildMemberController(
 	}
 
 	subGroup := baseGroup.Group("/guilds/:guildID/members")
+	subGroup.GET("/:userID", controller.getMember)
 	subGroup.GET("", controller.getMembers)
-	subGroup.POST("/join", controller.createMember)
+	subGroup.POST("", controller.createMember)
 	subGroup.PATCH("/:userID", controller.updateMember)
 	subGroup.DELETE("/:userID", controller.deleteMember)
 
@@ -69,7 +70,27 @@ func (c *GuildMemberController) getMembers(ctx echo.Context) error {
 		return handleError(ctx, err)
 	}
 
-	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildMemberUsersResponse(guildMembers.Result))
+	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildMembersResponse(guildMembers.Result))
+}
+
+func (c *GuildMemberController) getMember(ctx echo.Context) error {
+	var payload request.QueryGuildMemberRequest
+	if err := ctx.Bind(&payload); err != nil {
+		return handleError(ctx, err)
+	}
+
+	requestorID, _ := authentication.GetRequestorDetails(ctx)
+	cmd, err := payload.ToGuildMemberQuery(requestorID)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	guildMember, err := c.guildMemberService.GetByID(ctx.Request().Context(), cmd)
+	if err != nil {
+		return handleError(ctx, err)
+	}
+
+	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildMemberResponse(guildMember.Result))
 }
 
 func (c *GuildMemberController) updateMember(ctx echo.Context) error {

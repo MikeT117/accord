@@ -1,19 +1,19 @@
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
-import { updateGuildChannelFormSchema } from "./guild-channel-settings-form-validation";
-import type { UpdateGuildChannelFormType } from "./guild-channel-settings-dialog-types";
 import { useUpdateGuildChannelMutation } from "@/lib/react-query/mutations/update-guild-channel-mutation";
 import { SettingsDialogUnsavedChanges } from "../settings-dialog/settings-dialog-unsaved-changes";
 import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog-content-section";
+import { Field, FieldError, FieldLabel, FieldGroup, FieldSet } from "../ui/field";
+import { UpdateGuildChannelFormType } from "./types/guild-channel-settings-dialog-types";
+import { updateGuildChannelFormSchema } from "./zod-validation/guild-channel-settings-form-validation";
 
 type GuildChannelSettingsOverviewSectionProps = {
     id: string;
     name: string;
+    parentId?: string | null;
     topic: string;
-    parentId: string | null;
 };
 
 export function GuildChannelSettingsOverviewSection({
@@ -32,14 +32,8 @@ export function GuildChannelSettingsOverviewSection({
         },
     });
 
-    function handleSaveChanges() {
-        form.handleSubmit((values: UpdateGuildChannelFormType) =>
-            updateGuildChannel({
-                ...values,
-                id,
-                parentId,
-            }),
-        )();
+    function onSubmit(values: UpdateGuildChannelFormType) {
+        updateGuildChannel({ ...values, id, parentId });
     }
 
     function resetForm() {
@@ -48,38 +42,49 @@ export function GuildChannelSettingsOverviewSection({
 
     return (
         <SettingsDialogContentSection title="Channel Overview" description="Manage channel properties.">
-            <Form {...form}>
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Channel Name</FormLabel>
-                            <FormControl>
-                                <Input placeholder="Give your channel a name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="topic"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Channel Topic</FormLabel>
-                            <FormControl>
-                                <Textarea placeholder="Give your channel a topic" {...field} rows={4} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </Form>
+            <form className="w-full" id="channel-settings-form" onSubmit={form.handleSubmit(onSubmit)}>
+                <FieldSet>
+                    <FieldGroup>
+                        <Controller
+                            control={form.control}
+                            name="name"
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor="guild-channel-settings-field-display-name">Name</FieldLabel>
+                                    <Input
+                                        id="guild-channel-settings-field-display-name"
+                                        aria-invalid={fieldState.invalid}
+                                        placeholder="Give your channel a name"
+                                        {...field}
+                                    />
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                        <Controller
+                            control={form.control}
+                            name="topic"
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor="guild-channel-settings-field-topic">Topic</FieldLabel>
+                                    <Textarea
+                                        id="guild-channel-settings-field-topic"
+                                        aria-invalid={fieldState.invalid}
+                                        placeholder="Give your channel a topic"
+                                        {...field}
+                                        rows={4}
+                                    />
+                                    {fieldState.error && <FieldError errors={[fieldState.error]} />}
+                                </Field>
+                            )}
+                        />
+                    </FieldGroup>
+                </FieldSet>
+            </form>
             <SettingsDialogUnsavedChanges
                 isVisible={form.formState.isDirty}
                 onDiscard={resetForm}
-                onSave={handleSaveChanges}
+                onSave={form.handleSubmit(onSubmit)}
             />
         </SettingsDialogContentSection>
     );

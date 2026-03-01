@@ -1,5 +1,5 @@
 import { AlertCircleIcon } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
+import { Alert, AlertTitle, AlertDescription, AlertAction } from "../ui/alert";
 import { Button } from "../ui/button";
 
 type UnsavedChangesProps = {
@@ -13,16 +13,16 @@ export function SettingsDialogUnsavedChanges({ onDiscard, onSave, isVisible }: U
         return null;
     }
     return (
-        <Alert variant="warning" className="sticky bottom-6">
+        <Alert className="sticky border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-500">
             <AlertCircleIcon />
-            <AlertTitle>You have unsaved changes</AlertTitle>
+            <AlertTitle className="">You have unsaved changes</AlertTitle>
             <AlertDescription>Your changes will be lost if to exist without saving.</AlertDescription>
-            <div className="flex col-3 h-full -row-start-1 -row-end-3 items-center space-x-2">
+            <AlertAction className="space-x-1.5">
                 <Button variant="outline" onClick={onDiscard}>
                     Discard
                 </Button>
                 <Button onClick={onSave}>Save Changes</Button>
-            </div>
+            </AlertAction>
         </Alert>
     );
 }

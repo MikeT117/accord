@@ -7,11 +7,11 @@ export const userSchema = z.object({
     publicFlags: z.number(),
     avatar: z.pipe(
         z.optional(z.nullable(z.string())),
-        z.transform((a) => (!a || a.trim() === "" ? null : a))
+        z.transform((a) => (!a || a.trim() === "" ? null : a)),
     ),
     banner: z.pipe(
         z.optional(z.nullable(z.string())),
-        z.transform((a) => (!a || a.trim() === "" ? null : a))
+        z.transform((a) => (!a || a.trim() === "" ? null : a)),
     ),
 });
 
@@ -24,10 +24,10 @@ export const userUpdatedSchema = z.object({
     publicFlags: z.number(),
     avatar: z.pipe(
         z.optional(z.nullable(z.string())),
-        z.transform((a) => (!a || a.trim() === "" ? null : a))
+        z.transform((a) => (!a || a.trim() === "" ? null : a)),
     ),
     banner: z.pipe(
         z.optional(z.nullable(z.string())),
-        z.transform((a) => (!a || a.trim() === "" ? null : a))
+        z.transform((a) => (!a || a.trim() === "" ? null : a)),
     ),
 });

@@ -5,6 +5,7 @@ import { routeTree } from "./routeTree.gen";
 import { queryClient } from "./lib/react-query/query-client";
 import "./index.css";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { TooltipProvider } from "./components/ui/tooltip";
 import { eventWebsocket } from "./lib/websocket/event-ws";
 
 const router = createRouter({
@@ -30,7 +31,9 @@ if (!rootElement.innerHTML) {
     root.render(
         <StrictMode>
             <QueryClientProvider client={queryClient}>
-                <RouterProvider router={router} />
+                <TooltipProvider>
+                    <RouterProvider router={router} />
+                </TooltipProvider>
             </QueryClientProvider>
         </StrictMode>,
     );

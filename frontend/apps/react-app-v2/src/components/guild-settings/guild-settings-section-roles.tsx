@@ -2,14 +2,17 @@ import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog
 import { useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Button } from "../ui/button";
-import { ChevronRight, PencilIcon, ShieldUserIcon, Trash2Icon, Users2Icon } from "lucide-react";
-import { DestructiveIconButton } from "../destructive-icon-button";
 import { useGuildRolesArray } from "@/lib/valtio/queries/guild-store-queries";
 import { GuildSettingsRoleEditor } from "./guild-settings-role-editor";
 import { GuildSettingsRoleEditorSidebar } from "./guild-settings-role-editor-sidebar";
 import { useCreateGuildRoleMutation } from "@/lib/react-query/mutations/create-role-mutation";
 import { useDeleteGuildRoleMutation } from "@/lib/react-query/mutations/delete-role-mutation";
-import { Input } from "../ui/input";
+import { ButtonWithTooltip } from "../button-with-tooltip";
+import { Card, CardContent } from "../ui/card";
+import { ButtonGroup } from "../ui/button-group";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
+import { ChevronRight, ShieldCheckIcon, ShieldIcon, SquarePenIcon, Trash2Icon, Users2Icon } from "lucide-react";
+import { FilterInput } from "../filter-input";
 
 type GuildSettingsRolesSectionProps = {
     guildId: string;
@@ -39,76 +42,104 @@ export function GuildSettingsRolesSection({ guildId }: GuildSettingsRolesSection
     if (editingRoleId) {
         const role = [...custom, defaultRole].find((r) => r.id === editingRoleId);
 
-        if (role) {
-            return (
-                <div className="flex h-full">
-                    <GuildSettingsRoleEditorSidebar
-                        roles={custom}
-                        roleId={role.id}
-                        onRoleChange={setEditingRoleId}
-                        onCreateRole={handleCreateGuildRole}
-                    />
+        if (!role) {
+            return null;
+        }
+
+        return (
+            <div className="flex h-svh">
+                <GuildSettingsRoleEditorSidebar
+                    roles={custom}
+                    roleId={role.id}
+                    onRoleChange={setEditingRoleId}
+                    onCreateRole={handleCreateGuildRole}
+                />
+                <div className="flex h-full w-full flex-col gap-6">
                     <GuildSettingsRoleEditor role={role} />
                 </div>
-            );
-        }
+            </div>
+        );
     }
 
     return (
         <SettingsDialogContentSection
-            title="Server Roles"
-            description="Manage roles for this server, grouping members and assigning permissions."
+            title="Guild Roles"
+            description="Manage roles for this guild, grouping members and assigning permissions."
         >
-            <button
-                className="flex w-full cursor-pointer items-center gap-6 rounded-lg border bg-card p-4 text-foreground hover:bg-accent dark:text-muted-foreground dark:hover:text-white"
+            <Button
+                variant="outline"
+                className="flex w-full items-center gap-4 py-8"
                 onClick={() => setEditingRoleId(defaultRole.id)}
             >
-                <Users2Icon className="size-6" />
-                <div className="space-y-0.5">
-                    <h1 className="text-start font-medium">Default Permissions</h1>
-                    <p className="text-xs">@default - applies to all server members</p>
+                <Users2Icon />
+                <div className="text-start">
+                    <h1>Default Permissions</h1>
+                    <span className="text-xs text-muted-foreground">Permissions that apply to all guild members</span>
                 </div>
-                <ChevronRight className="ml-auto size-6" />
-            </button>
-            <div className="flex items-center space-x-3">
-                <Input
-                    value={roleFilter}
-                    onChange={(e) => setRoleFilter(e.currentTarget.value)}
-                    placeholder="Search Roles"
-                />
+                <ChevronRight className="ml-auto size-6 text-muted-foreground" />
+            </Button>
+            <div className="flex items-center space-x-2">
+                <FilterInput filterValue={roleFilter} onChange={setRoleFilter} resultsCount={filteredRoles.length} />
                 <Button onClick={handleCreateGuildRole}>Create Role</Button>
             </div>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Roles - {custom.length}</TableHead>
-                        <TableHead>Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {filteredRoles.map((r) => (
-                        <TableRow key={r.id}>
-                            <TableCell className="w-full">
-                                <div className="flex items-center space-x-1.5">
-                                    <ShieldUserIcon />
-                                    <p>{r.name}</p>
-                                </div>
-                            </TableCell>
-                            <TableCell className="flex space-x-2">
-                                <Button size="icon" variant="outline" onClick={() => setEditingRoleId(r.id)}>
-                                    <PencilIcon />
-                                </Button>
-                                <DestructiveIconButton
-                                    onClick={() => handelDeleteGuildRole(r.id)}
-                                    tooltipText="Delete Role"
-                                >
-                                    <Trash2Icon />
-                                </DestructiveIconButton>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+            <Card className="bg-transparent p-0">
+                <CardContent className="p-0">
+                    {filteredRoles.length ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Roles - {custom.length}</TableHead>
+                                    <TableHead className="text-center">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredRoles.map((r) => (
+                                    <TableRow key={r.id}>
+                                        <TableCell className="w-full">
+                                            <div className="flex items-center space-x-1.5">
+                                                <ShieldCheckIcon className="size-5" />
+                                                <span className="text-xs">{r.name}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="flex space-x-1">
+                                            <ButtonGroup>
+                                                <ButtonWithTooltip
+                                                    size="icon"
+                                                    variant="secondary"
+                                                    tooltipText="Edit Role"
+                                                    onClick={() => setEditingRoleId(r.id)}
+                                                >
+                                                    <SquarePenIcon />
+                                                </ButtonWithTooltip>
+                                                <ButtonWithTooltip
+                                                    size="icon"
+                                                    variant="destructive"
+                                                    onClick={() => handelDeleteGuildRole(r.id)}
+                                                    tooltipText="Delete Role"
+                                                >
+                                                    <Trash2Icon />
+                                                </ButtonWithTooltip>
+                                            </ButtonGroup>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <Empty>
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <ShieldIcon />
+                                </EmptyMedia>
+                                <EmptyTitle>No Roles Found</EmptyTitle>
+                                <EmptyDescription>
+                                    You can add roles by clicking the create role button above.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                        </Empty>
+                    )}
+                </CardContent>
+            </Card>
         </SettingsDialogContentSection>
     );
 }

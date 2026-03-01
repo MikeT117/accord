@@ -1,31 +1,16 @@
-import { CogIcon, GlobeIcon, LogOut, MoonIcon, PlusIcon, SunIcon, SunMoonIcon, UserRoundCogIcon } from "lucide-react";
+import { GlobeIcon, PlusIcon } from "lucide-react";
 import { AccordLogo } from "../accord-logo";
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import { useGuildsArray } from "@/lib/valtio/queries/guild-store-queries";
 import { openCreateGuildDialog } from "@/lib/valtio/mutations/create-guild-dialog-ui-store-mutations";
 import { ButtonWithTooltip } from "../button-with-tooltip";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { cycleAppTheme } from "@/lib/valtio/mutations/theme-store-mutations";
-import { useTheme } from "@/lib/valtio/queries/theme-store-queries";
-import { useUser } from "@/lib/valtio/queries/user-store-queries";
-import { openUserSettings } from "@/lib/valtio/mutations/user-settings-ui-store-mutations";
-import { GuildIcon } from "../guild-icon";
+import { AvatarWithFallback } from "../avatar-with-fallback";
 import { AppSidebarActiveVoice } from "./app-sidebar-active-voice";
+import { AppSidebarUser } from "./app-sidebar-user";
 
 export function AppSidebar() {
     const { guildId } = useParams({ strict: false });
     const guilds = useGuildsArray();
-    const user = useUser();
-    const theme = useTheme();
 
     const navigate = useNavigate();
 
@@ -50,113 +35,51 @@ export function AppSidebar() {
     }
 
     return (
-        <div className="flex w-[72px] flex-col items-center space-y-3 bg-background py-4">
-            <div className="flex flex-col gap-1.5">
+        <div className="flex h-svh w-[50px] flex-col gap-4 border-r pt-2">
+            <div className="flex h-min flex-col items-center gap-2">
                 <ButtonWithTooltip
+                    size="icon-lg"
                     tooltipText="User Dashboard"
                     side="right"
-                    className="flex size-10 items-center justify-center rounded-lg bg-accent-foreground text-accent"
                     onClick={handleUserDashboardClick}
                 >
                     <AccordLogo />
                 </ButtonWithTooltip>
                 <ButtonWithTooltip
-                    tooltipText="Public Servers"
+                    tooltipText="Public Guilds"
                     side="right"
-                    size="lg"
+                    size="icon-lg"
                     onClick={handleDiscoveravleGuildsClick}
-                    className="flex size-10 items-center justify-center rounded-lg p-0"
-                    variant="secondary"
+                    variant="outline"
                 >
                     <GlobeIcon />
                 </ButtonWithTooltip>
-
                 <ButtonWithTooltip
-                    tooltipText="Create Server"
+                    tooltipText="Create Guild"
                     side="right"
-                    size="lg"
+                    size="icon-lg"
                     onClick={openCreateGuildDialog}
-                    className="flex size-10 items-center justify-center rounded-lg p-0"
-                    variant="secondary"
+                    variant="outline"
                 >
                     <PlusIcon />
                 </ButtonWithTooltip>
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="no-scrollbar flex min-h-0 flex-col items-center gap-3 overflow-auto py-1">
                 {guilds.map((g) => (
                     <ButtonWithTooltip
                         key={g.id}
-                        tooltipText={`${g.name} Server`}
+                        tooltipText={`${g.name} Guild`}
                         side="right"
-                        size="icon"
-                        variant="link"
-                        className="group relative size-10 rounded-lg p-0"
-                        data-state={g.id === guildId ? "active" : "inactive"}
+                        size="icon-sm"
+                        className="relative"
                         onClick={() => handleGuildClick(g.id)}
                     >
-                        <div className="absolute -left-5 h-3 w-2 rounded-r-xs transition-all group-hover:h-5 group-data-[state=active]:bg-accent-foreground" />
-                        <GuildIcon name={g.name} icon={g.icon} className="size-10 border-none" />
+                        {guildId === g.id && <div className="absolute -left-3 h-3 w-1 rounded-r-xs bg-accent" />}
+                        <AvatarWithFallback fallback={g.name} src={g.icon} size="default" />
                     </ButtonWithTooltip>
                 ))}
             </div>
-            <div className="mt-auto flex flex-col items-center space-y-3">
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <ButtonWithTooltip
-                            size="icon"
-                            className="overflow-hidden rounded-lg"
-                            tooltipText="Settings"
-                            side="right"
-                        >
-                            <Avatar className="items-center justify-center rounded-none">
-                                <AvatarImage src={user.avatar ?? ""} alt={user.displayName} />
-                                <AvatarFallback className="pointer-events-none rounded-none bg-transparent">
-                                    MT
-                                </AvatarFallback>
-                            </Avatar>
-                        </ButtonWithTooltip>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="min-w-56 rounded-lg" align="end" sideOffset={8} side="right">
-                        <DropdownMenuLabel className="p-0 font-normal">
-                            <div className="flex items-center  gap-2 px-1 py-1.5 text-sm">
-                                <Avatar className="flex items-center justify-center rounded-lg">
-                                    <AvatarImage src={user.avatar ?? ""} alt={user.displayName} />
-                                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                                </Avatar>
-                                <div className="grid flex-1 text-left text-sm leading-tight">
-                                    <span className="truncate font-medium">{user.displayName}</span>
-                                    <span className="truncate text-xs">{user.username}</span>
-                                </div>
-                            </div>
-                        </DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={openUserSettings}>
-                                <CogIcon />
-                                User Settings
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <UserRoundCogIcon />
-                                Edit Profile
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={cycleAppTheme}>
-                                {theme === "dark" && <MoonIcon />}
-                                {theme === "light" && <SunIcon />}
-                                {theme === "system" && <SunMoonIcon />}
-                                Cycle Theme
-                            </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                            <LogOut />
-                            Log out
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
+            <AppSidebarUser />
             <AppSidebarActiveVoice />
         </div>
     );

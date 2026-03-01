@@ -3,16 +3,21 @@ import * as z from "zod/v4-mini";
 
 export const guildInviteSchema = z.object({
     id: z.string(),
-    guildId: z.string(),
-    name: z.string(),
-    description: z.string(),
-    channelCount: z.number(),
-    memberCount: z.number(),
-    icon: z.nullable(z.string()),
-    banner: z.nullable(z.string()),
     createdAt: z.pipe(
         z.number(),
         z.transform((num) => fromUnixTime(num)),
+    ),
+    expiresAt: z.pipe(
+        z.number(),
+        z.transform((num) => fromUnixTime(num)),
+    ),
+    usedCount: z.number(),
+    creatorId: z.string(),
+    displayName: z.string(),
+    username: z.string(),
+    avatar: z.pipe(
+        z.optional(z.nullable(z.string())),
+        z.transform((a) => (!a || a.trim() === "" ? null : a)),
     ),
 });
 

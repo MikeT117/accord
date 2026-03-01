@@ -2,14 +2,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useGuildCategoriesQuery } from "@/lib/react-query/queries/guild-category-query";
 import type { ComponentProps } from "react";
 
-type GuildCategorySelectProps = { className?: string } & ComponentProps<typeof Select>;
+type GuildCategorySelectProps = Omit<ComponentProps<typeof Select>, "defaultValue"> & {
+    className?: string;
+    defaultValue?: string | null;
+};
 
-export function GuildCategorySelect({ className, ...props }: GuildCategorySelectProps) {
+export function GuildCategorySelect({ className, defaultValue, ...props }: GuildCategorySelectProps) {
     const guildCategories = useGuildCategoriesQuery();
-    const placeholder = guildCategories?.find((g) => g.id === props.defaultValue)?.name ?? "Select Category";
+    const placeholder = guildCategories?.find((g) => g.id === defaultValue)?.name ?? "Select Category";
 
     return (
-        <Select {...props}>
+        <Select defaultValue={typeof defaultValue !== "string" ? undefined : defaultValue} {...props}>
             <SelectTrigger className={className}>
                 <SelectValue placeholder={placeholder} />
             </SelectTrigger>

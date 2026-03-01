@@ -76,7 +76,7 @@ func (s *ChannelService) GetByUserID(ctx context.Context, userID uuid.UUID) (*qu
 }
 
 func (s *ChannelService) Create(ctx context.Context, cmd *command.CreateChannelCommand) (*command.CreateChannelCommandResult, error) {
-	channel, err := entities.NewChannel(cmd.ChannelType, cmd.GuildID, cmd.CreatorID, cmd.Name, cmd.Topic)
+	channel, err := entities.NewChannel(cmd.ChannelType, cmd.GuildID, cmd.CreatorID, cmd.Name)
 	if err != nil {
 		return nil, err
 	}

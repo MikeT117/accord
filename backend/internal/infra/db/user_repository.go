@@ -33,7 +33,8 @@ func (r *UserRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.U
 			avatar_id,
 			banner_id,
 			created_at,
-			updated_at
+			updated_at,
+			flags
 		FROM
 			"user"
 		WHERE
@@ -55,6 +56,7 @@ func (r *UserRepository) GetByID(ctx context.Context, ID uuid.UUID) (*entities.U
 		&user.BannerID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.Flags,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrEntityNotFound
@@ -79,7 +81,8 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*e
 			avatar_id,
 			banner_id,
 			created_at,
-			updated_at
+			updated_at,
+			flags
 		FROM
 			"user"
 		WHERE
@@ -101,6 +104,7 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*e
 		&user.BannerID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.Flags,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrEntityNotFound
@@ -125,7 +129,8 @@ func (r *UserRepository) GetByAccountID(ctx context.Context, accountID uuid.UUID
 			avatar_id,
 			banner_id,
 			created_at,
-			updated_at
+			updated_at,
+			flags
 		FROM
 			"user"
 		WHERE
@@ -147,6 +152,7 @@ func (r *UserRepository) GetByAccountID(ctx context.Context, accountID uuid.UUID
 		&user.BannerID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.Flags,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrEntityNotFound
@@ -171,7 +177,8 @@ func (r *UserRepository) GetMapByIDs(ctx context.Context, IDs []uuid.UUID) (map[
 			avatar_id,
 			banner_id,
 			created_at,
-			updated_at
+			updated_at,
+			flags
 		FROM
 			"user"
 		WHERE
@@ -199,6 +206,7 @@ func (r *UserRepository) GetMapByIDs(ctx context.Context, IDs []uuid.UUID) (map[
 			&user.BannerID,
 			&user.CreatedAt,
 			&user.UpdatedAt,
+			&user.Flags,
 		); err != nil {
 			return nil, wrapUnknownErr("map over select users by ids failed", err)
 		}
@@ -222,7 +230,8 @@ func (r *UserRepository) GetByIDs(ctx context.Context, IDs []uuid.UUID) ([]*enti
 			avatar_id,
 			banner_id,
 			created_at,
-			updated_at
+			updated_at,
+			flags
 		FROM
 			"user"
 		WHERE
@@ -250,6 +259,7 @@ func (r *UserRepository) GetByIDs(ctx context.Context, IDs []uuid.UUID) ([]*enti
 			&user.BannerID,
 			&user.CreatedAt,
 			&user.UpdatedAt,
+			&user.Flags,
 		); err != nil {
 			return nil, wrapUnknownErr("map over select users by ids failed", err)
 		}
@@ -273,7 +283,8 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*entitie
 			avatar_id,
 			banner_id,
 			created_at,
-			updated_at
+			updated_at,
+			flags
 		FROM
 			"user"
 		WHERE
@@ -295,6 +306,7 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*entitie
 		&user.BannerID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.Flags,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrEntityNotFound
@@ -320,9 +332,10 @@ func (r *UserRepository) Create(ctx context.Context, user *entities.User) error 
 				avatar_id,
 				banner_id,
 				created_at,
-				updated_at
+				updated_at,
+				flags
 			)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
 	`,
 		&user.ID,
 		&user.AccountID,
@@ -336,6 +349,7 @@ func (r *UserRepository) Create(ctx context.Context, user *entities.User) error 
 		user.BannerID,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.Flags,
 	)
 
 	if err != nil {
@@ -350,17 +364,20 @@ func (r *UserRepository) Update(ctx context.Context, user *entities.User) error 
 		UPDATE
 			"user"
 		SET
-			display_name = $2,
-			email = $3,
-			email_verified = $4,
-			public_flags = $5,
-			avatar_id = $6,
-			banner_id = $7,
-			updated_at = $8
+			username = $2,
+			display_name = $3,
+			email = $4,
+			email_verified = $5,
+			public_flags = $6,
+			avatar_id = $7,
+			banner_id = $8,
+			updated_at = $9,
+			flags = $10
 		WHERE
 			id = $1;
 		`,
 		&user.ID,
+		&user.Username,
 		&user.DisplayName,
 		&user.Email,
 		&user.EmailVerified,
@@ -368,6 +385,7 @@ func (r *UserRepository) Update(ctx context.Context, user *entities.User) error 
 		user.AvatarID,
 		user.BannerID,
 		&user.UpdatedAt,
+		&user.Flags,
 	)
 
 	if err != nil {

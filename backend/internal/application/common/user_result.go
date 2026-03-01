@@ -11,4 +11,5 @@ type UserResult struct {
 	PublicFlags int8
 	AvatarID    *uuid.UUID
 	BannerID    *uuid.UUID
+	Flags       int
 }

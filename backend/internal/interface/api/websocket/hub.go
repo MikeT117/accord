@@ -104,16 +104,16 @@ func (h *Hub) handleProviderEvent(event []byte) {
 	h.clients.Mutex.RLock()
 	defer h.clients.Mutex.RUnlock()
 
-	switch providerEvent.Op {
-	case pb.ProviderOpCode_ASSOCIATE_USER_ROLE.Enum():
+	switch providerEvent.GetOp() {
+	case pb.ProviderOpCode_ASSOCIATE_USER_ROLE:
 		for _, client := range h.clients.Data {
 			client.addRole(*providerEvent.GetUserRoleAssociate().RoleId)
 		}
-	case pb.ProviderOpCode_DISASSOCIATE_USER_ROLE.Enum():
+	case pb.ProviderOpCode_DISASSOCIATE_USER_ROLE:
 		for _, client := range h.clients.Data {
 			client.deleteRole(*providerEvent.GetUserRoleDisassociate().RoleId)
 		}
-	case pb.ProviderOpCode_INVALIDATE_TOKEN.Enum():
+	case pb.ProviderOpCode_INVALIDATE_TOKEN:
 		for _, client := range h.clients.Data {
 			client.shutdown(CLOSE_SESSION_EXPIRED)
 		}

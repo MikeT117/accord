@@ -67,7 +67,7 @@ func (c *GuildRoleController) getGuildRoleMembers(ctx echo.Context) error {
 		return handleError(ctx, err)
 	}
 
-	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildMemberUsersResponse(guildRoleMembers.Result))
+	return response.JSONResponse(ctx, http.StatusOK, mapper.ToGuildMembersResponse(guildRoleMembers.Result))
 }
 
 func (c *GuildRoleController) syncChannelRoleAssociations(ctx echo.Context) error {

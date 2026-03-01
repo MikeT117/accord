@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"log"
 
 	"github.com/MikeT117/accord/backend/internal/application/command"
 	"github.com/MikeT117/accord/backend/internal/application/interfaces"
@@ -189,16 +190,17 @@ func (s *GuildRoleService) SyncGuildChannelRoleAssociations(ctx context.Context,
 		return err
 	}
 
-	sourceChannel, err := s.channelRepository.GetByIDAndGuildID(ctx, cmd.SourceChannelID, cmd.GuildID)
+	targetChannel, err := s.channelRepository.GetByIDAndGuildID(ctx, cmd.TargetChannelID, cmd.GuildID)
 	if err != nil {
 		return err
 	}
 
-	if !sourceChannel.IsGuildCategoryChannel() {
+	if !targetChannel.IsGuildCategoryChannel() {
+		log.Println("Source_Channel_Type: ", targetChannel.ChannelType)
 		return ErrInvalidChannelType
 	}
 
-	_, err = s.channelRepository.GetByIDAndGuildIDAndParentID(ctx, cmd.TargetChannelID, cmd.GuildID, sourceChannel.ID)
+	_, err = s.channelRepository.GetByIDAndGuildIDAndParentID(ctx, cmd.SourceChannelID, cmd.GuildID, cmd.TargetChannelID)
 	if err != nil {
 		return err
 	}
@@ -285,7 +287,7 @@ func (s *GuildRoleService) GetAssignedGuildMembersByRoleID(ctx context.Context, 
 	}
 
 	return &query.GuildMemberQueryListResult{
-		Result: mapper.NewGuildMemberUserListResultFromGuildMember(guildMembers, guildMembersRolesMap, usersMap),
+		Result: mapper.NewGuildMemberListResultFromGuildMember(guildMembers, guildMembersRolesMap, usersMap),
 	}, nil
 }
 
@@ -311,6 +313,6 @@ func (s *GuildRoleService) GetUnassignedGuildMembersByRoleID(ctx context.Context
 	}
 
 	return &query.GuildMemberQueryListResult{
-		Result: mapper.NewGuildMemberUserListResultFromGuildMember(guildMembers, guildMembersRolesMap, usersMap),
+		Result: mapper.NewGuildMemberListResultFromGuildMember(guildMembers, guildMembersRolesMap, usersMap),
 	}, nil
 }

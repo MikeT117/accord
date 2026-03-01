@@ -1,8 +1,7 @@
 import { MessageCircleIcon, MoreHorizontalIcon, UserRoundXIcon } from "lucide-react";
 import { RELATIONSHIP_STATUS } from "@/lib/zod-validation/relationship-schema";
-import { UserAvatar } from "../user-avatar";
+import { AvatarWithFallback } from "../avatar-with-fallback";
 import { ButtonWithTooltip } from "../button-with-tooltip";
-import { Input } from "../ui/input";
 import { getPrivateDirectChannelIdByUserId } from "@/lib/valtio/queries/private-channel-store-queries";
 import { useNavigate } from "@tanstack/react-router";
 import { useCreatePrivateChannelMutation } from "@/lib/react-query/mutations/create-private-channel-mutation";
@@ -14,17 +13,16 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "../ui/item";
+import { Button } from "../ui/button";
+import { openCreateRelationshipRequestDialog } from "@/lib/valtio/mutations/create-relationship-request-dialog-ui-store-mutations";
+import { FilterInput } from "../filter-input";
 
 export function UserDashboardFriendsList() {
     const { filteredRelationships, filter, setFilter } = useFilteredRelationships(RELATIONSHIP_STATUS.FRIEND);
     const { mutate: createPrivateChannel } = useCreatePrivateChannelMutation();
     const { mutate: deleteRelationship } = useDeleteRelationshipMutation();
-
     const navigate = useNavigate();
-
-    function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-        setFilter(e.currentTarget.value);
-    }
 
     function handleDeleteRelationship(relationshipId: string) {
         deleteRelationship({ id: relationshipId });
@@ -53,23 +51,24 @@ export function UserDashboardFriendsList() {
 
     return (
         <div className="space-y-3 p-3">
-            <Input placeholder="Search" onChange={handleInputChange} value={filter} />
+            <div className="flex items-center space-x-3">
+                <FilterInput filterValue={filter} onChange={setFilter} resultsCount={filteredRelationships.length} />
+                <Button onClick={openCreateRelationshipRequestDialog}>Add Friend</Button>
+            </div>
             <div className="flex flex-col overflow-auto">
                 {filteredRelationships.map((r) => (
-                    <div key={r.id} className="flex items-center justify-between rounded-lg p-1.5 hover:bg-accent/50">
-                        <div className="flex items-center space-x-1.5">
-                            <UserAvatar
-                                avatar={r.user.avatar}
-                                displayName={r.user.displayName}
-                                className="size-6 border-none"
-                            />
-                            <span className="font-medium">{r.user.displayName}</span>
-                        </div>
-                        <div className="flex space-x-1.5">
+                    <Item variant="outline" key={r.id}>
+                        <ItemMedia>
+                            <AvatarWithFallback src={r.user.avatar} fallback={r.user.displayName} size="lg" />
+                        </ItemMedia>
+                        <ItemContent>
+                            <ItemTitle>{r.user.displayName}</ItemTitle>
+                            <ItemDescription>{r.user.username}</ItemDescription>
+                        </ItemContent>
+                        <ItemActions>
                             <ButtonWithTooltip
                                 size="icon"
-                                tooltipText="Message"
-                                className="size-8"
+                                tooltipText="Open Direct Channel"
                                 variant="outline"
                                 onClick={() => handleChatClick(r.user.id)}
                             >
@@ -81,7 +80,6 @@ export function UserDashboardFriendsList() {
                                         aria-label="More Options"
                                         variant="outline"
                                         size="icon"
-                                        className="size-8 data-[state=open]:bg-accent dark:data-[state=open]:bg-accent/50"
                                         tooltipText="More Options"
                                     >
                                         <MoreHorizontalIcon />
@@ -98,8 +96,8 @@ export function UserDashboardFriendsList() {
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                        </div>
-                    </div>
+                        </ItemActions>
+                    </Item>
                 ))}
             </div>
         </div>

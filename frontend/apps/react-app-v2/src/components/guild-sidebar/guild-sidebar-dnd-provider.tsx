@@ -1,7 +1,7 @@
 import { useUpdateGuildChannelMutation } from "@/lib/react-query/mutations/update-guild-channel-mutation";
 import { DragDropProvider } from "@dnd-kit/react";
 import type { ReactNode } from "react";
-import { guildSidebarDnDContextSchema } from "./guild-sidebar-dnd-context-zod-validator";
+import { guildSidebarDnDContextSchema } from "./zod-validation/guild-sidebar-dnd-context-zod-validator";
 
 export function DnDProvider({ children }: { children: ReactNode }) {
     const { mutate: updateGuildChannel } = useUpdateGuildChannelMutation();
@@ -11,11 +11,14 @@ export function DnDProvider({ children }: { children: ReactNode }) {
             onDragEnd={(event) => {
                 if (event.canceled) return;
 
-                const { success, data } = guildSidebarDnDContextSchema.safeParse({
+                const { success, data, error } = guildSidebarDnDContextSchema.safeParse({
                     ...(event.operation.source?.data ?? {}),
                     ...(event.operation.target?.data ?? {}),
                 });
-                if (!success) return;
+                if (!success) {
+                    console.error(error);
+                    return;
+                }
 
                 updateGuildChannel(data);
             }}

@@ -73,6 +73,11 @@ func (s *EventService) GuildCreated(ctx context.Context, ID uuid.UUID, userID uu
 		return err
 	}
 
+	assignedRoleIDs, err := s.guildRoleRepository.GetRoleIDsByUserIDAndGuildID(ctx, userID, ID)
+	if err != nil {
+		return err
+	}
+
 	if err := s.eventPublisher.PublishUserEvent(
 		[]uuid.UUID{userID},
 		mapper.NewGuildCreatedProtoEvent(guild, channels, channelRoles, roles),
@@ -80,8 +85,8 @@ func (s *EventService) GuildCreated(ctx context.Context, ID uuid.UUID, userID uu
 		return err
 	}
 
-	for _, role := range roles {
-		if err := s.UserRoleAssociated(ctx, userID, role.ID); err != nil {
+	for _, roleID := range assignedRoleIDs {
+		if err := s.UserRoleAssociated(ctx, userID, roleID); err != nil {
 			return err
 		}
 	}
@@ -172,8 +177,12 @@ func (s *EventService) ChannelCreated(ctx context.Context, ID uuid.UUID) error {
 		return err
 	}
 
-	userIDs := make([]uuid.UUID, len(users))
+	userIDs := make([]uuid.UUID, len(users)-1)
 	for i := 0; i < len(users); i++ {
+		if users[i].ID == channel.CreatorID {
+			continue
+		}
+
 		userIDs[i] = users[i].ID
 	}
 
@@ -238,7 +247,7 @@ func (s *EventService) RelationshipCreated(ctx context.Context, ID uuid.UUID) er
 		}
 	}
 
-	if err := s.eventPublisher.PublishUserEvent([]uuid.UUID{relationship.RecipientID}, mapper.NewRelationshipCreatedProtoEvent(relationship, recipient)); err != nil {
+	if err := s.eventPublisher.PublishUserEvent([]uuid.UUID{relationship.CreatorID}, mapper.NewRelationshipCreatedProtoEvent(relationship, recipient)); err != nil {
 		return err
 	}
 

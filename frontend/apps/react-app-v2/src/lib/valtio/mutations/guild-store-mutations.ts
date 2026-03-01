@@ -61,6 +61,12 @@ export function handleGuildUpdated(guildUpdate: APIGuildUpdatedType) {
 }
 
 export function handleGuildDeleted(guildDelete: APIGuildDeletedType) {
+    const index = guildStore.keys.findIndex((c) => c === guildDelete.id);
+    if (index === -1) {
+        return;
+    }
+
+    guildStore.keys.splice(index, 1);
     delete guildStore.values[guildDelete.id];
 }
 
@@ -73,6 +79,7 @@ export function handleGuildChannelCreated(channel: APIGuildChannelType) {
     if (!guild.channels.keys.includes(channel.id)) {
         guild.channels.keys.push(channel.id);
     }
+
     guild.channels.values[channel.id] = apiGuildChannelToGuildChannel(channel);
 }
 
@@ -89,10 +96,10 @@ export function handleGuildChannelUpdated(channelUpdate: APIChannelUpdatedType) 
 
     if (!isGuildCategoryChannel(channel)) {
         channel.parentId = channelUpdate.parentId;
+        channel.topic = channelUpdate.topic;
     }
 
     channel.name = channelUpdate.name;
-    channel.topic = channelUpdate.topic;
     channel.updatedAt = channelUpdate.updatedAt;
 }
 

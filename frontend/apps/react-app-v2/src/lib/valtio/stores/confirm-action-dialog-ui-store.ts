@@ -1,5 +1,4 @@
 import { proxy } from "valtio";
-import { devtools } from "valtio/utils";
 
 type ConfirmActionDialogUIStore = {
     isOpen: boolean;
@@ -14,4 +13,3 @@ export const confirmActionDialogUIStore = proxy<ConfirmActionDialogUIStore>({
     title: "",
     actionFn: () => void 0,
 });
-devtools(confirmActionDialogUIStore, { name: "confirm action dialog ui store", enabled: true });

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Hash, Users, FingerprintIcon, ServerIcon } from "lucide-react";
+import { FingerprintIcon, UserRoundPenIcon, CastleIcon, LayoutDashboardIcon, ShieldIcon } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import type { ValueOf } from "@/lib/types/types";
 import { SettingsDialogContent } from "../settings-dialog/settings-dialog-content";
@@ -11,6 +11,7 @@ import { UserSettingsOverviewSection } from "./user-settings-section-overview";
 import { UserSettingsPermissionsSection } from "./user-settings-section-permissions";
 import { UserSettingsSessionsSection } from "./user-settings-section-sessions";
 import { UserSettingsGuildsSection } from "./user-settings-section-guilds";
+import { UserSettingsGuildProfileSection } from "./user-settings-section-guild-profile";
 
 export function UserSettings() {
     const { isOpen } = useUserSettingsState();
@@ -26,38 +27,40 @@ const USER_SETTINGS_SECTION = {
     PERMISSIONS: 1,
     SESSIONS: 2,
     GUILDS: 3,
+    GUILD_PROFILES: 4,
 } as const;
 
 const sidebarItems = [
     {
         id: USER_SETTINGS_SECTION.OVERVIEW,
-        label: "Account Overview",
-        icon: <Hash />,
-        description: "View account information",
+        label: "Overview",
+        icon: <LayoutDashboardIcon />,
     },
     {
         id: USER_SETTINGS_SECTION.PERMISSIONS,
-        label: "Account Permissions",
-        icon: <Users />,
-        description: "Manage account permissions",
+        label: "Permissions",
+        icon: <ShieldIcon />,
     },
     {
         id: USER_SETTINGS_SECTION.SESSIONS,
         label: "Sessions",
         icon: <FingerprintIcon />,
-        description: "Manage account sessions",
     },
     {
         id: USER_SETTINGS_SECTION.GUILDS,
-        label: "Servers",
-        icon: <ServerIcon />,
-        description: "Manage server memberships",
+        label: "Guilds",
+        icon: <CastleIcon />,
+    },
+    {
+        id: USER_SETTINGS_SECTION.GUILD_PROFILES,
+        label: "Guild Profile",
+        icon: <UserRoundPenIcon />,
     },
 ] as const;
 
 function UserSettingsContent() {
     const [activeSection, setActiveSection] = React.useState<ValueOf<typeof USER_SETTINGS_SECTION>>(
-        USER_SETTINGS_SECTION.OVERVIEW
+        USER_SETTINGS_SECTION.OVERVIEW,
     );
     const user = useUser();
 
@@ -75,6 +78,7 @@ function UserSettingsContent() {
         >
             {activeSection === USER_SETTINGS_SECTION.OVERVIEW && (
                 <UserSettingsOverviewSection
+                    userId={user.id}
                     displayName={user.displayName}
                     publicFlags={user.publicFlags}
                     avatar={user.avatar}
@@ -83,6 +87,7 @@ function UserSettingsContent() {
             )}
             {activeSection === USER_SETTINGS_SECTION.PERMISSIONS && (
                 <UserSettingsPermissionsSection
+                    userId={user.id}
                     displayName={user.displayName}
                     publicFlags={user.publicFlags}
                     avatar={user.avatar}
@@ -90,7 +95,10 @@ function UserSettingsContent() {
                 />
             )}
             {activeSection === USER_SETTINGS_SECTION.SESSIONS && <UserSettingsSessionsSection />}
-            {activeSection === USER_SETTINGS_SECTION.GUILDS && <UserSettingsGuildsSection />}
+            {activeSection === USER_SETTINGS_SECTION.GUILDS && <UserSettingsGuildsSection userId={user.id} />}
+            {activeSection === USER_SETTINGS_SECTION.GUILD_PROFILES && (
+                <UserSettingsGuildProfileSection userId={user.id} />
+            )}
         </SettingsDialogContent>
     );
 }

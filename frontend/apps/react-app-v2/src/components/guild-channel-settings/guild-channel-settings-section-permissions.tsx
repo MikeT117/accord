@@ -1,29 +1,34 @@
-import { Plus, ShieldIcon, ShieldUserIcon, Trash2Icon } from "lucide-react";
-import { Button } from "../ui/button";
+import { BrickWallShieldIcon, CogIcon, Plus, ShieldIcon, Trash2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../ui/card";
 import { useGuildChannelPermissions } from "@/lib/valtio/queries/guild-store-queries";
 import { Switch } from "../ui/switch";
 import { useDeleteRoleChannelAssoc } from "@/lib/react-query/mutations/delete-role-channel-assoc-mutation";
 import { useCreateRoleChannelAssoc } from "@/lib/react-query/mutations/create-role-channel-assoc-mutation";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { SettingsDialogUnsavedChanges } from "../settings-dialog/settings-dialog-unsaved-changes";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "../ui/form";
 import { GuildRolePermissionBadges } from "../guild-role-permission-badges";
 import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog-content-section";
 import { GuildChannelSettingsPermissionSyncAlert } from "./guild-channel-settings-permission-sync-alert";
 import { useSyncChannelRoleAssociationsMutation } from "@/lib/react-query/mutations/sync-channel-role-associsations-mutation";
-import { DestructiveIconButton } from "../destructive-icon-button";
+import { ButtonWithTooltip } from "../button-with-tooltip";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "../ui/item";
+import { ScrollArea } from "../ui/scroll-area";
+import { openGuildSettings } from "@/lib/valtio/mutations/guild-settings-ui-store-mutations";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "../ui/empty";
+import { Button } from "../ui/button";
+import { Field, FieldError } from "../ui/field";
+import { GuildChannelType } from "@/lib/types/types";
+import { GUILD_CHANNEL_TYPE } from "@/lib/zod-validation/channel-schema";
 
-type GuildChannelSettingsPermissionsSectionProps = {
-    id: string;
-    guildId: string;
-    parentId: string | null;
+type GuildChannelSettingsPermissionsSectionProps = Pick<GuildChannelType, "id" | "guildId" | "channelType"> & {
+    parentId?: string | null | undefined;
 };
 
 export function GuildChannelSettingsPermissionsSection({
     id,
     guildId,
     parentId,
+    channelType,
 }: GuildChannelSettingsPermissionsSectionProps) {
     const { assignedRoles, availableRoles, defaultRoleId, isPrivate, isSyncedWithParent } = useGuildChannelPermissions(
         guildId,
@@ -55,59 +60,64 @@ export function GuildChannelSettingsPermissionsSection({
         syncChannelRoleAssociations({ guildId, sourceChannelId: id, targetChannelId: parentId });
     }
 
-    async function handleSaveChanges() {
-        form.handleSubmit(() => {
-            if (isPrivate) {
-                handleRoleAssign(defaultRoleId);
-            } else {
-                handleRoleUnassign(defaultRoleId);
-            }
-        })();
+    async function onSubmit() {
+        if (isPrivate) {
+            handleRoleAssign(defaultRoleId);
+        } else {
+            handleRoleUnassign(defaultRoleId);
+        }
     }
 
     function resetForm() {
         form.reset({ isPrivate });
     }
 
+    const isGuildCategoryChannel = channelType === GUILD_CHANNEL_TYPE.GUILD_CATEGORY_CHANNEL;
+
     return (
-        <SettingsDialogContentSection
-            title="Channel Roles"
-            description="Manage roles, permissions and visibility for this channel."
-        >
-            {parentId && isSyncedWithParent === false && (
-                <GuildChannelSettingsPermissionSyncAlert
-                    isVisible={!isSyncedWithParent}
-                    onSync={handleSyncParentRoleAssociations}
-                />
-            )}
-            <Card>
+        <SettingsDialogContentSection title="Permissions" description="Manage roles, permissions and visibility.">
+            <GuildChannelSettingsPermissionSyncAlert
+                isVisible={!isGuildCategoryChannel && !!parentId && !isSyncedWithParent}
+                onSync={handleSyncParentRoleAssociations}
+            />
+            <Card className="shrink-0 border-2 bg-transparent ring-0">
                 <CardHeader>
                     <CardTitle>Visibility</CardTitle>
-                    <CardDescription>Current visibility status of this channel</CardDescription>
+                    <CardDescription>Viewable by all or only users within a specific role.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Form {...form}>
-                        <FormField
+                    <form id="channel-channel-visibility" onSubmit={form.handleSubmit(onSubmit)}>
+                        <Controller
                             control={form.control}
                             name="isPrivate"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 has-[[aria-checked=true]]:bg-muted">
-                                    <div className="space-y-0.5">
-                                        <FormLabel>Private Channel</FormLabel>
-                                        <FormDescription className="text-xs">
-                                            Only members within selected roles will be able to view the channel.
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                    </FormControl>
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <Item
+                                        size="xs"
+                                        variant="outline"
+                                        className="border-2 has-[[aria-checked=true]]:bg-input/30"
+                                    >
+                                        <ItemMedia variant="icon">
+                                            <BrickWallShieldIcon />
+                                        </ItemMedia>
+                                        <ItemContent>
+                                            <ItemTitle>Private Channel</ItemTitle>
+                                            <ItemDescription>
+                                                Only members within assigned roles will be able to view the Channel.
+                                            </ItemDescription>
+                                        </ItemContent>
+                                        <ItemActions>
+                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                        </ItemActions>
+                                    </Item>
+                                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                </Field>
                             )}
                         />
-                    </Form>
+                    </form>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="shrink-0 border-2 bg-transparent ring-0">
                 <CardHeader>
                     <CardTitle>Assigned Roles</CardTitle>
                     <CardDescription>Roles currently assigned to this channel.</CardDescription>
@@ -115,65 +125,98 @@ export function GuildChannelSettingsPermissionsSection({
                 <CardContent>
                     <div className="space-y-3">
                         {assignedRoles.map((role) => (
-                            <div key={role.id} className="flex items-center justify-between rounded-lg border p-3">
-                                <div className="flex items-center gap-3">
-                                    <ShieldIcon className="size-5 shrink-0" />
-                                    <div className="space-y-1.5">
-                                        <div className="font-medium">{role.name}</div>
-                                        <GuildRolePermissionBadges permissions={role.permissions} />
-                                    </div>
-                                </div>
-
-                                <DestructiveIconButton
-                                    onClick={() => handleRoleUnassign(role.id)}
-                                    tooltipText="Remove Role"
-                                >
-                                    <Trash2Icon />
-                                </DestructiveIconButton>
-                            </div>
+                            <Item variant="outline" key={role.id}>
+                                <ItemMedia>
+                                    <ShieldIcon className="size-5" />
+                                </ItemMedia>
+                                <ItemContent>
+                                    <ItemTitle>{role.name}</ItemTitle>
+                                    <GuildRolePermissionBadges permissions={role.permissions} />
+                                </ItemContent>
+                                <ItemActions>
+                                    <ButtonWithTooltip
+                                        tooltipText="Unassign Role"
+                                        variant="destructive"
+                                        size="icon-sm"
+                                        onClick={() => handleRoleUnassign(role.id)}
+                                    >
+                                        <Trash2 />
+                                    </ButtonWithTooltip>
+                                </ItemActions>
+                            </Item>
                         ))}
                         {assignedRoles.length === 0 && (
-                            <div className="py-8 text-center text-muted-foreground">
-                                No roles assigned to this channel.
-                            </div>
+                            <Empty>
+                                <EmptyHeader>
+                                    <EmptyMedia variant="icon">
+                                        <ShieldIcon />
+                                    </EmptyMedia>
+                                    <EmptyTitle>No Roles assigned</EmptyTitle>
+                                    <EmptyDescription>
+                                        You can add roles by clicking the button in the listed roles below.
+                                    </EmptyDescription>
+                                </EmptyHeader>
+                            </Empty>
                         )}
                     </div>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="shrink-0 border-2 bg-transparent ring-0">
                 <CardHeader>
                     <CardTitle>Add Role</CardTitle>
                     <CardDescription>Assign additional roles to this channel.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="space-y-3">
-                        {availableRoles.map((role) => (
-                            <div key={role.id} className="flex items-center justify-between rounded-lg border p-3">
-                                <div className="flex items-center gap-3">
-                                    <ShieldUserIcon className="size-5 shrink-0" />
-                                    <div className="space-y-1.5">
-                                        <div className="font-medium">{role.name}</div>
+                    <ScrollArea className="max-h-96">
+                        <div className="flex flex-col space-y-3">
+                            {availableRoles.map((role) => (
+                                <Item variant="outline">
+                                    <ItemMedia>
+                                        <ShieldIcon className="size-5" />
+                                    </ItemMedia>
+                                    <ItemContent>
+                                        <ItemTitle>{role.name}</ItemTitle>
                                         <GuildRolePermissionBadges permissions={role.permissions} />
-                                    </div>
-                                </div>
-                                <Button variant="outline" size="sm" onClick={() => handleRoleAssign(role.id)}>
-                                    <Plus className="mr-1 h-4 w-4" />
-                                    Add
-                                </Button>
-                            </div>
-                        ))}
-                        {availableRoles.length === 0 && (
-                            <div className="py-8 text-center text-muted-foreground">
-                                All available roles have been assigned.
-                            </div>
-                        )}
-                    </div>
+                                    </ItemContent>
+                                    <ItemActions>
+                                        <ButtonWithTooltip
+                                            variant="outline"
+                                            size="icon-sm"
+                                            tooltipText="Assign Role"
+                                            onClick={() => handleRoleAssign(role.id)}
+                                        >
+                                            <Plus />
+                                        </ButtonWithTooltip>
+                                    </ItemActions>
+                                </Item>
+                            ))}
+                            {availableRoles.length === 0 && (
+                                <Empty>
+                                    <EmptyHeader>
+                                        <EmptyMedia variant="icon">
+                                            <ShieldIcon />
+                                        </EmptyMedia>
+                                        <EmptyTitle>No Roles available</EmptyTitle>
+                                        <EmptyDescription>
+                                            You can create roles in guild settings, they will then appear here.
+                                        </EmptyDescription>
+                                    </EmptyHeader>
+                                    <EmptyContent className="flex-row justify-center gap-2">
+                                        <Button variant="outline" onClick={openGuildSettings}>
+                                            <CogIcon />
+                                            <span>Guild Settings</span>
+                                        </Button>
+                                    </EmptyContent>
+                                </Empty>
+                            )}
+                        </div>
+                    </ScrollArea>
                 </CardContent>
             </Card>
             <SettingsDialogUnsavedChanges
                 isVisible={form.formState.isDirty}
                 onDiscard={resetForm}
-                onSave={handleSaveChanges}
+                onSave={form.handleSubmit(onSubmit)}
             />
         </SettingsDialogContentSection>
     );

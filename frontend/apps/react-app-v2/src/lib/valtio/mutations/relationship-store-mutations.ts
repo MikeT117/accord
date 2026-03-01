@@ -23,7 +23,7 @@ export function handleRelationshipCreated(relationship: RelationshipType) {
     relationshipStore.values[relationship.id] = relationship;
 }
 
-export function handlePrivateRelationshipUpdated(updatedRelationship: APIRelationshipUpdatedType) {
+export function handleRelationshipUpdated(updatedRelationship: APIRelationshipUpdatedType) {
     const relationship = relationshipStore.values[updatedRelationship.id];
     if (!relationship) {
         return;
@@ -33,7 +33,7 @@ export function handlePrivateRelationshipUpdated(updatedRelationship: APIRelatio
     relationship.updatedAt = updatedRelationship.updatedAt;
 }
 
-export function handlePrivateRelationshipDeleted(relationship: APIRelationshipDeletedType) {
+export function handleRelationshipDeleted(relationship: APIRelationshipDeletedType) {
     const index = relationshipStore.keys.findIndex((c) => c === relationship.id);
     if (index === -1) {
         return;

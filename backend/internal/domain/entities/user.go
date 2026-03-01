@@ -8,6 +8,11 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	StatusRegistrationPending int = iota
+	StatusRegistrationComplete
+)
+
 type User struct {
 	ID                uuid.UUID
 	AccountID         uuid.UUID
@@ -21,6 +26,7 @@ type User struct {
 	BannerID          *uuid.UUID
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
+	Flags             int
 }
 
 func (u *User) validate() error {
@@ -41,7 +47,9 @@ func (u *User) validate() error {
 	}
 	if u.RelationshipCount < 0 {
 		return domain.NewDomainValidationError("relationshipCount must not be negative")
-
+	}
+	if u.Flags < 0 || u.Flags > 1 {
+		return domain.NewDomainValidationError("invalid user flag")
 	}
 	return nil
 }
@@ -66,6 +74,7 @@ func NewUser(username string, displayName string, accountID uuid.UUID, email str
 		BannerID:          bannerID,
 		CreatedAt:         timestamp,
 		UpdatedAt:         timestamp,
+		Flags:             StatusRegistrationPending,
 	}
 
 	if err := user.validate(); err != nil {
@@ -81,6 +90,10 @@ func (u *User) AllowsFriendRequests() bool {
 
 func (u *User) AllowsGuildMemberMessages() bool {
 	return u.PublicFlags&(1<<constants.ALLOW_GUILD_MEMBER_DM) != 0
+}
+
+func (u *User) IsRegistrationComplete() bool {
+	return u.Flags == StatusRegistrationComplete
 }
 
 func (u *User) UpdateUsername(username string) error {
@@ -127,6 +140,12 @@ func (u *User) UpdateAvatarID(avatarID *uuid.UUID) error {
 
 func (u *User) UpdateBannerID(bannerID *uuid.UUID) error {
 	u.BannerID = bannerID
+	u.UpdatedAt = time.Now().UTC()
+	return u.validate()
+}
+
+func (u *User) UpdateRegistrationStatus() error {
+	u.Flags = StatusRegistrationComplete
 	u.UpdatedAt = time.Now().UTC()
 	return u.validate()
 }

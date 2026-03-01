@@ -80,7 +80,7 @@ func main() {
 	channelService := services.CreateChannelService(transactor, authorisationService, eventService, channelRepository, guildRepository, guildRoleRepository, userRepository)
 	guildBanService := services.CreateGuildBanService(transactor, authorisationService, guildMemberRepository, guildBanRepository, userRepository)
 	guildCategoryService := services.CreateGuildCategoryService(transactor, authorisationService, guildCategoryRepository)
-	guildInviteService := services.CreateGuildInviteService(transactor, authorisationService, guildInviteRepository, guildRepository)
+	guildInviteService := services.CreateGuildInviteService(transactor, authorisationService, guildInviteRepository, guildRepository, guildMemberRepository, userRepository)
 	guildMemberService := services.CreateGuildMemberService(transactor, authorisationService, userRepository, guildMemberRepository, guildRoleRepository, guildRepository, guildInviteRepository, eventService)
 	guildService := services.CreateGuildService(transactor, authorisationService, eventService, guildRepository, guildMemberRepository, guildRoleRepository, channelRepository, voiceStateRepository, userRepository)
 	guildRoleService := services.CreateGuildRoleService(transactor, authorisationService, eventService, guildRoleRepository, guildMemberRepository, channelRepository, userRepository)

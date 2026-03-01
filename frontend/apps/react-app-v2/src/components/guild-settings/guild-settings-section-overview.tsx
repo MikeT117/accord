@@ -1,21 +1,22 @@
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "../ui/form";
 import { SettingsDialogUnsavedChanges } from "../settings-dialog/settings-dialog-unsaved-changes";
 import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog-content-section";
 import { useUpdateGuildMutation } from "@/lib/react-query/mutations/update-guild-mutation";
-import type { UpdateGuildFormType } from "./guild-settings-dialog-types";
-import { updateGuildFormSchema } from "./guild-settings-form-validation";
 import { Switch } from "../ui/switch";
 import { useCloudinary } from "@/hooks/use-cloudinary";
 import { useGuildCategoriesQuery } from "@/lib/react-query/queries/guild-category-query";
 import { GuildCategorySelect } from "./guild-category-select";
-import { GuildProfilePreview } from "./guild-profile-preview";
 import { Button } from "../ui/button";
-import { UploadIcon } from "lucide-react";
+import { EarthIcon, UploadIcon } from "lucide-react";
 import type { GuildType, Snapshot } from "@/lib/types/types";
+import { GuildCard } from "../guild-browser/guild-card";
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "../ui/item";
+import { Field, FieldDescription, FieldError, FieldLabel, FieldSet } from "../ui/field";
+import { UpdateGuildFormType } from "./types/guild-settings-dialog-types";
+import { updateGuildFormSchema } from "./zod-validation/guild-settings-form-validation";
 
 type GuildSettingsOverviewSectionProps = {
     guild: Snapshot<GuildType>;
@@ -67,47 +68,61 @@ export function GuildSettingsOverviewSection({ guild }: GuildSettingsOverviewSec
             discoverable: guild.discoverable,
             guildCategoryId: guild.guildCategoryId,
         });
+
+        iconCloudinary.clearAttachments();
+        bannerCloudinary.clearAttachments();
     }
+
+    const isFormDirty =
+        form.formState.isDirty || !!iconCloudinary.attachments.length || !!bannerCloudinary.attachments.length;
 
     if (!guildCategories) {
         return null;
     }
 
     return (
-        <SettingsDialogContentSection title="Server Overview" description="Manage Server properties.">
+        <SettingsDialogContentSection title="Guild Overview" description="Manage guild properties.">
             <div className="flex space-x-6">
-                <Form {...form}>
-                    <div className="flex w-full flex-col space-y-6">
-                        <FormField
+                <form id="guild-settings-form">
+                    <FieldSet>
+                        <Controller
                             control={form.control}
                             name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Server Name</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Give your server a name" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor="guild-creator-field-name">Name</FieldLabel>
+                                    <Input
+                                        id="guild-creator-field-name"
+                                        aria-invalid={fieldState.invalid}
+                                        autoComplete="off"
+                                        placeholder="Give your guild a name"
+                                        {...field}
+                                    />
+                                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                </Field>
                             )}
                         />
-                        <FormField
+                        <Controller
                             control={form.control}
                             name="description"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Server Description</FormLabel>
-                                    <FormControl>
-                                        <Textarea placeholder="Give your server a description" {...field} rows={4} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor="guild-creator-field-description">Description</FieldLabel>
+                                    <Textarea
+                                        id="guild-creator-field-description"
+                                        aria-invalid={fieldState.invalid}
+                                        autoComplete="off"
+                                        placeholder="Give your guild a description"
+                                        {...field}
+                                    />
+                                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                </Field>
                             )}
                         />
-                        <FormItem>
-                            <FormLabel>Server Icon</FormLabel>
+                        <Field>
+                            <FieldLabel>Icon</FieldLabel>
                             <div className="flex items-center space-x-3">
-                                <Button onClick={iconCloudinary.onFileUploadClick} size="sm">
+                                <Button onClick={iconCloudinary.onFileUploadClick} size="sm" type="button">
                                     <UploadIcon />
                                     Change Icon
                                 </Button>
@@ -115,14 +130,14 @@ export function GuildSettingsOverviewSection({ guild }: GuildSettingsOverviewSec
                                     Remove Avatar
                                 </Button>
                             </div>
-                            <FormDescription>
+                            <FieldDescription>
                                 Recommended: Square image, at least 128x128 pixels. Max file size: 8MB.
-                            </FormDescription>
-                        </FormItem>
-                        <FormItem>
-                            <FormLabel>Server Banner</FormLabel>
+                            </FieldDescription>
+                        </Field>
+                        <Field>
+                            <FieldLabel>Banner</FieldLabel>
                             <div className="flex space-x-3">
-                                <Button onClick={bannerCloudinary.onFileUploadClick} size="sm">
+                                <Button onClick={bannerCloudinary.onFileUploadClick} size="sm" type="button">
                                     <UploadIcon />
                                     Change Banner
                                 </Button>
@@ -130,62 +145,70 @@ export function GuildSettingsOverviewSection({ guild }: GuildSettingsOverviewSec
                                     Remove Banner
                                 </Button>
                             </div>
-                            <FormDescription>Recommended: 600x200 pixels. Max file size: 8MB.</FormDescription>
-                        </FormItem>
-                        <FormField
+                            <FieldDescription>Recommended: 600x200 pixels. Max file size: 8MB.</FieldDescription>
+                        </Field>
+                        <Controller
                             control={form.control}
                             name="discoverable"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 has-[[aria-checked=true]]:bg-muted">
-                                    <div className="space-y-0.5">
-                                        <FormLabel>Private Server</FormLabel>
-                                        <FormDescription className="text-xs">
-                                            An invite will be required to join, server will not be visible in server
-                                            browser.
-                                        </FormDescription>
-                                    </div>
-                                    <FormControl>
-                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                    </FormControl>
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <Item
+                                        size="xs"
+                                        variant="outline"
+                                        className="border-2 has-[[aria-checked=true]]:bg-input/30"
+                                    >
+                                        <ItemMedia variant="icon">
+                                            <EarthIcon />
+                                        </ItemMedia>
+                                        <ItemContent>
+                                            <ItemTitle>Discoverable</ItemTitle>
+                                            <ItemDescription>
+                                                Enable discovery to allow users to join the guild without needing an
+                                                invite, otherwise users may only join via an invite.
+                                            </ItemDescription>
+                                        </ItemContent>
+                                        <ItemActions>
+                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                        </ItemActions>
+                                    </Item>
+                                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                </Field>
                             )}
                         />
-                        <FormField
+                        <Controller
                             control={form.control}
                             name="guildCategoryId"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Server Category</FormLabel>
-                                    <FormControl>
-                                        <GuildCategorySelect
-                                            className="w-full"
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                        />
-                                    </FormControl>
-                                </FormItem>
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor="guild-category-field">Guild Category</FieldLabel>
+                                    <GuildCategorySelect
+                                        className="w-full"
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                    />
+
+                                    {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                                </Field>
                             )}
                         />
-                    </div>
-                </Form>
-                <GuildProfilePreview
+                    </FieldSet>
+                </form>
+
+                <GuildCard
+                    id={guild.id}
                     name={name}
                     description={description}
                     createdAt={guild.createdAt}
                     memberCount={guild.memberCount}
                     icon={guild.icon}
-                    onIconMutate={iconCloudinary.onFileUploadClick}
                     iconPreview={iconCloudinary.attachments.length ? iconCloudinary.attachments[0].preview : null}
                     banner={guild.banner}
-                    onBannerMutate={bannerCloudinary.onFileUploadClick}
                     bannerPreview={bannerCloudinary.attachments.length ? bannerCloudinary.attachments[0].preview : null}
+                    onBannerMutate={bannerCloudinary.onFileUploadClick}
+                    onIconMutate={iconCloudinary.onFileUploadClick}
                 />
             </div>
-            <SettingsDialogUnsavedChanges
-                isVisible={form.formState.isDirty}
-                onDiscard={resetForm}
-                onSave={handleSaveChanges}
-            />
+            <SettingsDialogUnsavedChanges isVisible={isFormDirty} onDiscard={resetForm} onSave={handleSaveChanges} />
             <iconCloudinary.UploadWrapper id="server-icon" />
             <bannerCloudinary.UploadWrapper id="server-banner" />
         </SettingsDialogContentSection>

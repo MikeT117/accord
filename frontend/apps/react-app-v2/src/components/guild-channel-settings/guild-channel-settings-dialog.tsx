@@ -1,15 +1,18 @@
 import * as React from "react";
-import { Hash, Users, Trash2Icon } from "lucide-react";
+import { Trash2Icon, LockKeyholeIcon, LayoutDashboardIcon } from "lucide-react";
 import { Dialog } from "@/components/ui/dialog";
 import { closeGuildChannelSettings } from "@/lib/valtio/mutations/guild-channel-settings-ui-store-mutations";
 import type { ValueOf } from "@/lib/types/types";
-import { useGuildTextChannel } from "@/lib/valtio/queries/guild-store-queries";
+import { useGuildChannel } from "@/lib/valtio/queries/guild-store-queries";
 import { GuildChannelSettingsOverviewSection } from "./guild-channel-settings-section-overview";
 import { GuildChannelSettingsPermissionsSection } from "./guild-channel-settings-section-permissions";
 import { GuildChannelSettingsDestructionSection } from "./guild-channel-settings-section-destruction";
 import { SettingsDialogContent } from "../settings-dialog/settings-dialog-content";
 import { SettingsDialogSidebar } from "../settings-dialog/settings-dialog-sidebar";
 import { useGuildChannelSettingsState } from "@/lib/valtio/queries/guild-channel-settings-ui-store-queries";
+import { isGuildCategoryChannel } from "@/lib/types/guards";
+import { GuildCategoryChannelSettingsOverviewSection } from "./guild-channel-category-settings-section-overview";
+import { GUILD_CHANNEL_TYPE } from "@/lib/zod-validation/channel-schema";
 
 export function GuildChannelSettings() {
     const { isOpen, channelId, guildId } = useGuildChannelSettingsState();
@@ -29,21 +32,18 @@ const CHANNEL_SETTINGS_SECTION = {
 const sidebarItems = [
     {
         id: CHANNEL_SETTINGS_SECTION.CHANNEL_OVERVIEW,
-        label: "Channel Overview",
-        icon: <Hash />,
-        description: "View channel information",
+        label: "Overview",
+        icon: <LayoutDashboardIcon />,
     },
     {
         id: CHANNEL_SETTINGS_SECTION.CHANNEL_PERMISSIONS,
-        label: "Channel Permissions",
-        icon: <Users />,
-        description: "Manage channel permissions",
+        label: "Permissions",
+        icon: <LockKeyholeIcon />,
     },
     {
         id: CHANNEL_SETTINGS_SECTION.DELETE_CHANNEL,
-        label: "Delete Channel",
+        label: "Delete",
         icon: <Trash2Icon />,
-        description: "Permanently delete this channel",
     },
 ] as const;
 
@@ -51,9 +51,9 @@ type GuildChannelSettingsContentProps = { guildId: string; channelId: string };
 
 function GuildChannelSettingsContent({ channelId, guildId }: GuildChannelSettingsContentProps) {
     const [activeSection, setActiveSection] = React.useState<ValueOf<typeof CHANNEL_SETTINGS_SECTION>>(
-        CHANNEL_SETTINGS_SECTION.CHANNEL_OVERVIEW
+        CHANNEL_SETTINGS_SECTION.CHANNEL_OVERVIEW,
     );
-    const channel = useGuildTextChannel(guildId, channelId);
+    const channel = useGuildChannel(guildId, channelId);
     return (
         <SettingsDialogContent
             onClose={closeGuildChannelSettings}
@@ -66,23 +66,34 @@ function GuildChannelSettingsContent({ channelId, guildId }: GuildChannelSetting
                 />
             }
         >
-            {activeSection === CHANNEL_SETTINGS_SECTION.CHANNEL_OVERVIEW && (
-                <GuildChannelSettingsOverviewSection
-                    id={channel.id}
-                    name={channel.name}
-                    topic={channel.topic}
-                    parentId={channel.parentId}
-                />
-            )}
+            {activeSection === CHANNEL_SETTINGS_SECTION.CHANNEL_OVERVIEW &&
+                (isGuildCategoryChannel(channel) ? (
+                    <GuildCategoryChannelSettingsOverviewSection id={channel.id} name={channel.name} />
+                ) : (
+                    <GuildChannelSettingsOverviewSection
+                        id={channel.id}
+                        name={channel.name}
+                        topic={channel.topic}
+                        parentId={channel.parentId}
+                    />
+                ))}
             {activeSection === CHANNEL_SETTINGS_SECTION.CHANNEL_PERMISSIONS && (
                 <GuildChannelSettingsPermissionsSection
                     id={channel.id}
                     guildId={channel.guildId}
-                    parentId={channel.parentId}
+                    parentId={
+                        channel.channelType === GUILD_CHANNEL_TYPE.GUILD_CATEGORY_CHANNEL ? undefined : channel.parentId
+                    }
+                    channelType={channel.channelType}
                 />
             )}
+
             {activeSection === CHANNEL_SETTINGS_SECTION.DELETE_CHANNEL && (
-                <GuildChannelSettingsDestructionSection id={channel.id} name={channel.name} />
+                <GuildChannelSettingsDestructionSection
+                    id={channel.id}
+                    name={channel.name}
+                    channelType={channel.channelType}
+                />
             )}
         </SettingsDialogContent>
     );

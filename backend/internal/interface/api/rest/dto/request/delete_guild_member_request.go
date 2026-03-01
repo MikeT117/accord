@@ -6,7 +6,7 @@ import (
 )
 
 type DeleteGuildMemberRequest struct {
-	UserID  uuid.UUID `param:"roleID"`
+	UserID  uuid.UUID `param:"userID"`
 	GuildID uuid.UUID `param:"guildID"`
 }
 

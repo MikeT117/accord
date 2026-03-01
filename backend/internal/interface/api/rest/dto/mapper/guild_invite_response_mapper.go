@@ -10,15 +10,14 @@ func ToGuildInviteResponse(guildInvite *common.GuildInviteResult) *response.Guil
 		return nil
 	}
 	return &response.GuildInviteResponse{
-		ID:           guildInvite.ID,
-		GuildID:      guildInvite.GuildID,
-		Name:         guildInvite.Name,
-		Description:  guildInvite.Description,
-		ChannelCount: guildInvite.ChannelCount,
-		MemberCount:  guildInvite.MemberCount,
-		Icon:         guildInvite.IconID,
-		Banner:       guildInvite.BannerID,
-		CreatedAt:    guildInvite.CreatedAt.Unix(),
+		ID:          guildInvite.ID,
+		CreatedAt:   guildInvite.CreatedAt.Unix(),
+		ExpiresAt:   guildInvite.ExpiresAt.Unix(),
+		UsedCount:   guildInvite.UsedCount,
+		CreatorId:   guildInvite.CreatorID,
+		DisplayName: guildInvite.DisplayName,
+		Username:    guildInvite.Username,
+		Avatar:      guildInvite.Avatar,
 	}
 }
 

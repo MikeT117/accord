@@ -13,26 +13,31 @@ import (
 )
 
 type UserAccountController struct {
-	userAccontService interfaces.UserAccountService
+	userAccountService interfaces.UserAccountService
 }
 
 func NewUserAccountController(
 	baseGroup *echo.Group,
-	userAccontService interfaces.UserAccountService,
+	userAccountService interfaces.UserAccountService,
 ) *UserAccountController {
 	controller := &UserAccountController{
-		userAccontService: userAccontService,
+		userAccountService: userAccountService,
 	}
 
 	subGroup := baseGroup.Group("/users")
-	subGroup.GET("/me", controller.getRequestUser)
-	subGroup.PATCH("/me", controller.updateRequestUser)
+	subGroup.GET("/:userID/profile", controller.getUserProfile)
+	subGroup.PATCH("/:userID", controller.updateUser)
 	return controller
 }
 
-func (c *UserAccountController) getRequestUser(ctx echo.Context) error {
+func (c *UserAccountController) getUserProfile(ctx echo.Context) error {
+	var payload request.QueryUserRequest
+	if err := ctx.Bind(&payload); err != nil {
+		return response.ErrorResponse(ctx, http.StatusBadRequest, nil)
+	}
+
 	requestorID, _ := authentication.GetRequestorDetails(ctx)
-	user, err := c.userAccontService.GetByID(ctx.Request().Context(), requestorID)
+	user, err := c.userAccountService.GetByID(ctx.Request().Context(), requestorID)
 
 	if err != nil {
 		return handleError(ctx, err)
@@ -41,8 +46,7 @@ func (c *UserAccountController) getRequestUser(ctx echo.Context) error {
 	return response.JSONResponse(ctx, http.StatusOK, mapper.ToUserResponse(user.Result))
 }
 
-func (c *UserAccountController) updateRequestUser(ctx echo.Context) error {
-
+func (c *UserAccountController) updateUser(ctx echo.Context) error {
 	var payload request.UpdateUserRequest
 	if err := ctx.Bind(&payload); err != nil {
 		return response.ErrorResponse(ctx, http.StatusBadRequest, nil)
@@ -54,7 +58,7 @@ func (c *UserAccountController) updateRequestUser(ctx echo.Context) error {
 		return handleError(ctx, err)
 	}
 
-	if err := c.userAccontService.UpdateUserAccount(ctx.Request().Context(), cmd); err != nil {
+	if err := c.userAccountService.UpdateUserAccount(ctx.Request().Context(), cmd); err != nil {
 		return handleError(ctx, err)
 	}
 

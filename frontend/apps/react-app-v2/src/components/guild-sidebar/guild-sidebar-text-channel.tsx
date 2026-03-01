@@ -1,13 +1,13 @@
 import type { GuildTextChannelType, Snapshot } from "@/lib/types/types";
 import { HashIcon } from "lucide-react";
-import { SidebarMenuSubItem, SidebarMenuSubButton } from "../ui/sidebar";
+import { SidebarMenuButton, SidebarMenuItem } from "../ui/sidebar";
 import { GuildSidebarChannelContextMenu } from "./guild-sidebar-channel-context-menu";
 
 type GuildSidebarTextChannelProps = {
     channel: Snapshot<GuildTextChannelType>;
     isActive?: boolean;
     onClick: () => void;
-} & Pick<React.ComponentProps<"li">, "ref">;
+} & Pick<React.ComponentProps<"button">, "ref">;
 
 export function GuildSidebarTextChannel({ channel, isActive = false, onClick, ref }: GuildSidebarTextChannelProps) {
     return (
@@ -17,12 +17,12 @@ export function GuildSidebarTextChannel({ channel, isActive = false, onClick, re
             id={channel.id}
             name={channel.name}
         >
-            <SidebarMenuSubItem key={channel.id} ref={ref}>
-                <SidebarMenuSubButton className="cursor-pointer select-none" isActive={isActive} onClick={onClick}>
+            <SidebarMenuItem key={channel.id}>
+                <SidebarMenuButton isActive={isActive} onClick={onClick} ref={ref}>
                     <HashIcon />
-                    <p>{channel.name}</p>
-                </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
+                    {channel.name}
+                </SidebarMenuButton>
+            </SidebarMenuItem>
         </GuildSidebarChannelContextMenu>
     );
 }

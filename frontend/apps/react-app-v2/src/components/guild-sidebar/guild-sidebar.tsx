@@ -8,11 +8,12 @@ import {
 } from "@/components/ui/sidebar";
 import { GuildSidebarCategoryChannel } from "./guild-sidebar-category-channel";
 import { GuildSidebarChannel } from "./guild-sidebar-channel";
-import { GuildSidebarHeader } from "./guild-sidebar-header";
 import { useGuild, useSortedGuildChannels } from "@/lib/valtio/queries/guild-store-queries";
 import { useParams } from "@tanstack/react-router";
 import { DnDProvider } from "./guild-sidebar-dnd-provider";
 import { GuildSidebarDnDDroppable } from "./guild-sidebar-channel-dnd-droppable";
+import { ChevronDownIcon, XIcon } from "lucide-react";
+import { GuildSidebarHeaderDropdown } from "./guild-sidebar-header-dropdown";
 
 export function GuildSidebar() {
     const { guildId } = useParams({ from: "/_auth/app/$guildId" });
@@ -20,14 +21,22 @@ export function GuildSidebar() {
     const channels = useSortedGuildChannels(guildId);
 
     return (
-        <SidebarProvider>
-            <Sidebar collapsible="none" className="flex max-w-[250px] border-r border-l bg-background">
-                <GuildSidebarHeader id={guild.id} name={guild.name} />
+        <SidebarProvider className="grid grid-cols-1 grid-rows-[50px_1fr]">
+            <GuildSidebarHeaderDropdown
+                guildId={guild.id}
+                creatorId={guild.creatorId}
+                className="flex items-center justify-between border-r border-b p-4"
+            >
+                <h1 className="mr-2 truncate font-medium select-none">{guild.name}</h1>
+                <ChevronDownIcon size={20} className="group-data-[state=open]/guild-dropdown:hidden" />
+                <XIcon size={20} className="group-data-[state=closed]/guild-dropdown:hidden" />
+            </GuildSidebarHeaderDropdown>
+            <Sidebar collapsible="none" className="h-full max-w-[250px] overflow-hidden border-r bg-background">
                 <SidebarContent>
                     <DnDProvider>
                         <SidebarGroup>
                             <SidebarGroupContent>
-                                <SidebarMenu>
+                                <SidebarMenu className="gap-1">
                                     {channels?.parents.map((parent) => (
                                         <GuildSidebarCategoryChannel key={parent.id} channel={parent}>
                                             {channels.children.map(
@@ -42,6 +51,12 @@ export function GuildSidebar() {
                                             )}
                                         </GuildSidebarCategoryChannel>
                                     ))}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+                        <SidebarGroup>
+                            <SidebarGroupContent>
+                                <SidebarMenu className="gap-1">
                                     {channels?.orphans &&
                                         channels.orphans.map((c) => <GuildSidebarChannel key={c.id} channel={c} />)}
                                 </SidebarMenu>

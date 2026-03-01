@@ -13,11 +13,10 @@ import {
 import { UserDashboardSidebarTextChannel } from "./user-dashboard-sidebar-text-channel";
 import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { HandshakeIcon, UsersRoundIcon } from "lucide-react";
-import { Input } from "../ui/input";
 import { Separator } from "../ui/separator";
 import { useUser } from "@/lib/valtio/queries/user-store-queries";
-import { PRIVATE_CHANNEL_TYPE } from "@/lib/zod-validation/channel-schema";
 import { useFilteredPrivateChannels } from "./hooks/use-filtered-private-channels";
+import { FilterInput } from "../filter-input";
 
 export function UserDashboardSidebar() {
     const user = useUser();
@@ -28,26 +27,29 @@ export function UserDashboardSidebar() {
 
     const navigate = useNavigate();
     const location = useLocation();
-    const { privateChannels, filter, setFilter } = useFilteredPrivateChannels();
+    const { channelFilter, filteredChannels, setChannelFilter } = useFilteredPrivateChannels();
 
-    function handleConversationFilterInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-        setFilter(e.currentTarget.value);
+    function handlePrivateChannelClick(channelId: string) {
+        navigate({
+            to: "/app/dashboard/$channelId",
+            params: { channelId },
+        });
     }
 
     return (
-        <SidebarProvider>
-            <Sidebar collapsible="none" className="flex max-w-[250px] border-r border-l bg-background">
-                <SidebarHeader className="border-b">
-                    <Input
-                        placeholder="Find a conversation"
-                        onChange={handleConversationFilterInputChange}
-                        value={filter}
-                    />
-                </SidebarHeader>
+        <SidebarProvider className="grid grid-cols-1 grid-rows-[50px_1fr] overflow-hidden border-r">
+            <SidebarHeader className="border-b">
+                <FilterInput
+                    filterValue={channelFilter}
+                    onChange={setChannelFilter}
+                    resultsCount={filteredChannels.length}
+                />
+            </SidebarHeader>
+            <Sidebar collapsible="none" className="flex max-w-[250px] bg-background">
                 <SidebarContent>
                     <SidebarGroup>
                         <SidebarGroupContent>
-                            <SidebarMenu>
+                            <SidebarMenu className="gap-1">
                                 <SidebarMenuItem>
                                     <SidebarMenuButton
                                         className="py-5"
@@ -78,33 +80,16 @@ export function UserDashboardSidebar() {
                         </SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
-                                {privateChannels.map((c) => {
-                                    const displayName = c.users
-                                        .filter((u) => u.id !== user.id)
-                                        .map((u) => u.displayName)
-                                        .join(", ");
-
-                                    const avatar =
-                                        c.channelType === PRIVATE_CHANNEL_TYPE.PRIVATE_DIRECT_CHANNEL
-                                            ? c.users.filter((u) => u.id !== user.id)[0].avatar
-                                            : undefined;
-
-                                    return (
-                                        <UserDashboardSidebarTextChannel
-                                            key={c.id}
-                                            avatar={avatar}
-                                            channelType={c.channelType}
-                                            displayName={displayName}
-                                            onClick={() =>
-                                                navigate({
-                                                    to: "/app/dashboard/$channelId",
-                                                    params: { channelId: c.id },
-                                                })
-                                            }
-                                            isActive={c.id === params?.channelId}
-                                        />
-                                    );
-                                })}
+                                {filteredChannels.map((c) => (
+                                    <UserDashboardSidebarTextChannel
+                                        key={c.id}
+                                        users={c.users}
+                                        currentUserId={user.id}
+                                        channelType={c.channelType}
+                                        isActive={c.id === params?.channelId}
+                                        onClick={() => handlePrivateChannelClick(c.id)}
+                                    />
+                                ))}
                             </SidebarMenu>
                         </SidebarGroupContent>
                     </SidebarGroup>
