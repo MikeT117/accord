@@ -1,5 +1,5 @@
 import { tokensSchema } from "@/lib/zod-validation/localstorage-schema";
-import { tokenStoreActions, useTokenStore } from "@/lib/zustand/stores/token-store";
+import { tokenStoreActions } from "@/lib/zustand/stores/token-store";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 type AuthSearchParamsType = {

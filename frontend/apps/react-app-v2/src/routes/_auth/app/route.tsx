@@ -43,7 +43,7 @@ import { DialogManager } from "@/components/dialog-manager/dialog-manager";
 
 export const Route = createFileRoute("/_auth/app")({
     beforeLoad: async ({ context, cause }) => {
-        const { success } = tokensSchema.safeParse(tokenStoreState);
+        const { success } = tokensSchema.safeParse(tokenStoreState());
         if (!success) {
             throw redirect({ to: "/" });
         }
@@ -61,7 +61,7 @@ export const Route = createFileRoute("/_auth/app")({
                                 op: root.pb.OpCode.IDENTIFY,
                                 ver: 0,
                                 identify: root.pb.Identify.create({
-                                    refreshtoken: tokenStoreState.refreshtoken,
+                                    refreshtoken: tokenStoreState().refreshtoken,
                                     ver: 0,
                                 }),
                             }),

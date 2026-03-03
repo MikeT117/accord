@@ -6,6 +6,7 @@ import { Label } from "../ui/label";
 import { useState } from "react";
 import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog-content-section";
 import { useDeleteGuildMutation } from "@/lib/react-query/mutations/delete-guild-mutation";
+import { useNavigate } from "@tanstack/react-router";
 
 type GuildSettingsDestructionSectionProps = {
     guildId: string;
@@ -18,11 +19,14 @@ export function GuildSettingsDestructionSection({ guildId, name, onClose }: Guil
     const [confirmValue, setConfirmValue] = useState("");
 
     const isConfirmed = confirmValue === name;
+    const navigate = useNavigate();
 
     function handleDeleteGuildClick() {
         if (!isConfirmed) {
             return;
         }
+        onClose();
+        navigate({ to: "/app/dashboard" });
         deleteGuild({ id: guildId });
     }
 

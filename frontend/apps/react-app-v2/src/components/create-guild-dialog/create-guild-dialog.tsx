@@ -77,15 +77,15 @@ export function CreateGuildDialog({ onClose }: CreateGuildDialogProps) {
                             <UploadWrapper id="guild-creator" />
                         </FieldGroup>
                     </FieldSet>
-                    <DialogFooter>
-                        <Button onClick={onClose} variant="outline">
-                            Cancel
-                        </Button>
-                        <Button type="submit" form="create-guild-form">
-                            Create
-                        </Button>
-                    </DialogFooter>
                 </form>
+                <DialogFooter>
+                    <Button onClick={onClose} variant="outline">
+                        Cancel
+                    </Button>
+                    <Button type="submit" form="create-guild-form">
+                        Create
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

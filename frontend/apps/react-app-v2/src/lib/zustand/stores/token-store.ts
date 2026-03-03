@@ -11,9 +11,9 @@ type TokenActions = {
 };
 
 const initialState: TokenStoreType = { accesstoken: "", refreshtoken: "" };
-type UserStore = TokenStoreType & TokenActions;
+type TokenStore = TokenStoreType & TokenActions;
 
-export const useTokenStore = create<UserStore>()(
+export const useTokenStore = create<TokenStore>()(
     devtools(
         persist(
             immer((set) => ({
@@ -46,7 +46,7 @@ export const tokenStoreActions = {
     reset: useTokenStore.getState().reset,
 };
 
-export const tokenStoreState = {
+export const tokenStoreState = () => ({
     accesstoken: useTokenStore.getState().accesstoken,
     refreshtoken: useTokenStore.getState().refreshtoken,
-};
+});

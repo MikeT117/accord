@@ -230,7 +230,7 @@ func NewGuildDeletedProtoEvent(ID uuid.UUID) *pb.EventPayload {
 	var ver int32 = 0
 	return &pb.EventPayload{
 		Ver: &ver,
-		Op:  pb.OpCode_GUILD_UPDATE_EVENT.Enum(),
+		Op:  pb.OpCode_GUILD_DELETE_EVENT.Enum(),
 		Payload: &pb.EventPayload_GuildDeleted{
 			GuildDeleted: &pb.GuildDeleted{
 				Ver: &ver,

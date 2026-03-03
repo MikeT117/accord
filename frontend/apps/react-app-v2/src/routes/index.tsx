@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { OnboardingSocialProviderSelect } from "@/components/onboarding/onboarding-social-provider-select";
 import { tokensSchema } from "@/lib/zod-validation/localstorage-schema";
-import { tokenStoreState, useTokenStore } from "@/lib/zustand/stores/token-store";
+import { tokenStoreState } from "@/lib/zustand/stores/token-store";
 
 export const Route = createFileRoute("/")({
     beforeLoad: () => {

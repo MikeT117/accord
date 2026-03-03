@@ -43,7 +43,11 @@ export function GuildChannelSettingsDestructionSection({
 
     const isConfirmed = confirmValue === name;
     function handleDeleteChannelClick() {
-        if (!isConfirmed) return;
+        if (!isConfirmed) {
+            return;
+        }
+
+        onClose();
         deleteChannel({ id });
     }
 

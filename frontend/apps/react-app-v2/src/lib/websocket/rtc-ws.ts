@@ -6,8 +6,8 @@ import {
     type RTCCandidateType,
 } from "../zod-validation/webrtc-schema";
 import { WEBRTC_SDP_TYPE } from "../constants";
-import { tokenStoreActions, tokenStoreState, useTokenStore } from "../zustand/stores/token-store";
-import { rtcStoreActions, useRTCStore } from "../zustand/stores/rtc-store";
+import { tokenStoreActions, tokenStoreState } from "../zustand/stores/token-store";
+import { rtcStoreActions } from "../zustand/stores/rtc-store";
 
 function createWebRTCEventPayload(payload: root.pb.IWebRTCEvent) {
     return root.pb.WebRTCEvent.encode(root.pb.WebRTCEvent.create(payload)).finish();
@@ -217,7 +217,7 @@ export const accordVoiceController = (() => {
                     ver: 0,
                     webrtcIdentify: root.pb.WebRTCIdentify.create({
                         ver: 0,
-                        token: tokenStoreState.refreshtoken,
+                        token: tokenStoreState().refreshtoken,
                         guildId,
                         channelId,
                     }),

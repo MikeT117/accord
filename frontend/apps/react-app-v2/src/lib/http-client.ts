@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 import { env } from "./constants";
 import type { APIErrorResponse } from "@/lib/types/types";
-import { tokenStoreActions, tokenStoreState, useTokenStore } from "./zustand/stores/token-store";
+import { tokenStoreActions, tokenStoreState } from "./zustand/stores/token-store";
 
 const httpClient = axios.create({
     baseURL: `${env.HOST}/api/v1`,
@@ -13,8 +13,8 @@ httpClient.interceptors.request.use((config) => {
         return config;
     }
 
-    config.headers.setAuthorization(tokenStoreState.accesstoken);
-    config.headers.set("X-App-Token", tokenStoreState.refreshtoken);
+    config.headers.setAuthorization(tokenStoreState().accesstoken);
+    config.headers.set("X-App-Token", tokenStoreState().refreshtoken);
 
     return config;
 });
