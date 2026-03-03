@@ -1,18 +1,20 @@
 import { isGuildTextChannel } from "@/lib/types/guards";
-import type { GuildTextChannelType, GuildVoiceChannelType, Snapshot } from "@/lib/types/types";
+import type { GuildRolePermissionsType, GuildTextChannelType, GuildVoiceChannelType } from "@/lib/types/types";
 import { GuildSidebarVoiceChannel } from "./guild-sidebar-voice-channel";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useDraggable } from "@dnd-kit/react";
 import { GuildSidebarTextChannel } from "./guild-sidebar-text-channel";
 
 type GuildSidebarChannelProps = {
-    channel: Snapshot<GuildTextChannelType | GuildVoiceChannelType>;
+    currentUserId: string;
+    permissions: GuildRolePermissionsType;
+    channel: GuildTextChannelType | GuildVoiceChannelType;
     sub?: boolean;
 };
 
-export function GuildSidebarChannel({ channel, sub = false }: GuildSidebarChannelProps) {
+export function GuildSidebarChannel({ permissions, currentUserId, channel, sub = false }: GuildSidebarChannelProps) {
     const params = useParams({
-        from: "/_auth/app/$guildId/$channelId",
+        from: "/_auth/app/$guildId/$channelId/",
         shouldThrow: false,
     });
 
@@ -36,9 +38,18 @@ export function GuildSidebarChannel({ channel, sub = false }: GuildSidebarChanne
                 onClick={handleChannelClick}
                 isActive={channel.id === params?.channelId}
                 ref={ref}
+                permissions={permissions}
             />
         );
     }
 
-    return <GuildSidebarVoiceChannel channel={channel} sub={sub} ref={ref} />;
+    return (
+        <GuildSidebarVoiceChannel
+            channel={channel}
+            sub={sub}
+            ref={ref}
+            permissions={permissions}
+            currentUserId={currentUserId}
+        />
+    );
 }

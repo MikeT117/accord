@@ -14,7 +14,7 @@ type MutationHookArgs = {
     onSuccess?: () => void;
 };
 
-export const useDeleteChannelMutation = (args: MutationHookArgs) =>
+export const useDeleteChannelMutation = (args?: MutationHookArgs) =>
     useMutation({
         mutationFn: deleteChannelRequest,
         onSuccess: () => (typeof args?.onSuccess === "function" ? args.onSuccess() : void 0),

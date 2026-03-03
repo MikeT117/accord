@@ -2,7 +2,6 @@ import { MessageCircleIcon, MoreHorizontalIcon, UserRoundXIcon } from "lucide-re
 import { RELATIONSHIP_STATUS } from "@/lib/zod-validation/relationship-schema";
 import { AvatarWithFallback } from "../avatar-with-fallback";
 import { ButtonWithTooltip } from "../button-with-tooltip";
-import { getPrivateDirectChannelIdByUserId } from "@/lib/valtio/queries/private-channel-store-queries";
 import { useNavigate } from "@tanstack/react-router";
 import { useCreatePrivateChannelMutation } from "@/lib/react-query/mutations/create-private-channel-mutation";
 import { useFilteredRelationships } from "./hooks/use-filtered-relationships";
@@ -15,8 +14,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "../ui/item";
 import { Button } from "../ui/button";
-import { openCreateRelationshipRequestDialog } from "@/lib/valtio/mutations/create-relationship-request-dialog-ui-store-mutations";
 import { FilterInput } from "../filter-input";
+import { getPrivateDirectChannelIdByUserId } from "@/lib/zustand/stores/private-channel-store";
+import { Dialogs, dialogUIStoreActions } from "@/lib/zustand/stores/dialog-ui-store";
 
 export function UserDashboardFriendsList() {
     const { filteredRelationships, filter, setFilter } = useFilteredRelationships(RELATIONSHIP_STATUS.FRIEND);
@@ -53,7 +53,7 @@ export function UserDashboardFriendsList() {
         <div className="space-y-3 p-3">
             <div className="flex items-center space-x-3">
                 <FilterInput filterValue={filter} onChange={setFilter} resultsCount={filteredRelationships.length} />
-                <Button onClick={openCreateRelationshipRequestDialog}>Add Friend</Button>
+                <Button onClick={() => dialogUIStoreActions.openDialog(Dialogs.CreateRelationship)}>Add Friend</Button>
             </div>
             <div className="flex flex-col overflow-auto">
                 {filteredRelationships.map((r) => (

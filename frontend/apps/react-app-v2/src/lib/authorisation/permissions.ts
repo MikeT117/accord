@@ -1,12 +1,10 @@
-import { guildStore } from "../valtio/stores/guild-store";
-import { userRoleStore } from "../valtio/stores/user-roles-store";
 import { GUILD_PERMISSION, USER_FLAG } from "../constants";
-import type { OptionalReadonly, Dictionary, GuildRoleType, ValueOf } from "../types/types";
-import { useGuild } from "../valtio/queries/guild-store-queries";
+import type { Dictionary, GuildRoleType, ValueOf } from "@/lib/types/types";
 import { ErrChannelNotFound } from "../error";
-import { useUserRoles } from "../valtio/queries/user-role-store-queries";
+import { useGuild } from "../zustand/stores/guild-store";
+import { useUserRoleStore } from "../zustand/stores/user-role-store";
 
-function hasRolePermission(permission: number, flag: ValueOf<typeof GUILD_PERMISSION>) {
+export function hasRolePermission(permission: number, flag: ValueOf<typeof GUILD_PERMISSION>) {
     return (permission & (1 << flag)) !== 0;
 }
 
@@ -96,7 +94,7 @@ export function generateRolePermissionsNumber(permissionsObj: ReturnType<typeof 
 
 export const useUserGuildChannelPermissions = (guildId: string, channelId: string) => {
     const guild = useGuild(guildId);
-    const userRoles = useUserRoles();
+    const userRoles = useUserRoleStore((s) => s.values);
     const channel = guild.channels.values[channelId];
 
     if (!channel) {
@@ -104,33 +102,37 @@ export const useUserGuildChannelPermissions = (guildId: string, channelId: strin
     }
 
     let permission = 0;
-    channel.roleIds.keys.forEach((cr) => {
-        if (guild.roles.values[cr] && userRoles.values[cr]) {
-            permission = permission | guild.roles.values[cr].permissions;
+    for (const roleId of channel.roleIds.keys) {
+        if (!guild.roles.values[roleId] || !userRoles[roleId]) {
+            continue;
         }
-    });
+
+        permission = permission | guild.roles.values[roleId].permissions;
+    }
 
     return generateRolePermissionsObj(permission);
 };
 
 export const useUserGuildPermissions = (guildId: string) => {
     const guild = useGuild(guildId);
-    const userRoles = useUserRoles();
+    const userRoles = useUserRoleStore((s) => s.keys);
 
     let permission = 0;
-    userRoles.keys.forEach((ur) => {
-        if (guild.roles.values[ur]) {
-            permission = permission | guild.roles.values[ur].permissions;
+    for (const roleId of userRoles) {
+        if (!guild.roles.values[roleId]) {
+            continue;
         }
-    });
+
+        permission = permission | guild.roles.values[roleId].permissions;
+    }
 
     return generateRolePermissionsObj(permission);
 };
 
 export function isChannelViewable(
-    channelRoleIds: OptionalReadonly<string[]>,
-    userRoleIds: OptionalReadonly<Dictionary<boolean>>,
-    guildRoles: OptionalReadonly<Dictionary<GuildRoleType>>,
+    channelRoleIds: string[],
+    userRoleIds: Dictionary<boolean>,
+    guildRoles: Dictionary<GuildRoleType>,
 ) {
     for (const channelRoleId of channelRoleIds) {
         if (!userRoleIds[channelRoleId] || !guildRoles[channelRoleId]) {
@@ -143,14 +145,4 @@ export function isChannelViewable(
     }
 
     return false;
-}
-
-export function isGuildChannelAccessible(guildId: string, channelId: string) {
-    const guild = guildStore.values[guildId];
-    if (!guild) return false;
-
-    const channel = guild.channels.values[channelId];
-    if (!channel) return false;
-
-    return isChannelViewable(channel.roleIds.keys, userRoleStore.values, guild.roles.values);
 }

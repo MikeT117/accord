@@ -3,10 +3,10 @@ import { formatDistanceToNow } from "date-fns";
 import { ChannelMessageContent } from "./channel-message-content";
 import { Image } from "@/components/image";
 import { AvatarWithFallback } from "../avatar-with-fallback";
-import { openAttachmentGallery } from "@/lib/valtio/mutations/attachment-gallery-ui-store-mutations";
 import { useDeleteChannelPinMutation } from "@/lib/react-query/mutations/delete-channel-pin-mutation";
 import { PinIcon } from "lucide-react";
 import { ButtonWithTooltip } from "../button-with-tooltip";
+import { dialogUIStoreActions, Dialogs } from "@/lib/zustand/stores/dialog-ui-store";
 
 type PinnedChannelMessageProps = {
     message: ChannelMessageType;
@@ -26,7 +26,11 @@ export function PinnedChannelMessage({ ref, message, canUnpinMessage }: PinnedCh
     }
 
     function handleOpenAttachmentsGallery(startIndex: number) {
-        openAttachmentGallery(startIndex, message.author, message.attachments);
+        dialogUIStoreActions.openDialog(Dialogs.AttachmentGallery, {
+            attachments: message.attachments,
+            author: message.author,
+            initialIndex: startIndex,
+        });
     }
 
     return (
@@ -47,6 +51,7 @@ export function PinnedChannelMessage({ ref, message, canUnpinMessage }: PinnedCh
                 <ChannelMessageContent content={message.content} />
                 {message.attachments.map((attachment, i) => (
                     <Image
+                        key={attachment.id}
                         className="max-h-[80px]"
                         src={attachment.id}
                         onClick={() => handleOpenAttachmentsGallery(i)}

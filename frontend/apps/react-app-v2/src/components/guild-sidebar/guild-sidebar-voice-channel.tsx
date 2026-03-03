@@ -1,22 +1,22 @@
-import type { GuildVoiceChannelType, Snapshot } from "@/lib/types/types";
+import type { GuildRolePermissionsType, GuildVoiceChannelType } from "@/lib/types/types";
 import { Volume2Icon } from "lucide-react";
 import { SidebarMenuButton, SidebarMenuSub, SidebarMenuItem } from "../ui/sidebar";
-import { useVoiceStates } from "@/lib/valtio/queries/guild-store-queries";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
 import { useAccordVoiceController } from "@/hooks/use-accord-voice";
 import { GuildSidebarChannelContextMenu } from "./guild-sidebar-channel-context-menu";
-import { useUser } from "@/lib/valtio/queries/user-store-queries";
 import { GuildSidebarVoiceChannelVoiceState } from "./guild-sidebar-voice-channel-voice-state";
+import { useChannelVoiceStates } from "@/lib/zustand/stores/guild-store";
 
 type GuildSidebarVoiceChannelProps = {
-    channel: Snapshot<GuildVoiceChannelType>;
+    currentUserId: string;
+    channel: GuildVoiceChannelType;
+    permissions: GuildRolePermissionsType;
     sub?: boolean;
 } & Pick<React.ComponentProps<"button">, "ref">;
 
-export function GuildSidebarVoiceChannel({ channel, ref }: GuildSidebarVoiceChannelProps) {
+export function GuildSidebarVoiceChannel({ currentUserId, permissions, channel, ref }: GuildSidebarVoiceChannelProps) {
     const { joinVoiceChannel, toggleNonSelfMute, toggleSelfMute } = useAccordVoiceController();
-    const user = useUser();
-    const voiceStates = useVoiceStates(channel.guildId, channel.id);
+    const voiceStates = useChannelVoiceStates(channel.guildId, channel.id);
 
     return (
         <Collapsible
@@ -30,6 +30,7 @@ export function GuildSidebarVoiceChannel({ channel, ref }: GuildSidebarVoiceChan
                 guildId={channel.guildId}
                 id={channel.id}
                 name={channel.name}
+                permissions={permissions}
             >
                 <CollapsibleTrigger asChild>
                     <SidebarMenuItem>
@@ -50,7 +51,7 @@ export function GuildSidebarVoiceChannel({ channel, ref }: GuildSidebarVoiceChan
                         <GuildSidebarVoiceChannelVoiceState
                             key={v.id}
                             voiceState={v}
-                            onMute={() => (v.user.id === user.id ? toggleSelfMute() : toggleNonSelfMute(v.id))}
+                            onMute={() => (v.user.id === currentUserId ? toggleSelfMute() : toggleNonSelfMute(v.id))}
                         />
                     ))}
                 </SidebarMenuSub>

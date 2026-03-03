@@ -1,6 +1,6 @@
 import { httpClient } from "@/lib/http-client";
-import { handlePrivateChannelCreated } from "@/lib/valtio/mutations/private-channel-mutations";
 import { PRIVATE_CHANNEL_TYPE, privateChannelSchema } from "@/lib/zod-validation/channel-schema";
+import { privateChannelStoreActions, usePrivateChannelStore } from "@/lib/zustand/stores/private-channel-store";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -8,7 +8,7 @@ type mutationFnArgsType = {
     userIds: string[];
 };
 
-export const mutationFnTest = async (payload: mutationFnArgsType) => {
+export const mutationFn = async (payload: mutationFnArgsType) => {
     return httpClient
         .post(`/channels`, {
             ...payload,
@@ -19,7 +19,7 @@ export const mutationFnTest = async (payload: mutationFnArgsType) => {
         })
         .then((r) => {
             const channel = privateChannelSchema.parse(r.data);
-            handlePrivateChannelCreated(channel);
+            privateChannelStoreActions.createChannel(channel);
             return channel;
         });
 };
@@ -31,7 +31,7 @@ type MutationHookArgs = {
 
 export const useCreatePrivateChannelMutation = (args?: MutationHookArgs) => {
     return useMutation({
-        mutationFn: mutationFnTest,
+        mutationFn,
         ...args,
         onError: () => {
             toast("An error occurred while creating channel, please try again later.");

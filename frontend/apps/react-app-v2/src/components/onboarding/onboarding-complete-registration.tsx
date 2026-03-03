@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 import { Field, FieldGroup, FieldLabel, FieldError, FieldDescription, FieldSet } from "../ui/field";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { useCompleteRegistrationMutation } from "@/lib/react-query/mutations/register-user-mutation";
-import { useUniqueUsernameCheck } from "@/lib/react-query/queries/unique-username-query";
+import { useUniqueUsernameCheck } from "@/lib/react-query/mutations/unique-username-query";
 import { AccordLogo } from "../accord-logo";
 import { OnboardingCompleteRegistrationFormType } from "./types/onboarding-user-setup-types";
 import { onboardingCompleteRegistrationFormSchema } from "./zod-validation/onboarding-complete-registration-form-schema";

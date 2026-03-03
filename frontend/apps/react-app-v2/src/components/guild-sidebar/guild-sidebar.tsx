@@ -8,23 +8,23 @@ import {
 } from "@/components/ui/sidebar";
 import { GuildSidebarCategoryChannel } from "./guild-sidebar-category-channel";
 import { GuildSidebarChannel } from "./guild-sidebar-channel";
-import { useGuild, useSortedGuildChannels } from "@/lib/valtio/queries/guild-store-queries";
 import { useParams } from "@tanstack/react-router";
 import { DnDProvider } from "./guild-sidebar-dnd-provider";
 import { GuildSidebarDnDDroppable } from "./guild-sidebar-channel-dnd-droppable";
 import { ChevronDownIcon, XIcon } from "lucide-react";
 import { GuildSidebarHeaderDropdown } from "./guild-sidebar-header-dropdown";
+import { useGuildSidebarState } from "./hooks/use-guild-sidebar-state";
 
 export function GuildSidebar() {
     const { guildId } = useParams({ from: "/_auth/app/$guildId" });
-    const guild = useGuild(guildId);
-    const channels = useSortedGuildChannels(guildId);
-
+    const { guild, permissions, user, children, orphans, parents } = useGuildSidebarState(guildId);
     return (
         <SidebarProvider className="grid grid-cols-1 grid-rows-[50px_1fr]">
             <GuildSidebarHeaderDropdown
                 guildId={guild.id}
                 creatorId={guild.creatorId}
+                currentUserId={user.id}
+                permissions={permissions}
                 className="flex items-center justify-between border-r border-b p-4"
             >
                 <h1 className="mr-2 truncate font-medium select-none">{guild.name}</h1>
@@ -34,34 +34,50 @@ export function GuildSidebar() {
             <Sidebar collapsible="none" className="h-full max-w-[250px] overflow-hidden border-r bg-background">
                 <SidebarContent>
                     <DnDProvider>
-                        <SidebarGroup>
-                            <SidebarGroupContent>
-                                <SidebarMenu className="gap-1">
-                                    {channels?.parents.map((parent) => (
-                                        <GuildSidebarCategoryChannel key={parent.id} channel={parent}>
-                                            {channels.children.map(
-                                                (child) =>
-                                                    parent.id === child.parentId && (
-                                                        <GuildSidebarChannel
-                                                            key={child.id}
-                                                            channel={child}
-                                                            sub={true}
-                                                        />
-                                                    ),
-                                            )}
-                                        </GuildSidebarCategoryChannel>
-                                    ))}
-                                </SidebarMenu>
-                            </SidebarGroupContent>
-                        </SidebarGroup>
-                        <SidebarGroup>
-                            <SidebarGroupContent>
-                                <SidebarMenu className="gap-1">
-                                    {channels?.orphans &&
-                                        channels.orphans.map((c) => <GuildSidebarChannel key={c.id} channel={c} />)}
-                                </SidebarMenu>
-                            </SidebarGroupContent>
-                        </SidebarGroup>
+                        {!!parents.length && (
+                            <SidebarGroup>
+                                <SidebarGroupContent>
+                                    <SidebarMenu className="gap-1">
+                                        {parents.map((parent) => (
+                                            <GuildSidebarCategoryChannel
+                                                key={parent.id}
+                                                channel={parent}
+                                                permissions={permissions}
+                                            >
+                                                {children.map(
+                                                    (child) =>
+                                                        parent.id === child.parentId && (
+                                                            <GuildSidebarChannel
+                                                                currentUserId={user.id}
+                                                                permissions={permissions}
+                                                                key={child.id}
+                                                                channel={child}
+                                                                sub={true}
+                                                            />
+                                                        ),
+                                                )}
+                                            </GuildSidebarCategoryChannel>
+                                        ))}
+                                    </SidebarMenu>
+                                </SidebarGroupContent>
+                            </SidebarGroup>
+                        )}
+                        {!!orphans.length && (
+                            <SidebarGroup>
+                                <SidebarGroupContent>
+                                    <SidebarMenu className="gap-1">
+                                        {orphans.map((c) => (
+                                            <GuildSidebarChannel
+                                                key={c.id}
+                                                channel={c}
+                                                currentUserId={user.id}
+                                                permissions={permissions}
+                                            />
+                                        ))}
+                                    </SidebarMenu>
+                                </SidebarGroupContent>
+                            </SidebarGroup>
+                        )}
                         <GuildSidebarDnDDroppable />
                     </DnDProvider>
                 </SidebarContent>

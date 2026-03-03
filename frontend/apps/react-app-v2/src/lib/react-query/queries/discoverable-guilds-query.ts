@@ -65,7 +65,7 @@ export function useSuspenseInfiniteDiscoverableGuildQuery() {
     return useInfiniteScroll(data.pages.flat() ?? [], hasPreviousPage, hasNextPage, fetchPreviousPage, fetchNextPage);
 }
 
-export function useInfiniteDiscoverableGuildQuery() {
+export function useInfiniteDiscoverableGuildsQuery() {
     const { data, hasNextPage, hasPreviousPage, fetchPreviousPage, fetchNextPage } = useInfiniteQuery(
         discoverableGuildQueryOptions({}),
     );

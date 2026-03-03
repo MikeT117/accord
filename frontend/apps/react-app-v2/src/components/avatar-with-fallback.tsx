@@ -28,10 +28,21 @@ export function AvatarWithFallback({
 
     const altText = typeof alt === "undefined" ? fallback : alt;
     const isMutable = typeof onMutate === "function";
+    const avatarSrc = (() => {
+        if (preview) {
+            return preview;
+        }
+
+        if (src) {
+            return `${env.CLOUDINARY_RES_URL}/${src}`;
+        }
+
+        return "";
+    })();
 
     return (
         <Avatar size={size} className={className}>
-            {(preview || src) && <AvatarImage src={preview ?? `${env.CLOUDINARY_RES_URL}/${src}`} alt={altText} />}
+            {(preview || src) && <AvatarImage src={avatarSrc} alt={altText} />}
             <AvatarFallback>{fallbackText}</AvatarFallback>
             {isMutable && (
                 <AvatarBadge onClick={onMutate}>

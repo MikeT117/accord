@@ -1,7 +1,7 @@
 import { CastleIcon } from "lucide-react";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "../ui/empty";
 import { Button } from "../ui/button";
-import { openCreateGuildDialog } from "@/lib/valtio/mutations/create-guild-dialog-ui-store-mutations";
+import { Dialogs, dialogUIStoreActions } from "@/lib/zustand/stores/dialog-ui-store";
 
 export function GuildNotFound() {
     return (
@@ -16,7 +16,7 @@ export function GuildNotFound() {
                         Looks like you've taken a wrong turn, this guild doesn't appear to exist.
                     </EmptyDescription>
                     <EmptyContent>
-                        <Button variant="outline" onClick={openCreateGuildDialog}>
+                        <Button variant="outline" onClick={() => dialogUIStoreActions.openDialog(Dialogs.CreateGuild)}>
                             <CastleIcon />
                             <span>Create Guild</span>
                         </Button>

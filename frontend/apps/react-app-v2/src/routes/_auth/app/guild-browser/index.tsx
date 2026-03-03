@@ -1,3 +1,4 @@
+import { ErrorManager } from "@/components/error/error-manager";
 import { GuildBrowser } from "@/components/guild-browser/guild-browser";
 import { discoverableGuildQueryOptions } from "@/lib/react-query/queries/discoverable-guilds-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -14,5 +15,6 @@ export const Route = createFileRoute("/_auth/app/guild-browser/")({
     loader: ({ context: { queryClient } }) => {
         return queryClient.ensureInfiniteQueryData(discoverableGuildQueryOptions({}));
     },
+    errorComponent: (errProps) => <ErrorManager {...errProps} />,
     component: GuildBrowser,
 });

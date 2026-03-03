@@ -1,9 +1,9 @@
-import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { infiniteQueryOptions, useInfiniteQuery } from "@tanstack/react-query";
 import { getUnixTime } from "date-fns";
 import { MAX_INFINITE_PAGE_LEN } from "../query-constants";
 import { httpClient } from "@/lib/http-client";
 import { toast } from "sonner";
-import { guildMemberSchema, guildMembersSchema } from "@/lib/zod-validation/guild-member-schema";
+import { guildMembersSchema } from "@/lib/zod-validation/guild-member-schema";
 
 type GuildMembersQueryArgs = {
     guildId: string;

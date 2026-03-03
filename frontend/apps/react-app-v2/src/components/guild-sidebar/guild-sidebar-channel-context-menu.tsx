@@ -5,70 +5,50 @@ import {
     ContextMenuItem,
     ContextMenuSeparator,
 } from "@/components/ui/context-menu";
-import { useUserGuildChannelPermissions } from "@/lib/authorisation/permissions";
-import type { GuildChannelType } from "@/lib/types/types";
+import type { GuildChannelType, GuildRolePermissionsType } from "@/lib/types/types";
 import { GUILD_CHANNEL_TYPE } from "@/lib/zod-validation/channel-schema";
 import type { ReactNode } from "react";
 import { useDeleteChannelMutation } from "@/lib/react-query/mutations/delete-channel-mutation";
-import { useClipboard } from "@/hooks/use-clipboard";
-import {
-    closeConfirmActionDialog,
-    openConfirmDeleteGuildChannelActionDialog,
-} from "@/lib/valtio/mutations/confirm-action-dialog-ui-store-mutations";
-import { openGuildChannelSettings } from "@/lib/valtio/mutations/guild-channel-settings-ui-store-mutations";
+import { Dialogs, dialogUIStoreActions } from "@/lib/zustand/stores/dialog-ui-store";
 
 type ChannelSidebarChannelContextMenuProps = {
     children: ReactNode;
-} & Pick<GuildChannelType, "channelType" | "id" | "guildId" | "name">;
+} & Pick<GuildChannelType, "channelType" | "id" | "guildId" | "name"> & {
+        permissions: GuildRolePermissionsType;
+    };
 
 export function GuildSidebarChannelContextMenu({
     id,
     guildId,
     name,
     channelType,
+    permissions,
     children,
 }: ChannelSidebarChannelContextMenuProps) {
-    const { onCopy } = useClipboard();
-    const { ManageGuildChannel } = useUserGuildChannelPermissions(guildId, id);
-    const { mutate: deleteChannel } = useDeleteChannelMutation({ onSuccess: closeConfirmActionDialog });
-
+    const { mutate: deleteChannel } = useDeleteChannelMutation();
     const isGuildCategoryChannel = channelType === GUILD_CHANNEL_TYPE.GUILD_CATEGORY_CHANNEL;
 
     function handleDeleteClick() {
-        openConfirmDeleteGuildChannelActionDialog(name, channelType, () => deleteChannel({ id }));
-    }
-
-    function handleCopyLinkClick() {
-        onCopy(`${window.location.origin}/app/${guildId}/${id}`);
+        dialogUIStoreActions.openDialog(Dialogs.ConfirmDeleteAction, {
+            actionFn: () => deleteChannel({ id }),
+        });
     }
 
     function handleEditClick() {
-        // if (isGuildCategoryChannel) {
-        //     openGuildCategoryChannelSettings(guildId, id);
-        // } else {
-        openGuildChannelSettings(guildId, id);
-        // }
+        dialogUIStoreActions.openDialog(Dialogs.ChannelSettings, { channelId: id, guildId });
     }
 
     return (
         <ContextMenu>
             <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
             <ContextMenuContent className="w-40">
-                {!isGuildCategoryChannel && (
-                    <>
-                        <ContextMenuItem>Mute Channel</ContextMenuItem>
-                        <ContextMenuItem onClick={handleCopyLinkClick}>Copy Link</ContextMenuItem>
-                        <ContextMenuSeparator />
-                    </>
-                )}
-
-                {ManageGuildChannel && (
+                {permissions.ManageGuildChannel && (
                     <ContextMenuItem onClick={handleEditClick}>
                         Edit {isGuildCategoryChannel ? "Category" : "Channel"}
                     </ContextMenuItem>
                 )}
                 <ContextMenuSeparator />
-                {ManageGuildChannel && (
+                {permissions.ManageGuildChannel && (
                     <ContextMenuItem variant="destructive" onClick={handleDeleteClick}>
                         Delete
                     </ContextMenuItem>

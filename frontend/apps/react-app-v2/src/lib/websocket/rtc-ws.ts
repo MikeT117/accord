@@ -1,14 +1,13 @@
 import { websocket, type AccordWebsocket } from "./websocket";
 import * as root from "../protobuf/gen/proto-bundle";
-import { handleResetTokenStore } from "../valtio/mutations/token-store-mutations";
-import { tokenStore } from "../valtio/stores/token-store";
 import {
     rtcCandidateSchema,
     rtcSessionDescriptionSchema,
     type RTCCandidateType,
 } from "../zod-validation/webrtc-schema";
 import { WEBRTC_SDP_TYPE } from "../constants";
-import { setRTCConnectionState } from "../valtio/mutations/rtc-store-mutations";
+import { tokenStoreActions, tokenStoreState, useTokenStore } from "../zustand/stores/token-store";
+import { rtcStoreActions, useRTCStore } from "../zustand/stores/rtc-store";
 
 function createWebRTCEventPayload(payload: root.pb.IWebRTCEvent) {
     return root.pb.WebRTCEvent.encode(root.pb.WebRTCEvent.create(payload)).finish();
@@ -23,7 +22,7 @@ export const accordVoiceController = (() => {
     let pendingICECandidates: RTCCandidateType[] = [];
 
     async function createPeerConnection() {
-        setRTCConnectionState("connecting");
+        rtcStoreActions.setRTCState("connecting");
 
         peer = new RTCPeerConnection();
         audio = new Audio();
@@ -70,7 +69,7 @@ export const accordVoiceController = (() => {
 
         peer.addEventListener("connectionstatechange", () => {
             // non-null assertion: 'peer' will be initialised at this point as we're adding a listener
-            setRTCConnectionState(peer!.connectionState);
+            rtcStoreActions.setRTCState(peer!.connectionState);
         });
     }
 
@@ -211,14 +210,14 @@ export const accordVoiceController = (() => {
             log: true,
             retries: 5,
             retry: true,
-            onInvalidSession: handleResetTokenStore,
+            onInvalidSession: tokenStoreActions.reset,
             identify: () =>
                 createWebRTCEventPayload({
                     op: root.pb.WebRTCOpCode.WEBRTC_IDENTIFY,
                     ver: 0,
                     webrtcIdentify: root.pb.WebRTCIdentify.create({
                         ver: 0,
-                        token: tokenStore.refreshtoken,
+                        token: tokenStoreState.refreshtoken,
                         guildId,
                         channelId,
                     }),
@@ -252,7 +251,7 @@ export const accordVoiceController = (() => {
         ws = null;
         peer = null;
 
-        setRTCConnectionState("closed");
+        rtcStoreActions.setRTCState("closed");
     }
 
     return {

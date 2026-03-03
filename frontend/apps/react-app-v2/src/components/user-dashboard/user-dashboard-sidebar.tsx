@@ -14,14 +14,14 @@ import { UserDashboardSidebarTextChannel } from "./user-dashboard-sidebar-text-c
 import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { HandshakeIcon, UsersRoundIcon } from "lucide-react";
 import { Separator } from "../ui/separator";
-import { useUser } from "@/lib/valtio/queries/user-store-queries";
 import { useFilteredPrivateChannels } from "./hooks/use-filtered-private-channels";
 import { FilterInput } from "../filter-input";
+import { useUser } from "@/lib/zustand/stores/user-store";
 
 export function UserDashboardSidebar() {
     const user = useUser();
     const params = useParams({
-        from: "/_auth/app/dashboard/$channelId",
+        from: "/_auth/app/dashboard/$channelId/",
         shouldThrow: false,
     });
 

@@ -1,9 +1,9 @@
-import { getGuildRolesByIDs } from "@/lib/valtio/queries/guild-store-queries";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { ChevronRight } from "lucide-react";
+import { getGuildRolesByIDs } from "@/lib/zustand/stores/guild-store";
 
 export function GuildRoleBadges({ guildId, roleIDs }: { guildId: string; roleIDs: string[] }) {
     const roles = getGuildRolesByIDs(guildId, roleIDs);

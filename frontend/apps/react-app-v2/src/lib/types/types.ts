@@ -31,7 +31,6 @@ import {
 import { sessionSchema } from "../zod-validation/session-schema";
 import { userSchema, userRoleAssociationChangeSchema, userUpdatedSchema } from "../zod-validation/user-schema";
 import type { envSchema } from "../zod-validation/env-schema";
-import type { useSnapshot } from "valtio";
 import type {
     voiceStateDeletedSchema,
     voiceStateSchema,
@@ -40,7 +39,6 @@ import type {
 import type { publicInvitesSchema } from "../zod-validation/public-invite-schema";
 
 // Utility Types
-export type Snapshot<T extends object> = ReturnType<typeof useSnapshot<T>>;
 export type Dictionary<T> = {
     [key: string]: T | undefined;
 };
@@ -51,8 +49,6 @@ export type Normalize<T> = {
     keys: string[];
     values: Dictionary<T>;
 };
-
-export type OptionalReadonly<T> = Readonly<T> | T;
 
 // Env Types
 export type EnvironmentVarsType = z.infer<typeof envSchema>;

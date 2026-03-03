@@ -3,12 +3,10 @@ import { formatDistanceToNow } from "date-fns";
 import { ChannelMessageContent } from "./channel-message-content";
 import { AvatarWithFallback } from "../avatar-with-fallback";
 import { useState } from "react";
-import { openAttachmentGallery } from "@/lib/valtio/mutations/attachment-gallery-ui-store-mutations";
 import { ChannelMessageInlineEditor } from "./channel-message-inline-editor";
 import { ButtonWithTooltip } from "../button-with-tooltip";
 import { MoreHorizontalIcon, PinIcon, EditIcon, Trash2Icon } from "lucide-react";
 import { Image } from "@/components/image";
-import clsx from "clsx";
 import { ButtonGroup } from "../ui/button-group";
 import { useParams } from "@tanstack/react-router";
 import { ProfilePopover } from "../profile-popover";
@@ -19,6 +17,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { Dialogs, dialogUIStoreActions } from "@/lib/zustand/stores/dialog-ui-store";
+import { cn } from "@/lib/utils";
 
 type ChannelMessageProps = {
     message: ChannelMessageType;
@@ -70,7 +70,11 @@ export function ChannelMessage({
     }
 
     function handleOpenAttachmentsGallery(startIndex: number) {
-        openAttachmentGallery(startIndex, message.author, message.attachments);
+        dialogUIStoreActions.openDialog(Dialogs.AttachmentGallery, {
+            attachments: message.attachments,
+            author: message.author,
+            initialIndex: startIndex,
+        });
     }
 
     function toggleEditor() {
@@ -134,7 +138,7 @@ export function ChannelMessage({
                         tooltipText={message.pinned ? "Unpin Message" : "Pin Message"}
                         onClick={handlePinUnpinMessage}
                     >
-                        <PinIcon className={clsx("rotate-45", message.pinned && "fill-black dark:fill-white")} />
+                        <PinIcon className={cn("rotate-45", message.pinned && "fill-black dark:fill-white")} />
                     </ButtonWithTooltip>
                     <ButtonWithTooltip
                         variant="outline"
@@ -166,7 +170,7 @@ export function ChannelMessage({
                                 <DropdownMenuItem className="justify-between" onClick={handlePinUnpinMessage}>
                                     <span>{message.pinned ? "Unpin" : "Pin"} Message</span>
                                     <PinIcon
-                                        className={clsx("rotate-45", message.pinned && "fill-black dark:fill-white")}
+                                        className={cn("rotate-45", message.pinned && "fill-black dark:fill-white")}
                                     />
                                 </DropdownMenuItem>
                             )}

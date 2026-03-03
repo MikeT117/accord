@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import { Skeleton } from "./ui/skeleton";
 import { env } from "@/lib/constants";
-import clsx from "clsx";
 
 const IMAGE_LOADING_STATE = {
     Failure: -1,
@@ -52,7 +51,7 @@ export function Image({ alt, className, onClick, src, preview }: ImageProps) {
         return (
             <div
                 ref={inViewRef}
-                className={clsx(
+                className={cn(
                     "flex aspect-video w-3xs flex-col items-center justify-center gap-2 rounded-md border border-destructive/20 bg-destructive/10",
                     className,
                 )}

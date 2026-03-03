@@ -18,7 +18,7 @@ export function TextChannel({ messageCreator, messages, name, pinnedMessages }: 
                 </div>
                 {pinnedMessages}
             </div>
-            <div className="mt-auto flex h-full flex-col-reverse overflow-auto"> {messages}</div>
+            <div className="mt-auto flex h-full flex-col-reverse overflow-auto py-4"> {messages}</div>
             {messageCreator}
         </div>
     );

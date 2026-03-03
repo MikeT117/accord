@@ -1,8 +1,3 @@
-import { useUserGuildPermissions } from "@/lib/authorisation/permissions";
-import { openCreateGuildCategoryDialog } from "@/lib/valtio/mutations/create-guild-category-dialog-ui-store-mutations";
-import { openCreateGuildChannelDialog } from "@/lib/valtio/mutations/create-guild-channel-dialog-ui-store-mutations";
-import { openCreateGuildInviteDialog } from "@/lib/valtio/mutations/create-guild-invite-dialog-ui-store-mutations";
-import { openGuildSettings } from "@/lib/valtio/mutations/guild-settings-ui-store-mutations";
 import { CogIcon, DoorOpenIcon, FolderPlusIcon, PlusCircleIcon, UserPlusIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -13,26 +8,31 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUser } from "@/lib/valtio/queries/user-store-queries";
 import { useDeleteGuildMemberMutation } from "@/lib/react-query/mutations/delete-guild-member-mutation";
+import { GuildRolePermissionsType } from "@/lib/types/types";
+import { Dialogs, dialogUIStoreActions } from "@/lib/zustand/stores/dialog-ui-store";
 
-type GuildSidebarHeaderDropdownProps = { guildId: string; creatorId: string; className?: string; children: ReactNode };
+type GuildSidebarHeaderDropdownProps = {
+    guildId: string;
+    creatorId: string;
+    className?: string;
+    children: ReactNode;
+    currentUserId: string;
+    permissions: GuildRolePermissionsType;
+};
 
 export function GuildSidebarHeaderDropdown({
+    currentUserId,
+    permissions,
     guildId,
     creatorId,
     children,
     className,
 }: GuildSidebarHeaderDropdownProps) {
-    const { ManageGuild, ManageGuildChannel } = useUserGuildPermissions(guildId);
-    const user = useUser();
     const { mutate: leaveGuild } = useDeleteGuildMemberMutation();
 
     function handleLeaveGuildClick() {
-        if (creatorId === user.id) {
-            return;
-        }
-        leaveGuild({ guildId, userId: user.id });
+        leaveGuild({ guildId, userId: currentUserId });
     }
     return (
         <DropdownMenu>
@@ -42,33 +42,45 @@ export function GuildSidebarHeaderDropdown({
                 {children}
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48" align="center" side="bottom">
-                {ManageGuildChannel && (
-                    <DropdownMenuItem className="justify-between" onClick={openCreateGuildChannelDialog}>
+                {permissions.ManageGuildChannel && (
+                    <DropdownMenuItem
+                        className="justify-between"
+                        onClick={() => dialogUIStoreActions.openDialog(Dialogs.CreateGuildChannel)}
+                    >
                         Create Channel
                         <PlusCircleIcon />
                     </DropdownMenuItem>
                 )}
-                {ManageGuildChannel && (
-                    <DropdownMenuItem className="justify-between" onClick={openCreateGuildCategoryDialog}>
+                {permissions.ManageGuildChannel && (
+                    <DropdownMenuItem
+                        className="justify-between"
+                        onClick={() => dialogUIStoreActions.openDialog(Dialogs.CreateGuildCategory)}
+                    >
                         Create Category
                         <FolderPlusIcon />
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                {ManageGuild && (
-                    <DropdownMenuItem className="justify-between" onClick={openCreateGuildInviteDialog}>
+                {permissions.ManageGuild && (
+                    <DropdownMenuItem
+                        className="justify-between"
+                        onClick={() => dialogUIStoreActions.openDialog(Dialogs.CreateGuildInvite)}
+                    >
                         Invite People
                         <UserPlusIcon />
                     </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                {ManageGuild && (
-                    <DropdownMenuItem onClick={openGuildSettings} className="justify-between">
+                {permissions.ManageGuild && (
+                    <DropdownMenuItem
+                        onClick={() => dialogUIStoreActions.openDialog(Dialogs.GuildSettings)}
+                        className="justify-between"
+                    >
                         Guild Settings
                         <CogIcon />
                     </DropdownMenuItem>
                 )}
-                {creatorId !== user.id && (
+                {creatorId !== currentUserId && (
                     <DropdownMenuItem variant="destructive" className="justify-between" onClick={handleLeaveGuildClick}>
                         Leave Guild
                         <DoorOpenIcon />

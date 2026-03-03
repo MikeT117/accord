@@ -1,5 +1,5 @@
 import { SidebarMenuItem, SidebarMenuButton } from "../ui/sidebar";
-import type { Snapshot, UserType, ValueOf } from "@/lib/types/types";
+import type { UserType, ValueOf } from "@/lib/types/types";
 import { PRIVATE_CHANNEL_TYPE } from "@/lib/zod-validation/channel-schema";
 import { AvatarWithFallback } from "../avatar-with-fallback";
 import { AvatarGroup, AvatarGroupCount } from "../ui/avatar";
@@ -8,7 +8,7 @@ type UserDashboardSidebarTextChannelProps = {
     channelType: ValueOf<typeof PRIVATE_CHANNEL_TYPE>;
     isActive?: boolean;
     onClick: () => void;
-    users: Snapshot<UserType[]>;
+    users: UserType[];
     currentUserId: string;
 } & Pick<React.ComponentProps<"li">, "ref">;
 

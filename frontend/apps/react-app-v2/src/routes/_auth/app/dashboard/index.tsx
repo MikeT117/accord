@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { openCreateGuildDialog } from "@/lib/valtio/mutations/create-guild-dialog-ui-store-mutations";
+import { Dialogs, dialogUIStoreActions } from "@/lib/zustand/stores/dialog-ui-store";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { CastleIcon, EarthIcon, LayoutDashboardIcon } from "lucide-react";
 
@@ -28,7 +28,7 @@ function RouteComponent() {
                     </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent className="flex-row justify-center gap-2">
-                    <Button variant="outline" onClick={openCreateGuildDialog}>
+                    <Button variant="outline" onClick={() => dialogUIStoreActions.openDialog(Dialogs.GuildSettings)}>
                         <CastleIcon />
                         <span>Create Guild</span>
                     </Button>

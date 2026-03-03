@@ -1,5 +1,5 @@
 import { httpClient } from "@/lib/http-client";
-import { handleGuildDeleted } from "@/lib/valtio/mutations/guild-store-mutations";
+import { guildStoreActions } from "@/lib/zustand/stores/guild-store";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ export const useDeleteGuildMemberMutation = () => {
         mutationFn,
         onSuccess: (_, vars) => {
             router.navigate({ to: "/app/dashboard" });
-            handleGuildDeleted({ id: vars.guildId });
+            guildStoreActions.deleteGuild({ id: vars.guildId });
         },
         onError: () => {
             toast("An error occurred deleting guild member, please try again later.");

@@ -1,9 +1,8 @@
-import { RootErrorComponent } from "@/components/error/error-component";
+import { ErrorManager } from "@/components/error/error-manager";
 import { ChannelMessage } from "@/components/text-channel/channel-message";
 import { ChannelMessageCreator } from "@/components/text-channel/channel-message-creator";
 import { PinnedMessagesPopover } from "@/components/text-channel/pinned-messages-popover";
 import { TextChannel } from "@/components/text-channel/text-channel";
-import { ErrChannelNotFound } from "@/lib/error";
 import { useCreateChannelPinMutation } from "@/lib/react-query/mutations/create-channel-pin-mutation";
 import { useDeleteChannelMessageMutation } from "@/lib/react-query/mutations/delete-channel-message-mutation";
 import { useDeleteChannelPinMutation } from "@/lib/react-query/mutations/delete-channel-pin-mutation";
@@ -11,9 +10,9 @@ import {
     channelMessageQueryOptions,
     useSuspenseInfiniteChannelMessagesQuery,
 } from "@/lib/react-query/queries/channel-message-query";
-import { doesPrivateChannelExist, usePrivateChannel } from "@/lib/valtio/queries/private-channel-store-queries";
-import { useUser } from "@/lib/valtio/queries/user-store-queries";
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { usePrivateChannel } from "@/lib/zustand/stores/private-channel-store";
+import { useUser } from "@/lib/zustand/stores/user-store";
+import { createFileRoute } from "@tanstack/react-router";
 
 type RouteQueryOptions = {
     before?: string | null | undefined;
@@ -26,7 +25,7 @@ export const Route = createFileRoute("/_auth/app/dashboard/$channelId/")({
     loaderDeps: ({ search }) => ({ before: search.before }),
     loader: ({ context: { queryClient }, params: { channelId } }) =>
         queryClient.ensureInfiniteQueryData(channelMessageQueryOptions({ channelId })),
-    errorComponent: (errProps) => <RootErrorComponent {...errProps} />,
+    errorComponent: (errProps) => <ErrorManager {...errProps} />,
     component: RouteComponent,
 });
 
@@ -40,14 +39,12 @@ function RouteComponent() {
     const { mutate: unpinMessage } = useDeleteChannelPinMutation();
     const { mutate: deleteMessage } = useDeleteChannelMessageMutation();
 
-    const channelName = channel.users.map((u) => `${u.displayName}`).join(", ");
-
     return (
         <TextChannel
-            name={channelName}
+            name={channel.name}
             pinnedMessages={<PinnedMessagesPopover channelId={channel.id} canUnpinMessage={true} />}
             messageCreator={
-                <ChannelMessageCreator channelId={channel.id} channelName={channelName} canCreateMessage={true} />
+                <ChannelMessageCreator channelId={channel.id} channelName={channel.name} canCreateMessage={true} />
             }
             messages={data.map((msg, i) => (
                 <ChannelMessage

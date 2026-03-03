@@ -4,10 +4,10 @@ import { AvatarWithFallback } from "../avatar-with-fallback";
 import { useFilteredRelationships } from "./hooks/use-filtered-relationships";
 import { useDeleteRelationshipMutation } from "@/lib/react-query/mutations/delete-relationship-mutation";
 import { useUpdateRelationshipMutation } from "@/lib/react-query/mutations/update-relationship-mutation";
-import { useUser } from "@/lib/valtio/queries/user-store-queries";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "../ui/item";
 import { Button } from "../ui/button";
 import { FilterInput } from "../filter-input";
+import { useUser } from "@/lib/zustand/stores/user-store";
 
 export function UserDashboardRequests() {
     const { filteredRelationships, filter, setFilter } = useFilteredRelationships(RELATIONSHIP_STATUS.PENDING);
@@ -33,7 +33,7 @@ export function UserDashboardRequests() {
                 <FilterInput filterValue={filter} onChange={setFilter} resultsCount={filteredRelationships.length} />
                 <div className="flex flex-col overflow-auto">
                     {filteredRelationships.map((r) => (
-                        <Item variant="outline">
+                        <Item variant="outline" key={r.id}>
                             <ItemMedia>
                                 <AvatarWithFallback src={r.user.avatar} fallback={r.user.displayName} size="lg" />
                             </ItemMedia>

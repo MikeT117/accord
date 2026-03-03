@@ -1,28 +1,18 @@
 import { useCreateGuildMember } from "@/lib/react-query/mutations/create-guild-member-mutation";
-import { useInfiniteDiscoverableGuildQuery } from "@/lib/react-query/queries/discoverable-guilds-query";
 import { GlobeIcon, SearchIcon } from "lucide-react";
-import { ChangeEvent, useState } from "react";
-import { GuildCard } from "./guild-card";
+import { GuildCard } from "../guild-card";
 import { ScrollArea } from "../ui/scroll-area";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "../ui/input-group";
 import { useNavigate } from "@tanstack/react-router";
+import { useFilteredDiscoverableGuilds } from "./hooks/use-filtered-discoverable-guilds";
 
 export function GuildBrowser() {
-    const [filter, setFilter] = useState("");
-    const { data, infiniteScrollRef } = useInfiniteDiscoverableGuildQuery();
+    const { guildFilter, guilds, infiniteScrollRef, setGuildFilter } = useFilteredDiscoverableGuilds();
     const { mutate } = useCreateGuildMember();
     const navigate = useNavigate();
 
     function handleJoinGuildClick(guildId: string) {
         mutate({ guildId });
-    }
-
-    const filteredGuilds = filter.trim().length
-        ? data.filter((g) => g.name.toLowerCase().includes(filter.toLowerCase()))
-        : data;
-
-    function handleFilterChange(e: ChangeEvent<HTMLInputElement, HTMLInputElement>) {
-        setFilter(e.currentTarget.value);
     }
 
     function handleGoToClick(guildId: string) {
@@ -45,18 +35,17 @@ export function GuildBrowser() {
                         Discover communities to connect, share, and grow with.
                     </p>
                 </header>
-                <div className="relative mx-auto mb-8 max-w-md">
+                <div className="relative mx-auto mb-8 max-w-xl">
                     <InputGroup className="mt-4">
-                        <InputGroupInput placeholder="Search guilds..." value={filter} onChange={handleFilterChange} />
+                        <InputGroupInput placeholder="Search guilds..." value={guildFilter} onChange={setGuildFilter} />
                         <InputGroupAddon>
                             <SearchIcon />
                         </InputGroupAddon>
-                        <InputGroupAddon align="inline-end">{filteredGuilds.length} results</InputGroupAddon>
+                        <InputGroupAddon align="inline-end">{guilds.length} results</InputGroupAddon>
                     </InputGroup>
                 </div>
-
                 <div className="flex flex-wrap justify-center gap-4">
-                    {filteredGuilds.map((g, i) => (
+                    {guilds.map((g, i) => (
                         <GuildCard
                             key={g.id}
                             banner={g.banner}

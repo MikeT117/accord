@@ -1,21 +1,20 @@
 import { AvatarWithFallback } from "@/components/avatar-with-fallback";
+import { ErrorManager } from "@/components/error/error-manager";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { useUserGuildPermissions } from "@/lib/authorisation/permissions";
-import { openCreateGuildChannelDialog } from "@/lib/valtio/mutations/create-guild-channel-dialog-ui-store-mutations";
-import { openGuildSettings } from "@/lib/valtio/mutations/guild-settings-ui-store-mutations";
-import { useGuild } from "@/lib/valtio/queries/guild-store-queries";
+import { Dialogs, dialogUIStoreActions } from "@/lib/zustand/stores/dialog-ui-store";
+import { useGuildWithPermissions } from "@/lib/zustand/stores/guild-store";
 import { createFileRoute } from "@tanstack/react-router";
 import { CogIcon, HashIcon } from "lucide-react";
 
 export const Route = createFileRoute("/_auth/app/$guildId/")({
     component: RouteComponent,
+    errorComponent: (errProps) => <ErrorManager {...errProps} />,
 });
 
 function RouteComponent() {
     const { guildId } = Route.useParams();
-    const { ManageGuild, ManageGuildChannel } = useUserGuildPermissions(guildId);
-    const guild = useGuild(guildId);
+    const { guild, permissions } = useGuildWithPermissions(guildId);
 
     return (
         <div className="flex h-full">
@@ -30,14 +29,20 @@ function RouteComponent() {
                     </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent className="flex-row justify-center gap-2">
-                    {ManageGuildChannel && (
-                        <Button variant="outline" onClick={openCreateGuildChannelDialog}>
+                    {permissions.ManageGuildChannel && (
+                        <Button
+                            variant="outline"
+                            onClick={() => dialogUIStoreActions.openDialog(Dialogs.CreateGuildChannel)}
+                        >
                             <HashIcon />
                             <span>Create Channel</span>
                         </Button>
                     )}
-                    {ManageGuild && (
-                        <Button variant="outline" onClick={openGuildSettings}>
+                    {permissions.ManageGuild && (
+                        <Button
+                            variant="outline"
+                            onClick={() => dialogUIStoreActions.openDialog(Dialogs.GuildSettings)}
+                        >
                             <CogIcon />
                             <span>Guild Settings</span>
                         </Button>

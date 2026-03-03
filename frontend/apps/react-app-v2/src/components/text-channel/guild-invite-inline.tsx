@@ -3,7 +3,7 @@ import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "../ui/
 import { TriangleAlertIcon } from "lucide-react";
 import { useCreateGuildMember } from "@/lib/react-query/mutations/create-guild-member-mutation";
 import { usePublicInviteQuery } from "@/lib/react-query/queries/public-invite-query";
-import { GuildCard } from "../guild-browser/guild-card";
+import { GuildCard } from "../guild-card";
 import { useNavigate } from "@tanstack/react-router";
 
 export const GuildInviteInline = ({ inviteId }: { inviteId: string }) => {

@@ -2,17 +2,12 @@ import { PlusCircleIcon, Trash2Icon } from "lucide-react";
 import { useCreateChannelMessageMutation } from "@/lib/react-query/mutations/create-channel-message-mutation";
 import { useCloudinary } from "@/hooks/use-cloudinary";
 import { ChannelMessageEmojiPicker } from "./channel-message-creator-emoji-picker";
-import { useMessageDraft } from "@/lib/valtio/queries/message-draft-store-queries";
-import {
-    appendMessageDraft,
-    resetMessageDraft,
-    setMessageDraft,
-} from "@/lib/valtio/mutations/message-draft-store-mutations";
 import { ChannelMessageCreatorInput } from "./channel-message-creator-input";
 import { InputGroup, InputGroupAddon } from "../ui/input-group";
 import { ButtonWithTooltip } from "../button-with-tooltip";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemHeader } from "../ui/item";
 import { Image } from "@/components/image";
+import { useMessageDraft, messageDraftStoreActions } from "@/lib/zustand/stores/message-draft-store";
 
 type ChannelMessageCreatorProps = {
     channelId: string;
@@ -35,15 +30,15 @@ export function ChannelMessageCreator({ channelId, channelName, canCreateMessage
 
     function resetMessageContent() {
         clearAttachments();
-        resetMessageDraft(channelId);
+        messageDraftStoreActions.resetMessageDraft(channelId);
     }
 
     function handleChange(value: string) {
-        setMessageDraft(channelId, value);
+        messageDraftStoreActions.setMessageDraft(channelId, value);
     }
 
     function handleEmojiSelect(emoji: string) {
-        appendMessageDraft(channelId, emoji);
+        messageDraftStoreActions.appendMessageDraft(channelId, emoji);
     }
 
     const placeholder = canCreateMessage

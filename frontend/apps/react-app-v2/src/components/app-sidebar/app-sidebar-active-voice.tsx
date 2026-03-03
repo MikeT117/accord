@@ -1,55 +1,49 @@
-import { useCurrentUserVoiceState } from "@/lib/valtio/queries/guild-store-queries";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { ButtonWithTooltip } from "../button-with-tooltip";
-import { AudioWaveformIcon, MicIcon, MicOffIcon, PhoneOffIcon } from "lucide-react";
+import { MicIcon, MicOffIcon, PhoneOffIcon } from "lucide-react";
 import { useAccordVoiceController } from "@/hooks/use-accord-voice";
+import { useCurrentUserVoiceState } from "@/lib/zustand/stores/guild-store";
+import { GuildCard } from "../guild-card";
 import { AvatarWithFallback } from "../avatar-with-fallback";
 
 export function AppSidebarActiveVoice() {
-    const { leaveVoiceChannel, toggleSelfMute, connectionState } = useAccordVoiceController();
-    const currentUserVoiceState = useCurrentUserVoiceState();
-    const isConnected = connectionState === "connected";
+    const { leaveVoiceChannel, toggleSelfMute } = useAccordVoiceController();
+    const voiceState = useCurrentUserVoiceState();
 
-    if (!currentUserVoiceState) {
+    if (!voiceState) {
         return null;
     }
 
     return (
-        <div className="flex flex-col items-center gap-1 bg-linear-to-t from-green-950 to-background p-1">
+        <div className="flex flex-col items-center gap-1.5">
             <HoverCard openDelay={5} closeDelay={50}>
-                <HoverCardTrigger className="inline-flex size-8 items-center justify-center gap-2 rounded-md bg-green-400/20">
-                    <AudioWaveformIcon className="size-4 shrink-0 text-green-400/75" />
+                <HoverCardTrigger>
+                    <AvatarWithFallback fallback={voiceState.guild.name} src={voiceState.guild.icon} size="default" />
                 </HoverCardTrigger>
-                <HoverCardContent
-                    className="flex w-64 gap-4 p-2"
-                    side="right"
-                    align="start"
-                    alignOffset={-4}
-                    sideOffset={12}
-                >
-                    <AvatarWithFallback
-                        fallback={currentUserVoiceState.guild.name}
-                        src={currentUserVoiceState.guild.icon}
-                        className="size-8 border-none"
+                <HoverCardContent side="right" align="start" alignOffset={-220} sideOffset={14} asChild>
+                    <GuildCard
+                        banner={voiceState.guild.banner}
+                        createdAt={voiceState.guild.createdAt}
+                        description={voiceState.guild.description}
+                        icon={voiceState.guild.icon}
+                        id={voiceState.guild.id}
+                        memberCount={voiceState.guild.memberCount}
+                        name={voiceState.guild.name}
                     />
-                    <div className="flex flex-col space-y-1">
-                        <span className="text-xs">{isConnected ? "Voice Connected" : "Voice Not Connected"}</span>
-                        <span className="text- overflow-hidden text-xs text-ellipsis">{`${currentUserVoiceState.guild.name} / ${currentUserVoiceState.channel.name}`}</span>
-                    </div>
                 </HoverCardContent>
             </HoverCard>
             <ButtonWithTooltip
-                aria-label={currentUserVoiceState.voiceState.selfMute ? "Unmute" : "Mute"}
-                variant={currentUserVoiceState.voiceState.selfMute ? "destructive" : "outline"}
+                aria-label={voiceState.voiceState.selfMute ? "Unmute" : "Mute"}
+                variant={voiceState.voiceState.selfMute ? "destructive" : "outline"}
                 className="size-8"
-                tooltipText={currentUserVoiceState.voiceState.selfMute ? "Unmute" : "Mute"}
+                tooltipText={voiceState.voiceState.selfMute ? "Unmute" : "Mute"}
                 onClick={toggleSelfMute}
             >
-                {currentUserVoiceState.voiceState.selfMute ? <MicOffIcon /> : <MicIcon />}
+                {voiceState.voiceState.selfMute ? <MicOffIcon /> : <MicIcon />}
             </ButtonWithTooltip>
             <ButtonWithTooltip
                 aria-label="Disconnect Voice"
-                variant="outline"
+                variant="destructive"
                 className="size-8"
                 onClick={leaveVoiceChannel}
                 tooltipText="Disconnect Voice"

@@ -1,27 +1,30 @@
 import { SidebarMenuButton, SidebarMenuItem, SidebarMenuSub } from "@/components/ui/sidebar";
-import type { GuildCategoryChannelType, Snapshot } from "@/lib/types/types";
+import type { GuildCategoryChannelType, GuildRolePermissionsType } from "@/lib/types/types";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Plus, Minus } from "lucide-react";
 import type { ReactNode } from "react";
 import { GuildSidebarChannelContextMenu } from "./guild-sidebar-channel-context-menu";
-import { useCollapsedCategoryUIState } from "@/lib/valtio/queries/collapsed-categories-ui-store-queries";
-import { setCollapsedCategoryUIStore } from "@/lib/valtio/mutations/collapsed-categories-ui-store-mutations";
 import { useDroppable } from "@dnd-kit/react";
+import {
+    collapsedCategoryUIStoreActions,
+    useCollapsedCategory,
+} from "@/lib/zustand/stores/collapsed-categories-ui-store";
 
 type GuildSidebarCategoryChannelProps = {
-    channel: Snapshot<GuildCategoryChannelType>;
+    permissions: GuildRolePermissionsType;
+    channel: GuildCategoryChannelType;
     children: ReactNode;
 };
 
-export function GuildSidebarCategoryChannel({ channel, children }: GuildSidebarCategoryChannelProps) {
-    const isOpen = useCollapsedCategoryUIState(channel.id);
+export function GuildSidebarCategoryChannel({ channel, permissions, children }: GuildSidebarCategoryChannelProps) {
+    const isOpen = useCollapsedCategory(channel.id);
     const { ref, isDropTarget } = useDroppable({
         id: channel.id,
         data: { parentId: channel.id },
     });
 
     function handleCollapsibleChange(state: boolean) {
-        setCollapsedCategoryUIStore(channel.id, state);
+        collapsedCategoryUIStoreActions.setCollapsedCategory(channel.id, state);
     }
 
     return (
@@ -37,6 +40,7 @@ export function GuildSidebarCategoryChannel({ channel, children }: GuildSidebarC
                     name={channel.name}
                     guildId={channel.guildId}
                     channelType={channel.channelType}
+                    permissions={permissions}
                 >
                     <CollapsibleTrigger asChild>
                         <SidebarMenuButton

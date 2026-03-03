@@ -1,8 +1,7 @@
-import { tokenStore } from "@/lib/valtio/stores/token-store";
 import axios, { AxiosError } from "axios";
 import { env } from "./constants";
-import type { APIErrorResponse } from "./types/types";
-import { handleResetTokenStore } from "./valtio/mutations/token-store-mutations";
+import type { APIErrorResponse } from "@/lib/types/types";
+import { tokenStoreActions, tokenStoreState, useTokenStore } from "./zustand/stores/token-store";
 
 const httpClient = axios.create({
     baseURL: `${env.HOST}/api/v1`,
@@ -14,8 +13,8 @@ httpClient.interceptors.request.use((config) => {
         return config;
     }
 
-    config.headers.setAuthorization(tokenStore.accesstoken);
-    config.headers.set("X-App-Token", tokenStore.refreshtoken);
+    config.headers.setAuthorization(tokenStoreState.accesstoken);
+    config.headers.set("X-App-Token", tokenStoreState.refreshtoken);
 
     return config;
 });
@@ -29,7 +28,7 @@ httpClient.interceptors.response.use(
     (error: AxiosError<APIErrorResponse>) => {
         console.error(error.response);
         if (error.response?.status === 401 && error.response?.data?.detail === "invalid tokens") {
-            handleResetTokenStore();
+            tokenStoreActions.reset();
         }
 
         throw error;

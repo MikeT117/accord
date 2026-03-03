@@ -8,57 +8,46 @@ import type {
     GuildTextChannelType,
     GuildVoiceChannelType,
     PrivateChannelType,
-    Snapshot,
     APIGuildChannelType,
     APIPrivateChannelType,
 } from "./types";
 
-export function isGuildChannel(
-    channel: Snapshot<GuildChannelType | PrivateChannelType>
-): channel is Snapshot<GuildChannelType> {
+export function isGuildChannel(channel: GuildChannelType | PrivateChannelType): channel is GuildChannelType {
     return channel.channelType < PRIVATE_CHANNEL_TYPE.PRIVATE_DIRECT_CHANNEL;
 }
 export function isAPIGuildChannel(
-    channel: APIGuildChannelType | APIPrivateChannelType
+    channel: APIGuildChannelType | APIPrivateChannelType,
 ): channel is APIGuildChannelType {
     return channel.channelType < PRIVATE_CHANNEL_TYPE.PRIVATE_DIRECT_CHANNEL;
 }
 
-export function isPrivateChannel(
-    channel: Snapshot<GuildChannelType | PrivateChannelType>
-): channel is Snapshot<PrivateChannelType> {
+export function isPrivateChannel(channel: GuildChannelType | PrivateChannelType): channel is PrivateChannelType {
     return channel.channelType > GUILD_CHANNEL_TYPE.GUILD_CATEGORY_CHANNEL;
 }
 
 export function isAPIPrivateChannel(
-    channel: APIGuildChannelType | APIPrivateChannelType
+    channel: APIGuildChannelType | APIPrivateChannelType,
 ): channel is APIPrivateChannelType {
     return channel.channelType > GUILD_CHANNEL_TYPE.GUILD_CATEGORY_CHANNEL;
 }
 
-export function isGuildTextChannel(channel: Snapshot<GuildChannelType>): channel is Snapshot<GuildTextChannelType> {
+export function isGuildTextChannel(channel: GuildChannelType): channel is GuildTextChannelType {
     return channel.channelType === GUILD_CHANNEL_TYPE.GUILD_TEXT_CHANNEL;
 }
 
-export function isGuildVoiceChannel(channel: Snapshot<GuildChannelType>): channel is Snapshot<GuildVoiceChannelType> {
+export function isGuildVoiceChannel(channel: GuildChannelType): channel is GuildVoiceChannelType {
     return channel.channelType === GUILD_CHANNEL_TYPE.GUILD_VOICE_CHANNEL;
 }
 
-export function isGuildCategoryChannel(
-    channel: Snapshot<GuildChannelType>
-): channel is Snapshot<GuildCategoryChannelType> {
+export function isGuildCategoryChannel(channel: GuildChannelType): channel is GuildCategoryChannelType {
     return channel.channelType === GUILD_CHANNEL_TYPE.GUILD_CATEGORY_CHANNEL;
 }
 
-export function isPrivateDirectChannel(
-    channel: Snapshot<PrivateChannelType>
-): channel is Snapshot<PrivateDirectChannelType> {
+export function isPrivateDirectChannel(channel: PrivateChannelType): channel is PrivateDirectChannelType {
     return channel.channelType === PRIVATE_CHANNEL_TYPE.PRIVATE_DIRECT_CHANNEL;
 }
 
-export function isPrivateGroupChannel(
-    channel: Snapshot<PrivateChannelType>
-): channel is Snapshot<PrivateGroupChannelType> {
+export function isPrivateGroupChannel(channel: PrivateChannelType): channel is PrivateGroupChannelType {
     return channel.channelType === PRIVATE_CHANNEL_TYPE.PRIVATE_GROUP_CHANNEL;
 }
 

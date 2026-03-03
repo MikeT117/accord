@@ -1,11 +1,11 @@
-import { usePrivateChannelsArray } from "@/lib/valtio/queries/private-channel-store-queries";
-import { useUser } from "@/lib/valtio/queries/user-store-queries";
+import { usePrivateChannels } from "@/lib/zustand/stores/private-channel-store";
+import { useUser } from "@/lib/zustand/stores/user-store";
 import { useState } from "react";
 
 export function useFilteredPrivateChannels() {
     const [channelFilter, setChannelFilter] = useState("");
     const user = useUser();
-    const channels = usePrivateChannelsArray();
+    const channels = usePrivateChannels();
 
     const filteredChannels = channelFilter.trim().length
         ? channels.filter((c) =>

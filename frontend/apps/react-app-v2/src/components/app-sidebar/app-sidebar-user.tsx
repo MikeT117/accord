@@ -1,6 +1,3 @@
-import { cycleAppTheme } from "@/lib/valtio/mutations/theme-store-mutations";
-import { openUserSettings } from "@/lib/valtio/mutations/user-settings-ui-store-mutations";
-import { useUser } from "@/lib/valtio/queries/user-store-queries";
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -11,17 +8,19 @@ import {
     DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { CogIcon, MoonIcon, SunIcon, SunMoonIcon, LogOut } from "lucide-react";
-import { useTheme } from "@/lib/valtio/queries/theme-store-queries";
 import { AvatarWithFallback } from "../avatar-with-fallback";
 import { ButtonWithTooltip } from "../button-with-tooltip";
-import { handleResetTokenStore } from "@/lib/valtio/mutations/token-store-mutations";
+import { useUser } from "@/lib/zustand/stores/user-store";
+import { tokenStoreActions } from "@/lib/zustand/stores/token-store";
+import { Dialogs, dialogUIStoreActions } from "@/lib/zustand/stores/dialog-ui-store";
+import { useTheme } from "@/components/theme-provider";
 
 export function AppSidebarUser() {
     const user = useUser();
-    const theme = useTheme();
+    const { theme, cycleTheme } = useTheme();
 
     function handleLogoutClick() {
-        handleResetTokenStore();
+        tokenStoreActions.reset();
         location.reload();
     }
 
@@ -50,14 +49,14 @@ export function AppSidebarUser() {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
-                        <DropdownMenuItem onClick={openUserSettings}>
+                        <DropdownMenuItem onClick={() => dialogUIStoreActions.openDialog(Dialogs.UserSettings)}>
                             <CogIcon />
                             User Settings
                         </DropdownMenuItem>
                     </DropdownMenuGroup>
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
-                        <DropdownMenuItem onClick={cycleAppTheme}>
+                        <DropdownMenuItem onClick={cycleTheme}>
                             {theme === "dark" && <MoonIcon />}
                             {theme === "light" && <SunIcon />}
                             {theme === "system" && <SunMoonIcon />}
