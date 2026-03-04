@@ -1,9 +1,0 @@
-parser: 'typescript'
-semi: true
-tabWidth: 4
-printWidth: 100
-singleQuote: true
-trailingComma: 'all'
-arrowParens: 'always'
-jsxSingleQuote: true
-bracketSpacing: true

@@ -183,7 +183,7 @@ func (ac *AuthController) HandleOAuthCallback(provider string) func(ctx echo.Con
 				return handleAuthError(ctx, ac.config.Host, err)
 			}
 
-			return response.TemporaryRedirect(ctx, fmt.Sprintf("https://%s/complete-registration?token=%s", ac.config.Host, registrationToken))
+			return response.TemporaryRedirect(ctx, fmt.Sprintf("%s/complete-registration?token=%s", ac.config.Host, registrationToken))
 		}
 
 		_, accesstoken, err := authentication.CreateAndSignToken(
@@ -222,6 +222,6 @@ func (ac *AuthController) HandleOAuthCallback(provider string) func(ctx echo.Con
 			return handleAuthError(ctx, ac.config.Host, err)
 		}
 
-		return response.TemporaryRedirect(ctx, fmt.Sprintf("https://%s/auth?accesstoken=%s&refreshtoken=%s", ac.config.Host, accesstoken, refreshtoken))
+		return response.TemporaryRedirect(ctx, fmt.Sprintf("%s/auth?accesstoken=%s&refreshtoken=%s", ac.config.Host, accesstoken, refreshtoken))
 	}
 }

@@ -1,7 +1,3 @@
--- +goose Up
--- +goose StatementBegin
-SELECT "up SQL query";
-
 CREATE TABLE IF NOT EXISTS "account" (
     "id" UUID PRIMARY KEY NOT NULL,
     "provider" TEXT NOT NULL,
@@ -173,7 +169,7 @@ CREATE TABLE IF NOT EXISTS "voice_state" (
     "self_mute" boolean NOT NULL,
     "self_deaf" boolean NOT NULL,
     "channel_id" uuid NOT NULL REFERENCES "channel" ("id"),
-    "guild_id" uuid REFERENCES "guild" ("id"),
+    "guild_id" uuid REFERENCES "guild" ("id")
 );
 
 -- Join Tables Begin --
@@ -206,10 +202,3 @@ CREATE TABLE IF NOT EXISTS "guild_role_channel" (
 );
 
 -- Join Tables End --
-
--- +goose StatementEnd
-
--- +goose Down
--- +goose StatementBegin
-SELECT "down SQL query";
--- +goose StatementEnd
