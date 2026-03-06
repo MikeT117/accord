@@ -1,7 +1,7 @@
 import { env } from "@/lib/constants";
 import { useSignAttachmentMutation } from "@/lib/react-query/mutations/sign-attachment-mutation";
 import { useUploadAttachmentMutation } from "@/lib/react-query/mutations/upload-attachment-mutation";
-import { useState, useRef, type ChangeEvent, type ReactNode } from "react";
+import { useState, useRef, type ReactNode, Ref, useEffect } from "react";
 
 export type AttachmentPreview = {
     id: string;
@@ -26,34 +26,74 @@ function createPreview(file: File): Promise<string> {
     });
 }
 
+export function UploadWrapper({
+    id,
+    ref,
+    children,
+    disabled = false,
+    multiple = true,
+}: {
+    id: string;
+    ref: Ref<HTMLInputElement>;
+    children?: ReactNode;
+    disabled?: boolean;
+    multiple?: boolean;
+}) {
+    return (
+        <label htmlFor={id} className="m-0 cursor-pointer p-0">
+            {children}
+            <input
+                id={id}
+                name={id}
+                ref={ref}
+                type="file"
+                style={{ display: "none" }}
+                disabled={disabled}
+                multiple={multiple}
+            />
+        </label>
+    );
+}
+
 export function useCloudinary() {
     const [attachments, setAttachments] = useState<AttachmentPreview[]>([]);
     const [error, setError] = useState(false);
-    const ref = useRef<HTMLInputElement | null>(null);
+    const elemRef = useRef<HTMLInputElement | null>(null);
 
     const { mutateAsync: signAttachment } = useSignAttachmentMutation();
     const { mutateAsync: uploadAttachment } = useUploadAttachmentMutation();
 
-    function onFileUploadClick() {
-        if (!env.CLOUDINARY_URL || !env.CLOUDINARY_API_KEY) {
-            console.warn("Cloudinary URL/API-KEY not valid, attachment upload functionality disabled!");
+    useEffect(() => {
+        return () => {
+            if (!elemRef.current) {
+                return;
+            }
+
+            elemRef.current.removeEventListener("change", handleChangeEvent);
+        };
+    }, []);
+
+    function setRef(elem: HTMLInputElement) {
+        if (!elem) {
             return;
         }
 
-        if (typeof ref.current?.click !== "function") {
+        if (!(elem instanceof HTMLInputElement)) {
             return;
         }
 
-        ref.current.click();
+        elemRef.current = elem;
+        elem.addEventListener("change", handleChangeEvent);
     }
 
-    async function handleUploadInputChange({ target }: ChangeEvent<HTMLInputElement>) {
-        if (!target.files) {
+    async function handleChangeEvent(event: Event) {
+        const files = (event.target as HTMLInputElement).files;
+        if (!files || !files.length) {
             return;
         }
 
         await Promise.allSettled(
-            Array.from(target.files).map(async (file) => {
+            Array.from(files).map(async (file) => {
                 try {
                     const preview = await createPreview(file);
                     const { id, signature, timestamp } = await signAttachment({
@@ -73,44 +113,28 @@ export function useCloudinary() {
                     setError(true);
                     console.error("Attachment upload error: ", e);
                 }
-            })
+            }),
         );
     }
 
-    function UploadWrapper({
-        id,
-        children,
-        disabled = false,
-        multiple = true,
-    }: {
-        id: string;
-        children?: ReactNode;
-        disabled?: boolean;
-        multiple?: boolean;
-    }) {
-        return (
-            <label htmlFor={id} className="m-0 cursor-pointer p-0">
-                {children}
-                <input
-                    id={id}
-                    name={id}
-                    ref={ref}
-                    onChange={handleUploadInputChange}
-                    type="file"
-                    style={{ display: "none" }}
-                    disabled={disabled}
-                    multiple={multiple}
-                />
-            </label>
-        );
+    function onClick() {
+        if (!env.CLOUDINARY_URL || !env.CLOUDINARY_API_KEY) {
+            console.warn("Cloudinary URL/API-KEY not valid, attachment upload functionality disabled!");
+            return;
+        }
+
+        if (typeof elemRef.current?.click !== "function") {
+            return;
+        }
+
+        elemRef.current.click();
     }
 
     return {
-        ref,
         attachments,
+        setRef,
         error,
-        UploadWrapper,
-        onFileUploadClick,
+        onClick,
         deleteAttachment: (id: string) => setAttachments((s) => s.filter((a) => a.id !== id)),
         clearAttachments: () => setAttachments([]),
     };

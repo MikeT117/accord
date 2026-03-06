@@ -1,5 +1,4 @@
 import type { ChannelMessageType } from "@/lib/types/types";
-import { formatDistanceToNow } from "date-fns";
 import { ChannelMessageContent } from "./channel-message-content";
 import { AvatarWithFallback } from "../avatar-with-fallback";
 import { useState } from "react";
@@ -19,6 +18,7 @@ import {
 } from "../ui/dropdown-menu";
 import { Dialogs, dialogUIStoreActions } from "@/lib/zustand/stores/dialog-ui-store";
 import { cn } from "@/lib/utils";
+import { useRelativeTime } from "./hooks/use-relative-time";
 
 type ChannelMessageProps = {
     message: ChannelMessageType;
@@ -46,6 +46,8 @@ export function ChannelMessage({
     const [isEditing, setIsEditing] = useState(false);
     const [isMouseOver, setMouseOver] = useState(false);
     const [isDropdownOpen, setDropdownOpen] = useState(false);
+
+    const relativeTimestamp = useRelativeTime(message.createdAt);
 
     const optionsVisible = isMouseOver || isDropdownOpen;
 
@@ -108,11 +110,7 @@ export function ChannelMessage({
                             {message.author.displayName}
                         </a>
                     </ProfilePopover>
-                    <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(message.createdAt, {
-                            addSuffix: true,
-                        })}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{relativeTimestamp}</span>
                 </div>
                 {isEditing ? (
                     <ChannelMessageInlineEditor message={message} onClose={toggleEditor} />

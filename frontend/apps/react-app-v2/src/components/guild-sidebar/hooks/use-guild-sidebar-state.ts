@@ -11,8 +11,8 @@ export function useGuildSidebarState(guildId: string) {
     const userRoles = useUserRoleStore((s) => s.values);
 
     const parents: GuildCategoryChannelType[] = [];
-    const children: (GuildTextChannelType | GuildVoiceChannelType)[] = [];
     const orphans: (GuildTextChannelType | GuildVoiceChannelType)[] = [];
+    const children: { [key: string]: (GuildTextChannelType | GuildVoiceChannelType)[] } = {};
 
     for (let i = 0; i < guild.channels.keys.length; i++) {
         const channel = guild.channels.values[guild.channels.keys[i]];
@@ -45,7 +45,11 @@ export function useGuildSidebarState(guildId: string) {
             continue;
         }
 
-        children.push(channel);
+        if (children[channel.parentId]) {
+            children[channel.parentId] = [...children[channel.parentId], channel];
+        }
+
+        children[channel.parentId] = [channel];
     }
 
     return { guild, permissions, user, parents, children, orphans };

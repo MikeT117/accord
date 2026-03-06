@@ -1,5 +1,4 @@
 import type { ChannelMessageType } from "@/lib/types/types";
-import { formatDistanceToNow } from "date-fns";
 import { ChannelMessageContent } from "./channel-message-content";
 import { Image } from "@/components/image";
 import { AvatarWithFallback } from "../avatar-with-fallback";
@@ -7,6 +6,7 @@ import { useDeleteChannelPinMutation } from "@/lib/react-query/mutations/delete-
 import { PinIcon } from "lucide-react";
 import { ButtonWithTooltip } from "../button-with-tooltip";
 import { dialogUIStoreActions, Dialogs } from "@/lib/zustand/stores/dialog-ui-store";
+import { useRelativeTime } from "./hooks/use-relative-time";
 
 type PinnedChannelMessageProps = {
     message: ChannelMessageType;
@@ -16,6 +16,7 @@ type PinnedChannelMessageProps = {
 
 export function PinnedChannelMessage({ ref, message, canUnpinMessage }: PinnedChannelMessageProps) {
     const { mutate: unpinMessage } = useDeleteChannelPinMutation();
+    const relativeTimestamp = useRelativeTime(message.createdAt);
 
     function handlePinMessage() {
         if (!canUnpinMessage) {
@@ -42,11 +43,7 @@ export function PinnedChannelMessage({ ref, message, canUnpinMessage }: PinnedCh
             <div className="flex w-full flex-col items-start gap-y-2">
                 <div className="mb-1 flex items-baseline gap-x-2">
                     <span className="cursor-pointer font-medium text-foreground">{message.author.displayName}</span>
-                    <span className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(message.createdAt, {
-                            addSuffix: true,
-                        })}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{relativeTimestamp}</span>
                 </div>
                 <ChannelMessageContent content={message.content} />
                 {message.attachments.map((attachment, i) => (

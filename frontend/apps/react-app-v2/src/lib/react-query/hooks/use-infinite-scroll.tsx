@@ -1,6 +1,6 @@
 import { useInView } from "react-intersection-observer";
 
-export function useInfiniteScroll<T = any>(
+export function useInfiniteScroll<T = unknown>(
     data: T[],
     hasPreviousPage: boolean,
     hasNextPage: boolean,

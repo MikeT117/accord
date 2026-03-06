@@ -10,6 +10,7 @@ import { getUnixTime } from "date-fns";
 import { MAX_INFINITE_PAGE_LEN } from "../query-constants";
 import { httpClient } from "@/lib/http-client";
 import { useInfiniteScroll } from "../hooks/use-infinite-scroll";
+import { useMemo } from "react";
 
 type PageParam = { before: string; after?: never } | { after: string; before?: never } | null | undefined;
 
@@ -73,7 +74,8 @@ export function useSuspenseInfiniteChannelMessagesQuery({ channelId, pinned }: C
         channelMessageQueryOptions({ channelId, pinned }),
     );
 
-    return useInfiniteScroll(data.pages.flat() ?? [], hasPreviousPage, hasNextPage, fetchPreviousPage, fetchNextPage);
+    const messages = useMemo(() => data.pages.flat() ?? [], [data, channelId, pinned]);
+    return useInfiniteScroll(messages, hasPreviousPage, hasNextPage, fetchPreviousPage, fetchNextPage);
 }
 
 export function useInfiniteChannelMessagesQuery({ channelId, pinned }: ChannelMessageQueryHookArgs) {
@@ -81,5 +83,6 @@ export function useInfiniteChannelMessagesQuery({ channelId, pinned }: ChannelMe
         channelMessageQueryOptions({ channelId, pinned }),
     );
 
-    return useInfiniteScroll(data?.pages.flat() ?? [], hasPreviousPage, hasNextPage, fetchPreviousPage, fetchNextPage);
+    const messages = useMemo(() => data?.pages.flat() ?? [], [data, channelId, pinned]);
+    return useInfiniteScroll(messages, hasPreviousPage, hasNextPage, fetchPreviousPage, fetchNextPage);
 }
