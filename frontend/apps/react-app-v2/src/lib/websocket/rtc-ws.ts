@@ -5,7 +5,7 @@ import {
     rtcSessionDescriptionSchema,
     type RTCCandidateType,
 } from "../zod-validation/webrtc-schema";
-import { WEBRTC_SDP_TYPE } from "../constants";
+import { env, WEBRTC_SDP_TYPE } from "../constants";
 import { tokenStoreActions, tokenStoreState } from "../zustand/stores/token-store";
 import { rtcStoreActions } from "../zustand/stores/rtc-store";
 
@@ -118,6 +118,7 @@ export const accordVoiceController = (() => {
 
     async function handleIceCandidate(payload: root.pb.IWebRTCICECandidate) {
         try {
+            console.log(payload);
             const data = rtcCandidateSchema.parse(payload);
 
             if (!peer || !peer.remoteDescription) {
@@ -206,7 +207,7 @@ export const accordVoiceController = (() => {
 
         ws = websocket();
         ws.loadConfig({
-            endpoint: "wss://accord.razor116.com/rtc",
+            endpoint: `wss://${env.RTC_URL}`,
             log: true,
             retries: 5,
             retry: true,

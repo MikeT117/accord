@@ -39,7 +39,7 @@ export const updateInfiniteDataItem = <T = unknown>(data: InfiniteData<T[]> | un
 
 export const deleteInfiniteDataItem = <T = unknown>(
     data: InfiniteData<T[]> | undefined,
-    filterFn: (item: T) => boolean
+    filterFn: (item: T) => boolean,
 ) => {
     if (!data) {
         return;
@@ -56,7 +56,7 @@ export const deleteInfiniteDataItem = <T = unknown>(
 
     const pageParams = pages.map((page, i) => {
         if (i === 0) {
-            return null;
+            return;
         } else if (page.length < MAX_INFINITE_PAGE_LEN) {
             return page.length + i * MAX_INFINITE_PAGE_LEN;
         } else {

@@ -1,5 +1,5 @@
 import { httpClient } from "@/lib/http-client";
-import { tokensSchema } from "@/lib/zod-validation/localstorage-schema";
+import { tokensSchema } from "@/lib/zod-validation/tokens-schema";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
