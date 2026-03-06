@@ -100,7 +100,7 @@ func (ac *AuthController) HandleCompleteRegistration(ctx echo.Context) error {
 	}
 
 	_, accesstoken, err := authentication.CreateAndSignToken(
-		ac.config.JWTIssuer,
+		ac.config.Host,
 		id,
 		ac.config.JWTAccesstokenKey,
 		requestId,
@@ -112,7 +112,7 @@ func (ac *AuthController) HandleCompleteRegistration(ctx echo.Context) error {
 
 	expiresAt := time.Now().UTC().Add(time.Hour * 168)
 	_, refreshtoken, err := authentication.CreateAndSignToken(
-		ac.config.JWTIssuer,
+		ac.config.Host,
 		id,
 		ac.config.JWTRefreshtokenKey,
 		requestId,
@@ -178,7 +178,7 @@ func (ac *AuthController) HandleOAuthCallback(provider string) func(ctx echo.Con
 		}
 
 		if !isRegistrationComplete {
-			_, registrationToken, err := authentication.CreateAndSignRegistrationToken(ac.config.JWTIssuer, user.Result.ID, provider, ac.config.JWTRegistrationTokenKey, requestId, time.Now().UTC().Add(time.Minute*5))
+			_, registrationToken, err := authentication.CreateAndSignRegistrationToken(ac.config.Host, user.Result.ID, provider, ac.config.JWTRegistrationTokenKey, requestId, time.Now().UTC().Add(time.Minute*5))
 			if err != nil {
 				return handleAuthError(ctx, ac.config.Host, err)
 			}
@@ -187,7 +187,7 @@ func (ac *AuthController) HandleOAuthCallback(provider string) func(ctx echo.Con
 		}
 
 		_, accesstoken, err := authentication.CreateAndSignToken(
-			ac.config.JWTIssuer,
+			ac.config.Host,
 			user.Result.ID,
 			ac.config.JWTAccesstokenKey,
 			requestId,
@@ -199,7 +199,7 @@ func (ac *AuthController) HandleOAuthCallback(provider string) func(ctx echo.Con
 
 		expiresAt := time.Now().UTC().Add(time.Hour * 168)
 		_, refreshtoken, err := authentication.CreateAndSignToken(
-			ac.config.JWTIssuer,
+			ac.config.Host,
 			user.Result.ID,
 			ac.config.JWTRefreshtokenKey,
 			requestId,
@@ -222,6 +222,6 @@ func (ac *AuthController) HandleOAuthCallback(provider string) func(ctx echo.Con
 			return handleAuthError(ctx, ac.config.Host, err)
 		}
 
-		return response.TemporaryRedirect(ctx, fmt.Sprintf("%s/auth?accesstoken=%s&refreshtoken=%s", ac.config.Host, accesstoken, refreshtoken))
+		return response.TemporaryRedirect(ctx, fmt.Sprintf("https://%s/auth?accesstoken=%s&refreshtoken=%s", ac.config.Host, accesstoken, refreshtoken))
 	}
 }

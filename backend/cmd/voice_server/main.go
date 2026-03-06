@@ -73,7 +73,7 @@ func main() {
 	}
 
 	// Websocket Handler
-	server := &http.Server{Addr: fmt.Sprintf(":%d", config.WebRTCWebsocketPort)}
+	server := &http.Server{Addr: fmt.Sprintf(":%d", config.WebRTCPort)}
 	http.HandleFunc("/rtc", func(w http.ResponseWriter, r *http.Request) {
 
 		if !hub.AllowConnections() {

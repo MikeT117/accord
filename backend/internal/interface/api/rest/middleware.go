@@ -51,7 +51,7 @@ func CreateAuthenticationMiddleware(config *config.Config, sessionService interf
 			}
 
 			_, newAccesstoken, err := authentication.CreateAndSignToken(
-				config.JWTIssuer,
+				config.Host,
 				requestorID,
 				config.JWTAccesstokenKey,
 				c.Response().Header().Get(echo.HeaderXRequestID),

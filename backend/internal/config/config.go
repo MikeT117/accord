@@ -19,7 +19,6 @@ type Config struct {
 	GitlabSecret      string
 	GitlabRedirectURL string
 
-	JWTIssuer          string
 	JWTAccesstokenKey  []byte
 	JWTRefreshtokenKey []byte
 
@@ -33,9 +32,9 @@ type Config struct {
 
 	DatabaseURL string
 
-	HTTPPort            int
-	WebsocketPort       int
-	WebRTCWebsocketPort int
+	HTTPPort      int
+	WebsocketPort int
+	WebRTCPort    int
 
 	Host string
 
@@ -51,33 +50,9 @@ type Config struct {
 func MustLoadConfig() *Config {
 	godotenv.Load(".env.local")
 
-	HTTPPort, err := strconv.Atoi(mustGetEnv("HTTP_PORT", true))
-	if err != nil {
-		log.Fatalf("invalid http port environment variable: %d\n", HTTPPort)
-	}
-
-	WebsocketPort, err := strconv.Atoi(mustGetEnv("WEBSOCKET_PORT", true))
-	if err != nil {
-		log.Fatalf("invalid websocket port environment variable: %d\n", WebsocketPort)
-	}
-
-	WebRTCPort, err := strconv.Atoi(mustGetEnv("WEBRTC_WS_PORT", true))
-	if err != nil {
-		log.Fatalf("invalid web rtc websocket port environment variable: %d\n", WebRTCPort)
-	}
-
-	return &Config{
+	config := &Config{
 		OAuthNonceSecret: mustGetEnv("OAUTH_NONCE_SECRET", true),
 
-		GithubKey:         mustGetEnv("GITHUB_KEY", true),
-		GithubSecret:      mustGetEnv("GITHUB_SECRET", true),
-		GithubRedirectURL: mustGetEnv("GITHUB_REDIRECT_URL", true),
-
-		GitlabKey:         mustGetEnv("GITLAB_KEY", true),
-		GitlabSecret:      mustGetEnv("GITLAB_SECRET", true),
-		GitlabRedirectURL: mustGetEnv("GITLAB_REDIRECT_URL", true),
-
-		JWTIssuer:               mustGetEnv("JWT_ISSUER", true),
 		JWTAccesstokenKey:       []byte(mustGetEnv("JWT_ACCESSTOKEN_KEY", true)),
 		JWTRefreshtokenKey:      []byte(mustGetEnv("JWT_REFRESHTOKEN_KEY", true)),
 		JWTRegistrationTokenKey: []byte(mustGetEnv("JWT_REGISTRATIONTOKEN_KEY", true)),
@@ -90,32 +65,63 @@ func MustLoadConfig() *Config {
 
 		DatabaseURL: mustGetEnv("DATABASE_URL", true),
 
-		HTTPPort:            HTTPPort,
-		WebsocketPort:       WebsocketPort,
-		WebRTCWebsocketPort: WebRTCPort,
-
-		Host: mustGetEnv("HOST", true),
-
 		NATSURL:      mustGetEnv("NATS_URL", true),
 		NATSUser:     mustGetEnv("NATS_USER", true),
 		NATSPassword: mustGetEnv("NATS_PASSWORD", true),
 
+		Host:   mustGetEnv("HOST", true),
 		APIURL: mustGetEnv("API_URL", true),
 		RTCURL: mustGetEnv("RTC_URL", true),
 		WSURL:  mustGetEnv("WS_URL", true),
 	}
 
+	var err error
+
+	config.HTTPPort, err = strconv.Atoi(mustGetEnv("HTTP_PORT", true))
+	if err != nil {
+		log.Fatalf("invalid http port environment variable: %d\n", config.HTTPPort)
+	}
+
+	config.WebsocketPort, err = strconv.Atoi(mustGetEnv("WEBSOCKET_PORT", true))
+	if err != nil {
+		log.Fatalf("invalid websocket port environment variable: %d\n", config.WebsocketPort)
+	}
+
+	config.WebRTCPort, err = strconv.Atoi(mustGetEnv("WEBRTC_WS_PORT", true))
+	if err != nil {
+		log.Fatalf("invalid web rtc websocket port environment variable: %d\n", config.WebRTCPort)
+	}
+
+	config.GithubKey = mustGetEnv("GITHUB_KEY", false)
+	if config.GithubKey != "" {
+		config.GithubSecret = mustGetEnv("GITHUB_SECRET", true)
+		config.GithubRedirectURL = mustGetEnv("GITHUB_REDIRECT_URL", true)
+	}
+
+	config.GitlabKey = mustGetEnv("GITLAB_KEY", false)
+	if config.GitlabKey != "" {
+		config.GitlabSecret = mustGetEnv("GITLAB_SECRET", true)
+		config.GitlabRedirectURL = mustGetEnv("GITLAB_REDIRECT_URL", true)
+	}
+
+	if config.GithubKey == "" && config.GitlabKey == "" {
+		log.Fatalf("no oauth config provided\n")
+	}
+
+	return config
 }
 
 func mustGetEnv(key string, required bool) string {
 	val := os.Getenv(key)
-	if val == "" {
-		if required {
-			log.Fatalf("missing required environment variable : %s\n", key)
-		}
-
-		log.Printf("missing non-required environment variable (%s), this may reduce functionality.\n", key)
+	if val != "" {
+		return val
 	}
 
-	return val
+	if required {
+		log.Fatalf("missing required environment variable : %s\n", key)
+	}
+
+	log.Printf("missing non-required environment variable (%s), this may reduce functionality.\n", key)
+
+	return ""
 }
