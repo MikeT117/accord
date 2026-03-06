@@ -1,4 +1,4 @@
-import { tokensSchema } from "@/lib/zod-validation/localstorage-schema";
+import { tokensSchema } from "@/lib/zod-validation/tokens-schema";
 import { tokenStoreActions } from "@/lib/zustand/stores/token-store";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 

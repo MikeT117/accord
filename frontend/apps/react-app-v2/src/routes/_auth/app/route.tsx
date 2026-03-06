@@ -32,7 +32,7 @@ import {
     voiceStateDeletedSchema,
 } from "@/lib/zod-validation/voice-state-schema";
 import * as root from "../../../lib/protobuf/gen/proto-bundle";
-import { tokensSchema } from "@/lib/zod-validation/localstorage-schema";
+import { tokensSchema } from "@/lib/zod-validation/tokens-schema";
 import { guildStoreActions } from "@/lib/zustand/stores/guild-store";
 import { userStoreActions } from "@/lib/zustand/stores/user-store";
 import { userRoleStoreActions } from "@/lib/zustand/stores/user-role-store";
@@ -40,6 +40,7 @@ import { privateChannelStoreActions } from "@/lib/zustand/stores/private-channel
 import { relationshipStoreActions } from "@/lib/zustand/stores/relationship-store";
 import { tokenStoreActions, tokenStoreState } from "@/lib/zustand/stores/token-store";
 import { DialogManager } from "@/components/dialog-manager/dialog-manager";
+import { env } from "@/lib/constants";
 
 export const Route = createFileRoute("/_auth/app")({
     beforeLoad: async ({ context, cause }) => {
@@ -50,7 +51,7 @@ export const Route = createFileRoute("/_auth/app")({
         if (cause === "enter") {
             return new Promise<void>((res, rej) => {
                 const config: WebSocketConfig = {
-                    endpoint: "wss://accord.razor116.com/ws",
+                    endpoint: `wss://${env.WS_URL}`,
                     log: true,
                     retries: 5,
                     retry: true,
@@ -206,7 +207,7 @@ export const Route = createFileRoute("/_auth/app")({
 
 function RouteComponent() {
     return (
-        <div className="grid h-screen w-screen grid-cols-[min-content_250px_1fr] grid-rows-[100%]">
+        <div className="grid h-screen w-screen grid-cols-[min-content_1fr] grid-rows-[32px_1fr]">
             <AppSidebar />
             <Outlet />
             <DialogManager />

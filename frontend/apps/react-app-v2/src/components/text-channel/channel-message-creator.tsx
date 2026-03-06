@@ -1,6 +1,6 @@
 import { PlusCircleIcon, Trash2Icon } from "lucide-react";
 import { useCreateChannelMessageMutation } from "@/lib/react-query/mutations/create-channel-message-mutation";
-import { useCloudinary } from "@/hooks/use-cloudinary";
+import { UploadWrapper, useCloudinary } from "@/hooks/use-cloudinary";
 import { ChannelMessageEmojiPicker } from "./channel-message-creator-emoji-picker";
 import { ChannelMessageCreatorInput } from "./channel-message-creator-input";
 import { InputGroup, InputGroupAddon } from "../ui/input-group";
@@ -18,7 +18,7 @@ type ChannelMessageCreatorProps = {
 export function ChannelMessageCreator({ channelId, channelName, canCreateMessage }: ChannelMessageCreatorProps) {
     const content = useMessageDraft(channelId);
     const { mutate: createMessage } = useCreateChannelMessageMutation({ onSuccess: resetMessageContent });
-    const { UploadWrapper, onFileUploadClick, attachments, deleteAttachment, clearAttachments } = useCloudinary();
+    const { onClick, setRef, attachments, deleteAttachment, clearAttachments } = useCloudinary();
 
     function submitMessage() {
         if (!canCreateMessage) {
@@ -81,7 +81,7 @@ export function ChannelMessageCreator({ channelId, channelName, canCreateMessage
                         tooltipText="Attach Files"
                         aria-label="Attach Files"
                         size="icon"
-                        onClick={onFileUploadClick}
+                        onClick={onClick}
                         disabled={!canCreateMessage}
                         variant="ghost"
                     >
@@ -99,7 +99,7 @@ export function ChannelMessageCreator({ channelId, channelName, canCreateMessage
                     <ChannelMessageEmojiPicker onEmojiSelect={handleEmojiSelect} isDisabled={!canCreateMessage} />
                 </InputGroupAddon>
             </InputGroup>
-            <UploadWrapper id="message-creator" disabled={!canCreateMessage} />
+            <UploadWrapper id="message-creator" ref={setRef} disabled={!canCreateMessage} />
         </div>
     );
 }

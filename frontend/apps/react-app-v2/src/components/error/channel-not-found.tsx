@@ -8,7 +8,7 @@ export function ChannelNotFound() {
                 <EmptyMedia variant="icon">
                     <HashIcon />
                 </EmptyMedia>
-                <EmptyTitle>404 - Channel Not Found</EmptyTitle>
+                <EmptyTitle>Channel Not Found!</EmptyTitle>
                 <EmptyDescription>
                     Looks like you've taken a wrong turn, this channel doesn't appear to exist.
                 </EmptyDescription>

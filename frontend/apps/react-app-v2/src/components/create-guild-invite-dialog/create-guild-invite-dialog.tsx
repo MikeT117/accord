@@ -30,7 +30,7 @@ export function CreateGuildInviteDialog({ onClose }: CreateGuildInviteDialogProp
     } = useCreateGuildInviteMutation();
 
     const { onCopy, isSuccess: isCopySuccessful } = useClipboard();
-    const inviteLink = guildInvite ? `${env.HOST}/invite/${guildInvite.id}` : "";
+    const inviteLink = guildInvite ? `https://${env.HOST}/invite/${guildInvite.id}` : "";
 
     function handleCopyLinkClick() {
         if (!isGuildInviteCreationSuccessful) {
@@ -49,7 +49,7 @@ export function CreateGuildInviteDialog({ onClose }: CreateGuildInviteDialogProp
                 { expiresAt: future, guildId },
                 {
                     onSuccess(inviteData) {
-                        createAdhocPrivateMessage(userId, `${env.HOST}/invite/${inviteData.id}`);
+                        createAdhocPrivateMessage(userId, `https://${env.HOST}/invite/${inviteData.id}`);
                     },
                 },
             );

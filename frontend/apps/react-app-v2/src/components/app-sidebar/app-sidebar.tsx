@@ -19,7 +19,7 @@ export function AppSidebar() {
     }
 
     return (
-        <div className="flex h-svh w-[50px] flex-col gap-4 border-r py-2">
+        <div className="col-start-1 row-start-2 flex flex-col gap-4 px-4 pb-2">
             <div className="flex h-min flex-col items-center gap-2">
                 <ButtonWithTooltip
                     size="icon-lg"

@@ -6,7 +6,7 @@ import { SettingsDialogUnsavedChanges } from "../settings-dialog/settings-dialog
 import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog-content-section";
 import { useUpdateGuildMutation } from "@/lib/react-query/mutations/update-guild-mutation";
 import { Switch } from "../ui/switch";
-import { useCloudinary } from "@/hooks/use-cloudinary";
+import { UploadWrapper, useCloudinary } from "@/hooks/use-cloudinary";
 import { useGuildCategoriesQuery } from "@/lib/react-query/queries/guild-category-query";
 import { GuildCategorySelect } from "./guild-category-select";
 import { Button } from "../ui/button";
@@ -122,7 +122,7 @@ export function GuildSettingsOverviewSection({ guild }: GuildSettingsOverviewSec
                         <Field>
                             <FieldLabel>Icon</FieldLabel>
                             <div className="flex items-center space-x-3">
-                                <Button onClick={iconCloudinary.onFileUploadClick} size="sm" type="button">
+                                <Button onClick={iconCloudinary.onClick} size="sm" type="button">
                                     <UploadIcon />
                                     Change Icon
                                 </Button>
@@ -131,13 +131,13 @@ export function GuildSettingsOverviewSection({ guild }: GuildSettingsOverviewSec
                                 </Button>
                             </div>
                             <FieldDescription>
-                                Recommended: Square image, at least 128x128 pixels. Max file size: 8MB.
+                                Recommended: Square image, at least 128x128 pixels. Max file size: 10MB.
                             </FieldDescription>
                         </Field>
                         <Field>
                             <FieldLabel>Banner</FieldLabel>
                             <div className="flex space-x-3">
-                                <Button onClick={bannerCloudinary.onFileUploadClick} size="sm" type="button">
+                                <Button onClick={bannerCloudinary.onClick} size="sm" type="button">
                                     <UploadIcon />
                                     Change Banner
                                 </Button>
@@ -145,7 +145,7 @@ export function GuildSettingsOverviewSection({ guild }: GuildSettingsOverviewSec
                                     Remove Banner
                                 </Button>
                             </div>
-                            <FieldDescription>Recommended: 600x200 pixels. Max file size: 8MB.</FieldDescription>
+                            <FieldDescription>Recommended: 600x200 pixels. Max file size: 10MB.</FieldDescription>
                         </Field>
                         <Controller
                             control={form.control}
@@ -204,13 +204,13 @@ export function GuildSettingsOverviewSection({ guild }: GuildSettingsOverviewSec
                     iconPreview={iconCloudinary.attachments.length ? iconCloudinary.attachments[0].preview : null}
                     banner={guild.banner}
                     bannerPreview={bannerCloudinary.attachments.length ? bannerCloudinary.attachments[0].preview : null}
-                    onBannerMutate={bannerCloudinary.onFileUploadClick}
-                    onIconMutate={iconCloudinary.onFileUploadClick}
+                    onBannerMutate={bannerCloudinary.onClick}
+                    onIconMutate={iconCloudinary.onClick}
                 />
             </div>
             <SettingsDialogUnsavedChanges isVisible={isFormDirty} onDiscard={resetForm} onSave={handleSaveChanges} />
-            <iconCloudinary.UploadWrapper id="server-icon" />
-            <bannerCloudinary.UploadWrapper id="server-banner" />
+            <UploadWrapper id="server-icon" ref={iconCloudinary.setRef} />
+            <UploadWrapper id="server-banner" ref={bannerCloudinary.setRef} />
         </SettingsDialogContentSection>
     );
 }

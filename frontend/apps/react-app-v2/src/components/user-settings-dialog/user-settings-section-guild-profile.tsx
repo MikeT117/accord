@@ -2,7 +2,7 @@ import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../ui/select";
 import { useEffect, useState } from "react";
 import { GuildMemberType } from "@/lib/types/types";
-import { useCloudinary } from "@/hooks/use-cloudinary";
+import { UploadWrapper, useCloudinary } from "@/hooks/use-cloudinary";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CastleIcon, EarthIcon, UploadIcon } from "lucide-react";
 import { useForm, Controller } from "react-hook-form";
@@ -170,30 +170,30 @@ export function GuildProfileEditor({ guildProfile }: UserSettingsGuildProfileSec
                             <Field>
                                 <FieldLabel>Avatar</FieldLabel>
                                 <div className="flex items-center space-x-3">
-                                    <Button onClick={avatarCloudinary.onFileUploadClick} type="button">
+                                    <Button onClick={avatarCloudinary.onClick} type="button" size="sm">
                                         <UploadIcon />
                                         Change Avatar
                                     </Button>
-                                    <Button variant="outline" type="button">
+                                    <Button variant="outline" type="button" size="sm">
                                         Remove Avatar
                                     </Button>
                                 </div>
                                 <FieldDescription>
-                                    Recommended: Square image, at least 128x128 pixels. Max file size: 8MB.
+                                    Recommended: Square image, at least 128x128 pixels. Max file size: 10MB.
                                 </FieldDescription>
                             </Field>
                             <Field>
                                 <FieldLabel>Banner</FieldLabel>
                                 <div className="flex items-center space-x-3">
-                                    <Button onClick={bannerCloudinary.onFileUploadClick} type="button">
+                                    <Button onClick={bannerCloudinary.onClick} type="button" size="sm">
                                         <UploadIcon />
                                         Change Banner
                                     </Button>
-                                    <Button variant="outline" type="button">
+                                    <Button variant="outline" type="button" size="sm">
                                         Remove Banner
                                     </Button>
                                 </div>
-                                <FieldDescription>Recommended: 600x200 pixels. Max file size: 8MB.</FieldDescription>
+                                <FieldDescription>Recommended: 600x200 pixels. Max file size: 10MB.</FieldDescription>
                             </Field>
                         </FieldGroup>
                     </FieldSet>
@@ -204,13 +204,13 @@ export function GuildProfileEditor({ guildProfile }: UserSettingsGuildProfileSec
                     banner={guildProfile.banner}
                     avatarPreview={avatarCloudinary.attachments.length ? avatarCloudinary.attachments[0].preview : null}
                     bannerPreview={bannerCloudinary.attachments.length ? bannerCloudinary.attachments[0].preview : null}
-                    onAvatarMutate={avatarCloudinary.onFileUploadClick}
-                    onBannerMutate={bannerCloudinary.onFileUploadClick}
+                    onAvatarMutate={avatarCloudinary.onClick}
+                    onBannerMutate={bannerCloudinary.onClick}
                     roleIds={guildProfile.roles}
                     guildId={guildProfile.guildId}
                 />
-                <avatarCloudinary.UploadWrapper id="user-guild-profile-avatar" />
-                <bannerCloudinary.UploadWrapper id="user-guild-profile-banner" />
+                <UploadWrapper id="user-guild-profile-avatar" ref={avatarCloudinary.setRef} />
+                <UploadWrapper id="user-guild-profile-banner" ref={bannerCloudinary.setRef} />
             </div>
             <SettingsDialogUnsavedChanges
                 isVisible={attachmentsDetected || form.formState.isDirty}

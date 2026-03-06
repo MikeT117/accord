@@ -8,7 +8,12 @@ import { useRouter } from "@tanstack/react-router";
 import { useGuilds } from "@/lib/zustand/stores/guild-store";
 import { Dialogs, dialogUIStoreActions } from "@/lib/zustand/stores/dialog-ui-store";
 
-export function UserSettingsGuildsSection({ userId }: { userId: string }) {
+type UserSettingsGuildsSectionProps = {
+    userId: string;
+    onClose: () => void;
+};
+
+export function UserSettingsGuildsSection({ userId, onClose }: UserSettingsGuildsSectionProps) {
     const guilds = useGuilds();
     const { mutate: leaveGuild } = useDeleteGuildMemberMutation();
     const router = useRouter();
@@ -18,7 +23,13 @@ export function UserSettingsGuildsSection({ userId }: { userId: string }) {
     }
 
     function handleGuildBrowserClick() {
+        onClose();
         router.navigate({ to: "/app/guild-browser" });
+    }
+
+    function handleGoToGuildClick(guildId: string) {
+        onClose();
+        router.navigate({ to: "/app/$guildId", params: { guildId } });
     }
 
     return (
@@ -63,6 +74,7 @@ export function UserSettingsGuildsSection({ userId }: { userId: string }) {
                             id={g.id}
                             memberCount={g.memberCount}
                             name={g.name}
+                            onGoTo={() => handleGoToGuildClick(g.id)}
                             onLeave={() => handleLeaveGuildClick(g.id)}
                         />
                     ))}

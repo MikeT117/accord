@@ -6,7 +6,7 @@ import { SettingsDialogContentSection } from "../settings-dialog/settings-dialog
 import { updateUserFormSchema } from "./zod-validation/user-settings-form-validation";
 import type { UpdateUserFormType } from "./types/user-settings-dialog-types";
 import { useUpdateUserMutation } from "@/lib/react-query/mutations/update-user-mutation";
-import { useCloudinary } from "@/hooks/use-cloudinary";
+import { UploadWrapper, useCloudinary } from "@/hooks/use-cloudinary";
 import { UploadIcon } from "lucide-react";
 import { UserCard } from "@/components/user-card";
 import { Button } from "../ui/button";
@@ -86,7 +86,7 @@ export function UserSettingsOverviewSection({
                             <Field>
                                 <FieldLabel>Avatar</FieldLabel>
                                 <div className="flex items-center space-x-3">
-                                    <Button onClick={avatarCloudinary.onFileUploadClick} type="button" size="sm">
+                                    <Button onClick={avatarCloudinary.onClick} type="button" size="sm">
                                         <UploadIcon />
                                         Change Avatar
                                     </Button>
@@ -95,13 +95,13 @@ export function UserSettingsOverviewSection({
                                     </Button>
                                 </div>
                                 <FieldDescription>
-                                    Recommended: Square image, at least 128x128 pixels. Max file size: 8MB.
+                                    Recommended: Square image, at least 128x128 pixels. Max file size: 10MB.
                                 </FieldDescription>
                             </Field>
                             <Field>
                                 <FieldLabel>Banner</FieldLabel>
                                 <div className="flex space-x-3">
-                                    <Button onClick={bannerCloudinary.onFileUploadClick} type="button" size="sm">
+                                    <Button onClick={bannerCloudinary.onClick} type="button" size="sm">
                                         <UploadIcon />
                                         Change Banner
                                     </Button>
@@ -109,7 +109,7 @@ export function UserSettingsOverviewSection({
                                         Remove Banner
                                     </Button>
                                 </div>
-                                <FieldDescription>Recommended: 600x200 pixels. Max file size: 8MB.</FieldDescription>
+                                <FieldDescription>Recommended: 600x200 pixels. Max file size: 10MB.</FieldDescription>
                             </Field>
                         </FieldGroup>
                     </FieldSet>
@@ -120,8 +120,8 @@ export function UserSettingsOverviewSection({
                     banner={banner}
                     avatarPreview={avatarCloudinary.attachments.length ? avatarCloudinary.attachments[0].preview : null}
                     bannerPreview={bannerCloudinary.attachments.length ? bannerCloudinary.attachments[0].preview : null}
-                    onAvatarMutate={avatarCloudinary.onFileUploadClick}
-                    onBannerMutate={bannerCloudinary.onFileUploadClick}
+                    onAvatarMutate={avatarCloudinary.onClick}
+                    onBannerMutate={bannerCloudinary.onClick}
                 />
             </div>
             <SettingsDialogUnsavedChanges
@@ -129,8 +129,8 @@ export function UserSettingsOverviewSection({
                 onDiscard={resetForm}
                 onSave={handleSaveChanges}
             />
-            <avatarCloudinary.UploadWrapper id="user-avatar" />
-            <bannerCloudinary.UploadWrapper id="user-banner" />
+            <UploadWrapper id="user-avatar" ref={avatarCloudinary.setRef} />
+            <UploadWrapper id="user-banner" ref={bannerCloudinary.setRef} />
         </SettingsDialogContentSection>
     );
 }

@@ -16,15 +16,13 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "..
 import { AssignRoleMemberFormType } from "./types/guild-settings-dialog-types";
 import { assignRoleMembersSchema } from "./zod-validation/guild-settings-form-validation";
 
-export function GuildRoleMembersDialog({
-    guildId,
-    onClose,
-    roleId,
-}: {
+type GuildRoleMembersDialogProps = {
     guildId: string;
     roleId: string;
     onClose: () => void;
-}) {
+};
+
+export function GuildRoleMembersDialog({ guildId, onClose, roleId }: GuildRoleMembersDialogProps) {
     const data = useGuildRoleMembersQuery({ roleId, guildId, assigned: false });
     const { mutate: createRoleUserAssoc } = useCreateRoleUserAssocMutation({ onSuccess: onClose });
     const [filter, setFilter] = useState("");

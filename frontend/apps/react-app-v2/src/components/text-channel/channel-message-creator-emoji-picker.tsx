@@ -22,7 +22,7 @@ export function ChannelMessageEmojiPicker({ onEmojiSelect, isDisabled }: Channel
                     <SmileIcon />
                 </ButtonWithTooltip>
             </PopoverTrigger>
-            <PopoverContent className="w-fit p-0" align="end" side="top" alignOffset={-12} sideOffset={24}>
+            <PopoverContent className="w-fit p-0" align="end" side="top" alignOffset={-3} sideOffset={24}>
                 <EmojiPicker className="h-[360px]" onEmojiSelect={({ emoji }) => onEmojiSelect(emoji)}>
                     <EmojiPickerSearch />
                     <EmojiPickerContent />

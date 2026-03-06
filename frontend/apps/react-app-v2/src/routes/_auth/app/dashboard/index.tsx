@@ -28,7 +28,7 @@ function RouteComponent() {
                     </EmptyDescription>
                 </EmptyHeader>
                 <EmptyContent className="flex-row justify-center gap-2">
-                    <Button variant="outline" onClick={() => dialogUIStoreActions.openDialog(Dialogs.GuildSettings)}>
+                    <Button variant="outline" onClick={() => dialogUIStoreActions.openDialog(Dialogs.CreateGuild)}>
                         <CastleIcon />
                         <span>Create Guild</span>
                     </Button>

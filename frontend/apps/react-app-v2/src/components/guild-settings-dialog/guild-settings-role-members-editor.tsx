@@ -28,7 +28,9 @@ export function GuildSettingsRoleMembersEditor({ guildId, roleId }: GuildSetting
         : flatData;
 
     function handleUserUnassign(userId: string) {
-        unassignUserMutation({ guildId, roleId, userId });
+        dialogUIStoreActions.openDialog(Dialogs.ConfirmDeleteAction, {
+            actionFn: () => unassignUserMutation({ guildId, roleId, userId }),
+        });
     }
 
     function handleOpenAddUsersDialog() {

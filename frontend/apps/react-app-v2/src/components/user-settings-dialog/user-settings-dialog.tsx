@@ -87,7 +87,9 @@ export function UserSettingsDialog({ onClose }: UserSettingsDialogProps) {
                     />
                 )}
                 {activeSection === USER_SETTINGS_SECTION.SESSIONS && <UserSettingsSessionsSection />}
-                {activeSection === USER_SETTINGS_SECTION.GUILDS && <UserSettingsGuildsSection userId={user.id} />}
+                {activeSection === USER_SETTINGS_SECTION.GUILDS && (
+                    <UserSettingsGuildsSection userId={user.id} onClose={onClose} />
+                )}
                 {activeSection === USER_SETTINGS_SECTION.GUILD_PROFILES && (
                     <UserSettingsGuildProfileSection userId={user.id} />
                 )}

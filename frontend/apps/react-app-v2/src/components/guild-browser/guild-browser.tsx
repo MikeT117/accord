@@ -20,19 +20,19 @@ export function GuildBrowser() {
     }
 
     return (
-        <ScrollArea className="col-span-2 h-svh w-full px-4 py-10">
+        <ScrollArea className="col-span-2 h-svh w-full px-4 py-6">
             <div className="mx-auto max-w-6xl">
                 <header className="mb-8 text-center">
                     <div className="mb-2 flex items-center justify-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
-                            <GlobeIcon className="h-5 w-5 text-muted-foreground" />
+                            <GlobeIcon className="size-5" />
                         </div>
-                        <h1 className="text-3xl font-bold tracking-tight text-balance text-foreground/70 dark:text-muted-foreground">
+                        <h1 className="text-3xl font-bold tracking-tight text-balance text-foreground">
                             Public Guilds
                         </h1>
                     </div>
-                    <p className="mt-1 text-sm font-medium text-muted-foreground/70">
-                        Discover communities to connect, share, and grow with.
+                    <p className="mt-1 text-sm font-medium text-wrap text-muted-foreground">
+                        From gaming, to music, there's a place for you.
                     </p>
                 </header>
                 <div className="relative mx-auto mb-8 max-w-xl">

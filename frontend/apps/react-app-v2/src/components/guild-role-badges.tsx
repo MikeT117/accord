@@ -3,10 +3,10 @@ import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { ChevronRight } from "lucide-react";
-import { getGuildRolesByIDs } from "@/lib/zustand/stores/guild-store";
+import { useGuildRolesByIDs } from "@/lib/zustand/stores/guild-store";
 
 export function GuildRoleBadges({ guildId, roleIDs }: { guildId: string; roleIDs: string[] }) {
-    const roles = getGuildRolesByIDs(guildId, roleIDs);
+    const roles = useGuildRolesByIDs(guildId, roleIDs);
     if (!roles || !roles.length) {
         return null;
     }

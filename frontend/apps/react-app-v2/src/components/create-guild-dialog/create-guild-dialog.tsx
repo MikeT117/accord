@@ -3,7 +3,7 @@ import { Controller, useForm } from "react-hook-form";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
-import { useCloudinary } from "@/hooks/use-cloudinary";
+import { UploadWrapper, useCloudinary } from "@/hooks/use-cloudinary";
 import { useCreateGuildMutation } from "@/lib/react-query/mutations/create-guild-mutation";
 import { AvatarWithFallback } from "../avatar-with-fallback";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldSet } from "../ui/field";
@@ -13,7 +13,7 @@ import { CreateGuildFormType } from "./types/create-guild-dialog-types";
 type CreateGuildDialogProps = { onClose: () => void };
 
 export function CreateGuildDialog({ onClose }: CreateGuildDialogProps) {
-    const { UploadWrapper, onFileUploadClick, attachments, clearAttachments } = useCloudinary();
+    const { onClick, attachments, clearAttachments, setRef } = useCloudinary();
     const { mutate: createGuild } = useCreateGuildMutation({ onSuccess: handleSuccess });
     const form = useForm<CreateGuildFormType>({
         resolver: zodResolver(createGuildFormSchema),
@@ -48,7 +48,7 @@ export function CreateGuildDialog({ onClose }: CreateGuildDialogProps) {
                     </DialogDescription>
                     <AvatarWithFallback
                         size="xxxl"
-                        onMutate={onFileUploadClick}
+                        onMutate={onClick}
                         preview={attachments.length !== 0 ? attachments[0].preview : null}
                         fallback="Guild Icon"
                     />
@@ -74,7 +74,7 @@ export function CreateGuildDialog({ onClose }: CreateGuildDialogProps) {
                                     </Field>
                                 )}
                             />
-                            <UploadWrapper id="guild-creator" />
+                            <UploadWrapper id="guild-creator" ref={setRef} />
                         </FieldGroup>
                     </FieldSet>
                 </form>

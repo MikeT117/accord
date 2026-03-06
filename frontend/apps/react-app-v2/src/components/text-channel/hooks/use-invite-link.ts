@@ -1,9 +1,9 @@
 import { env } from "@/lib/constants";
 import { useEffect, useState } from "react";
 
-const INVITE_CHECK = `${env.HOST}/invite/`;
+const INVITE_CHECK = `https://${env.HOST}/invite/`;
 const INVITE_REGEX = RegExp(
-    `${env.HOST}/invite/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`,
+    `https://${env.HOST}/invite/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`,
     "gm",
 );
 

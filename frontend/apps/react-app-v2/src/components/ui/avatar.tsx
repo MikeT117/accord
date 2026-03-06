@@ -8,14 +8,14 @@ function Avatar({
     size = "default",
     ...props
 }: React.ComponentProps<typeof AvatarPrimitive.Root> & {
-    size?: "default" | "sm" | "lg" | "xl" | "xxl" | "xxxl";
+    size?: "default" | "xs" | "sm" | "lg" | "xl" | "xxl" | "xxxl";
 }) {
     return (
         <AvatarPrimitive.Root
             data-slot="avatar"
             data-size={size}
             className={cn(
-                "group/avatar relative flex size-8 shrink-0 rounded-full select-none after:absolute after:inset-0 after:rounded-full after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 data-[size=xl]:size-14 data-[size=xxl]:size-18 data-[size=xxxl]:size-22 dark:after:mix-blend-lighten",
+                "group/avatar relative flex size-8 shrink-0 rounded-full select-none after:absolute after:inset-0 after:rounded-full after:border after:border-border after:mix-blend-darken data-[size=lg]:size-10 data-[size=sm]:size-6 data-[size=xl]:size-14 data-[size=xs]:size-4 data-[size=xxl]:size-18 data-[size=xxxl]:size-22 dark:after:mix-blend-lighten",
                 className,
             )}
             {...props}
@@ -38,7 +38,7 @@ function AvatarFallback({ className, ...props }: React.ComponentProps<typeof Ava
         <AvatarPrimitive.Fallback
             data-slot="avatar-fallback"
             className={cn(
-                "group-data-[size=lg]/avatar:text-default group-data-[size=xl]/avatar:text-md flex size-full items-center justify-center rounded-full bg-muted text-sm  text-muted-foreground group-data-[size=lg]/avatar:text-lg group-data-[size=sm]/avatar:text-sm group-data-[size=xl]/avatar:text-xl group-data-[size=xxl]/avatar:text-2xl group-data-[size=xxxl]/avatar:text-3xl",
+                "group-data-[size=lg]/avatar:text-default group-data-[size=xl]/avatar:text-md flex size-full items-center justify-center rounded-full bg-muted text-sm  text-muted-foreground group-data-[size=lg]/avatar:text-lg group-data-[size=sm]/avatar:text-sm group-data-[size=xl]/avatar:text-xl group-data-[size=xs]/avatar:text-xs group-data-[size=xxl]/avatar:text-2xl group-data-[size=xxxl]/avatar:text-3xl",
                 className,
             )}
             {...props}
@@ -83,7 +83,7 @@ function AvatarGroupCount({ className, ...props }: React.ComponentProps<"div">) 
         <div
             data-slot="avatar-group-count"
             className={cn(
-                "relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm text-muted-foreground ring-2 ring-background group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=sm]/avatar-group:size-6 group-has-data-[size=xl]/avatar-group:size-16 [&>svg]:size-4 group-has-data-[size=lg]/avatar-group:[&>svg]:size-5 group-has-data-[size=sm]/avatar-group:[&>svg]:size-3 group-has-data-[size=xl]/avatar-group:[&>svg]:size-7 group-has-data-[size=xxl]/avatar-group:[&>svg]:size-9 group-has-data-[size=xxxl]/avatar-group:[&>svg]:size-11",
+                "relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm text-muted-foreground ring-2 ring-background group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=sm]/avatar-group:size-6 group-has-data-[size=xl]/avatar-group:size-16 group-has-data-[size=xs]/avatar-group:size-4 [&>svg]:size-4 group-has-data-[size=lg]/avatar-group:[&>svg]:size-5 group-has-data-[size=sm]/avatar-group:[&>svg]:size-3 group-has-data-[size=xl]/avatar-group:[&>svg]:size-7 group-has-data-[size=xxl]/avatar-group:[&>svg]:size-9 group-has-data-[size=xxxl]/avatar-group:[&>svg]:size-11",
                 className,
             )}
             {...props}

@@ -18,18 +18,12 @@ export function PinnedMessagesPopover({ canUnpinMessage, channelId }: PinnedMess
                     <PinIcon className="rotate-45" />
                 </ButtonWithTooltip>
             </PopoverTrigger>
-            <PopoverContent
-                className="max-h-[80svh] min-h-80 w-sm gap-0 overflow-auto bg-card p-0"
-                align="end"
-                sideOffset={8}
-            >
+            <PopoverContent className="h-96 w-sm gap-0 overflow-auto p-0" align="end" sideOffset={8}>
                 <div className="flex items-center gap-3 border-b p-4">
                     <PinIcon className="size-5 rotate-45" />
                     <h1 className="text-lg font-medium">Pinned Messages</h1>
                 </div>
-                <div className="flex flex-col gap-3 p-3">
-                    <PinnedMessagesPopoverContent canUnpinMessage={canUnpinMessage} channelId={channelId} />
-                </div>
+                <PinnedMessagesPopoverContent canUnpinMessage={canUnpinMessage} channelId={channelId} />
             </PopoverContent>
         </Popover>
     );
@@ -50,7 +44,7 @@ function PinnedMessagesPopoverContent({ channelId, canUnpinMessage }: PinnedMess
                     <EmptyMedia variant="icon">
                         <PinIcon className="rotate-45" />
                     </EmptyMedia>
-                    <EmptyTitle>No Pins yet</EmptyTitle>
+                    <EmptyTitle>No Pins!</EmptyTitle>
                     <EmptyDescription>
                         You can pin messages by clicking the pin icon when hovering over a message.
                     </EmptyDescription>
@@ -59,12 +53,16 @@ function PinnedMessagesPopoverContent({ channelId, canUnpinMessage }: PinnedMess
         );
     }
 
-    return data.map((msg, i) => (
-        <PinnedChannelMessage
-            key={msg.id}
-            message={msg}
-            canUnpinMessage={canUnpinMessage}
-            ref={(e) => infiniteScrollRef(i, e)}
-        />
-    ));
+    return (
+        <div className="flex h-full flex-col gap-3 p-3">
+            {data.map((msg, i) => (
+                <PinnedChannelMessage
+                    key={msg.id}
+                    message={msg}
+                    canUnpinMessage={canUnpinMessage}
+                    ref={(e) => infiniteScrollRef(i, e)}
+                />
+            ))}
+        </div>
+    );
 }

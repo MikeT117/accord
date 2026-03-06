@@ -1,17 +1,15 @@
 import { CloudOffIcon } from "lucide-react";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "../ui/empty";
 
-export function ChannelMessagesLoadingFailed() {
+export function UnknownError() {
     return (
         <Empty>
             <EmptyHeader>
                 <EmptyMedia variant="icon">
                     <CloudOffIcon />
                 </EmptyMedia>
-                <EmptyTitle>Unable To Load Messages!</EmptyTitle>
-                <EmptyDescription>
-                    Please ensure you have an active internet connection and access to this channel.
-                </EmptyDescription>
+                <EmptyTitle>Unknown Error</EmptyTitle>
+                <EmptyDescription>An unknown error occurred, please refresh the app.</EmptyDescription>
             </EmptyHeader>
         </Empty>
     );

@@ -15,6 +15,7 @@ import { Image } from "@/components/image";
 import { ButtonWithTooltip } from "./button-with-tooltip";
 import { Badge } from "./ui/badge";
 import { useIsGuildMember } from "@/lib/zustand/stores/guild-store";
+import { cn } from "@/lib/utils";
 
 type GuildCardProps = {
     ref?: (elem: HTMLDivElement | null) => void;
@@ -50,18 +51,25 @@ export function GuildCard({
             ref={ref}
             className="group relative h-82 w-66 shrink-0 overflow-hidden pt-0 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
         >
-            <div className="relative h-30 overflow-hidden">
-                <Image
-                    src={banner}
-                    preview={bannerPreview}
-                    alt="Profile banner"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-card via-card/10 to-transparent" />
+            <div
+                className={cn(
+                    "relative h-35 w-full",
+                    !(banner || bannerPreview) && "bg-linear-to-t from-fuchsia-500 to-amber-500",
+                )}
+            >
+                {(banner || bannerPreview) && (
+                    <Image
+                        src={banner}
+                        preview={bannerPreview}
+                        alt="Profile banner"
+                        className="h-full w-full object-cover"
+                    />
+                )}
+                <div className="absolute inset-0 -bottom-0.5 bg-gradient-to-t from-card via-card/10 to-transparent" />
             </div>
             <AvatarWithFallback
                 size="xl"
-                className="absolute top-22 left-4"
+                className="absolute top-26 left-4"
                 fallback={name}
                 src={icon}
                 preview={iconPreview}
@@ -88,13 +96,7 @@ export function GuildCard({
             <CardHeader className="mt-4 px-4">
                 <CardTitle>{name}</CardTitle>
                 <CardDescription className="col-span-2 mt-2 text-xs">{description}</CardDescription>
-                <CardAction>
-                    {isMember && (
-                        <Badge variant="secondary" className="">
-                            Joined
-                        </Badge>
-                    )}
-                </CardAction>
+                <CardAction>{isMember && <Badge variant="secondary">Joined</Badge>}</CardAction>
             </CardHeader>
             <CardFooter className="mt-auto flex justify-between px-4">
                 <div className="flex items-center gap-4">
