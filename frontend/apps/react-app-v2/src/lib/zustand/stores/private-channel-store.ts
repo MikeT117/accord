@@ -5,6 +5,7 @@ import { Normalize, PrivateChannelType } from "@/lib/types/types";
 import { ErrChannelNotFound } from "../../error";
 import { useShallow } from "zustand/react/shallow";
 import { PRIVATE_CHANNEL_TYPE } from "../../zod-validation/channel-schema";
+import { APP_MODE, env } from "@/lib/constants";
 
 type PrivateChannelStoreType = Normalize<PrivateChannelType> & { initialised: boolean };
 
@@ -22,10 +23,16 @@ export const usePrivateChannelStore = create<RelationshipStore>()(
             ...initialState,
             initialise: (channels) => {
                 return set((state) => {
+                    const keys = [];
+                    const values: { [key: string]: PrivateChannelType } = {};
+
                     for (const channel of channels) {
-                        state.keys.push(channel.id);
-                        state.values[channel.id] = channel;
+                        keys.push(channel.id);
+                        values[channel.id] = channel;
                     }
+
+                    state.keys = keys;
+                    state.values = values;
                     state.initialised = true;
                 });
             },
@@ -36,8 +43,7 @@ export const usePrivateChannelStore = create<RelationshipStore>()(
                 });
             },
         })),
-
-        { name: "privateChannelStore", enabled: true },
+        { name: "privateChannelStore", enabled: env.APP_MODE === APP_MODE.DEVELOPMENT },
     ),
 );
 

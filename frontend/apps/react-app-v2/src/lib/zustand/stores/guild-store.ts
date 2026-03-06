@@ -29,7 +29,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useUser } from "./user-store";
 import { useUserRoleStore } from "./user-role-store";
 import { isGuildTextChannel, isGuildVoiceChannel } from "../../types/guards";
-import { GUILD_PERMISSION } from "../../constants";
+import { APP_MODE, env, GUILD_PERMISSION } from "../../constants";
 
 type GuildStoreType = Normalize<GuildType> & {
     initialised: boolean;
@@ -64,11 +64,16 @@ export const useGuildStore = create<GuildStore>()(
             ...initialState,
             initialise: (guilds) => {
                 return set((state) => {
+                    const keys = [];
+                    const values: { [key: string]: GuildType } = {};
+
                     for (const guild of guilds) {
-                        state.keys.push(guild.id);
-                        state.values[guild.id] = apiGuildToGuild(guild);
+                        keys.push(guild.id);
+                        values[guild.id] = apiGuildToGuild(guild);
                     }
-                    state.initialised;
+                    state.keys = keys;
+                    state.values = values;
+                    state.initialised = true;
                 });
             },
             createGuild: (guild) => {
@@ -282,7 +287,7 @@ export const useGuildStore = create<GuildStore>()(
                 });
             },
         })),
-        { name: "guildStore", enabled: true },
+        { name: "guildStore", enabled: env.APP_MODE === APP_MODE.DEVELOPMENT },
     ),
 );
 
@@ -451,7 +456,7 @@ export function useGuildRoles(guildId: string) {
     return { custom, defaultRole };
 }
 
-export function getGuildRolesByIDs(guildId: string, roleIds: string[]) {
+export function useGuildRolesByIDs(guildId: string, roleIds: string[]) {
     const guildRoles = useGuildStore((s) => s.values[guildId]?.roles.values);
     if (!guildRoles) {
         return;

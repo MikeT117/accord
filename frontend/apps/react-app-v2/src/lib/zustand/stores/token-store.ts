@@ -1,3 +1,4 @@
+import { APP_MODE, env } from "@/lib/constants";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -33,7 +34,7 @@ export const useTokenStore = create<TokenStore>()(
             })),
             { name: "tokenStore" },
         ),
-        { name: "tokenStore", enabled: true },
+        { name: "tokenStore", enabled: env.APP_MODE === APP_MODE.DEVELOPMENT },
     ),
 );
 

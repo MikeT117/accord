@@ -1,3 +1,4 @@
+import { APP_MODE, env } from "@/lib/constants";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -27,6 +28,7 @@ export const useMessageDraftStore = create<MessageDraftStore>()(
                 return set((state) => {
                     if (!state.drafts[key]) {
                         state.drafts[key] = value;
+                        return;
                     }
 
                     state.drafts[key] = `${state.drafts[key]}${value}`;
@@ -47,12 +49,12 @@ export const useMessageDraftStore = create<MessageDraftStore>()(
                 });
             },
         })),
-        { name: "messageDraftStore", enabled: true },
+        { name: "messageDraftStore", enabled: env.APP_MODE === APP_MODE.DEVELOPMENT },
     ),
 );
 
 export const useMessageDraft = (id: string) => {
-    return useMessageDraftStore((s) => s.drafts[id]);
+    return useMessageDraftStore((s) => s.drafts[id] ?? "");
 };
 
 export const messageDraftStoreActions = {

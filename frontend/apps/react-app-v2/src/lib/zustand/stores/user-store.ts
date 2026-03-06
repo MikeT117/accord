@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { ErrUserNotInitialised } from "../../error";
+import { APP_MODE, env } from "@/lib/constants";
 
 type UserStoreType = { initialised: false; user: null } | { initialised: true; user: UserType };
 
@@ -34,7 +35,7 @@ export const useUserStore = create<UserStore>()(
                 });
             },
         })),
-        { name: "userStore", enabled: true },
+        { name: "userStore", enabled: env.APP_MODE === APP_MODE.DEVELOPMENT },
     ),
 );
 

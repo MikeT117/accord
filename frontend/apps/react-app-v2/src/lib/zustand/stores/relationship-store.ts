@@ -10,6 +10,7 @@ import {
     ValueOf,
 } from "@/lib/types/types";
 import { RELATIONSHIP_STATUS } from "@/lib/zod-validation/relationship-schema";
+import { APP_MODE, env } from "@/lib/constants";
 
 type RelationshipStoreType = Normalize<RelationshipType> & { initialised: boolean };
 
@@ -29,10 +30,16 @@ export const useRelationshipStore = create<RelationshipStore>()(
             ...initialState,
             initialise: (relationships) => {
                 return set((state) => {
+                    const keys = [];
+                    const values: { [key: string]: RelationshipType } = {};
+
                     for (const relationship of relationships) {
-                        state.keys.push(relationship.id);
-                        state.values[relationship.id] = relationship;
+                        keys.push(relationship.id);
+                        values[relationship.id] = relationship;
                     }
+
+                    state.keys = keys;
+                    state.values = values;
                     state.initialised = true;
                 });
             },
@@ -64,27 +71,30 @@ export const useRelationshipStore = create<RelationshipStore>()(
                 });
             },
         })),
-        { name: "relationshipStore", enabled: true },
+        { name: "relationshipStore", enabled: env.APP_MODE === APP_MODE.DEVELOPMENT },
     ),
 );
 
 export const useRelationships = (status: ValueOf<typeof RELATIONSHIP_STATUS>) => {
-    const { keys, values } = useRelationshipStore(useShallow((s) => ({ keys: s.keys, values: s.values })));
-    const relationships = [];
-    for (const key of keys) {
-        const relationship = values[key];
-        if (!relationship) {
-            continue;
-        }
+    return useRelationshipStore(
+        useShallow((s) => {
+            const relationships = [];
+            for (const key of s.keys) {
+                const relationship = s.values[key];
+                if (!relationship) {
+                    continue;
+                }
 
-        if (relationship.status !== status) {
-            continue;
-        }
+                if (relationship.status !== status) {
+                    continue;
+                }
 
-        relationships.push(relationship);
-    }
+                relationships.push(relationship);
+            }
 
-    return relationships;
+            return relationships;
+        }),
+    );
 };
 
 export const relationshipStoreActions = {

@@ -1,3 +1,4 @@
+import { APP_MODE, env } from "@/lib/constants";
 import { APIUserRoleAssociationChangeType, Normalize } from "@/lib/types/types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
@@ -20,10 +21,14 @@ export const useUserRoleStore = create<UserRoleStore>()(
             ...initialState,
             initialise: (roleIds) => {
                 return set((state) => {
-                    state.keys = roleIds;
+                    const values: { [key: string]: boolean } = {};
+
                     for (const roleId of roleIds) {
-                        state.values[roleId] = true;
+                        values[roleId] = true;
                     }
+
+                    state.keys = roleIds;
+                    state.values = values;
                     state.initialised = true;
                 });
             },
@@ -36,13 +41,15 @@ export const useUserRoleStore = create<UserRoleStore>()(
             disassociateUserRole: (disassociatedUserRole) => {
                 return set((state) => {
                     const index = state.keys.findIndex((r) => r === disassociatedUserRole.roleId);
-                    if (!index) return;
+                    if (index === -1) {
+                        return;
+                    }
 
                     delete state.values[disassociatedUserRole.roleId];
                 });
             },
         })),
-        { name: "userRoleStore", enabled: true },
+        { name: "userRoleStore", enabled: env.APP_MODE === APP_MODE.DEVELOPMENT },
     ),
 );
 

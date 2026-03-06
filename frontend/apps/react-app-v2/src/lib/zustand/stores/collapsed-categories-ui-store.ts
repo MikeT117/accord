@@ -1,3 +1,4 @@
+import { APP_MODE, env } from "@/lib/constants";
 import { Dictionary } from "@/lib/types/types";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
@@ -29,7 +30,7 @@ export const useCollapsedCategoryUIStore = create<CollapsedCategoryUIStore>()(
             })),
             { name: "collapsedCategoriesStore" },
         ),
-        { name: "collapsedCategoriesStore", enabled: true },
+        { name: "collapsedCategoriesStore", enabled: env.APP_MODE === APP_MODE.DEVELOPMENT },
     ),
 );
 

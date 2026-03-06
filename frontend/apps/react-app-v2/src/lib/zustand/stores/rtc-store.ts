@@ -1,3 +1,4 @@
+import { APP_MODE, env } from "@/lib/constants";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
@@ -22,7 +23,7 @@ export const useRTCStore = create<RTCStore>()(
             },
         })),
 
-        { name: "rtcStore", enabled: true },
+        { name: "rtcStore", enabled: env.APP_MODE === APP_MODE.DEVELOPMENT },
     ),
 );
 

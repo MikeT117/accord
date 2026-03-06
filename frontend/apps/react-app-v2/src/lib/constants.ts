@@ -34,3 +34,8 @@ export const OAUTH_PROVIDER = {
     GITHUB: "GITHUB",
     GITLAB: "GITLAB",
 } as const;
+
+export const APP_MODE = {
+    DEVELOPMENT: "DEVELOPMENT",
+    PRODUCTION: "PRODUCTION",
+} as const;

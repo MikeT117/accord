@@ -1,3 +1,4 @@
+import { APP_MODE, env } from "@/lib/constants";
 import { UserType, AttachmentType } from "@/lib/types/types";
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
@@ -79,7 +80,7 @@ export const useDialogUIStore = create<DialogUIStore>()(
                 });
             },
         })),
-        { name: "dialogUIStore" },
+        { name: "dialogUIStore", enabled: env.APP_MODE === APP_MODE.DEVELOPMENT },
     ),
 );
 
