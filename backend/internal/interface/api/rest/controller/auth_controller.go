@@ -107,7 +107,7 @@ func (ac *AuthController) HandleCompleteRegistration(ctx echo.Context) error {
 		time.Now().UTC().Add(time.Hour),
 	)
 	if err != nil {
-		return handleAuthError(ctx, ac.config.Host, err)
+		return handleAuthError(ctx, ac.config.FrontendHost, err)
 	}
 
 	expiresAt := time.Now().UTC().Add(time.Hour * 168)
@@ -119,7 +119,7 @@ func (ac *AuthController) HandleCompleteRegistration(ctx echo.Context) error {
 		expiresAt,
 	)
 	if err != nil {
-		return handleAuthError(ctx, ac.config.Host, err)
+		return handleAuthError(ctx, ac.config.FrontendHost, err)
 	}
 
 	if err = ac.sessionService.Create(
@@ -132,7 +132,7 @@ func (ac *AuthController) HandleCompleteRegistration(ctx echo.Context) error {
 			ExpiresAt: expiresAt,
 		},
 	); err != nil {
-		return handleAuthError(ctx, ac.config.Host, err)
+		return handleAuthError(ctx, ac.config.FrontendHost, err)
 	}
 
 	return response.JSONResponse(ctx, http.StatusOK, &response.CompleteRegistrationResponse{
@@ -145,7 +145,7 @@ func (ac *AuthController) HandleOAuthInit(provider string) func(ctx echo.Context
 	return func(ctx echo.Context) error {
 		redirectURL, err := ac.authenticationService.GetOAuthCodeURL(provider)
 		if err != nil {
-			return handleAuthError(ctx, ac.config.Host, err)
+			return handleAuthError(ctx, ac.config.FrontendHost, err)
 		}
 		return response.TemporaryRedirect(ctx, redirectURL)
 	}
@@ -162,7 +162,7 @@ func (ac *AuthController) HandleOAuthCallback(provider string) func(ctx echo.Con
 			provider,
 		)
 		if err != nil {
-			return handleAuthError(ctx, ac.config.Host, err)
+			return handleAuthError(ctx, ac.config.FrontendHost, err)
 		}
 
 		user, isRegistrationComplete, err := ac.authenticationService.CreateOrGetOAuthAccountUser(
@@ -174,16 +174,16 @@ func (ac *AuthController) HandleOAuthCallback(provider string) func(ctx echo.Con
 			strings.ReplaceAll(uuid.New().String(), "-", ""),
 		)
 		if err != nil {
-			return handleAuthError(ctx, ac.config.Host, err)
+			return handleAuthError(ctx, ac.config.FrontendHost, err)
 		}
 
 		if !isRegistrationComplete {
 			_, registrationToken, err := authentication.CreateAndSignRegistrationToken(ac.config.Host, user.Result.ID, provider, ac.config.JWTRegistrationTokenKey, requestId, time.Now().UTC().Add(time.Minute*5))
 			if err != nil {
-				return handleAuthError(ctx, ac.config.Host, err)
+				return handleAuthError(ctx, ac.config.FrontendHost, err)
 			}
 
-			return response.TemporaryRedirect(ctx, fmt.Sprintf("%s/complete-registration?token=%s", ac.config.Host, registrationToken))
+			return response.TemporaryRedirect(ctx, fmt.Sprintf("%s/complete-registration?token=%s", ac.config.FrontendHost, registrationToken))
 		}
 
 		_, accesstoken, err := authentication.CreateAndSignToken(
@@ -194,7 +194,7 @@ func (ac *AuthController) HandleOAuthCallback(provider string) func(ctx echo.Con
 			time.Now().UTC().Add(time.Hour),
 		)
 		if err != nil {
-			return handleAuthError(ctx, ac.config.Host, err)
+			return handleAuthError(ctx, ac.config.FrontendHost, err)
 		}
 
 		expiresAt := time.Now().UTC().Add(time.Hour * 168)
@@ -206,7 +206,7 @@ func (ac *AuthController) HandleOAuthCallback(provider string) func(ctx echo.Con
 			expiresAt,
 		)
 		if err != nil {
-			return handleAuthError(ctx, ac.config.Host, err)
+			return handleAuthError(ctx, ac.config.FrontendHost, err)
 		}
 
 		if err = ac.sessionService.Create(
@@ -219,9 +219,9 @@ func (ac *AuthController) HandleOAuthCallback(provider string) func(ctx echo.Con
 				ExpiresAt: expiresAt,
 			},
 		); err != nil {
-			return handleAuthError(ctx, ac.config.Host, err)
+			return handleAuthError(ctx, ac.config.FrontendHost, err)
 		}
 
-		return response.TemporaryRedirect(ctx, fmt.Sprintf("https://%s/auth?accesstoken=%s&refreshtoken=%s", ac.config.Host, accesstoken, refreshtoken))
+		return response.TemporaryRedirect(ctx, fmt.Sprintf("%s/auth?accesstoken=%s&refreshtoken=%s", ac.config.FrontendHost, accesstoken, refreshtoken))
 	}
 }

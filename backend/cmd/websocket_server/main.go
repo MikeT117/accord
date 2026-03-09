@@ -56,9 +56,9 @@ func main() {
 	hub := websocket_api.NewHub(ctx, config, eventSubscriber, websocketService)
 
 	// Websocket Handler
-	server := &http.Server{Addr: fmt.Sprintf(":%d", config.WebsocketPort)}
+	server := &http.Server{Addr: fmt.Sprintf(":%d", config.WebsocketServerPort)}
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		websocket_api.HandleNewWS(hub, w, r)
+		websocket_api.HandleNewWS(hub, config, w, r)
 	})
 	go func() {
 		if err := server.ListenAndServe(); err != nil {

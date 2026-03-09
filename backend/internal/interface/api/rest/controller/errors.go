@@ -48,6 +48,6 @@ func handleAuthError(ctx echo.Context, host string, err error) error {
 	}
 
 	return response.TemporaryRedirect(ctx,
-		fmt.Sprintf("https://%s?error=%s", host, errMsg),
+		fmt.Sprintf("%s?error=%s", host, errMsg),
 	)
 }

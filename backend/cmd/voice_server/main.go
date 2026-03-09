@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"slices"
 	"syscall"
 
 	"github.com/MikeT117/accord/backend/internal/application/services"
@@ -73,7 +74,7 @@ func main() {
 	}
 
 	// Websocket Handler
-	server := &http.Server{Addr: fmt.Sprintf(":%d", config.WebRTCPort)}
+	server := &http.Server{Addr: fmt.Sprintf(":%d", config.WebRTCWebsocketServerPort)}
 	http.HandleFunc("/rtc", func(w http.ResponseWriter, r *http.Request) {
 
 		if !hub.AllowConnections() {
@@ -84,6 +85,10 @@ func main() {
 		upgrader := websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
+			CheckOrigin: func(r *http.Request) bool {
+				allowedOrigins := []string{config.Host, config.FrontendHost}
+				return slices.Contains(allowedOrigins, r.Header.Get("Origin"))
+			},
 		}
 
 		conn, err := upgrader.Upgrade(w, r, nil)

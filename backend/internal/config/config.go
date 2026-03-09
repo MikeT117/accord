@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -9,7 +10,17 @@ import (
 )
 
 type Config struct {
+	AppMode  string
+	Protocol string
+
+	FrontendHost string
+	Host         string
+
 	OAuthNonceSecret string
+
+	JWTAccesstokenKey       []byte
+	JWTRefreshtokenKey      []byte
+	JWTRegistrationTokenKey []byte
 
 	GithubKey         string
 	GithubSecret      string
@@ -19,11 +30,6 @@ type Config struct {
 	GitlabSecret      string
 	GitlabRedirectURL string
 
-	JWTAccesstokenKey  []byte
-	JWTRefreshtokenKey []byte
-
-	JWTRegistrationTokenKey []byte
-
 	CloudinaryURL    string
 	CloudinaryResURL string
 	CloudinarySecret string
@@ -32,33 +38,31 @@ type Config struct {
 
 	DatabaseURL string
 
-	HTTPPort      int
-	WebsocketPort int
-	WebRTCPort    int
-
-	Host string
+	RestServerPort            int
+	WebsocketServerPort       int
+	WebRTCWebsocketServerPort int
 
 	NATSURL      string
 	NATSUser     string
 	NATSPassword string
-
-	APIURL string
-	RTCURL string
-	WSURL  string
 }
 
 func MustLoadConfig() *Config {
 	godotenv.Load(".env.local")
 
 	config := &Config{
+		AppMode:      mustGetEnv("APP_MODE", true),
+		Protocol:     mustGetEnv("PROTOCOL", true),
+		FrontendHost: mustGetEnv("FRONTEND_HOST", true),
+
+		Host: mustGetEnv("HOST", true),
+
 		OAuthNonceSecret: mustGetEnv("OAUTH_NONCE_SECRET", true),
 
 		JWTAccesstokenKey:       []byte(mustGetEnv("JWT_ACCESSTOKEN_KEY", true)),
 		JWTRefreshtokenKey:      []byte(mustGetEnv("JWT_REFRESHTOKEN_KEY", true)),
 		JWTRegistrationTokenKey: []byte(mustGetEnv("JWT_REGISTRATIONTOKEN_KEY", true)),
 
-		CloudinaryURL:    mustGetEnv("CLOUDINARY_URL", false),
-		CloudinaryResURL: mustGetEnv("CLOUDINARY_RES_URL", false),
 		CloudinarySecret: mustGetEnv("CLOUDINARY_SECRET", false),
 		CloudinaryAPIKey: mustGetEnv("CLOUDINARY_API_KEY", false),
 		CloudinaryEnv:    mustGetEnv("CLOUDINARY_ENVIRONMENT", false),
@@ -68,28 +72,31 @@ func MustLoadConfig() *Config {
 		NATSURL:      mustGetEnv("NATS_URL", true),
 		NATSUser:     mustGetEnv("NATS_USER", true),
 		NATSPassword: mustGetEnv("NATS_PASSWORD", true),
-
-		Host:   mustGetEnv("HOST", true),
-		APIURL: mustGetEnv("API_URL", true),
-		RTCURL: mustGetEnv("RTC_URL", true),
-		WSURL:  mustGetEnv("WS_URL", true),
 	}
 
 	var err error
 
-	config.HTTPPort, err = strconv.Atoi(mustGetEnv("HTTP_PORT", true))
-	if err != nil {
-		log.Fatalf("invalid http port environment variable: %d\n", config.HTTPPort)
+	if config.AppMode == "" || (config.AppMode != "PRODUCTION" && config.AppMode != "DEVELOPMENT") {
+		log.Fatalf("invalid app mode, only production or development is allowed\n")
 	}
 
-	config.WebsocketPort, err = strconv.Atoi(mustGetEnv("WEBSOCKET_PORT", true))
-	if err != nil {
-		log.Fatalf("invalid websocket port environment variable: %d\n", config.WebsocketPort)
+	if config.Protocol != "http" && config.Protocol != "https" {
+		log.Fatalf("invalid protocol, valid options are 'http' or 'https'\n")
 	}
 
-	config.WebRTCPort, err = strconv.Atoi(mustGetEnv("WEBRTC_WS_PORT", true))
+	config.RestServerPort, err = strconv.Atoi(mustGetEnv("REST_SERVER_PORT", true))
 	if err != nil {
-		log.Fatalf("invalid web rtc websocket port environment variable: %d\n", config.WebRTCPort)
+		log.Fatalf("invalid http port environment variable: %d\n", config.RestServerPort)
+	}
+
+	config.WebsocketServerPort, err = strconv.Atoi(mustGetEnv("WEBSOCKET_SERVER_PORT", true))
+	if err != nil {
+		log.Fatalf("invalid websocket port environment variable: %d\n", config.WebsocketServerPort)
+	}
+
+	config.WebRTCWebsocketServerPort, err = strconv.Atoi(mustGetEnv("WEBRTC_WEBSOCKET_SERVER_PORT", true))
+	if err != nil {
+		log.Fatalf("invalid web rtc websocket port environment variable: %d\n", config.WebRTCWebsocketServerPort)
 	}
 
 	config.GithubKey = mustGetEnv("GITHUB_KEY", false)
@@ -108,6 +115,13 @@ func MustLoadConfig() *Config {
 		log.Fatalf("no oauth config provided\n")
 	}
 
+	if config.AppMode == "PRODUCTION" {
+		config.FrontendHost = fmt.Sprintf("https://%s", config.FrontendHost)
+	} else {
+		config.FrontendHost = fmt.Sprintf("http://%s", config.FrontendHost)
+	}
+
+	log.Printf("\n%s\n%s\n%s\n", config.NATSURL, config.NATSPassword, config.NATSUser)
 	return config
 }
 
