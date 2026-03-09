@@ -1,3 +1,5 @@
+-- +goose Up
+
 CREATE TABLE IF NOT EXISTS "account" (
     "id" UUID PRIMARY KEY NOT NULL,
     "provider" TEXT NOT NULL,
@@ -40,10 +42,6 @@ CREATE TABLE IF NOT EXISTS "session" (
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL
 );
-
--- PENDING = 0
--- FRIENDS = 1
--- BLOCKED = 2
 
 CREATE TABLE IF NOT EXISTS "user_relationship" (
     "id" UUID PRIMARY KEY NOT NULL,
@@ -117,13 +115,6 @@ CREATE TABLE IF NOT EXISTS "guild_invite" (
     "expires_at" TIMESTAMPTZ NOT NULL
 );
 
---- CHANNEL TYPE ---
--- GUILD_CHANNEL = 0
--- GUILD_VOICE_CHANNEL = 1
--- GUILD_CATEGORY_CHANNEL = 2
--- DM_CHANNEL = 3
--- GROUP_DM_CHANNEL = 4
-
 CREATE TABLE IF NOT EXISTS "channel" (
     "id" UUID PRIMARY KEY,
     "creator_id" UUID REFERENCES "user" ("id"),
@@ -135,10 +126,6 @@ CREATE TABLE IF NOT EXISTS "channel" (
     "created_at" TIMESTAMPTZ NOT NULL,
     "updated_at" TIMESTAMPTZ NOT NULL
 );
-
---- FLAG ---
--- HIDDEN = 0
--- VISIBLE = 1
 
 CREATE TABLE IF NOT EXISTS "channel_message" (
     "id" uuid PRIMARY KEY,
@@ -172,8 +159,6 @@ CREATE TABLE IF NOT EXISTS "voice_state" (
     "guild_id" uuid REFERENCES "guild" ("id")
 );
 
--- Join Tables Begin --
-
 CREATE TABLE IF NOT EXISTS "channel_message_attachment" (
     "channel_message_id" uuid NOT NULL REFERENCES "channel_message" ("id") ON DELETE CASCADE,
     "attachment_id" uuid NOT NULL REFERENCES "attachment" ("id") ON DELETE CASCADE,
@@ -200,5 +185,3 @@ CREATE TABLE IF NOT EXISTS "guild_role_channel" (
     "channel_id" uuid NOT NULL REFERENCES "channel" ("id") ON DELETE CASCADE,
     PRIMARY KEY ("role_id", "channel_id")
 );
-
--- Join Tables End --
