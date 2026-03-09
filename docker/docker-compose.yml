@@ -1,0 +1,138 @@
+name: "accord_prod"
+services:
+    db:
+        env_file:
+            - .env
+        environment:
+            - POSTGRES_HOST_AUTH_METHOD=trust
+        image: postgres:16-alpine
+        ports:
+            - 5432:5432
+        networks:
+            accord_network:
+                aliases:
+                    - database
+        restart: unless-stopped
+        volumes:
+            - database_data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    init:
+        env_file:
+            - .env
+        image: accord_init
+        networks:
+            accord_network:
+        depends_on:
+            db:
+                condition: service_healthy
+
+    nats:
+        env_file:
+            - .env
+        image: nats:alpine
+        ports:
+            - 4222:4222
+            - 6222:6222
+            - 8222:8222
+        networks:
+            accord_network:
+                aliases:
+                    - message_queue
+        command: -D -n accord_nats --user ${NATS_USER} -pass ${NATS_PASSWORD} -m 8222
+        restart: unless-stopped
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "wget -qO- http://localhost:8222/healthz || exit 1",
+                ]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+    frontend:
+        env_file:
+            - .env
+        image: accord_frontend
+        ports:
+            - 3000:80
+        networks:
+            accord_network:
+                aliases:
+                    - accord_frontend
+        restart: unless-stopped
+        depends_on:
+            init:
+                condition: service_completed_successfully
+            db:
+                condition: service_healthy
+            nats:
+                condition: service_healthy
+
+    rest_api:
+        env_file:
+            - .env
+        image: accord_rest_server
+        ports:
+            - 4000:4000
+        networks:
+            accord_network:
+                aliases:
+                    - rest_server
+        restart: unless-stopped
+        depends_on:
+            init:
+                condition: service_completed_successfully
+            db:
+                condition: service_healthy
+            nats:
+                condition: service_healthy
+
+    websocket:
+        env_file:
+            - .env
+        image: accord_websocket_server
+        ports:
+            - 4001:4001
+        networks:
+            accord_network:
+                aliases:
+                    - websocket_server
+        restart: unless-stopped
+        depends_on:
+            init:
+                condition: service_completed_successfully
+            db:
+                condition: service_healthy
+            nats:
+                condition: service_healthy
+
+    voice:
+        env_file:
+            - .env
+        image: accord_voice_server
+        ports:
+            - 4002:4002
+        networks:
+            accord_network:
+                aliases:
+                    - voice_server
+        restart: unless-stopped
+        depends_on:
+            init:
+                condition: service_completed_successfully
+            db:
+                condition: service_healthy
+            nats:
+                condition: service_healthy
+
+volumes:
+    database_data:
+networks:
+    accord_network:
+        name: accord_network

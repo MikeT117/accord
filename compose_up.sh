@@ -1,4 +1,4 @@
 #!/bin/sh
 
 cd ./docker
-docker compose -f ./docker-compose-prod.yaml --env-file .env up -d
+docker compose -f ./docker-compose.yml --env-file .env up -d

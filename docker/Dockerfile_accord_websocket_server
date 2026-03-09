@@ -1,0 +1,67 @@
+FROM golang:1.26 as BUILDER
+
+WORKDIR /app
+
+COPY ./backend/go.mod ./
+COPY ./backend/go.sum ./
+
+RUN go mod download && go mod verify
+
+COPY ./backend/cmd ./cmd
+COPY ./backend/internal ./internal
+
+RUN go build -v -o /app/websocket_server ./cmd/websocket_server/...
+
+
+FROM golang:1.26
+
+WORKDIR /app
+
+COPY --from=BUILDER /app/websocket_server ./
+
+## Env Vars
+
+## Frontend/Backend ##
+ENV APP_MODE=
+ENV PROTOCOL=
+ENV FRONTEND_HOST=
+
+## Backend ##
+ENV HOST=
+
+## OAuth ##
+ENV OAUTH_NONCE_SECRET=
+
+ENV GITHUB_KEY=
+ENV GITHUB_SECRET=
+ENV GITHUB_REDIRECT_URL=
+
+ENV GITLAB_KEY=
+ENV GITLAB_SECRET=
+ENV GITLAB_REDIRECT_URL=
+
+ENV JWT_ACCESSTOKEN_KEY=
+ENV JWT_REFRESHTOKEN_KEY=
+ENV JWT_REGISTRATIONTOKEN_KEY=
+
+## Cloudinary - Backend ##
+ENV CLOUDINARY_SECRET=
+ENV CLOUDINARY_ENVIRONMENT=
+
+## Cloudinary - Frontend/Backend ##
+ENV CLOUDINARY_API_KEY=
+
+## Database ##
+ENV DATABASE_URL=
+
+## NATs ##
+ENV NATS_URL=
+ENV NATS_USER=
+ENV NATS_PASSWORD=
+
+## Ports ##
+ENV REST_SERVER_PORT=
+ENV WEBSOCKET_SERVER_PORT=
+ENV WEBRTC_WEBSOCKET_SERVER_PORT=
+
+CMD ["/app/websocket_server"]
