@@ -51,7 +51,7 @@ export const Route = createFileRoute("/_auth/app")({
         if (cause === "enter") {
             return new Promise<void>((res, rej) => {
                 const config: WebSocketConfig = {
-                    endpoint: `wss://${env.WS_URL}`,
+                    endpoint: `${env.PROTOCOL === "http" ? "ws://" : "wss://"}${env.WS_URL}`,
                     log: true,
                     retries: 5,
                     retry: true,

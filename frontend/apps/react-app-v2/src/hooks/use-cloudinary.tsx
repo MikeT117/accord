@@ -1,7 +1,8 @@
 import { env } from "@/lib/constants";
 import { useSignAttachmentMutation } from "@/lib/react-query/mutations/sign-attachment-mutation";
 import { useUploadAttachmentMutation } from "@/lib/react-query/mutations/upload-attachment-mutation";
-import { useState, useRef, type ReactNode, Ref, useEffect } from "react";
+import { useState, useRef, type ReactNode, Ref, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 
 export type AttachmentPreview = {
     id: string;
@@ -73,7 +74,7 @@ export function useCloudinary() {
         };
     }, []);
 
-    function setRef(elem: HTMLInputElement) {
+    const setRef = useCallback(function (elem: HTMLInputElement) {
         if (!elem) {
             return;
         }
@@ -84,7 +85,7 @@ export function useCloudinary() {
 
         elemRef.current = elem;
         elem.addEventListener("change", handleChangeEvent);
-    }
+    }, []);
 
     async function handleChangeEvent(event: Event) {
         const files = (event.target as HTMLInputElement).files;
@@ -119,7 +120,7 @@ export function useCloudinary() {
 
     function onClick() {
         if (!env.CLOUDINARY_URL || !env.CLOUDINARY_API_KEY) {
-            console.warn("Cloudinary URL/API-KEY not valid, attachment upload functionality disabled!");
+            toast.warning("Cloudinary URL/API-KEY not valid, attachment upload functionality disabled!");
             return;
         }
 

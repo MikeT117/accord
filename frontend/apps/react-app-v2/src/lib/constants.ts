@@ -1,9 +1,7 @@
 import emojiRegex from "emoji-regex-xs";
 import { envSchema } from "./zod-validation/env-schema";
 
-export const env = (() => {
-    return envSchema.parse((window as any).__ENV__);
-})();
+export const env = (() => envSchema.parse((window as any).__ENV__))();
 
 export const GUILD_PERMISSION = {
     VIEW_GUILD_CHANNEL: 0,

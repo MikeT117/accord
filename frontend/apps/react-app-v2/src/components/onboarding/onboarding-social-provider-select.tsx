@@ -6,11 +6,11 @@ import { AccordLogo } from "../accord-logo";
 
 export function OnboardingSocialProviderSelect() {
     function handleGithubLogin() {
-        window.location.href = `https://${env.API_URL}/v1/auth/github`;
+        window.location.href = `${env.PROTOCOL}://${env.API_URL}/v1/auth/github`;
     }
 
     function handleGitlabLogin() {
-        window.location.href = `https://${env.API_URL}/v1/auth/gitlab`;
+        window.location.href = `${env.PROTOCOL}://${env.API_URL}/v1/auth/gitlab`;
     }
     return (
         <div className="flex min-h-svh flex-col place-content-center place-items-center gap-6">

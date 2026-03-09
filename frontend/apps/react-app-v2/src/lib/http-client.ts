@@ -4,7 +4,7 @@ import type { APIErrorResponse } from "@/lib/types/types";
 import { tokenStoreActions, tokenStoreState } from "./zustand/stores/token-store";
 
 const httpClient = axios.create({
-    baseURL: `https://${env.API_URL}/v1`,
+    baseURL: `${env.PROTOCOL}://${env.API_URL}/v1`,
     adapter: "fetch",
 });
 

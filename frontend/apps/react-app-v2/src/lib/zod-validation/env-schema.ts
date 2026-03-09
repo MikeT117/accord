@@ -1,12 +1,13 @@
 import * as z from "zod/v4-mini";
 
 const appModeSchema = z.literal(["DEVELOPMENT", "PRODUCTION"]);
+const protocolSchema = z.literal(["http", "https"]);
 
 export const envSchema = z.object({
-    HOST: z.string(),
-    CLOUDINARY_URL: z.url(),
-    CLOUDINARY_RES_URL: z.url(),
-    CLOUDINARY_API_KEY: z.string(),
+    PROTOCOL: protocolSchema,
+    CLOUDINARY_URL: z.optional(z.nullable(z.string())),
+    CLOUDINARY_RES_URL: z.optional(z.nullable(z.string())),
+    CLOUDINARY_API_KEY: z.optional(z.nullable(z.string())),
     API_URL: z.string(),
     RTC_URL: z.string(),
     WS_URL: z.string(),

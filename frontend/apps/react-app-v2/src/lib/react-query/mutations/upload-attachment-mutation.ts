@@ -12,7 +12,7 @@ type UploadAttachmentMutationArgs = {
 };
 
 function createUploadURL(args: UploadAttachmentMutationArgs) {
-    return `https://api.cloudinary.com/v1_1/${"dm3guxnpr"}/auto/upload?api_key=${env.CLOUDINARY_API_KEY}&signature=${args.signature}&timestamp=${args.timestamp}&public_id=${args.id}`;
+    return `${env.CLOUDINARY_URL}?api_key=${env.CLOUDINARY_API_KEY}&signature=${args.signature}&timestamp=${args.timestamp}&public_id=${args.id}`;
 }
 
 const uploadAttachmentRequest = async (args: UploadAttachmentMutationArgs) => {
