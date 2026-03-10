@@ -121,7 +121,6 @@ func MustLoadConfig() *Config {
 		config.FrontendHost = fmt.Sprintf("http://%s", config.FrontendHost)
 	}
 
-	log.Printf("\n%s\n%s\n%s\n", config.NATSURL, config.NATSPassword, config.NATSUser)
 	return config
 }
 
