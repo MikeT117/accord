@@ -28,6 +28,10 @@ func CreateAuthorisationService(guildRoleRepository repositories.GuildRoleReposi
 func (s *AuthorisationService) VerifyUserRelationship(ctx context.Context, requestorID uuid.UUID, userIDs []uuid.UUID, isBlocked bool, isFriend bool, isPending bool) error {
 	relationships, err := s.RelationshipRepository.GetByUserIDAndUserIDs(ctx, requestorID, userIDs)
 
+	if err != nil {
+		return err
+	}
+
 	if len(relationships) != len(userIDs) {
 		return ErrNotAuthorised
 	}
@@ -41,10 +45,6 @@ func (s *AuthorisationService) VerifyUserRelationship(ctx context.Context, reque
 		case isFriend && !relationship.IsFriend():
 			return ErrNotAuthorised
 		}
-	}
-
-	if err != nil {
-		return err
 	}
 
 	return nil
