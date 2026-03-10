@@ -84,7 +84,7 @@ cp frontend/apps/react-app-v2/.env_development.example frontend/apps/react-app-v
 This is only necessary if you don't want to set up NATs, PostgreSQL and manually run the DB migrations.
 
 ```bash
-cp docker/.env.dev.example docker/.env.dev
+cp docker/.env.dev.example docker/.env.local.dev
 ```
 
 Fill out the necessary values matching the values passed to the environment for the backend services in step 1 and the run the following:

@@ -1,4 +1,4 @@
 #!/bin/sh
 
 cd ./docker
-docker compose -f ./docker-compose-dev.yml --env-file .env.dev down
+docker compose -f ./docker-compose-dev.yml --env-file .env.local.dev down
