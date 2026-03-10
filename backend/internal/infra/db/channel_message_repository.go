@@ -58,6 +58,7 @@ func (r *ChannelMessageRepository) GetByID(ctx context.Context, ID uuid.UUID) (*
 
 	return channelMessage, nil
 }
+
 func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID uuid.UUID, before time.Time, limit int) ([]*entities.ChannelMessage, error) {
 	rows, err := r.db(ctx).Query(ctx, `
 		SELECT
@@ -69,13 +70,17 @@ func (r *ChannelMessageRepository) GetByAuthorID(ctx context.Context, authorID u
 			channel_id,
 			created_at,
 			updated_at
-		FROM
-			channel_message
-		WHERE
-			author_id = $1
-		ORDER BY
-			created_at ASC;
-	`, authorID)
+			FROM
+				channel_message
+			WHERE
+				author_id = $1
+			AND
+				created_at < $2
+			ORDER BY
+				created_at ASC
+			LIMIT
+				$4;
+	`, authorID, before, limit)
 
 	if err != nil {
 		return nil, wrapUnknownErr("select channel messages by author id failed", err)
@@ -308,7 +313,7 @@ func (r *ChannelMessageRepository) DisassociateAttachment(ctx context.Context, c
 			attachment_id = $1
 		AND
 			channel_message_id = $2;
-	`)
+	`, attachmentID, channelMessageID)
 
 	if err != nil {
 		return wrapUnknownErr("delete channel message attachment association failed", err)
