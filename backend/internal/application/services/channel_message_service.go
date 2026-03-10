@@ -173,7 +173,6 @@ func (s *ChannelMessageService) Create(ctx context.Context, cmd *command.CreateC
 			if attachment.OwnerID != cmd.RequestorID {
 				return ErrNotAuthorised
 			}
-			attachments = append(attachments, attachment)
 		}
 	}
 
