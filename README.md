@@ -15,16 +15,17 @@ This manages persistent client connections and pushes real-time events
 This handles WebRTC signalling and peer connection management for voice channels
 
 ## Features
-- **Guilds** — Create and manage servers with named text and voice channels organised into categories
-- **Real-time messaging** — Live message delivery, editing, deletion, and pinning over WebSocket using Protocol Buffers
-- **Voice channels** — WebRTC-powered audio with self-mute and per-user mute controls
-- **Direct messages** — Private one-to-one and group channels (group channels > 2 are not implemented in client)
-- **Relationships** — Friend requests, friend list, and blocked users
-- **Role-based permissions** — Bitfield permission system with per-role, per-channel and per-guild access control
-- **Guild discovery** — Browse and join public guilds
-- **OAuth authentication** — Sign in with GitHub or GitLab
-- **Attachment uploads** — Image attachments via Cloudinary with inline gallery viewer
-- **Drag and drop** — Reorder channels within the guild sidebar
+- **Guilds**: Create and manage servers with named text and voice channels organised into categories
+- **Real-time messaging**: Live message delivery, editing, deletion, and pinning over WebSocket using Protocol Buffers
+- **Voice channels**: WebRTC-powered audio with self-mute and per-user mute controls
+- **Direct messages**: Private one-to-one and group channels (group channels > 2 are not implemented in the client)
+- **Relationships**: Friend requests, friend list, and blocked users
+- **Role-based permissions**: Bitfield permission system with per-role, per-channel and per-guild access control
+- **Guild discovery**: Browse and join public guilds
+- **Guild invite system**: Non-public guilds can be joined via an invite
+- **OAuth authentication**: Sign in with GitHub or GitLab
+- **Attachment uploads**: Image attachments via Cloudinary with inline gallery viewer
+- **Drag and drop**: Reorder channels within the guild sidebar
 
 
 ## Tech Stack
@@ -47,8 +48,8 @@ Both the backend and frontend use a bitfield permission system. Each guild role 
 All WebSocket messages are serialised with Protocol Buffers. The `.proto` definitions live in `backend/internal/infra/pb/` and are mirrored in `frontend/apps/react-app-v2/src/lib/protobuf/`. The frontend uses a generated JS bundle; the backend uses generated Go bindings.
 
 ### Frontend state split
-- **Zustand** holds real-time entity state: guilds, channels, roles, voice states, relationships — anything pushed from the server over WebSocket.
-- **TanStack Query** handles paginated server data: message history, guild members, invites, bans — anything fetched on demand with `staleTime: Infinity`, with WebSocket events applied as cache mutations.
+- **Zustand** holds real-time entity state: guilds, channels, roles, voice states, relationships, these are inititialised on connection with subsequent updates pushed over websocket applied.
+- **TanStack Query** handles paginated server data: message history, guild members, invites, bans, basically anything that is not sent on initial connection is fetched as needed with staleTime: Infinity`, WebSocket events applied as cache mutations e.g. message edits, pins etc.
 
 ## Getting Started
 
@@ -56,12 +57,12 @@ All WebSocket messages are serialised with Protocol Buffers. The `.proto` defini
 
 * Go 1.26+
 * Bun
-* Can use provided dev_compose.yml file to set these up but they are both required
+* Can use provided scripts to set these up automatically using docker but they are both required
     - PostgreSQL 15+
     - [NATS Server](https://docs.nats.io/running-a-nats-service/introduction/installation)
 - A GitHub or GitLab OAuth application
 
-### For file attachment functionality 
+#### For file attachment functionality 
 - A cloudinary account
 
 ### 1. Configure environment
@@ -78,7 +79,25 @@ Copy the example frontend env file and fill in all values:
 cp frontend/apps/react-app-v2/.env_development.example frontend/apps/react-app-v2/.env_development.local
 ```
 
-### 2. Run database migrations
+### 1a (optional). Configure Docker environment
+
+This is only necessary if you don't want to set up NATs, PostgreSQL and manually run the DB migrations.
+
+```bash
+cp docker/.env.dev.example docker/.env.dev
+```
+
+Fill out the necessary values matching the values passed to the environment for the backend services in step 1 and the run the following:
+
+```bash
+sh build_docker_images_dev.sh
+```
+
+```bash
+sh compose_up_dev.sh
+```
+
+### 2. Run database migrations (**Not required if you followed step 1a**)
 
 ```bash
 cd backend
@@ -124,17 +143,17 @@ cp docker/.env.example docker/.env
 ### 2. Build Docker Images
 
 ```bash
-sh build_docker_images.sh
+sh build_docker_images_prod.sh
 ```
 
 ### 3. Start
 
 ```bash
-sh compose_up.sh
+sh compose_prod_up.sh
 ```
 
 ### 4. Shutdown
 
 ```bash
-sh compose_down.sh
+sh compose_prod_down.sh
 ```
