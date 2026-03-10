@@ -101,20 +101,35 @@ func (h *Hub) handleProviderEvent(event []byte) {
 		return
 	}
 
+	userId, err := uuid.Parse(providerEvent.GetUserId())
+	if err != nil {
+		log.Println("invalid user ID in provider event proto message: ", err)
+		return
+	}
+
 	h.clients.Mutex.RLock()
 	defer h.clients.Mutex.RUnlock()
 
 	switch providerEvent.GetOp() {
 	case pb.ProviderOpCode_ASSOCIATE_USER_ROLE:
 		for _, client := range h.clients.Data {
+			if client.userID != userId {
+				continue
+			}
 			client.addRole(*providerEvent.GetUserRoleAssociate().RoleId)
 		}
 	case pb.ProviderOpCode_DISASSOCIATE_USER_ROLE:
 		for _, client := range h.clients.Data {
+			if client.userID != userId {
+				continue
+			}
 			client.deleteRole(*providerEvent.GetUserRoleDisassociate().RoleId)
 		}
 	case pb.ProviderOpCode_INVALIDATE_TOKEN:
 		for _, client := range h.clients.Data {
+			if client.userID != userId {
+				continue
+			}
 			client.shutdown(CLOSE_SESSION_EXPIRED)
 		}
 	}
